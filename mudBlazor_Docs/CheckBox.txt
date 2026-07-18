@@ -1,0 +1,255 @@
+Check Box
+A form input for boolean values or selecting multiple items in a list. Use checkboxes (instead of switches or radio buttons) if multiple options can be selected from a list.
+API
+<MudCheckBox>
+Basic Checkboxes
+<MudCheckBox @bind-Value="Basic_CheckBox1"></MudCheckBox>
+<MudCheckBox @bind-Value="Basic_CheckBox2" Color="Color.Primary"></MudCheckBox>
+<MudCheckBox @bind-Value="Basic_CheckBox3" Color="Color.Secondary"></MudCheckBox>
+<MudCheckBox @bind-Value="Basic_CheckBox4" Disabled="true"></MudCheckBox>
+@code {
+    public bool Basic_CheckBox1 { get; set; } = true;
+    public bool Basic_CheckBox2 { get; set; } = false;
+    public bool Basic_CheckBox3 { get; set; } = false;
+    public bool Basic_CheckBox4 { get; set; } = true;
+}
+Color
+<MudCheckBox @bind-Value="Basic_CheckBox1" UncheckedColor="Color.Error"></MudCheckBox>
+<MudCheckBox @bind-Value="Basic_CheckBox2" Color="Color.Primary" UncheckedColor="Color.Default"></MudCheckBox>
+<MudCheckBox @bind-Value="Basic_CheckBox3" Color="Color.Secondary" UncheckedColor="Color.Default"></MudCheckBox>
+<MudCheckBox @bind-Value="Basic_CheckBox4" Disabled="true" UncheckedColor="Color.Success"></MudCheckBox>
+@code {
+    public bool Basic_CheckBox1 { get; set; } = true;
+    public bool Basic_CheckBox2 { get; set; } = false;
+    public bool Basic_CheckBox3 { get; set; } = false;
+    public bool Basic_CheckBox4 { get; set; } = true;
+}
+Labels
+Text can be added using the Label property and its position can be specified using the LabelPlacement property
+
+Default
+Primary
+Secondary
+Disabled
+<MudCheckBox @bind-Value="Label_CheckBox1" Label="Default"></MudCheckBox>
+<MudCheckBox @bind-Value="Label_CheckBox2" Label="Primary" Color="Color.Primary"></MudCheckBox>
+<MudCheckBox @bind-Value="Label_CheckBox3" Label="Secondary" LabelPlacement="Placement.Start" Color="Color.Secondary"></MudCheckBox>
+<MudCheckBox @bind-Value="Label_CheckBox1" Disabled="true" Label="Disabled" LabelPlacement="Placement.Start"></MudCheckBox>
+@code {
+    public bool Label_CheckBox1 { get; set; } = true;
+    public bool Label_CheckBox2 { get; set; } = false;
+    public bool Label_CheckBox3 { get; set; } = false;
+}
+Icons
+<MudCheckBox @bind-Value="CheckBox1" Color="Color.Secondary" CheckedIcon="@Icons.Material.Filled.Favorite" UncheckedIcon="@Icons.Material.Filled.FavoriteBorder"></MudCheckBox>
+<MudCheckBox @bind-Value="CheckBox2" Color="Color.Tertiary" CheckedIcon="@Icons.Material.Filled.Bookmark" UncheckedIcon="@Icons.Material.Filled.BookmarkBorder"></MudCheckBox>
+<MudCheckBox @bind-Value="CheckBox3" Color="Color.Warning" CheckedIcon="@Icons.Material.Filled.Star" UncheckedIcon="@Icons.Material.Filled.StarOutline"></MudCheckBox>
+@code {
+    public bool CheckBox1 { get; set; } = true;
+    public bool CheckBox2 { get; set; } = false;
+    public bool CheckBox3 { get; set; } = false;
+}
+Dense
+<MudCheckBox @bind-Value="Dense_CheckBox" Dense="true" Color="Color.Success"></MudCheckBox>
+<MudCheckBox @bind-Value="Dense_CheckBox" Dense="false" Color="Color.Primary"></MudCheckBox>
+@code {
+    public bool Dense_CheckBox { get; set; } = true;
+}
+Sizes
+<MudCheckBox @bind-Value="Size_CheckBox1" Size="Size.Small" Color="Color.Primary"></MudCheckBox>
+<MudCheckBox @bind-Value="Size_CheckBox2" Size="Size.Medium" Color="Color.Secondary"></MudCheckBox>
+<MudCheckBox @bind-Value="Size_CheckBox3" Size="Size.Large" Color="Color.Tertiary"></MudCheckBox>
+@code {
+    public bool Size_CheckBox1 { get; set; } = true;
+    public bool Size_CheckBox2 { get; set; } = false;
+    public bool Size_CheckBox3 { get; set; } = false;
+}
+Aria
+The checkbox uses a <label> element that wraps the input, which by default assigns any text provided via the Label property as the accessible name for the checkbox. If this behavior doesn't suit your layout or accessibility needs, you can use the AriaLabel property to explicitly set the accessible name. This overrides the default labeling behavior and works independently of the Label or ChildContent properties.
+
+CheckBox One
+CheckBox Two
+Option Two
+Option Three
+Misc ChildContent
+Option Four
+<MudCheckBox Class="cb1" @bind-Value="Basic_CheckBox1" Label="CheckBox One" />
+<MudCheckBox Class="cb2" @bind-Value="Basic_CheckBox2" Color="Color.Primary" AriaLabel="Option Two" Label="CheckBox Two" />
+<MudCheckBox Class="cb3" @bind-Value="Basic_CheckBox3" Color="Color.Tertiary" AriaLabel="Option Three" />
+<MudCheckBox Class="cb4" @bind-Value="Basic_CheckBox4" Color="Color.Secondary" AriaLabel="Option Four">
+    <span>Misc ChildContent</span>
+</MudCheckBox>
+@code {
+    private bool Basic_CheckBox1 { get; set; } = true;
+    private bool Basic_CheckBox2 { get; set; } = false;
+    private bool Basic_CheckBox3 { get; set; } = false;
+    private bool Basic_CheckBox4 { get; set; } = true;
+}
+Indeterminate State
+When you use T="bool?" or bind the checkbox against a nullable bool it can have an indeterminate state when the value is null.
+In addition, the different states when the checkbox is clicked are the following (with a starting null value):
+Indeterminate, True, False, True, False...
+It is not possible to obtain the Indeterminate state again unless you reset the value to Null. Alternatively, by setting TriState="true", you can get the Indeterminate state after the False state.
+
+Value: null
+Checkbox with TriState. Value: null
+<MudCheckBox @bind-Value="value" Color="@Color.Primary">
+    Value: @(value == null ? "null" : value.ToString())
+</MudCheckBox>
+<MudButton OnClick="@(()=>value=null)">Reset</MudButton>
+<MudCheckBox @bind-Value="anotherValue" Color="@Color.Secondary" TriState="true">Checkbox with TriState. Value: @(anotherValue == null ? "null" : anotherValue.ToString())</MudCheckBox>
+@code {
+    public bool? value { get; set; } = null;
+    public bool? anotherValue { get; set;} = null;
+}
+Binding Checkbox Against Different Data Types
+bool: True
+bool?: True
+int: 1
+string: "on"
+custom string: "I don't know"
+boxed bool: "False"
+<MudCheckBox @bind-Value="_boolean">bool: @_boolean</MudCheckBox>
+<MudCheckBox @bind-Value="_nullableBoolean" Color="Color.Primary">bool?: @_nullableBoolean</MudCheckBox>
+<MudCheckBox @bind-Value="_integer" Color="Color.Secondary">int: @_integer</MudCheckBox>
+<MudCheckBox @bind-Value="_string" Color="Color.Tertiary">string: "@(_string)"</MudCheckBox>
+<MudCheckBox @bind-Value="_customString" Converter="@CustomStringToBoolConverter.Instance">custom string: "@(_customString)"</MudCheckBox>
+<MudCheckBox @bind-Value="_object" Converter="@ObjectToBoolConverter.Instance">boxed bool: "@(_object.ToString())"</MudCheckBox>
+@code{ 
+    private bool _boolean = true;
+    private bool? _nullableBoolean = true;
+    private int _integer = 1;
+    private string _string = "on";
+    private string _customString = CustomStringToBoolConverter.NullString;
+    private object _object = false;
+
+    private class ObjectToBoolConverter : IReversibleConverter<object, bool?>
+    {
+        public bool? Convert(object input)
+        {
+            return input switch
+            {
+                null => null,
+                bool value => value,
+                _ => throw new InvalidCastException("Unable to convert object to bool?.")
+            };
+        }
+
+        public object ConvertBack(bool? output)
+        {
+            return output == true;
+        }
+
+        public static ObjectToBoolConverter Instance { get; } = new();
+    }
+
+    private class CustomStringToBoolConverter : IReversibleConverter<string, bool?>
+    {
+        public const string TrueString = "Yes, please";
+        public const string FalseString = "No, thanks";
+        public const string NullString = "I don't know";
+
+        public bool? Convert(string input)
+        {
+            return input switch
+            {
+                TrueString => true,
+                FalseString => false,
+                _ => null
+            };
+        }
+
+        public string ConvertBack(bool? output)
+        {
+            return output switch
+            {
+                true => TrueString,
+                false => FalseString,
+                null => NullString
+            };
+        }
+
+        public static CustomStringToBoolConverter Instance { get; } = new();
+    }
+}
+Content Placement
+Top
+Bottom
+Start
+End
+Left
+Right
+Test
+<MudGrid>
+    <MudItem xs="12" md="1">
+        <MudRadioGroup @bind-Value="Placement">
+            <MudStack AlignItems="AlignItems.Start" Justify="Justify.FlexStart">
+                <MudRadio Color="Color.Primary" Value="@(Placement.Top)">Top</MudRadio>
+                <MudRadio Color="Color.Primary" Value="@(Placement.Bottom)">Bottom</MudRadio>
+                <MudRadio Color="Color.Primary" Value="@(Placement.Start)">Start</MudRadio>
+                <MudRadio Color="Color.Primary" Value="@(Placement.End)">End</MudRadio>
+                <MudRadio Color="Color.Primary" Value="@(Placement.Left)">Left</MudRadio>
+                <MudRadio Color="Color.Primary" Value="@(Placement.Right)">Right</MudRadio>
+            </MudStack>
+        </MudRadioGroup>
+    </MudItem>
+    <MudItem xs="12" md="9" Class="d-flex justify-center align-center my-auto">
+        <MudCheckBox T="string" Label="Test" LabelPlacement="@Placement" Color="Color.Secondary" />
+    </MudItem>
+    <MudItem xs="12" md="2" Style="width:100%"></MudItem>
+</MudGrid>
+@code {
+    public Placement Placement { get; set; } = Placement.Right;
+}
+ReadOnly Mode
+Setting ReadOnly="true" stops the checkbox control from listening to user input.
+
+ReadOnly Checkbox 1
+ReadOnly Checkbox 2
+True
+Checkbox 1
+False
+Checkbox 2
+ReadOnly Mode
+<div>
+    <MudCheckBox ReadOnly="@ReadOnly" @bind-Value="Label_Checkbox1" Label="@(ReadOnly ? "ReadOnly Checkbox 1" : "EditMode Checkbox 1")"/>
+    <MudCheckBox ReadOnly="@ReadOnly" @bind-Value="Label_Checkbox2" Label="@(ReadOnly ? "ReadOnly Checkbox 2" : "EditMode Checkbox 2")"/>
+</div>
+<MudSelect  @bind-Value="Label_Checkbox1" Label="Checkbox 1">
+    <MudSelectItem Value="@(false)">False</MudSelectItem>
+    <MudSelectItem Value="@(true)">True</MudSelectItem>
+</MudSelect>
+<MudSelect @bind-Value="Label_Checkbox2" Label="Checkbox 2">
+    <MudSelectItem Value="@(false)">False</MudSelectItem>
+    <MudSelectItem Value="@(true)">True</MudSelectItem>
+</MudSelect>
+
+<MudSwitch @bind-Value="ReadOnly" Label="@(ReadOnly ? "ReadOnly Mode" : "Edit Mode")" Color="Color.Primary"/>
+@code {
+    public bool Label_Checkbox1 { get; set; } = true;
+    public bool Label_Checkbox2 { get; set; } = false;
+    public bool ReadOnly { get; set; } = true;
+}
+Keyboard Navigation
+MudCheckBox supports keyboard navigation.
+
+
+Space key to toggle between true/false/(when TriState is true) indeterminate
+
+Delete key to set unchecked
+
+Enter or NumpadEnter keys to set checked
+
+Backspace key to set indeterminate (only when TriState is true)
+
+*Disabled or ReadOnly checkboxes cannot be changed by keys.
+
+
+Basic
+TriState
+<MudCheckBox @bind-Value="CheckBox1" Color="Color.Primary" Label="Basic"></MudCheckBox>
+<MudCheckBox @bind-Value="CheckBox2" Color="Color.Primary" Label="TriState" TriState="true"></MudCheckBox>
+@code {
+    public bool CheckBox1 { get; set; } = true;
+    public bool? CheckBox2 { get; set; } = null;
+}

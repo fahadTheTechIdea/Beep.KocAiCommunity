@@ -1,0 +1,107 @@
+Breadcrumbs
+Represents a series of links used to show the user's current location.
+API
+<MudBreadcrumbs>
+Basic Breadcrumbs
+Home
+/
+Link 1
+/
+Link 2
+<MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+@code {
+    private List<BreadcrumbItem> _items =
+    [
+        new("Home", href: "#"),
+        new("Link 1", href: "#"),
+        new("Link 2", href: null, disabled: true)
+    ];
+}
+Custom Separator
+Home
+>
+Link 1
+>
+Link 2
+<MudBreadcrumbs Items="_items" Separator=">"></MudBreadcrumbs>
+@code {
+    private List<BreadcrumbItem> _items =
+    [
+        new("Home", href: "#"),
+        new("Link 1", href: "#"),
+        new("Link 2", href: null, disabled: true)
+    ];
+}
+Render Fragments
+It is also possible to provide a RenderFragment as a template.
+
+Home
+Link 1
+Link 2
+<MudBreadcrumbs Items="_items">
+    <SeparatorTemplate>
+        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
+    </SeparatorTemplate>
+</MudBreadcrumbs>
+@code {
+    private List<BreadcrumbItem> _items =
+    [
+        new("Home", href: "#"),
+        new("Link 1", href: "#"),
+        new("Link 2", href: null, disabled: true)
+    ];
+}
+Item Icons
+Home
+/
+Videos
+/
+Create
+<MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+@code {
+    private List<BreadcrumbItem> _items =
+    [
+        new("Home", href: "#", icon: Icons.Material.Filled.Home),
+        new("Videos", href: "#", icon: Icons.Material.Filled.VideoLibrary),
+        new("Create", href: null, disabled: true, icon: Icons.Material.Filled.Create)
+    ];
+}
+Item Template
+If you use the ItemTemplate parameter, MudBlazor doesn't wrap the content in anchors.
+
+HOME
+/
+LINK 1
+/
+LINK 2
+<MudBreadcrumbs Items="_items">
+    <ItemTemplate Context="item">
+        <MudLink Href="@item.Href">@item.Text.ToUpper()</MudLink>
+    </ItemTemplate>
+</MudBreadcrumbs>
+@code {
+    private List<BreadcrumbItem> _items =
+    [
+        new("Home", href: "#"),
+        new("Link 1", href: "#"),
+        new("Link 2", href: null, disabled: true)
+    ];
+}
+Collapsed
+You can set the MaxItems parameter in order to automatically collapse the breadcrumbs when it exceeds a number of items.
+
+Home
+/
+/
+Link 4
+<MudBreadcrumbs Items="_items" MaxItems="4"></MudBreadcrumbs>
+@code {
+    private List<BreadcrumbItem> _items =
+    [
+        new("Home", href: "#"),
+        new("Link 1", href: "#"),
+        new("Link 2", href: "#"),
+        new("Link 3", href: "#"),
+        new("Link 4", href: null, disabled: true)
+    ];
+}

@@ -1,0 +1,133 @@
+@inherits LayoutComponentBase
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Web.Services
+@inject DevIdentity Identity
+@inject NavigationManager Nav
+@implements IDisposable
+
+<MudThemeProvider Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Color="Color.Surface">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" aria-label="Toggle navigation" />
+        <MudImage Src="@KocBrand.LogoPath" Alt="Kuwait Oil Company" Height="38" Class="mr-3" />
+        <MudText Typo="Typo.h6" Class="koc-heading">@KocBrand.ProductName</MudText>
+        <MudSpacer />
+
+        @if (!Identity.IsGuest)
+        {
+            <NotificationBell />
+        }
+
+        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-2">
+            <ActivatorContent>
+                @if (Identity.IsGuest)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login">Sign in with KOC</MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" EndIcon="@Icons.Material.Filled.ArrowDropDown">
+                        @Identity.Current.Label
+                    </MudButton>
+                }
+            </ActivatorContent>
+            <ChildContent>
+                <MudText Typo="Typo.caption" Class="px-4 py-2 d-block">View the app as (dev)</MudText>
+                <MudDivider />
+                @foreach (var p in DevIdentity.Personas)
+                {
+                    <MudMenuItem OnClick="@(() => Switch(p.Key))">
+                        @if (p.Key == Identity.Current.Key)
+                        {
+                            <b>@p.Label ✓</b>
+                        }
+                        else
+                        {
+                            @p.Label
+                        }
+                    </MudMenuItem>
+                }
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+            @if (AllowedHere())
+            {
+                @Body
+            }
+            else
+            {
+                <BlueprintCard Class="pa-8 mt-6" Style="max-width:560px;margin:0 auto;text-align:center;">
+                    <MudIcon Icon="@(Identity.IsGuest ? Icons.Material.Filled.Lock : Icons.Material.Filled.Block)" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                    @if (Identity.IsGuest)
+                    {
+                        <MudText Typo="Typo.h6" Class="koc-heading mb-1">Sign in to continue</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-4">This area is for signed-in KOC employees. Use <b>Sign in with KOC</b> (top right) to pick a persona.</MudText>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Switch("employee"))">Sign in as Employee</MudButton>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6" Class="koc-heading mb-1">You don't have access to this area</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-4">Your role (<b>@Identity.Current.Label</b>) can't view this page. Supervision needs a team-lead role or above; Admin needs Platform Admin.</MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/">Back to home</MudButton>
+                    }
+                </BlueprintCard>
+            }
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private readonly MudTheme _theme = KocTheme.Build();
+    private bool _drawerOpen = true;
+
+    protected override void OnInitialized()
+    {
+        Identity.Changed += OnIdentityChanged;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private void Switch(string key)
+    {
+        Identity.SetPersona(key);
+        if (!AllowedHere())
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private void OnIdentityChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    // Central route guard — mirrors the server policies (RequireEmployee / RequireSupervisor / PlatformAdmin).
+    private bool AllowedHere()
+    {
+        var seg = new Uri(Nav.Uri).AbsolutePath.Trim('/').ToLowerInvariant().Split('/')[0];
+        return seg switch
+        {
+            "" or "learn" or "community" => true,       // public browsing
+            "supervision" => Identity.IsSupervisor,
+            "admin" => Identity.IsPlatformAdmin,
+            _ => Identity.HasAnyPosition,                // dashboard / compete / datasets / studio / workflow / models
+        };
+    }
+
+    public void Dispose()
+    {
+        Identity.Changed -= OnIdentityChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

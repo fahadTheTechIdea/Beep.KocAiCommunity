@@ -1,0 +1,655 @@
+Date Picker
+Represents a picker for dates.
+API
+<MudDatePicker>
+Basic Usage
+Note: Always use the two-way binding @bind-Date to bind to a field of type DateTime?
+
+4/22/2026
+4/22/2026
+4/22/2026
+22.04.2026
+4/22/2026
+4/22/2026
+<MudDatePicker Label="Basic example" @bind-Date="_date"/>
+<MudDatePicker Label="Editable with Placeholder" Editable="true" @bind-Date="_date" Placeholder="Select Date" />
+<MudDatePicker Label="Only Calendar" @bind-Date="_date" ShowToolbar="false" />
+<MudDatePicker Label="Date Format" @bind-Date="_date" DateFormat="dd.MM.yyyy" />
+<MudDatePicker Label="Show week number" ShowWeekNumbers="true" @bind-Date="_date" />
+<MudDatePicker Label="Display two months" DisplayMonths="2" TitleDateFormat="dddd, dd MMMM" @bind-Date="_date" />
+@code {
+    private DateTime? _date = DateTime.Today;
+}
+Input Masking
+By setting the Mask parameter, an editable DatePicker can be used with any suitable input mask, preferably a DateMask which has built-in date awareness. But other masks like PatternMask will work as well, even if they allow to input invalid dates. Make sure the DateFormat fits the mask!
+
+04/22/2026
+<MudDatePicker Label="dd.MM.yyyy" Editable="true" @bind-Date="_date1" Mask="@(new DateMask("dd.MM.yyyy"))" DateFormat="dd.MM.yyyy" Placeholder="de-AT Date"  Variant="Variant.Text" />
+<MudDatePicker Label="MM/dd/yyyy" Editable="true" @bind-Date="_date2" Mask="@(new DateMask("MM/dd/yyyy"))" DateFormat="MM/dd/yyyy" Placeholder="en-US Date" Variant="Variant.Filled" />
+<MudDatePicker Label="yyyy-MM-dd" Editable="true" @bind-Date="_date3" Mask="@(new DateMask("0000-00-00"))" DateFormat="yyyy-MM-dd" Placeholder="ISO Date" Variant="Variant.Outlined" />
+@code {
+    private DateTime? _date1 = null;
+    private DateTime? _date2 = DateTime.Today;
+    private DateTime? _date3 = null;
+}
+Text Parsing
+By setting the ImmediateText parameter to true, an editable DatePicker's Date can be set manually by parsing the user's text as they type.
+
+@using System.Globalization
+
+<MudDatePicker Label="Flexible Date" Editable="true" Date="_date" ImmediateText="true" Placeholder="day.month.year" DateFormat="@_dateFormat" TextChanged="DatePickerTextChanged" HelperText="@_bound" Clearable="true" />
+@code {
+    private DateTime? _date = null;
+    private string _dateFormat = "dd.MM.yyyy";
+    private string _bound = "not set";
+
+    private void DatePickerTextChanged(string value)
+    {
+        if (value == null || value.Length < 6)
+        {
+            _date = null;
+        }
+        else
+        {
+            string[] formats = { "ddMMyy", "dd.MM.yyyy", "dd.M.yyyy", "d.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "dd.M.yy", "d.MM.yy", "d.M.yy" };
+            if (DateTime.TryParseExact(value, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime validDate))
+            {
+                _date = validDate;
+            }
+            else
+            {
+                _date = null;
+            }
+        }
+
+        if (_date.HasValue)
+        {
+            _bound = _date.Value.ToString(_dateFormat); 
+        }
+        else
+        {
+            _bound = "not set";
+        }
+    }
+}
+Read Only
+If ReadOnly is set to true, the DatePicker can be used but the value will remain unchanged regardless of the actions performed or the values entered.
+
+4/22/2026
+<MudDatePicker Label="Read only" @bind-Date="_date" ReadOnly="true"/>
+@code {
+    private DateTime? _date = DateTime.Today;
+}
+Disable or customize days
+By setting the IsDateDisabledFunc parameter, it's possible to disable specific days and by setting the AdditionalDateClassesFunc parameter it's possible to apply a custom class to specific days.
+
+<MudDatePicker 
+    Label="Not working days, Sunday in red"   
+    IsDateDisabledFunc="@((DateTime dt)=>((int)dt.DayOfWeek > 0 && (int)dt.DayOfWeek < 6))"
+    AdditionalDateClassesFunc="@((DateTime dt)=>((int)dt.DayOfWeek == 0 ? "red-text text-accent-4" : ""))"/>
+Action Buttons
+You can add buttons by using the PickerActions render fragment. If AutoClose is set to true and PickerActions are defined, selecting a day will close the MudDatePicker.
+
+4/22/2026
+AutoClose
+<MudDatePicker @ref="_picker" Label="With action buttons" @bind-Date="_date" AutoClose="@_autoClose">
+    <PickerActions>
+        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Clear</MudButton>
+        <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@(() => _picker.CloseAsync())">OK</MudButton>
+    </PickerActions>
+</MudDatePicker>
+<MudSwitch @bind-Value="_autoClose" Color="Color.Secondary">AutoClose</MudSwitch>
+@code {
+    private MudDatePicker _picker;
+    private DateTime? _date = DateTime.Today;
+    private bool _autoClose;
+}
+Internationalization
+When you set the Culture parameter, the DatePicker will use culture-specific month names, weekday names and even different calendars.
+
+2/14/2021
+1399/11/26
+2021/2/14
+@using System.Globalization
+@using System.Reflection
+
+<MudDatePicker Label="Current UI Culture" @bind-Date="_date" />
+<MudDatePicker Label="Persian" @bind-Date="_date" Culture="@GetPersianCulture()" TitleDateFormat="dddd, dd MMMM"/>
+<MudDatePicker Label="Chinese" @bind-Date="_date" Culture="@CultureInfo.GetCultureInfo("zh-Hans")" TitleDateFormat="dddd, dd MMMM"/>
+@code {
+    private DateTime? _date = new DateTime(2021, 02, 14); // 1399-11-26 in Persian calendar
+
+    public CultureInfo GetPersianCulture()
+    {
+        var culture = new CultureInfo("fa-IR");
+        DateTimeFormatInfo formatInfo = culture.DateTimeFormat;
+        formatInfo.AbbreviatedDayNames = new[] { "ی", "د", "س", "چ", "پ", "ج", "ش" };
+        formatInfo.DayNames = new[] { "یکشنبه", "دوشنبه", "سه شنبه", "چهار شنبه", "پنجشنبه", "جمعه", "شنبه" };
+        var monthNames = new[]
+        {
+            "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن",
+            "اسفند",
+            "",
+        };
+        formatInfo.AbbreviatedMonthNames =
+            formatInfo.MonthNames =
+                formatInfo.MonthGenitiveNames = formatInfo.AbbreviatedMonthGenitiveNames = monthNames;
+        formatInfo.AMDesignator = "ق.ظ";
+        formatInfo.PMDesignator = "ب.ظ";
+        formatInfo.ShortDatePattern = "yyyy/MM/dd";
+        formatInfo.LongDatePattern = "dddd, dd MMMM,yyyy";
+        formatInfo.FirstDayOfWeek = DayOfWeek.Saturday;
+        Calendar cal = new PersianCalendar();
+        FieldInfo fieldInfo = culture.GetType().GetField("calendar", BindingFlags.NonPublic | BindingFlags.Instance);
+        if (fieldInfo != null)
+            fieldInfo.SetValue(culture, cal);
+        FieldInfo info = formatInfo.GetType().GetField("calendar", BindingFlags.NonPublic | BindingFlags.Instance);
+        if (info != null)
+            info.SetValue(formatInfo, cal);
+        culture.NumberFormat.NumberDecimalSeparator = "/";
+        culture.NumberFormat.DigitSubstitution = DigitShapes.NativeNational;
+        culture.NumberFormat.NumberNegativePattern = 0;
+        return culture;
+    }
+}
+Dialog Mode
+2020-10-19
+2020-10-19
+19/10/2020
+<MudDatePicker PickerVariant="PickerVariant.Dialog" Label="Picker example" Text="2020-10-19" />
+<MudDatePicker PickerVariant="PickerVariant.Dialog" Label="Only Calendar" Text="2020-10-19" ShowToolbar="false" HelperText="No header" />
+<MudDatePicker PickerVariant="PickerVariant.Dialog" Label="Date Format" HelperText="For custom cultures" DateFormat="dd/MM/yyyy" Date="@(new DateTime(2020,10,19))" />
+Static Mode
+Sun
+Mon
+Tue
+Wed
+Thu
+Fri
+Sat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sun
+Mon
+Tue
+Wed
+Thu
+Fri
+Sat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<MudDatePicker PickerVariant="PickerVariant.Static" Date="@(DateTime.Today.AddDays(1))" />
+<MudHidden Breakpoint="@Breakpoint.Xs">
+    <MudDatePicker PickerVariant="PickerVariant.Static" Orientation="Orientation.Landscape" Date="@(DateTime.Today.AddDays(1))" />
+</MudHidden>
+Different views
+By default, it opens to Date, but can be set to Year or Month.
+
+2020-10-19
+2020-10-19
+2020-10-19
+<MudDatePicker Label="Year" OpenTo="OpenTo.Year" Text="2020-10-19" />
+<MudDatePicker Label="Month" OpenTo="OpenTo.Month" Text="2020-10-19" />
+<MudDatePicker Label="Date" Text="2020-10-19" />
+Colors
+Sun
+Mon
+Tue
+Wed
+Thu
+Fri
+Sat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sun
+Mon
+Tue
+Wed
+Thu
+Fri
+Sat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<MudDatePicker PickerVariant="PickerVariant.Static" Color="Color.Success" Rounded="true" Date="@(DateTime.Today.AddDays(1))" />
+<MudDatePicker PickerVariant="PickerVariant.Static" Color="Color.Secondary" Rounded="true" Date="@(DateTime.Today.AddDays(1))" />
+Elevation
+You can change the elevation with the Elevation parameter. The default level is 8 for Inline, and 0 for Static or Dialog.
+
+Sun
+Mon
+Tue
+Wed
+Thu
+Fri
+Sat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sun
+Mon
+Tue
+Wed
+Thu
+Fri
+Sat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<MudDatePicker PickerVariant="PickerVariant.Static" Rounded="true" Elevation="1" Date="@(DateTime.Today.AddDays(1))" />
+<MudDatePicker PickerVariant="PickerVariant.Static" Rounded="true" Elevation="12" Date="@(DateTime.Today.AddDays(1))" />
+Go To Date
+GoToDate method helps to control the component programmatically. With GoToDate, users can navigate between dates with or without submitting. Works with all picker variants.
+This example shows the possible usage of GoToDate.
+
+Sun
+Mon
+Tue
+Wed
+Thu
+Fri
+Sat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<MudDatePicker @ref="_picker" @bind-Date="_date" PickerVariant="PickerVariant.Static" MaxDate="_maxDate">
+    <PickerActions>
+        <MudButton Class="mr-auto align-self-start" OnClick="TodayAsync">Today</MudButton>
+    </PickerActions>
+</MudDatePicker>
+
+<div class="d-flex flex-column gap-4">
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CurrentDate">Move To Current Date</MudButton>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="MudReleaseAsync">When First Mud Released?</MudButton>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GoMaxDateWithoutSubmitAsync">Go To Max Date Without Submit</MudButton>
+</div>
+@code {
+    private MudDatePicker _picker;
+    private DateTime? _date = DateTime.Today.AddDays(210);
+    private DateTime _maxDate = new DateTime(2050, 12, 31);
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _picker.GoToDate();
+        }
+    }
+
+    private Task TodayAsync()
+    {
+        return _picker.GoToDate(DateTime.Today);
+    }
+
+    private void CurrentDate()
+    {
+        _picker.GoToDate();
+    }
+
+    private Task MudReleaseAsync()
+    {
+        return _picker.GoToDate(new DateTime(2020, 10, 18));
+    }
+
+    private Task GoMaxDateWithoutSubmitAsync()
+    {
+        return _picker.GoToDate(_maxDate, false);
+    }
+}
+Fixed Values Usage
+You can set fixed values for day, month or year via FixDay, FixMonth and FixYear, default value is null for all of them. This in combination with the OpenTo parameter allows for Year-Month Pickers, where the user only selects those two values or Month-Day Pickers where the year is already given. This changes the behaviour of the picker so only views that can be set are displayed.
+
+<MudDatePicker Label="Year-Month Picker (Fixed Day)" HelperText="@_yearMonth?.ToShortDateString()" @bind-Date="_yearMonth" OpenTo="OpenTo.Year" FixDay="1" DateFormat="yyyy/MM" />
+<MudDatePicker Label="Month-Day Picker (Fixed Year)" HelperText="@_monthDay?.ToShortDateString()" @bind-Date="_monthDay" OpenTo="OpenTo.Month" FixYear="2021" DateFormat="MM/dd" />
+<MudDatePicker Label="Year-Day Picker (Fixed Month)" HelperText="@_yearDay?.ToShortDateString()" @bind-Date="_yearDay" OpenTo="OpenTo.Year" FixMonth="10" />
+<MudDatePicker Label="Year Picker (Fixed Month and Day)" HelperText="@_year?.ToShortDateString()" @bind-Date="_year" OpenTo="OpenTo.Year" FixMonth="@DateTime.Today.Month" FixDay="@DateTime.Today.Day" DateFormat="yyyy" />
+<MudDatePicker Label="Month Picker (Fixed Year and Day)" HelperText="@_month?.ToShortDateString()" @bind-Date="_month" OpenTo="OpenTo.Month" FixYear="@DateTime.Today.Year" FixDay="@DateTime.Today.Day" DateFormat="MMM" />
+<MudDatePicker Label="Day Picker (Fixed Year and Month)" HelperText="@_day?.ToShortDateString()" @bind-Date="_day" FixYear="@DateTime.Today.Year" FixMonth="@DateTime.Today.Month" DateFormat="dd" />
+@code { 
+    private DateTime? _yearMonth;
+    private DateTime? _monthDay;
+    private DateTime? _yearDay;
+    private DateTime? _year;
+    private DateTime? _month;
+    private DateTime? _day;
+}
+Range Picker Usage
+4/22/2026
+4/27/2026
+Basic range picker
+4/22/2026
+4/27/2026
+Basic range picker (editable)
+4/22/2026
+4/27/2026
+Placeholder
+4/22/2026
+4/27/2026
+Clearable
+22/04/2026
+27/04/2026
+Range picker format
+For custom cultures
+4/22/2026
+4/27/2026
+Custom start month
+4/22/2026
+4/27/2026
+With action buttons
+AutoClose
+<MudStack>
+    <MudDateRangePicker Label="Basic range picker" @bind-DateRange="_dateRange" />
+    <MudDateRangePicker Label="Basic range picker (editable)" Editable="true" @bind-DateRange="_dateRange" />
+    <MudDateRangePicker Label="Placeholder" @bind-DateRange="_dateRange" PlaceholderStart="Start Date" PlaceholderEnd="End Date" />
+    <MudDateRangePicker Label="Clearable" @bind-DateRange="_dateRange" Clearable="true" />
+    <MudDateRangePicker Label="Range picker format" HelperText="For custom cultures" DateFormat="dd/MM/yyyy" TitleDateFormat="dddd, dd. MMMM" @bind-DateRange="_dateRange" />
+    <MudDateRangePicker Label="Custom start month" StartMonth="@DateTime.Now.AddMonths(-1)" @bind-DateRange="_dateRange" />
+    <MudDateRangePicker @ref="_picker" Label="With action buttons" @bind-DateRange="_dateRange" AutoClose="@_autoClose">
+        <PickerActions>
+            <MudButton Class="mr-auto align-self-start" OnClick="@(() => _picker.ClearAsync())">Clear</MudButton>
+            <MudButton OnClick="@(() => _picker.CloseAsync(false))">Cancel</MudButton>
+            <MudButton Color="Color.Primary" OnClick="@(() => _picker.CloseAsync())">OK</MudButton>
+        </PickerActions>
+    </MudDateRangePicker>
+    <MudSwitch @bind-Value="_autoClose" Color="Color.Secondary">AutoClose</MudSwitch>
+</MudStack>
+@code { 
+    private MudDateRangePicker _picker;
+    private DateRange _dateRange = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(5).Date);
+    private bool _autoClose;
+}
+Accessibility
+Interacting with the MudDatePicker accepts the following keyboard shortcuts:
+
+Keys	Action
+Enter	Opens picker or submit value from picker
+Space	Opens picker
+Backspace	Go back to previous view or closes picker without submitting value
+Escape	Closes picker without submitting value
+ArrowLeft	Decrement month/date in respective view
+ArrowRight	Increment month/date in respective view
+ArrowUp	Decrement year in year view
+Move to date/month by row up in respective view
+ArrowDown	Increment year in year view
+Move to date/month by row down in respective view
+Shift+ArrowLeft	Decrement month in date/month view
+Shift+ArrowRight	Increment month in date view
+Shift+ArrowUp	Decrement year in month/date view
+Shift+ArrowDown	Increment year in month/date view

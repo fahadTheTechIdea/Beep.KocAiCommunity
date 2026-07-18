@@ -1,0 +1,129 @@
+@page "/supervision"
+@using Beep.KocAiCommunity.Contracts.Supervision
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+
+<PageTitle>Supervision · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Management view" Title="Supervision"
+            Subtitle="A read-only view of how your people are doing — learning progress and competition participation across the part of KOC you lead. You supervise; the employees do the work." />
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Couldn't reach the API (@_error).</MudAlert>
+}
+else if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_rollup is null)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+        You don't lead an org unit, so there's no rollup to show. Supervisors (Team Leader, Manager, DCEO, CEO) see
+        their subtree here.
+    </MudAlert>
+}
+else
+{
+    <MudText Typo="Typo.overline" Class="mb-3">@_rollup.ScopeLabel</MudText>
+
+    <MudGrid Spacing="4" Class="mb-6">
+        @foreach (var (value, label) in Tiles(_rollup))
+        {
+            <MudItem xs="6" md="3">
+                <BlueprintCard Class="pa-5">
+                    <div class="koc-stat-value" style="font-size:34px;">@value</div>
+                    <MudText Typo="Typo.caption">@label</MudText>
+                </BlueprintCard>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <BlueprintCard Class="pa-5 mb-4">
+        <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">Team at a glance</MudText>
+        <div class="d-flex gap-10 flex-wrap align-center">
+            @{
+                var completed = _rollup.Members.Count(m => m.TracksCompleted > 0);
+                var inProgress = _rollup.Members.Count(m => m.TracksCompleted == 0 && m.Enrollments > 0);
+                var notStarted = Math.Max(0, _rollup.MemberCount - completed - inProgress);
+                var maxDone = Math.Max(1, _rollup.Members.Count == 0 ? 0 : _rollup.Members.Max(x => x.TracksCompleted));
+                var maxSubs = Math.Max(1, _rollup.Members.Count == 0 ? 0 : _rollup.Members.Max(x => x.Submissions));
+            }
+            @KocCharts.Donut(
+                [new KocCharts.Seg("Completed", completed, "var(--koc-accent-700)"),
+                 new KocCharts.Seg("In progress", inProgress, "var(--koc-accent-300)"),
+                 new KocCharts.Seg("Not started", notStarted, "#dbe4ec")],
+                _rollup.MemberCount.ToString(), "Learning status")
+            <div style="flex:1;min-width:320px;">
+                <MudText Typo="Typo.caption" Class="d-block mb-2">Tracks completed per person</MudText>
+                @foreach (var m in _rollup.Members)
+                {
+                    @KocCharts.Bar(m.UserId, m.TracksCompleted, maxDone, "var(--koc-accent-700)")
+                }
+                <MudText Typo="Typo.caption" Class="d-block mt-3 mb-2">Competition submissions per person</MudText>
+                @foreach (var m in _rollup.Members)
+                {
+                    @KocCharts.Bar(m.UserId, m.Submissions, maxSubs, "var(--koc-accent-500)")
+                }
+            </div>
+        </div>
+    </BlueprintCard>
+
+    <BlueprintCard Class="pa-0">
+        <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">People in your organization</MudText></div>
+        <MudSimpleTable Dense="true" Hover="true">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th style="text-align:right;">Enrollments</th>
+                    <th style="text-align:right;">Tracks completed</th>
+                    <th style="text-align:right;">Submissions</th>
+                    <th style="text-align:right;">Best score</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in _rollup.Members)
+                {
+                    <tr>
+                        <td>@m.UserId</td>
+                        <td style="text-align:right;">@m.Enrollments</td>
+                        <td style="text-align:right;">@m.TracksCompleted</td>
+                        <td style="text-align:right;">@m.Submissions</td>
+                        <td style="text-align:right;">@(m.BestScore is null ? "—" : m.BestScore.Value.ToString("0.###"))</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </BlueprintCard>
+}
+
+@code {
+    private SupervisionRollupDto? _rollup;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _rollup = await Api.GetSupervisionRollupAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static IEnumerable<(string Value, string Label)> Tiles(SupervisionRollupDto r) =>
+    [
+        (r.MemberCount.ToString(), "People"),
+        (r.ActiveLearners.ToString(), "Active learners"),
+        (r.TracksCompleted.ToString(), "Tracks completed"),
+        (r.CompetitionsEntered.ToString(), "Competitions entered"),
+    ];
+}

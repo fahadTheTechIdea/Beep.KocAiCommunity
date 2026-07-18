@@ -1,0 +1,194 @@
+Grid
+A 12-point grid system for organizing content with responsive breakpoints for different screen sizes.
+Read more about MudBlazor's breakpoints here.
+
+API
+<MudGrid>
+- <MudItem>
+Spacing
+
+<MudSlider @bind-Value="Spacing" Min="0" Max="20" Color="Color.Info" Class="mb-6">Spacing: @Spacing.ToString()</MudSlider>
+
+<MudGrid Spacing="@Spacing" Justify="Justify.Center">
+    <MudItem>
+        <MudPaper Height="140px" Width="140px"/>
+    </MudItem>
+    <MudItem>
+        <MudPaper Height="140px" Width="140px"/>
+    </MudItem>
+    <MudItem>
+        <MudPaper Height="140px" Width="140px" />
+    </MudItem>
+</MudGrid>
+@code {
+    public int Spacing { get; set; } = 6;
+}
+Basic Grid
+The column widths apply at all breakpoints, xs and up.
+
+xs=12
+xs=6
+xs=6
+xs=3
+xs=3
+xs=3
+xs=3
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=12</MudPaper>
+    </MudItem>
+    <MudItem xs="6">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=6</MudPaper>
+    </MudItem>
+    <MudItem xs="6">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=6</MudPaper>
+    </MudItem>
+    <MudItem xs="3">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=3</MudPaper>
+    </MudItem>
+    <MudItem xs="3">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=3</MudPaper>
+    </MudItem>
+    <MudItem xs="3">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=3</MudPaper>
+    </MudItem>
+    <MudItem xs="3">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=3</MudPaper>
+    </MudItem>
+</MudGrid>
+Grid With Breakpoints
+You can apply multiple column widths, causing the layout to change at the specific break point.
+
+xs=12
+xs=12 sm=6
+xs=12 sm=6
+xs=6 sm=3
+xs=6 sm=3
+xs=6 sm=3
+xs=6 sm=3
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=12</MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=12 sm=6</MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=12 sm=6</MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=6 sm=3</MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=6 sm=3</MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=6 sm=3</MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="3">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">xs=6 sm=3</MudPaper>
+    </MudItem>
+</MudGrid>
+Line Break
+You can force items onto the next line by adding a MudFlexBreak.
+
+One
+Two
+Three
+<MudGrid>
+    <MudItem xs="6">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">One</MudPaper>
+    </MudItem>
+
+    <MudFlexBreak />
+
+    <MudItem xs="6">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">Two</MudPaper>
+    </MudItem>
+    <MudItem xs="6">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">Three</MudPaper>
+    </MudItem>
+</MudGrid>
+Grid Builder
+Calculate your breakpoints with this tool. Move the slider to add and remove items.
+
+Flex Start
+Justify
+3
+4
+2
+3
+3
+2
+4
+<MudGrid>
+    <MudItem xs="12">
+        <MudSlider Min="1" Max="20" Immediate="true" Step="1" @bind-Value="papers"></MudSlider>
+    </MudItem>
+    <MudItem xs="12">
+        <MudSelect Label="Justify" T="Justify" @bind-Value="justification">
+            <MudSelectItem Value="Justify.FlexStart">Flex Start</MudSelectItem>
+            <MudSelectItem Value="Justify.FlexEnd">Flex End</MudSelectItem>
+            <MudSelectItem Value="Justify.Center">Center</MudSelectItem>
+            <MudSelectItem Value="Justify.SpaceAround">Space Around</MudSelectItem>
+            <MudSelectItem Value="Justify.SpaceBetween">Space Between</MudSelectItem>
+            <MudSelectItem Value="Justify.SpaceEvenly">Space Evenly</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12">
+        <MudGrid Justify="justification">
+            @for (int i = 0; i < papers; i++)
+            {
+                int localindex = i;
+                
+                <MudItem xs="@breaks[localindex]">
+                    <MudPaper Class="d-flex flex-column align-center justify-center mud-width-full py-8">
+                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" OnClick="(()=>UpdateBreaks(localindex,1))" Size="Size.Small" />
+                        <MudText Typo="Typo.h6" Align="Align.Center">@breaks[localindex]</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" OnClick="(()=>UpdateBreaks(localindex,-1))" Size="Size.Small" />
+                    </MudPaper>
+                </MudItem>
+             }
+        </MudGrid>
+    </MudItem>
+</MudGrid>
+@code{
+
+    int _papers = 7;
+    int papers { get { return _papers; } set { UpdatePapers(value); } }
+
+    int[] breaks = new int[7] { 3, 4, 2, 3, 3, 2, 4 };
+
+    Justify justification = Justify.FlexStart;
+
+    void UpdatePapers(int value)
+    {
+
+        int[] newbreaks = Enumerable.Repeat(3, value).ToArray();
+
+        for (int i = 0; i < newbreaks.Length; i++)
+        {
+            if ( i < breaks.Length)
+            {
+                newbreaks[i] = breaks[i];
+            }
+        }
+
+        breaks = newbreaks;
+
+        _papers = value;
+
+        StateHasChanged();
+    }
+
+    void UpdateBreaks(int index,int changeamount)
+    {
+        List<int> newbreaks = breaks.ToList();
+        if (newbreaks[index] + changeamount > 12 || newbreaks[index] + changeamount < 1) return; //don't go above 12 or below 1
+        newbreaks[index] += changeamount;
+
+        breaks = newbreaks.ToArray();
+
+        StateHasChanged();
+    }
+}

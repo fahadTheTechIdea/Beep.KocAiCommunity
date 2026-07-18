@@ -1,0 +1,166 @@
+# Beep.KocAiCommunity
+
+An **internal Kuwait Oil Company (KOC)** platform to **train and familiarize employees with AI and machine
+learning**. Employees learn through guided tracks and compete in internal, Kaggle-style competitions on real KOC
+data; management supervises adoption through org-scoped rollups and dashboards. This is an internal application —
+**not a commercial product**.
+
+Built on **.NET 10**, **ASP.NET Core**, **Blazor (MudBlazor)**, **EF Core**, **ML.NET**, and **.NET Aspire**.
+
+> Design and staged plans live in [`plans/koc-ai-community-platform/`](plans/koc-ai-community-platform/README.md).
+
+## The loop
+
+**Dashboard → Learn → Build in the Studio → Compete → Model registry → Deploy** — with live notifications and
+management supervision over all of it.
+
+## Surfaces
+
+| Surface | Route | What it does |
+|---|---|---|
+| **Home** | `/` | Role switcher (Employee → CEO), KOC "blueprint" theme, brand assets |
+| **Dashboard** | `/dashboard` | Your learning + competition standings; a team overview if you lead people |
+| **Learn** | `/learn` | Guided tracks with real markdown lessons → enroll → complete → progress/completion |
+| **Compete** | `/compete` | Create a challenge (lifecycle + reveal day) → download data → **submit a Studio pipeline** → **live** leaderboard |
+| **Studio** | `/studio` | AutoML training over a CSV (binary / multiclass / regression) → runs feed the registry |
+| **Workflow** | `/workflow` | Visual **node editor** (Z.Blazor.Diagrams) — build an ML pipeline and run it node by node |
+| **Models** | `/models` | Registry: register → 2-approval promote → **deploy** / retire, with a deployments table |
+| **Datasets** | `/datasets` | Create datasets with a **"who can see this"** picker (Team/Group/Directorate/Company) + audience counts |
+| **Community** | `/community` | Discussions and replies |
+| **Supervision** | `/supervision` | A supervisor's read-only rollup of their people's learning + competition activity |
+
+A **notification bell** (live, per-user) sits in the app bar across every surface.
+
+## Machine learning
+
+- **Node editor** (`/workflow`): a real drag-to-connect canvas with an 11-node catalog — `dataset`,
+  `select-columns`, `sample`, `one-hot`, `replace-missing`, `normalize`, `split`, `train`, `cross-validate`,
+  `score`, `evaluate` — executed **node by node**, each reporting live status.
+- **Per-node config + hyperparameters**: algorithm choice plus trees / leaves / learning-rate (FastTree/FastForest)
+  and L2 (SDCA/LBFGS); blank fields fall back to ML.NET defaults.
+- **Three task types**: binary (accuracy), multiclass (MicroAccuracy), regression (RMSE) — type-aware transforms
+  and trainers throughout (SDCA, FastTree, FastForest, LBFGS, AveragedPerceptron, SdcaMaximumEntropy, NaiveBayes).
+- **AutoML** (`/studio`) via `Microsoft.ML.AutoML`, time-boxed, recorded as immutable training runs.
+
+## Competitions
+
+- A competition owns **training data** (visible), an **evaluation feature set** (visible, no label), and a
+  **hidden answer key**. Scored by trusted server-side plugins: `accuracy` (classification) or `rmse` (regression).
+- **Pipeline submissions**: a participant submits their node graph; the server runs it on the *authoritative*
+  data (no tampering) → predictions → score → leaderboard.
+- **Lifecycle**: draft → active → concluded, with a **reveal-day final leaderboard** kept hidden until reveal time.
+- **Live**: submitting pushes a `leaderboard.updated` event to the competition's SignalR group; open boards refresh
+  in place. Concluding notifies every participant.
+
+## Notifications & real-time
+
+A per-user `Notification` feed, emitted by domain events (submission scored, competition concluded, model
+promoted/deployed). Events flow through a **transactional outbox**; the dispatcher routes each to the right SignalR
+group (`user:{id}` / `competition:{id}`). The bell and leaderboards update live, with graceful fallback to polling.
+
+## Solution layout
+
+```
+src/
+  Beep.KocAiCommunity.Domain            Entity types + enums (no EF, no framework)
+  Beep.KocAiCommunity.Contracts         DTOs shared across hosts
+  Beep.KocAiCommunity.Application        Service interfaces, role/policy constants, domain events
+  Beep.KocAiCommunity.Workflow           Workflow compiler (validate + topological order)
+  Beep.KocAiCommunity.ML                 ML.NET runtime: AutoML trainer + node-by-node pipeline executor
+  Beep.KocAiCommunity.Infrastructure     EF Core (DbContext, configs, migrations), services, storage, seeders
+  Beep.KocAiCommunity.Infrastructure.SqlServerMigrations   Provider-specific SQL Server migrations
+  Beep.KocAiCommunity.Ui.Shared          MudBlazor theme + shared components (KOC blueprint)
+  Beep.KocAiCommunity.Ui.Community/Studio/Admin   Feature RCLs
+  Beep.KocAiCommunity.ServiceDefaults    Aspire defaults + shared security wiring
+  Beep.KocAiCommunity.Web                Blazor Web App (Interactive Server) — calls the API, live via SignalR
+  Beep.KocAiCommunity.Api                Minimal API (/api/v1) + SignalR hub + outbox dispatcher
+  Beep.KocAiCommunity.Worker             Background worker
+  Beep.KocAiCommunity.AppHost            .NET Aspire orchestration
+tests/                                    Unit, Integration, Component (bUnit), Architecture, EndToEnd
+```
+
+Backing all of it: Microsoft Entra authentication (config-driven), the KOC org hierarchy
+(Team ⊂ Group ⊂ Directorate ⊂ Company) with position roles (Employee → TeamLeader → Manager → DCEO → CEO),
+org-scoped visibility, and governed artifact storage with information-security classification.
+
+Dependency direction is enforced by `ArchitectureTests` (Domain/Application stay free of EF, ASP.NET, MudBlazor,
+and ML.NET; the Web calls the API, never the database).
+
+## Run it
+
+Prerequisites: **.NET SDK 10** (pinned in `global.json`).
+
+### Standalone (no Docker)
+
+Two terminals — the API auto-migrates a local SQLite database, seeds starter content (learning tracks + two demo
+competitions), and enables a **development-only auth** (no Entra tenant needed):
+
+```bash
+# Terminal 1 — API on http://localhost:5250 (migrate + seed + dev auth)
+ASPNETCORE_ENVIRONMENT=Development Seed__Enabled=true ASPNETCORE_URLS=http://localhost:5250 \
+  dotnet run --project src/Beep.KocAiCommunity.Api
+
+# Terminal 2 — Web on http://localhost:5150 (calls the API)
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5150 \
+  dotnet run --project src/Beep.KocAiCommunity.Web
+```
+
+Open <http://localhost:5150>. The **Dashboard**, **Datasets**, **Compete**, and **Models** pages let you change the
+acting-as dev user to see visibility, leaderboards, and dashboards behave per person. The dev user is seeded as a
+**Manager**, so **Supervision** and the team overview show populated rollups. Two demo competitions (a
+classification and a regression one) come pre-loaded with data so you can submit a pipeline immediately.
+
+### Aspire (orchestrated dashboard)
+
+`aspire run` orchestrates the API, Worker, and Web behind the Aspire dashboard. **In dev it uses the
+same built-in SQLite as standalone mode — no Docker, no SQL Server container** — so it starts in
+seconds. The dashboard is pinned to a fixed URL (`http://localhost:15130`) and opens automatically:
+
+```bash
+dotnet run --project src/Beep.KocAiCommunity.AppHost
+```
+
+Open the dashboard (link printed in the terminal / auto-opened), then click the `web` resource.
+
+To exercise the **production-shaped stack** (SQL Server in a container, which pulls a ~1.7 GB image
+the first time) locally, opt in — this requires Docker:
+
+```bash
+dotnet run --project src/Beep.KocAiCommunity.AppHost -- UseSqlServer=true
+```
+
+When **publishing** (`aspire publish` / `aspire deploy`), SQL Server is provisioned automatically and
+the API/Worker switch to `Database:Provider=SqlServer` — no code change needed.
+
+### Production auth
+
+Set the `AzureAd` configuration (TenantId, ClientId, …) and the app switches from dev auth to Microsoft Entra
+(OIDC for the Web, JWT bearer for the API). Set `Database:Provider=SqlServer` with `ConnectionStrings:kocdb` for
+SQL Server.
+
+## Develop
+
+```bash
+dotnet build Beep.KocAiCommunity.slnx -warnaserror
+dotnet test  Beep.KocAiCommunity.slnx
+dotnet format Beep.KocAiCommunity.slnx --verify-no-changes
+```
+
+EF migrations are maintained for **both** providers — add each change twice (see `docs/DEPLOYMENT.md`):
+
+```bash
+# SQLite (dev)
+dotnet ef migrations add <Name> \
+  --project src/Beep.KocAiCommunity.Infrastructure \
+  --startup-project src/Beep.KocAiCommunity.Infrastructure \
+  --output-dir Persistence/Migrations
+
+# SQL Server (prod)
+dotnet ef migrations add <Name> \
+  --project src/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations \
+  --startup-project src/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations \
+  --output-dir Migrations
+```
+
+CI (`.github/workflows/ci.yml`) runs restore → format check → build (warnings-as-errors) → test on every push and
+pull request.

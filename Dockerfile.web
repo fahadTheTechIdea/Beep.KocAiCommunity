@@ -1,0 +1,13 @@
+# KocAiCommunity Web — build from the repository root:  docker build -f Dockerfile.web -t koc-web .
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore src/Beep.KocAiCommunity.Web/Beep.KocAiCommunity.Web.csproj
+RUN dotnet publish src/Beep.KocAiCommunity.Web/Beep.KocAiCommunity.Web.csproj -c Release -o /app --no-restore /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app .
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "Beep.KocAiCommunity.Web.dll"]

@@ -1,0 +1,724 @@
+Autocomplete
+A text input for searching and selecting from a list of options. Unlike MudSelect<T>
+, it doesn't require the complete item list upfront and supports asynchronous search for database queries.
+API
+<MudAutocomplete>
+Visual Playground
+Text
+Filled
+
+Outlined
+None
+Margin
+Dense
+ReadOnly
+Disabled
+Placeholder
+HelperText
+HelperTextOnFocus
+Clearable
+Modal
+@using MudBlazor
+@using System.Threading
+
+<MudStack Row Class="justify-space-between mud-width-full">
+    <MudStack Style="width: 300px">
+        @foreach (var variant in Enum.GetValues(typeof(Variant)).Cast<Variant>())
+        {
+            <MudAutocomplete @bind-Value="_value"
+                             SearchFunc="Search"
+                             Variant="variant"
+                             Label="@variant.ToString()"
+                             Margin="_margin"
+                             Dense="_dense"
+                             Disabled="_disabled"
+                             ReadOnly="_readonly"
+                             Placeholder="@(_placeholder ? "Placeholder" : null)"
+                             HelperText="@(_helperText ? "Helper Text" : null)"
+                             HelperTextOnFocus="_helperTextOnFocus"
+                             Clearable="_clearable"
+                             Modal="_modal" />
+        }
+    </MudStack>
+
+    <MudStack>
+        <MudSelect @bind-Value="_margin" Label="Margin">
+            @foreach (var margin in Enum.GetValues(typeof(Margin)).Cast<Margin>())
+            {
+                <MudSelectItem Value="margin">@margin</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSwitch @bind-Value="_dense" Label="Dense" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_readonly" Label="ReadOnly" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_disabled" Label="Disabled" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_placeholder" Label="Placeholder" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_helperText" Label="HelperText" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_helperTextOnFocus" Label="HelperTextOnFocus" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_clearable" Label="Clearable" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_modal" Label="Modal" Color="Color.Primary" />
+    </MudStack>
+</MudStack>
+@code {
+    private string _value;
+    private Margin _margin;
+    private bool _dense;
+    private bool _disabled;
+    private bool _readonly;
+    private bool _placeholder;
+    private bool _helperText;
+    private bool _helperTextOnFocus;
+    private bool _clearable;
+    private bool _modal;
+
+    private string[] _states =
+    {
+        "Alabama", "Alaska", "Arizona", "Arkansas", "California",
+        "Colorado", "Connecticut", "Delaware", "Florida", "Georgia",
+        "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas",
+        "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts",
+        "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana",
+        "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico",
+        "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma",
+        "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+        "Tennessee", "Texas", "Utah", "Vermont", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming"
+    };
+
+    private async Task<IEnumerable<string>> Search(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+        {
+            return _states;
+        }
+
+        return _states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+}
+Usage
+How you write the search function determines whether or not the Autocomplete shows a full list initially. By setting ResetValueOnEmptyText="true", the Value will be reset when the user clears the input text. With CoerceText="true" upon selection of an entry from the list, the Text is always updated. When the user types something that is not on the list and CoerceValue is true, the Value will be overwritten with the user input which allows it to be passed to the validation function.
+
+US States
+US States
+Not selected
+Not selected
+
+Reset Value on empty Text
+Coerce Text to Value
+Coerce Value to Text (if not found)
+Select Value On Tab Key Press
+@using System.Threading
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="string" Label="US States" @bind-Value="value1" SearchFunc="@Search1"
+                         ResetValueOnEmptyText="@resetValueOnEmptyText"
+                         CoerceText="@coerceText" CoerceValue="@coerceValue" SelectValueOnTab="@selectedOnTab" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="string" Label="US States" @bind-Value="value2" SearchFunc="@Search2"
+                         ResetValueOnEmptyText="@resetValueOnEmptyText"
+                         CoerceText="@coerceText" CoerceValue="@coerceValue" SelectValueOnTab="@selectedOnTab"
+                         AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" />
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudText Class="mb-n3" Typo="Typo.body2">
+            <MudChip T="string">@(value1 ?? "Not selected")</MudChip><MudChip T="string">@(value2 ?? "Not selected")</MudChip>
+        </MudText>
+    </MudItem>
+    <MudItem xs="12" md="12" class="flex-column">
+        <MudSwitch @bind-Value="resetValueOnEmptyText" Color="Color.Primary">Reset Value on empty Text</MudSwitch>
+        <MudSwitch @bind-Value="coerceText" Color="Color.Secondary">Coerce Text to Value</MudSwitch>
+        <MudSwitch @bind-Value="coerceValue" Color="Color.Tertiary">Coerce Value to Text (if not found)</MudSwitch>
+        <MudSwitch @bind-Value="selectedOnTab" Color="Color.Tertiary">Select Value On Tab Key Press</MudSwitch>
+
+    </MudItem>
+</MudGrid>
+@code {
+    private bool resetValueOnEmptyText;
+    private bool coerceText;
+    private bool coerceValue;
+    private bool selectedOnTab;
+    private string value1, value2;
+    private string[] states =
+    {
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming",
+    };
+
+    private async Task<IEnumerable<string>> Search1(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return states;
+        return states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task<IEnumerable<string>> Search2(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        // if text is null or empty, don't return values (drop-down will not open)
+        if (string.IsNullOrEmpty(value))
+            return new string[0];
+        return states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+}
+Presentation
+When you use objects, Autocomplete uses ToString() to convert the object into text form. You can set a custom ToStringFunc to override how the list items are stringified. This string representation is also what you'll get as input to the search function.
+If that is not enough, you can define the following templates <ItemTemplate>, <ItemSelectedTemplate>, and <ItemDisabledTemplate> to create highly sophisticated list item presentations.
+
+Periodic Table Element
+Periodic Table Element
+Periodic Table Element
+Selected values: 
+Not selected
+Not selected
+Not selected
+
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@using System.Threading
+@inject HttpClient httpClient
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Periodic Table Element" @bind-Value="value1" 
+                         SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.Name} ({e.Sign})")" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Periodic Table Element" @bind-Value="value2" 
+                         SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.Name} ({e.Sign})")">
+            <ItemTemplate Context="e">                          
+                <MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.CheckBoxOutlineBlank" Class="mb-n1 mr-3"/>@($"{e.Name} ({e.Sign})")
+                </MudText>
+            </ItemTemplate>
+            <ItemSelectedTemplate Context="e">                
+                <MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.CheckBox" Class="mb-n1 mr-3"/>@($"{e.Name} ({e.Sign})")
+                </MudText>
+            </ItemSelectedTemplate>
+        </MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Periodic Table Element" @bind-Value="value3"
+                   SearchFunc="@Search" ItemDisabledFunc="@((Element e) => (e.Name.Contains("H")))" ToStringFunc="@(e=> e==null?null : $"{e.Name} ({e.Sign})")">
+            <ItemDisabledTemplate>
+                <MudText>Not available: @context.ToString()</MudText>
+            </ItemDisabledTemplate>
+        </MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudText Class="mb-n3" Typo="Typo.body2">
+            Selected values: <MudChip T="string">@(value1?.ToString() ?? "Not selected")</MudChip><MudChip T="string">@(value2?.ToString() ?? "Not selected")</MudChip><MudChip T="string">@(value3?.ToString() ?? "Not selected")</MudChip>
+        </MudText>
+    </MudItem>
+</MudGrid>
+@code {
+    private Element value1, value2, value3;
+
+    private async Task<IEnumerable<Element>> Search(string value, CancellationToken token)
+    {
+        return  await httpClient.GetFromJsonAsync<List<Element>>($"webapi/periodictable/{value}", token);
+    }
+}
+Presentation Extras
+You can also define a <MoreItemsTemplate> to handle the case where the search returns more items than the list is configured to show and a <NoItemsTemplate> that presents some default content if the search returns no results. For your own custom content that always shows at the top or the bottom of the list define the <BeforeItemsTemplate> and the <AfterItemsTemplate>.
+
+Periodic Table Element
+Periodic Table Element
+Periodic Table Element
+Periodic Table Element
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@using System.Threading
+@inject HttpClient httpClient
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Periodic Table Element" @bind-Value="value1"
+                         SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.Name} ({e.Sign})")">
+            <MoreItemsTemplate>
+                <MudText Align="Align.Center" Class="px-4 py-1">
+                    Only the first 10 items are shown
+                </MudText>
+            </MoreItemsTemplate>
+        </MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Periodic Table Element" @bind-Value="value2"
+                         SearchFunc="@SearchEmpty" ToStringFunc="@(e=> e==null?null : $"{e.Name} ({e.Sign})")">
+            <NoItemsTemplate>
+                <MudText Align="Align.Center" Class="px-4 py-1">
+                    No items found
+                </MudText>
+            </NoItemsTemplate>
+        </MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Periodic Table Element" @bind-Value="value3"
+                         SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.Name} ({e.Sign})")">
+            <BeforeItemsTemplate>
+                <MudText Color="Color.Primary" Class="px-4 py-1">Always Shows Before List</MudText>
+            </BeforeItemsTemplate>
+        </MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Periodic Table Element" @bind-Value="value4"
+                         SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.Name} ({e.Sign})")">
+            <AfterItemsTemplate>
+                <div class="pa-2">
+                    <MudButton Color="Color.Primary">Add item (does nothing)</MudButton>
+                </div>
+            </AfterItemsTemplate>
+        </MudAutocomplete>
+    </MudItem>
+</MudGrid>
+@code {
+    private Element value1, value2, value3, value4;
+
+    private async Task<IEnumerable<Element>> Search(string value, CancellationToken token)
+    {
+        return await httpClient.GetFromJsonAsync<List<Element>>($"webapi/periodictable/{value}", token);
+    }
+
+    private async Task<IEnumerable<Element>> SearchEmpty(string value, CancellationToken token)
+    {
+        await Task.Delay(5, token);
+        return Array.Empty<Element>();
+    }
+}
+Validation
+Below are different validation examples for the MudAutocomplete control. They use an EditForm or a MudForm, and the result and display vary if the <CoerceValue> option is set to <true> or if characters are typed into the control instead of choosing from the dropdown list.
+For more info on form validation, check out Form.
+
+US States
+US States
+US States
+IsTouched: False, IsValid: False
+
+Not selected
+Not selected
+Not selected
+
+Coerce Value to Text (if not found)
+@using System.ComponentModel.DataAnnotations
+@using System.Threading
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <EditForm EditContext="editContext1">
+        <DataAnnotationsValidator />
+            <MudAutocomplete Label="US States" @bind-Value="choice1.State" Required="true"
+             SearchFunc="@SearchAsync" Immediate="true" CoerceValue="@coerceValue" ResetValueOnEmptyText="true"
+             AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary"
+             For="@(() => choice1.State)"/>
+            <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Primary" 
+             Class="ml-auto mt-3 mb-3" OnClick="@(()=>success1=editContext1.Validate())">Validate</MudButton>
+                   @if (success1)
+                   {
+                       <MudText Color="Color.Success">Success</MudText>
+                   }
+        </EditForm>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <EditForm EditContext="editContext2">
+        <DataAnnotationsValidator />
+            <MudAutocomplete Label="US States" @bind-Value="choice2.State" Required="true"
+             SearchFunc="@SearchAsync" Immediate="true" CoerceValue="@coerceValue" ResetValueOnEmptyText="true"
+             OpenIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Secondary"
+             Validation="@(new Func<string, IEnumerable<string>>(Validate))" />
+            <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Primary" 
+                       Class="ml-auto mt-3 mb-3" OnClick="@(()=>success2=editContext2.Validate())">Validate</MudButton>
+                   @if (success2)
+                   {
+                       <MudText Color="Color.Success">Success</MudText>
+                   }
+        </EditForm>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudForm @ref="form">
+            <MudAutocomplete T="string" Label="US States" @bind-Value="choice3.State" Required="true"
+             SearchFunc="@SearchAsync" Immediate="true" CoerceValue="@coerceValue" ResetValueOnEmptyText="true"
+             CloseIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Tertiary"
+             Validation="@(new Func<string, IEnumerable<string>>(Validate))" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto mt-3 mb-3" 
+             OnClick="@(()=>form.ValidateAsync())">Validate</MudButton>
+                    @if (form.IsTouched && form.IsValid)
+                    {
+                        <MudText Color="Color.Success">Success</MudText>
+                    }
+                    else
+                    {
+                        <MudText>IsTouched: @form.IsTouched, IsValid: @form.IsValid</MudText>
+                    }
+        </MudForm>
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudText Class="mb-n3" Typo="Typo.body2">
+            <MudChip T="string">@(choice1.State ?? "Not selected")</MudChip><MudChip T="string">@(choice2.State ?? "Not selected")</MudChip><MudChip T="string">@(choice3.State ?? "Not selected")</MudChip>
+        </MudText>
+    </MudItem>
+    <MudItem xs="12" md="12" class="flex-column">
+        <MudSwitch @bind-Value="coerceValue" Color="Color.Tertiary">Coerce Value to Text (if not found)</MudSwitch>
+    </MudItem>
+</MudGrid>
+@code {
+    private MudForm form;
+    private bool coerceValue;
+    private bool success1;
+    private bool success2;
+    private Choice choice1 = new();
+    private Choice choice2 = new();
+    private Choice choice3 = new();
+    private EditContext editContext1;
+    private EditContext editContext2;
+
+    protected override void OnInitialized()
+    {
+        editContext1 = new EditContext(choice1);
+        editContext2 = new EditContext(choice2);
+    } 
+
+    private static string[] states =
+    {
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming",
+    };
+
+    private async Task<IEnumerable<string>> SearchAsync(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+        {
+            return states;
+        }
+
+        return states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private IEnumerable<string> Validate(string value)
+    {        
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            yield return "The State field is required";
+            yield break;
+        }
+
+        if (!states.Contains(value))
+        {
+            yield return "This is an incorrect value";
+        }
+    }
+
+    public class Choice
+    {
+        [Required]
+        [State]
+        public string State { get; set;}
+    }
+
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
+    public sealed class StateAttribute : ValidationAttribute
+    {
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            if (!states.Contains(value))
+            {
+                return new ValidationResult("This is an incorrect value", new[] { validationContext.MemberName });
+            }
+
+            return null;
+        }
+    }
+}
+Keyboard Navigation
+MudAutocomplete supports keyboard navigation.
+
+
+Escape or Alt+ArrowUp keys to close dropdown
+
+Enter or NumpadEnter or ArrowDown or ArrowUp keys to open dropdown
+
+ArrowUp key to select/navigate previous item
+
+ArrowDown key to select/navigate next item
+
+Enter or NumpadEnter keys to select item
+
+
+*If the search function doesn't return any values, keyboard shortcuts can't open the dropdown.
+
+
+US States
+US States
+Not selected
+Not selected
+
+Reset Value on empty Text
+Coerce Text to Value
+Coerce Value to Text (if not found)
+Select Value On Tab Key Press
+@using System.Threading
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="string" Label="US States" @bind-Value="value1" SearchFunc="@Search1"
+                         ResetValueOnEmptyText="@resetValueOnEmptyText"
+                         CoerceText="@coerceText" CoerceValue="@coerceValue" SelectValueOnTab="@selectedOnTab" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="string" Label="US States" @bind-Value="value2" SearchFunc="@Search2"
+                         ResetValueOnEmptyText="@resetValueOnEmptyText"
+                         CoerceText="@coerceText" CoerceValue="@coerceValue" SelectValueOnTab="@selectedOnTab"
+                         AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" />
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudText Class="mb-n3" Typo="Typo.body2">
+            <MudChip T="string">@(value1 ?? "Not selected")</MudChip><MudChip T="string">@(value2 ?? "Not selected")</MudChip>
+        </MudText>
+    </MudItem>
+    <MudItem xs="12" md="12" class="flex-column">
+        <MudSwitch @bind-Value="resetValueOnEmptyText" Color="Color.Primary">Reset Value on empty Text</MudSwitch>
+        <MudSwitch @bind-Value="coerceText" Color="Color.Secondary">Coerce Text to Value</MudSwitch>
+        <MudSwitch @bind-Value="coerceValue" Color="Color.Tertiary">Coerce Value to Text (if not found)</MudSwitch>
+        <MudSwitch @bind-Value="selectedOnTab" Color="Color.Tertiary">Select Value On Tab Key Press</MudSwitch>
+
+    </MudItem>
+</MudGrid>
+@code {
+    private bool resetValueOnEmptyText;
+    private bool coerceText;
+    private bool coerceValue;
+    private bool selectedOnTab;
+    private string value1, value2;
+    private string[] states =
+    {
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming",
+    };
+
+    private async Task<IEnumerable<string>> Search1(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return states;
+        return states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task<IEnumerable<string>> Search2(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5, token);
+
+        // if text is null or empty, don't return values (drop-down will not open)
+        if (string.IsNullOrEmpty(value))
+            return new string[0];
+        return states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+}
+Progress
+When fetching data from a remote data source MudAutocomplete can visually indicate that it is awaiting results. The following settings are available:
+
+
+ShowProgressIndicator: show circular progress indicator.
+
+ProgressIndicatorTemplate: replace the default circular progress indicator with a custom one.
+
+ProgressIndicatorInPopoverTemplate: show a progress indicator inside the popover.
+
+ProgressIndicatorColor: customize the color of the circular progress indicator.
+
+
+
+US States
+
+US States
+US States
+Progress options
+Default
+Color
+@using System.Threading
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="string" Label="US States" @bind-Value="value1" SearchFunc="@Search1" Variant="Variant.Outlined" ShowProgressIndicator="true" ProgressIndicatorColor="SelectedColor" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="string" Label="US States" @bind-Value="value3" SearchFunc="@Search1" Variant="Variant.Outlined" ProgressIndicatorColor="SelectedColor">
+            <ProgressIndicatorInPopoverTemplate>
+                <MudList T="string" ReadOnly>
+                    <MudListItem>
+                        Loading...
+                    </MudListItem>
+                </MudList>
+            </ProgressIndicatorInPopoverTemplate>
+        </MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="string" Label="US States" @bind-Value="value2" SearchFunc="@Search1" ShowProgressIndicator="true">
+            <ProgressIndicatorTemplate>
+                <MudProgressLinear Size="Size.Small" Indeterminate="true" Color="SelectedColor" />
+            </ProgressIndicatorTemplate>
+        </MudAutocomplete>
+    </MudItem>
+    <MudItem md="4">
+        <MudText Typo="Typo.h6" GutterBottom="true">Progress options</MudText>
+        <MudSelect T="Color" Label="Color" Margin="Margin.Dense" Dense="true" Value="@SelectedColor" ValueChanged="OnColorSelected">
+            <MudSelectItem T="Color" Value="@Color.Default">Default</MudSelectItem>
+            <MudSelectItem T="Color" Value="@Color.Info">Info</MudSelectItem>
+            <MudSelectItem T="Color" Value="@Color.Success">Success</MudSelectItem>
+            <MudSelectItem T="Color" Value="@Color.Warning">Warning</MudSelectItem>
+            <MudSelectItem T="Color" Value="@Color.Error">Error</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+</MudGrid>
+@code {
+
+    public Color SelectedColor { get; set; } = Color.Default;
+
+    private string value1;
+    private string value2;
+    private string value3;
+
+    private string[] states =
+    {
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming",
+    };
+
+    private async Task<IEnumerable<string>> Search1(string value, CancellationToken token)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(1000, token);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return states;
+        return states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    public void OnColorSelected(Color value)
+    {
+        SelectedColor = value;
+    }
+}
+Strict Mode
+After selecting an option from a MudAutocomplete, it may be desired to change the selection. By default, clicking a MudAutocomplete while a value is selected will pass the Text string to the SearchFunc. Setting the Strict option to false modifies this behavior and passes an empty string to the SearchFunc instead.
+
+You must either use records or define GetHashCode and Equals for T.
+
+Strict false with ToString
+Strict false with ToStringFunc
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@using System.Threading
+@inject HttpClient httpClient
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Strict false with ToString" @bind-Value="value1"
+                         SearchFunc="@Search" Strict="false">
+        </MudAutocomplete>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudAutocomplete T="Element" Label="Strict false with ToStringFunc" @bind-Value="value2"
+                         SearchFunc="@Search" ToStringFunc="@(e=> e==null?null : $"{e.Name} ({e.Sign})")" Strict="false">
+        </MudAutocomplete>
+    </MudItem>
+</MudGrid>
+@code {
+    private Element value1, value2;
+
+    private async Task<IEnumerable<Element>> Search(string value, CancellationToken token)
+    {
+        return await httpClient.GetFromJsonAsync<List<Element>>($"webapi/periodictable/{value}", token);
+    }
+}
+Cancellation Token
+Autocomplete can cancel the request if the user types new input
+
+
+
+US States
+@using System.Threading
+@using System.Net.Http.Json
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudAutocomplete T="string" Label="US States" @bind-Value="_state" SearchFunc="@Search" Variant="Variant.Outlined" ShowProgressIndicator="true" />
+    </MudItem>
+</MudGrid>
+@code {
+    [Inject] private HttpClient HttpClient { get; set; }
+    private string _state;
+
+    private async Task<IEnumerable<string>> Search(string value, CancellationToken token)
+    {
+        // Forward the CancellationToken to methods which supported, such as HttpClient and DbContext
+        return await HttpClient.GetFromJsonAsync<IEnumerable<string>>($"webapi/AmericanStates/searchWithDelay/{value ?? string.Empty}", token);
+    }
+}

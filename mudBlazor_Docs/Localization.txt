@@ -1,0 +1,253 @@
+Localization
+Localization allows the text in some components to be translated.
+Explanation
+MudBlazor itself provides English language strings for texts found in e.g. the MudDataGrid filter options. By registering a custom MudLocalizer implementation as a Service, you can provide custom translations.
+Note: if Thread.CurrentThread.CurrentUICulture is English, the included English translations will be used.
+Note: Some components don't support localization yet. Contributions are welcome!
+
+Crowdsourced Translations
+You can help us translate MudBlazor into your language by contributing to our Weblate Project. Visit the Translations Repository for more information.
+
+The crowdsourced translations are provided via the separate NuGet package MudBlazor.Translations.
+Open a terminal and install it with this command.
+
+dotnet add package MudBlazor.Translations
+Add the following in Program.cs to register the crowdsourced translations.
+
+using MudBlazor.Translations;
+
+builder.Services.AddMudTranslations();
+Custom Localizer Registration
+Add the following in Program.cs to register your custom localization service. AddTransient can be replaced with TryAddTransient and the scope can be changed to Scoped or Singleton depending on your exact implementation.
+
+using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
+
+builder.Services.AddTransient<MudLocalizer, CustomMudLocalizerImpl>();
+Custom ResX Localizer Example
+An example MudLocalizer implementation using Microsoft default IStringLocalizer. Using ResX, you'll have to leave the default culture translations file empty if you want to use English as the fallback language for missing translations. Otherwise, the default culture values will be used as a fallback for all non-English languages.
+
+using Microsoft.Extensions.Localization;
+using MudBlazor;
+
+internal class ResXMudLocalizer : MudLocalizer
+{
+    private IStringLocalizer _localization;
+
+    public ResXMudLocalizer(IStringLocalizer<ResXLanguageResource> localizer)
+    {
+        _localization = localizer;
+    }
+
+    public override LocalizedString this[string key] => _localization[key];
+
+    public override LocalizedString this[string key, params object[] arguments] => _localization[key, arguments];
+}
+Custom Dictionary Localizer Example
+An example implementing MudLocalizer using a hardcoded dictionary for the translations. Note that LocalizedString.ResourceNotFound should be true, if there is no custom translation for a given key. If LocalizedString.ResourceNotFound is true, the included English localization will be used.
+
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Microsoft.Extensions.Localization;
+using MudBlazor;
+
+internal class DictionaryMudLocalizer : MudLocalizer
+{
+    private Dictionary<string, string> _localization;
+
+    public DictionaryMudLocalizer()
+    {
+        _localization = new()
+        {
+            { "MudDataGrid_IsEmpty", "ist leer" },
+            { "MudDataGrid_IsNotEmpty", "ist nicht leer" },
+            { "MudDataGrid_Contains", "enthält" },
+            { "MudDataGrid_NotContains", "enthält nicht" },
+        };
+    }
+    
+    public override LocalizedString this[string key]
+    {
+        get
+        {
+            var currentCulture = Thread.CurrentThread.CurrentUICulture.Parent.TwoLetterISOLanguageName;
+            if (currentCulture.Equals("de", StringComparison.InvariantCultureIgnoreCase)
+                && _localization.TryGetValue(key, out var res))
+            {
+                return new(key, res);
+            }
+            else
+            {
+                return new(key, key, true);
+            }
+        }
+    }
+}
+Custom Translation Interceptor
+The interface ILocalizationInterceptor can be used to fully customize the translations. For example if you don't need the default English translation, or you want to get the translation from other source.
+
+using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
+
+builder.Services.AddLocalizationInterceptor<CustomLocalizationInterceptorImpl>();
+Translation Keys
+The current default English language localization strings:
+Translation Key
+English Translation
+Converter_ConversionError	Conversion error: {0}
+Converter_ConversionFailed	Conversion from {0} to {1} failed: {2}
+Converter_ConversionNotImplemented	Conversion to type {0} not implemented
+Converter_InvalidBoolean	Not a valid boolean
+Converter_InvalidDateTime	Not a valid date time
+Converter_InvalidGUID	Not a valid GUID
+Converter_InvalidNumber	Not a valid number
+
+
+
+RTL Languages
+Right-to-Left (RTL) specific styling options.
+Explanation
+Right-to-Left script is used in languages like Arabic and Hebrew where writing starts from the right of the page and continues to the left. The UI has to be mirrored horizontally because of that.
+
+MudRTLProvider
+Wrap your code inside a MudRTLProvider. Note that MudThemeProvider, MudDialogProvider and MudSnackbarProvider must be children of MudRTLProvider in order to support RTL. Your MainLayout.razor should look something like this.
+
+@inherits LayoutComponentBase
+
+<MudRTLProvider>
+    <MudThemeProvider/>
+    <MudPopoverProvider/>
+    <MudDialogProvider/>
+    <MudSnackbarProvider/>
+    <MudLayout>
+        <MudMainContent>
+            @Body
+        </MudMainContent>
+    </MudLayout>
+</MudRTLProvider>
+Example
+By setting RightToLeft="true" you can change the layout to RTL.
+
+استريا كرواتيا
+
+شبه الجزيرة في أوروبا
+
+التقطت هذه الصورة في قرية صغيرة في استرا كرواتيا
+
+Toggle Right to Left
+<MudRTLProvider RightToLeft="@_rightToLeft">
+    <MudCard Class="mb-2" Style="width: 400px">
+        <MudCardHeader>
+            <CardHeaderAvatar>
+                <MudAvatar Color="Color.Secondary">@Localizer("CardAvatarLetter")</MudAvatar>
+            </CardHeaderAvatar>
+            <CardHeaderContent>
+                <MudText Typo="Typo.body1">@Localizer("CardHeader")</MudText>
+                <MudText Typo="Typo.body2">@Localizer("CardSubHeader")</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardMedia Image="_content/MudBlazor.Docs/images/pilars.jpg" Height="250" />
+        <MudCardContent>
+            <MudText Typo="Typo.body2">@Localizer("CardDescription")</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Default" />
+            <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Default" />
+        </MudCardActions>
+    </MudCard>
+</MudRTLProvider>
+<MudSwitch @bind-Value="_rightToLeft" Label="Toggle Right to Left" Color="Color.Primary"/>
+@code {
+    private bool _rightToLeft = true;
+
+    //This translation is for demonstration purposes only. In a real application, you should use a IStringLocalizer etc.
+    private string Localizer(string key)
+    {
+        //This is just a google translation. If you have a better translation, feel free to share it with us  :)
+        if (key.Equals("CardAvatarLetter"))
+            return _rightToLeft ? "ا" : "I";
+        else if (key.Equals("CardHeader"))
+            return _rightToLeft ? "استريا كرواتيا" : "Istra Croatia";
+        else if (key.Equals("CardSubHeader"))
+            return _rightToLeft ? "شبه الجزيرة في أوروبا" : "Peninsula in Europe";
+        else if (key.Equals("CardDescription"))
+            return _rightToLeft ? "التقطت هذه الصورة في قرية صغيرة في استرا كرواتيا" : "This photo was taken in a small village in Istra Croatia.";
+        return "";
+    }
+}
+Text Fields
+Text Fields with InputType.Email or InputType.Telephone remain left-aligned, with the label remaining right-aligned.
+
+
+Text
+
+John Smith
+Telephone
+
+1618033988
+Email
+
+mail@example.com
+<MudRTLProvider RightToLeft="true">
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudText Align="Align.Left">Text</MudText>
+            <MudTextField Label="الاسم الأول" Variant="Variant.Outlined" @bind-Value="_name" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"></MudTextField>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudText Align="Align.Left">Telephone</MudText>
+            <MudTextField InputType="InputType.Telephone" Label="رقم الهاتف" Variant="Variant.Outlined" @bind-Value="_telephone" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Smartphone"></MudTextField>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudText Align="Align.Left">Email</MudText>
+            <MudTextField InputType="InputType.Email" Label="البريد الإلكتروني" Variant="Variant.Outlined" @bind-Value="_email" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email"></MudTextField>
+        </MudItem>
+    </MudGrid>
+</MudRTLProvider>
+@code {
+    private string _name { get; set; } = "John Smith";
+    private string _email { get; set; } = "mail@example.com";
+    private long? _telephone { get; set; } = 1618033988;
+}
+Border Radius
+If your application needs to support both left-to-right and right-to-left languages, make use of start and end border radiuses instead of left and right. Some other components like MudDrawer also support start and end properties.
+
+
+.rounded-s-xl
+
+.rounded-e-xl
+
+.rounded-ts-xl
+
+.rounded-te-xl
+
+.rounded-bs-xl
+
+.rounded-be-xl
+
+<div class="mud-theme-primary py-4 px-6 mx-4 rounded-s-xl">
+    <MudText Align="Align.Center">.rounded-s-xl</MudText>
+</div>
+<div class="mud-theme-secondary py-4 px-6 mx-4 rounded-e-xl">
+    <MudText Align="Align.Center">.rounded-e-xl</MudText>
+</div>
+<div class="mud-theme-tertiary py-4 px-6 mx-4 rounded-ts-xl">
+    <MudText Align="Align.Center">.rounded-ts-xl</MudText>
+</div>
+<div class="mud-theme-info py-4 px-6 mx-4 rounded-te-xl">
+    <MudText Align="Align.Center">.rounded-te-xl</MudText>
+</div>
+<div class="mud-theme-warning py-4 px-6 mx-4 rounded-bs-xl">
+    <MudText Align="Align.Center">.rounded-bs-xl</MudText>
+</div>
+<div class="mud-theme-error py-4 px-6 mx-4 rounded-be-xl">
+    <MudText Align="Align.Center">.rounded-be-xl</MudText>
+</div>
+Other useful css classes
+.mud-flip-x-rtl - Flips the element horizontally when in rtl mode (Can be used for icons which should be flipped in rtl mode)
+.mud-rtl and .mud-ltr - Changes a specific element to use left-to-right or right-to-left styling
+margin/padding with start/end - See Spacing for more information

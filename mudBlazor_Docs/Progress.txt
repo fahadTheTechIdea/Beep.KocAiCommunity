@@ -1,0 +1,316 @@
+Progress
+Informs users about the status of ongoing processes, such as loading an app, submitting a form, or saving updates. Shows either the length of a process or unspecified wait time.
+API
+<MudProgressCircular>
+- <MudProgressLinear>
+Determinate indicators
+Determinate indicators display how long a process will take. They should be used when the process completion rate can be estimated.
+
+Indeterminate indicators
+Indeterminate indicators express an unspecified amount of wait time. They should be used when progress isn't estimable, or when it's not necessary to indicate how long an activity will take.
+
+Circular Progress
+Indeterminate
+<MudProgressCircular Color="Color.Default" Indeterminate="true" />
+<MudProgressCircular Color="Color.Primary" Indeterminate="true"/>
+<MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+<MudProgressCircular Color="Color.Success" Indeterminate="true" />
+<MudProgressCircular Color="Color.Info" Indeterminate="true" />
+Determinate
+@using System;
+@using System.Threading;
+
+@implements IDisposable
+
+<MudProgressCircular Color="Color.Default" Value="@Value" />
+<MudProgressCircular Color="Color.Primary" Value="@Value" />
+<MudProgressCircular Color="Color.Secondary" Value="@Value" />
+<MudProgressCircular Color="Color.Success" Value="@Value" />
+<MudProgressCircular Color="Color.Info" Value="@Value" />
+@code {
+    private bool _disposed;
+
+    public int Value { get; set; }
+
+    public async Task SimulateProgressAsync()
+    {
+        Value = 0;
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 4;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+        await SimulateProgressAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await SimulateProgressAsync();
+    }
+
+    public void Dispose() => _disposed = true;
+}
+Custom Content
+You can place any content in the middle of the circular progress using the ChildContent parameter.
+
+28
+28 %
+Value
+
+28
+
+29.40
+Mud
+@using System;
+@using System.Threading;
+
+@implements IDisposable
+
+<MudProgressCircular Color="Color.Default" Value="@_value">
+    <ChildContent>
+        @_value
+    </ChildContent>
+</MudProgressCircular>
+<MudProgressCircular Color="Color.Primary" Value="@_value" Size="Size.Large">
+    <ChildContent>
+        @_value %
+    </ChildContent>
+</MudProgressCircular>
+<MudProgressCircular Style="height: 80px; width: 80px" Color="Color.Primary" Value="@_value">
+    <ChildContent>
+        <MudStack Spacing="0" AlignItems="AlignItems.Center" Justify="Justify.Center">
+            <MudText Typo="Typo.subtitle2">Value</MudText>
+            <MudText Typo="Typo.subtitle2">@_value</MudText>
+        </MudStack>
+    </ChildContent>
+</MudProgressCircular>
+<MudProgressCircular Style="height: 60px; width: 60px" Color="Color.Success" Value="@_doubleValue">
+    <ChildContent>@_doubleValue.ToString("N2")</ChildContent>
+</MudProgressCircular>
+<MudProgressCircular Size="Size.Large" Indeterminate="true" Color="Color.Primary">
+    <ChildContent>Mud</ChildContent>
+</MudProgressCircular>
+@code {
+    private bool _disposed;
+    private int _value;
+    private double _doubleValue;
+
+    public async Task SimulateProgressAsync()
+    {
+        _value = 0;
+        _doubleValue = 0;
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _value += 4;
+            _doubleValue += 4.2d;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (_value < 100);
+
+        await SimulateProgressAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await SimulateProgressAsync();
+    }
+
+    public void Dispose() => _disposed = true;
+}
+Sizes
+You can change the size with the pre-defined Size prop or change the Width and Height in css.
+
+<MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true"/>
+<MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+<MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+<MudProgressCircular Color="Color.Primary" Style="height:70px;width:70px;" Indeterminate="true" />
+Rounded
+<MudProgressCircular Color="Color.Error" Rounded="true" Size="Size.Large" StrokeWidth="4" Value="25" />
+<MudProgressCircular Color="Color.Warning" Rounded="true" Size="Size.Large" StrokeWidth="4" Value="50" />
+<MudProgressCircular Color="Color.Success" Rounded="true" Size="Size.Large" StrokeWidth="4" Value="75" />
+Linear Progress
+Indeterminate
+<MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+<MudProgressLinear Color="Color.Secondary" Indeterminate="true" Class="my-7"/>
+Determinate
+<MudProgressLinear Color="Color.Primary" Value="@Value" Class="my-7" />
+<MudProgressLinear Color="Color.Secondary" Value="@Value" Class="my-7" />
+@code {
+    private bool _disposed;
+
+    public int Value { get; set; }
+
+    public async Task SimulateProgressAsync()
+    {
+        Value = 0;
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 4;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+        await SimulateProgressAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await SimulateProgressAsync();
+    }
+
+    public void Dispose() => _disposed = true;
+}
+Sizes
+<MudProgressLinear Color="Color.Dark" Size="Size.Small" Value="25" />
+<MudProgressLinear Color="Color.Info" Size="Size.Medium" Value="50" Class="my-7" />
+<MudProgressLinear Color="Color.Tertiary" Size="Size.Large" Value="75" />
+Min Max
+By default, the value range is between 0 and 100. If you have a custom range, set Min and Max accordingly.
+
+<MudProgressLinear Value="-2" Min="-7" Max="7" />
+<MudProgressLinear Value="17.75" Min="17.0" Max="18.0" Class="my-7" />
+<MudProgressLinear Value="100" Min="0" Max="100" />
+Buffer
+When setting Buffer to true you also have to give it a BufferValue. You can use any combination of buffer-value and value to achieve your design.
+
+<MudProgressLinear Color="Color.Primary" Buffer="true" Value="@Value" BufferValue="@BufferValue" Class="my-7" />
+<MudProgressLinear Color="Color.Secondary" Buffer="true" Value="@Value" BufferValue="@BufferValue" Class="my-7" />
+<MudProgressLinear Color="Color.Tertiary" Buffer="true" Value="@Value" BufferValue="@BufferValue" Class="my-7" />
+<MudProgressLinear Color="Color.Info" Buffer="true" Value="@Value" BufferValue="@BufferValue" Class="my-7" />
+<MudProgressLinear Color="Color.Warning" Buffer="true" Value="@Value" BufferValue="@BufferValue" Class="my-7" />
+<MudProgressLinear Color="Color.Error" Buffer="true" Value="@Value" BufferValue="@BufferValue" Class="my-7" />
+@code {
+    private bool _disposed;
+
+    public int Value { get; set; }
+
+    public int BufferValue { get; set; }
+
+    public async Task SimulateProgressAsync()
+    {
+        Value = 5;
+        BufferValue = 10;
+
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 4;
+            BufferValue += 5;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+        await SimulateProgressAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await SimulateProgressAsync();
+    }
+
+    public void Dispose() => _disposed = true;
+}
+Rounded
+Sets the border radius on the progress linear to the set theme value.
+
+<MudProgressLinear Color="Color.Error" Rounded="true" Size="Size.Small" Value="25" />
+<MudProgressLinear Color="Color.Warning" Rounded="true" Size="Size.Medium" Value="50" Class="my-7" />
+<MudProgressLinear Color="Color.Success" Rounded="true" Size="Size.Large" Value="75" />
+Striped
+Applies a striped background over the progress bar.
+
+<MudProgressLinear Color="Color.Secondary" Striped="true" Size="Size.Medium" Value="50" Class="my-7" />
+<MudProgressLinear Color="Color.Primary" Striped="true" Size="Size.Large" Value="75" Class="my-7" />
+Background
+<MudProgressLinear Color="Color.Primary" Value="75" Class="my-4" />
+<MudProgressLinear Color="Color.Primary" Value="75" Class="my-4" ShowBackground="false" />
+Labels
+While using the ChildContent of the component you can add a text to display current value.
+
+25%
+
+<MudProgressLinear Color="Color.Info" Size="Size.Large" Value="25" Class="my-7">
+    <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+        <b>25%</b>
+    </MudText>
+</MudProgressLinear>
+Vertical
+Vertical progress bars works exactly the same way as the default horizontal ones.
+
+25
+
+<MudPaper Height="360px" Class="d-flex justify-space-around mud-width-full" Elevation="0">
+    <MudProgressLinear Vertical="true" Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
+    <MudProgressLinear Vertical="true" Color="Color.Primary" Size="Size.Medium" Value="@Value" />
+    <MudProgressLinear Vertical="true" Color="Color.Primary" Size="Size.Medium" Value="25">
+        <MudText Typo="Typo.subtitle1" Color="Color.Dark"><b>25</b></MudText>
+    </MudProgressLinear>
+    <MudProgressLinear Vertical="true" Color="Color.Primary" Size="Size.Small" Buffer="true" Value="@Value" BufferValue="@BufferValue" />
+    <MudProgressLinear Vertical="true" Color="Color.Primary" Striped="true" Size="Size.Large" Value="@Value" />
+</MudPaper>
+@code {
+    private bool _disposed;
+
+    public int Value { get; set; }
+
+    public int BufferValue { get; set; }
+
+    public async Task SimulateProgressAsync()
+    {
+        Value = 5;
+        BufferValue = 10;
+
+        do
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Value += 4;
+            BufferValue += 5;
+            StateHasChanged();
+            await Task.Delay(500);
+
+        } while (Value < 100);
+
+        await SimulateProgressAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await SimulateProgressAsync();
+    }
+
+    public void Dispose() => _disposed = true;
+}

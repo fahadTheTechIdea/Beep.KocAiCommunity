@@ -1,0 +1,35 @@
+@page "/admin"
+@using Beep.KocAiCommunity.Ui.Shared.Components
+
+<PageTitle>Admin · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Platform" Title="Admin"
+            Subtitle="Govern the platform — people and roles, org structure, competitions, learning content, connectors, and the audit trail." />
+
+<MudGrid Spacing="4">
+    @foreach (var a in _areas)
+    {
+        <MudItem xs="12" sm="6" md="4">
+            <BlueprintCard Class="pa-5" Style="height:100%;">
+                <MudIcon Icon="@a.Icon" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-1">@a.Title</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">@a.Body</MudText>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">@a.Status</MudChip>
+            </BlueprintCard>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    private sealed record Area(string Icon, string Title, string Body, string Status);
+
+    private readonly Area[] _areas =
+    [
+        new(Icons.Material.Filled.People, "People & roles", "Assign function roles (Competition Admin, Learning Admin, Auditor) on top of a person's org position.", "Entra-synced"),
+        new(Icons.Material.Filled.AccountTree, "Organization", "Team ⊂ Group ⊂ Directorate ⊂ Company — the reporting line that drives visibility and supervision.", "Directory-synced"),
+        new(Icons.Material.Filled.EmojiEvents, "Competitions", "Review, conclude, and reveal competitions; manage answer keys and datasets.", "Live"),
+        new(Icons.Material.Filled.School, "Learning content", "Publish and order learning tracks and lessons across the company.", "Live"),
+        new(Icons.Material.Filled.Hub, "Connectors", "Health of the API, ML runtime, storage, and identity provider.", "Healthy"),
+        new(Icons.Material.Filled.Verified, "Audit", "Every admin action and model promotion is recorded and retained for 7 years.", "Retained 7y"),
+    ];
+}

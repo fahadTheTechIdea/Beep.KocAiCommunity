@@ -1,0 +1,578 @@
+Form Validation
+Collects and validates user input, monitoring and validating every input derived from MudFormComponent within it.
+API
+<MudForm>
+Simple Form Validation
+MudForm is designed to be easy and simple. You just pass your own validation functions directly into the Validation parameter of your input controls. But if you want to make use of the handy data annotation attributes provided by Microsoft, you can pass them into Validation, as well. You can even use FluentValidation as shown in one of the examples below.
+Note: for MudForm, do NOT use a button with ButtonType="ButtonType.Submit"
+
+Personal
+Professional
+I agree!
+ 
+ 
+Errors (0)
+
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <MudForm @ref="_form" @bind-IsValid="@_success" @bind-Errors="@_errors" OnEnterPressed="@(() => _form.ValidateAsync())">
+                <MudTextField T="string" Label="Username" Required="true" RequiredError="User name is required!" />
+                <MudTextField T="string" Label="Email" Required="true" RequiredError="Email is required!"
+                              Validation="@(new EmailAddressAttribute { ErrorMessage = @"The email address is invalid" })" />
+                <MudTextField T="string"
+                              @bind-Value="@_password"
+                              Label="Password" 
+                              HelperText="Choose a strong password"
+                              InputType="InputType.Password"
+                              Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))" Required="true"
+                              RequiredError="Password is required!"/>
+                <MudTextField T="string"
+                              Label="Password" HelperText="Repeat the password" InputType="InputType.Password"
+                              Validation="@(new Func<string, string>(PasswordMatch))"/>
+                <div class="d-flex">
+                    <MudRadioGroup T="string" Required="true" RequiredError="Account type is required!">
+                        <MudRadio Value="@("Personal")">Personal</MudRadio>
+                        <MudRadio Value="@("Professional")">Professional</MudRadio>
+                    </MudRadioGroup>
+                </div>
+                <div class="d-flex align-center justify-space-between">
+                    <MudCheckBox T="bool" Required="true" RequiredError="You must agree" Label="I agree!"  />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_success)" Class="ml-auto">Register</MudButton>
+                </div>
+            </MudForm>
+        </MudPaper>
+        <MudPaper Class="pa-4 mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" OnClick="@(() => _form.ValidateAsync())">Validate</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" DropShadow="false" OnClick="@(() => _form.ResetAsync())" Class="mx-2">Reset</MudButton>
+            <MudButton Variant="Variant.Filled" DropShadow="false" OnClick="@(() => _form.ResetValidationAsync())">Reset Validation</MudButton>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="5">
+        <MudPaper Class="pa-4 mud-height-full">
+            <MudText Typo="Typo.subtitle2">@($"Errors ({_errors.Length})")</MudText>
+            @foreach (var error in _errors)
+            {
+                <MudText Color="@Color.Error">@error</MudText>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+@code {
+    private bool _success;
+    private MudForm _form;
+    private string _password;
+    private string[] _errors = [];
+
+    private static IEnumerable<string> PasswordStrength(string pw)
+    {
+        if (string.IsNullOrWhiteSpace(pw))
+        {
+            yield return "Password is required!";
+            yield break;
+        }
+        if (pw.Length < 8)
+            yield return "Password must be at least of length 8";
+        if (!Regex.IsMatch(pw, @"[A-Z]"))
+            yield return "Password must contain at least one capital letter";
+        if (!Regex.IsMatch(pw, @"[a-z]"))
+            yield return "Password must contain at least one lowercase letter";
+        if (!Regex.IsMatch(pw, @"[0-9]"))
+            yield return "Password must contain at least one digit";
+    }
+
+    private string PasswordMatch(string arg) => _password != arg ? "Passwords don't match" : null;
+}
+EditForm Support
+In Blazor, form validation is usually done with EditForm in conjunction with a form model class that is decorated with data annotations. MudBlazor's input components support Blazor's form validation if you put them into a <EditForm>. The following example shows a very simple use case. If you want to learn more, please check out ASP.NET Core Blazor forms and validation on the official Blazor documentation.
+
+Note: for EditForm validation to work make sure to set ButtonType="ButtonType.Submit" and do not use a MudForm.
+Make sure you don't forget the <DataAnnotationsValidator /> tag inside your <EditForm>
+
+Validation Summary
+
+
+Fill out the form correctly to see the success message.
+
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+<DataAnnotationsValidator/>
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudCard>
+            <MudCardContent>
+                <MudTextField Label="First name" HelperText="Max. 8 characters"
+                              @bind-Value="model.Username" For="@(() => model.Username)"/>
+                <MudTextField Label="Email" Class="mt-3"
+                              @bind-Value="model.Email" For="@(() => model.Email)"/>
+                <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3"
+                              @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password"/>
+                <MudTextField Label="Password" HelperText="Repeat the password" Class="mt-3"
+                              @bind-Value="model.Password2" For="@(() => model.Password2)" InputType="InputType.Password"/>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="5">
+        <MudPaper Class="pa-4 mud-height-full">
+            <MudText Typo="Typo.subtitle2">Validation Summary</MudText>
+            @if (success)
+            {
+                <MudText Color="Color.Success">Success</MudText>
+            }
+            else
+            {
+                <MudText Color="@Color.Error">
+                    <ValidationSummary />
+                </MudText>
+            }
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12">
+        <MudText Typo="Typo.body2" Align="Align.Center">
+            Fill out the form correctly to see the success message.
+        </MudText>
+    </MudItem>
+</MudGrid>
+</EditForm>
+@code {
+    RegisterAccountForm model = new RegisterAccountForm();
+    bool success;
+
+    public class RegisterAccountForm
+    {
+        [Required]
+        [StringLength(8, ErrorMessage = "Name length can't be more than 8.")]
+        public string Username { get; set; }
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        [Required]
+        [StringLength(30, ErrorMessage = "Password must be at least 8 characters long.", MinimumLength = 8)]
+        public string Password { get; set; }
+
+        [Required]
+        [Compare(nameof(Password))]
+        public string Password2 { get; set; }
+
+    }
+
+    private void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+    }
+}
+Using Simple Fluent Validation
+This example shows how to make use of the powerful FluentValidation validators with MudForm. Basically, we call the validator in our validation function and simply return the error messages.
+
+4012 8888 8888 1881
+@using FluentValidation
+
+<MudPaper Class="pa-4">
+    <MudForm>
+        <MudTextField @bind-Value="creditCardNr" Validation="@ccValidator.Validation" Immediate="true" Label="Credit card nr" />
+    </MudForm>
+</MudPaper>
+@code { 
+    // This is a valid Visa test card number
+    string creditCardNr = "4012 8888 8888 1881";
+
+    // The validation rules (overkill, I know, but very fluent):
+    FluentValueValidator<string> ccValidator = new FluentValueValidator<string>(x => x
+        .NotEmpty()
+        .Length(1,100)
+        .CreditCard());
+
+    /// <summary>
+    /// A glue class to make it easy to define validation rules for single values using FluentValidation
+    /// You can reuse this class for all your fields, like for the credit card rules above.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class FluentValueValidator<T> : AbstractValidator<T>
+    {
+        public FluentValueValidator(Action<IRuleBuilderInitial<T, T>> rule)
+        {
+            rule(RuleFor(x => x));
+        }
+
+        private IEnumerable<string> ValidateValue(T arg)
+        {
+            var result = Validate(arg);
+            if (result.IsValid)
+                return new string[0];
+            return result.Errors.Select(e => e.ErrorMessage);
+        }
+
+        public Func<T, IEnumerable<string>> Validation => ValidateValue;
+    }
+}
+Using Fluent Validation
+This example shows how to make use of the powerful FluentValidation validators with MudForm. This approach utilizes a standard AbstractValidator which can be shared with the ASP.NET API Controllers.
+
+4012 8888 8888 1881
+Description	Offer
+Perform Work order 1
+100
+0
+@using FluentValidation
+
+<MudCard>
+    <MudForm Model="@_model" @ref="@_form" Validation="@(_orderValidator.ValidateValue)" ValidationDelay="0">
+        <MudCardContent>
+                <MudTextField @bind-Value="_model.Name"                              
+                              For="@(() => _model.Name)"
+                              Immediate="true"
+                              Label="Name" />
+
+                <MudTextField @bind-Value="_model.Email"
+                              For="@(() => _model.Email)"
+                              Immediate="true"
+                              Label="Email" />
+
+                <MudTextField @bind-Value="_model.CCNumber"
+                              For="@(() => _model.CCNumber)"
+                              Immediate="true"
+                              Label="Credit card nr" />
+
+                <MudTextField @bind-Value="_model.Address.Address"
+                              For="@(() => _model.Address.Address)"
+                              Immediate="true"
+                              Label="Address" />
+
+                <MudTextField @bind-Value="_model.Address.City"
+                              For="@(() => _model.Address.City)"
+                              Immediate="true"
+                              Label="City" />
+
+                <MudTextField @bind-Value="_model.Address.Country"
+                              For="@(() => _model.Address.Country)"
+                              Immediate="true"
+                              Label="Country" />
+        </MudCardContent>
+        <MudCardContent Class="pa-0">
+
+            <MudTable Items="@_model.OrderDetails" Hover="true" Breakpoint="Breakpoint.None" Dense="@true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Description</MudTh>
+                    <MudTh>Offer</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Description">
+                        <MudForm Model="@context" Validation=@(_orderDetailsValidator.ValidateValue)>
+                              <MudTextField Label="Enter Description" 
+                              @bind-Value="context.Description" 
+                              For="() => context.Description" />
+                          </MudForm>
+                    </MudTd>
+                    <MudTd DataLabel="Offer">
+                        <MudForm Model="@context">
+                              <MudNumericField Label="Enter Offer" 
+                                               @bind-Value="context.Offer" 
+                                               Validation=@(_orderDetailsValidator.ValidateValue)
+                                               For="(() => context.Offer)" />
+                          </MudForm>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+        </MudCardContent>
+    </MudForm>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Order</MudButton>
+    </MudCardActions>
+</MudCard>
+@code {
+    private MudForm _form = null!;
+    private readonly OrderModel _model = new();
+    private readonly OrderModelFluentValidator _orderValidator = new();
+    private readonly OrderDetailsModelFluentValidator _orderDetailsValidator = new();
+
+    [Inject]
+    protected ISnackbar Snackbar { get; set; }
+
+    public class OrderModel
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string CCNumber { get; set; } = "4012 8888 8888 1881";
+        public AddressModel Address { get; set; } = new();
+        public List<OrderDetailsModel> OrderDetails =
+        [
+            new()
+            {
+                Description = "Perform Work order 1",
+                Offer = 100
+            },
+
+            new()
+        ];
+    }
+
+    public class AddressModel
+    {
+        public string Address { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+    }
+
+    public class OrderDetailsModel
+    {
+        public string Description { get; set; }
+        public decimal Offer { get; set; }
+    }
+
+    private async Task Submit()
+    {
+        await _form.ValidateAsync();
+
+        if (_form.IsValid)
+        {
+            Snackbar.Add("Submitted!");
+        }
+    }
+
+    /// <summary>
+    /// A standard AbstractValidator which contains multiple rules and can be shared with the back end API
+    /// </summary>
+    public class OrderModelFluentValidator : AbstractValidator<OrderModel>
+    {
+        public OrderModelFluentValidator()
+        {
+            RuleFor(x => x.Name)
+                .NotEmpty()
+                .Length(1,100);
+
+            RuleFor(x => x.Email)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .EmailAddress()
+                .MustAsync(async (value, _) => await IsUniqueAsync(value));
+
+            RuleFor(x => x.CCNumber)
+                .NotEmpty()
+                .Length(1,100)
+                .CreditCard();
+
+            RuleFor(x => x.Address.Address)
+                .NotEmpty()
+                .Length(1,100);
+
+            RuleFor(x => x.Address.City)
+                .NotEmpty()
+                .Length(1,100);
+
+            RuleFor(x => x.Address.Country)
+                .NotEmpty()
+                .Length(1,100);
+
+            RuleForEach(x => x.OrderDetails)
+                .SetValidator(new OrderDetailsModelFluentValidator());
+        }
+
+        private static async Task<bool> IsUniqueAsync(string email)
+        {
+            // Simulates a long-running http call
+            await Task.Delay(2000);
+            return email.ToLower() != "test@test.com";
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<OrderModel>.CreateWithOptions((OrderModel)model, x => x.IncludeProperties(propertyName)));
+            return result.IsValid ? [] : result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+
+    /// <summary>
+    /// A standard AbstractValidator for the Collection Object
+    /// </summary>
+    public class OrderDetailsModelFluentValidator : AbstractValidator<OrderDetailsModel>
+    {
+        public OrderDetailsModelFluentValidator()
+        {
+            RuleFor(x => x.Description)
+                .NotEmpty()
+                .Length(1,100);
+
+            RuleFor(x => x.Offer)
+                .GreaterThan(0)
+                .LessThan(999);
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<OrderDetailsModel>.CreateWithOptions((OrderDetailsModel)model, x => x.IncludeProperties(propertyName)));
+            return result.IsValid ? [] : result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}
+Validate only on user interaction
+Normally input fields are validated when leaving the input field. This behavior can be changed with the flag OnlyValidateIfDirty If this flag is set to true, the input field will only be validated if the user has changed the initial value.
+
+Note: The OnlyValidateIfDirty setting should not be changed dynamically
+
+OnlyValidateIfDirty="false" (default behavior)
+
+OnlyValidateIfDirty="true"
+
+Automatically set Labels
+A form field Label can be set automatically by adding a [Label] attribute to the relevant property on the model class. The For property must also be set. An automatic label can be overridden by setting the Label property manually on the component.
+
+Boolean LabelAttribute
+Parameter Label
+@using System.ComponentModel.DataAnnotations
+
+<MudCard>
+    <MudCardContent>
+        <MudForm Spacing="2">
+            <MudDatePicker For="@(() => model.Date)" />
+            <MudDatePicker For="@(() => model.Date)" Label="Parameter Label" />
+            <MudSwitch For="@(() => model.Boolean)" Color="Color.Primary" />
+            <MudSwitch For="@(() => model.Boolean)" Label="Parameter Label" Color="Color.Primary" />
+            <MudTextField For="@(() => model.String)" />
+            <MudTextField For="@(() => model.String)" Label="Parameter Label" />
+        </MudForm>
+    </MudCardContent>
+</MudCard>
+@code {
+    DisplayNameLabelClass model = new();
+
+    public class DisplayNameLabelClass
+    {
+        [Label("Date LabelAttribute")]
+        public DateTime? Date { get; set; }
+        [Label("Boolean LabelAttribute")]
+        public bool Boolean { get; set; }
+        [Label("String LabelAttribute")]
+        public string String { get; set; }
+    }
+}
+ReadOnly and Disabled Forms
+Setting ReadOnly or Disabled to true on a MudForm will automatically set all child inputs as ReadOnly or Disabled. The state will also be applied to child MudForms.
+
+ReadOnly Form
+
+0
+Switch
+CheckBox
+1
+2
+Nested Form
+
+0
+ReadOnly
+Nested
+Disabled Form
+
+0
+Switch
+CheckBox
+1
+2
+Nested Form
+
+0
+Disabled
+Nested
+<MudStack Row>
+    <MudCard>
+        <MudCardContent>
+            <MudText Align="Align.Center">ReadOnly Form</MudText>
+            <MudForm ReadOnly="ReadOnly" Spacing="2">
+                <MudTextField T="string" Label="Text" />
+                <MudNumericField T="int" Label="Number" />
+                <MudDatePicker Label="Date" />
+                <MudSwitch T="bool" Label="Switch" />
+                <MudCheckBox T="bool" Label="CheckBox" />
+                <MudRadioGroup T="string">
+                    <MudRadio Value="@("1")">1</MudRadio>
+                    <MudRadio Value="@("2")">2</MudRadio>
+                </MudRadioGroup>
+                <MudForm ReadOnly="NestedReadOnly" Spacing="2">
+                    <MudText Align="Align.Center">Nested Form</MudText>
+                    <MudTextField T="string" Label="Nested Text" />
+                    <MudNumericField T="int" Label="Nested Number" />
+                </MudForm>
+            </MudForm>
+        </MudCardContent>
+        <MudCardActions>
+            <MudCheckBox @bind-Value="ReadOnly">ReadOnly</MudCheckBox>
+            <MudCheckBox @bind-Value="NestedReadOnly">Nested</MudCheckBox>
+        </MudCardActions>
+    </MudCard>
+    <MudCard>
+        <MudCardContent>
+            <MudText Align="Align.Center">Disabled Form</MudText>
+            <MudForm Disabled="Disabled" Spacing="2">
+                <MudTextField T="string" Label="Text" />
+                <MudNumericField T="int" Label="Number" />
+                <MudDatePicker Label="Date" />
+                <MudSwitch T="bool" Label="Switch" />
+                <MudCheckBox T="bool" Label="CheckBox" />
+                <MudRadioGroup T="string">
+                    <MudRadio Value="@("1")">1</MudRadio>
+                    <MudRadio Value="@("2")">2</MudRadio>
+                </MudRadioGroup>
+                <MudForm Disabled="NestedDisabled" Spacing="2">
+                    <MudText Align="Align.Center">Nested Form</MudText>
+                    <MudTextField T="string" Label="Nested Text" />
+                    <MudNumericField T="int" Label="Nested Number" />
+                </MudForm>
+            </MudForm>
+        </MudCardContent>
+        <MudCardActions>
+            <MudCheckBox @bind-Value="Disabled">Disabled</MudCheckBox>
+            <MudCheckBox @bind-Value="NestedDisabled">Nested</MudCheckBox>
+        </MudCardActions>
+    </MudCard>
+</MudStack>
+@code {
+    bool ReadOnly = true;
+    bool NestedReadOnly;
+    bool Disabled = true;
+    bool NestedDisabled;
+}
+Customization
+You can control the gap between items with Spacing.
+
+Personal
+Professional
+
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <MudForm Spacing="spacing">
+                <MudTextField T="string" Label="Username" />
+                <MudTextField T="string" Label="Email" />
+                <MudTextField T="string" Label="Password" HelperText="Choose a strong password" InputType="InputType.Password" />
+                <MudTextField T="string" Label="Password" HelperText="Repeat the password" InputType="InputType.Password" />
+                <div class="d-flex">
+                    <MudRadioGroup T="string">
+                        <MudRadio Value="@("Personal")">Personal</MudRadio>
+                        <MudRadio Value="@("Professional")">Professional</MudRadio>
+                    </MudRadioGroup>
+                </div>
+            </MudForm>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="5">
+        <MudPaper Class="pa-4 mud-height-full">
+            <MudSlider @bind-Value="spacing" Min="0" Max="16" ValueLabel>Spacing between items</MudSlider>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+@code {
+    int spacing;
+}

@@ -1,0 +1,362 @@
+Stepper
+Guides users through a series of steps to complete a transaction, such as forms or wizards.
+Warning: This component is currently under development.
+
+Breaking changes such as updates to the API, look and feel, or CSS classes, may occur even in minor patch releases. Please use it only if you are prepared to adapt your code accordingly and provide feedback or contribute code.
+
+API
+<MudStepper>
+- <MudStep>
+Horizontal stepper
+Stepper needs MudStep in its child content. Each step can have Title and SecondaryText so the component can be displayed properly. The reset button is only shown if ShowResetButton is set. You might not need it in a real world example but in the docs it is important to be able to reset the stepper so we enabled it everywhere.
+
+
+1
+Select campaign settings
+
+
+2
+Create an ad group
+
+Optional
+
+3
+Create an ad
+
+Select campaign settings content
+<MudPaper Style="width: 800px">
+    <MudStepper ShowResetButton>
+        <MudStep Title="Select campaign settings">Select campaign settings content</MudStep>
+        <MudStep Title="Create an ad group" SecondaryText="Optional" Skippable="true">Create an ad group content</MudStep>
+        <MudStep Title="Create an ad">Create an ad content</MudStep>
+    </MudStepper>
+</MudPaper>
+Non-linear version
+If you need to jump between the steps, parameter NonLinear is there for that. You can opt out of the ripple effect with Ripple.
+
+
+
+
+Most programmers first start writing the code but some experts write the tests first
+Ripple
+<MudPaper Style="width: 800px">
+    <MudStepper NonLinear ShowResetButton Ripple="Ripple">
+        <MudStep Title="Write the code">Most programmers first start writing the code but some experts write the tests first</MudStep>
+        <MudStep Title="Write the tests">If you write the tests first you will design a better API when you write the code</MudStep>
+        <MudStep Title="Write the documentation" SecondaryText="... or not">Some consider writing readable code more important than writing documentation.</MudStep>
+    </MudStepper>
+</MudPaper>
+
+<MudDivider />
+
+<MudSwitch @bind-Value="@Ripple" Color="Color.Primary" Label="Ripple"></MudSwitch>
+@code {
+    public bool Ripple { get; set; } = true;
+}
+Centered labels
+CenterLabels centers the labels in the navigation bar below the circle. It affects only horizontal steppers.
+
+
+1
+Select campaign settings
+
+
+2
+Create an ad group
+
+Optional
+
+3
+Create an ad
+
+Select campaign settings content
+<MudPaper Style="width: 800px">
+    <MudStepper CenterLabels="true" ShowResetButton>
+        <MudStep Title="Select campaign settings">Select campaign settings content</MudStep>
+        <MudStep Title="Create an ad group" SecondaryText="Optional" Skippable="true">Create an ad group content</MudStep>
+        <MudStep Title="Create an ad">Create an ad content</MudStep>
+    </MudStepper>
+</MudPaper>
+Customization
+The component can be customized via TitleTemplate, LabelTemplate and ConnectorTemplate. You can also add a success message after the last step thanks to the CompletedContent fragment.
+You can also replace the step action buttons (previous, skip and next) by providing alternative buttons via theActionContent template.
+
+
+
+
+
+Check-in Step 1: Verify passenger data
+<MudPaper Style="width: 800px">
+    <MudStepper @bind-ActiveIndex="_index" CompletedStepColor="Color.Success" CurrentStepColor="Color.Primary" NavClass="border-b mud-border-lines-default" StepClass="pt-4" ShowResetButton>
+        <TitleTemplate>@*This empty template prevents rendering the title*@</TitleTemplate>
+        <ConnectorTemplate Context="step">
+            <div class="mud-stepper-nav-connector">
+                @{
+                    int value = step.Completed ? 100 : 0;
+                    <MudProgressLinear Indeterminate="@(step.IsActive)" Striped Value="value" Min="0" Max="100" Color="Color.Success" Style="height: 2px; background-color: #d4ddeb; border-radius: 2px;" />
+                }
+            </div>
+        </ConnectorTemplate>
+        <LabelTemplate>
+            @if (context.IsActive) {
+                <MudIcon Icon="@Icons.Material.Filled.AirplanemodeActive" Style="rotate: 90deg;" Color="context.Completed ? Color.Success : Color.Primary"></MudIcon>
+            }
+            else if (context.Completed) {
+                <div style="height: 10px; width:10px; background-color: var(--mud-palette-success); border-radius: 50%;"></div>
+            }
+            else {
+                <div style="height: 10px; width:10px; background-color: #d4ddeb; border-radius: 50%;"></div>
+            }
+        </LabelTemplate>
+        <ChildContent>
+            <MudStep Title="Verify passenger data">Check-in Step 1: Verify passenger data</MudStep>
+            <MudStep Title="Upgrade to first class" Skippable="true">Check-in Step 2: Upgrade to first class (optional)</MudStep>
+            <MudStep Title="Select seat">Check-in Step 3: Select seat</MudStep>
+            <MudStep Title="Complete check-in" @bind-Completed="_completed">Check-in Final Step: Complete check-in</MudStep>
+        </ChildContent>
+        <CompletedContent>
+            <MudStack Row Class="ma-3">
+                <MudIcon Icon="@Icons.Material.Filled.Done" Color="Color.Success"/>
+                <MudText>
+                    You are checked-in, your ticket will be sent by email.
+                </MudText>
+            </MudStack>
+        </CompletedContent>
+        <ActionContent Context="stepper">
+            <MudButton OnClick="@(() => stepper.ResetAsync())">Reset</MudButton>
+            @if (!_completed) {
+                <MudIconButton OnClick="@(() => stepper.PreviousStepAsync())" Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Primary" Disabled="@(_index <= 0)" />
+                <MudSpacer />
+                @if (stepper.Steps[_index].Skippable)
+                {
+                    <MudIconButton OnClick="@(() => stepper.SkipCurrentStepAsync())" Icon="@stepper.SkipButtonIcon" Color="Color.Primary" />
+                }
+                <MudIconButton OnClick="@(() => stepper.NextStepAsync())" Icon="@Icons.Material.Filled.ArrowForward" Color="Color.Primary" />
+            }
+        </ActionContent>
+    </MudStepper>
+</MudPaper>
+@code {
+    private int _index;
+    private bool _completed;
+}
+Step binding
+Each step can also show an error via HasError be disabled via Disabled or be completed via Completed.
+
+
+1
+Select campaign settings
+
+
+2
+Create an ad group
+
+
+3
+Create an ad
+
+Select campaign settings content
+_index: 0
+
+Step 1 error
+Step 2 completed
+Step 3 disabled
+0
+<MudPaper Style="width: 800px">
+    <MudStepper @bind-ActiveIndex="_index" ShowResetButton>
+        <MudStep Title="Select campaign settings" HasError="_error">Select campaign settings content</MudStep>
+        <MudStep Title="Create an ad group" @bind-Completed="_completed">Create an ad group content</MudStep>
+        <MudStep Title="Create an ad" Disabled="_disabled">Create an ad content</MudStep>
+    </MudStepper>
+</MudPaper>
+
+<MudDivider/>
+
+<p>_index: @_index</p>
+
+<MudDivider/>
+
+<MudSwitch @bind-Value="@_error" Color="Color.Primary" Label="Step 1 error"></MudSwitch>
+<MudSwitch @bind-Value="@_completed" Color="Color.Primary" Label="Step 2 completed"></MudSwitch>
+<MudSwitch @bind-Value="@_disabled" Color="Color.Primary" Label="Step 3 disabled" />
+
+<MudNumericField @bind-Value="_index" Label="Current index" Variant="Variant.Text" Min="0" Max="5" />
+@code {
+    private bool _error;
+    private bool _completed;
+    private bool _disabled;
+
+    private int _index;
+}
+Controlling navigation
+If you want to restrict navigation depending on certain conditions, i.e. completion of a form etc. you can do this using the OnPreviewInteraction event.
+
+When the user clicks the Next-button, the stepper will try to set the current step completed when the user clicks previous or any other step header, the stepper will try to activate that step. Depending on the user action the StepperInteractionEventArgs.Action will be either Complete or Activate. The StepperInteractionEventArgs.StepIndex indicates which step the user wants to complete or activate (navigate to). By setting the StepperInteractionEventArgs.Cancel property you can selectively prevent user actions and thus you have total control over which steps can be navigated to and which can't. In this example we also open a message box to notify the user about the required actions to be able to take the desired action.
+
+
+
+
+Flip the switch to be able to advance to step 2
+<MudPaper Style="width: 800px">
+    <MudStepper NonLinear ShowResetButton OnPreviewInteraction="OnPreviewInteraction">
+        <MudStep Title="Step 1" SecondaryText="Flip the switch" HasError="@(_step1Complete==false)">
+            <MudSwitch @bind-Value="_step1Complete" Color="Color.Primary">Flip the switch to be able to advance to step 2</MudSwitch>
+        </MudStep>
+        <MudStep Title="Step 2" SecondaryText="Enter some text" HasError="@(_step2TextInput=="")">
+            <MudTextField Label="Enter some text" @bind-Value="_step2TextInput" Variant="Variant.Filled" Clearable/>
+        </MudStep>
+        <MudStep Title="Step 3">This step can only be visited if the other steps are completed.</MudStep>
+    </MudStepper>
+</MudPaper>
+@code {
+
+    [Inject] 
+    IDialogService DialogService { get; set; }
+
+    private bool? _step1Complete;
+    private string _step2TextInput;
+
+    private async Task OnPreviewInteraction(StepperInteractionEventArgs arg)
+    {
+        if (arg.Action == StepAction.Complete) 
+        {
+            // occurrs when clicking next
+            await ControlStepCompletion(arg);
+        }
+        else if (arg.Action == StepAction.Activate) 
+        {
+            // occurrs when clicking a step header with the mouse
+            await ControlStepNavigation(arg);
+        }
+    }
+
+    private async Task ControlStepCompletion(StepperInteractionEventArgs arg)
+    {
+        switch (arg.StepIndex) {
+            case 0:
+                if (_step1Complete != true) 
+                {
+                    await DialogService.ShowMessageBoxAsync("Error", "You have not flipped the switch in step 1");
+                    arg.Cancel = true;
+                }
+                break;
+            case 1:
+                if ((_step2TextInput?.Length ?? 0) == 0) 
+                {
+                    await DialogService.ShowMessageBoxAsync("Error", "You have not entered text in step 2");
+                    arg.Cancel = true;
+                }
+                break;
+        }
+    }
+
+    private async Task ControlStepNavigation(StepperInteractionEventArgs arg)
+    {
+        switch (arg.StepIndex) {
+            case 1:
+                if (_step1Complete != true) 
+                {
+                    await DialogService.ShowMessageBoxAsync("Error", "Finish step 1 first");
+                    arg.Cancel = true;
+                }
+                break;
+            case 2:
+                if (_step1Complete != true || (_step2TextInput?.Length ?? 0) == 0) 
+                {
+                    await DialogService.ShowMessageBoxAsync("Error", "Finish step 1 and 2 first");
+                    arg.Cancel = true;
+                }
+                break;
+        }
+    }
+}
+Dynamically adding or removing steps
+By maintaining a list of steps you can easily add or remove steps programmatically. In this example we also set a custom CompletedContent that shows after the final step has been completed.
+
+
+1
+First
+
+
+2
+Second
+
+Select campaign settings content First
+2
+
+Current step index: 0
+
+<MudPaper Style="width: 800px">
+    <MudStepper @bind-ActiveIndex="_index" ShowResetButton>
+        <ChildContent>
+            @foreach (var step in _steps)
+            {
+                <MudStep Title="@step">Select campaign settings content @step</MudStep>
+            }
+        </ChildContent>
+        <CompletedContent>
+            Well done!!!
+        </CompletedContent>
+    </MudStepper>
+</MudPaper>
+
+<MudDivider/>
+
+<MudButton OnClick="Remove" Color="Color.Error">Remove</MudButton>
+<MudText>@_steps.Count</MudText>
+<MudButton OnClick="Add" Color="Color.Primary">Add</MudButton>
+
+<MudDivider/>
+
+<p>Current step index: @_index</p>
+@code {
+    List<string> _steps = new() { "First" ,  "Second" };
+    int _index;
+
+    private void Add()
+    {
+        Random rnd = new Random();
+        _steps.Add( $"Step {rnd.Next(0, 10000)}" );
+    }
+
+    private void Remove()
+    {
+        _steps.Remove(_steps[^1]);
+    }
+}
+Vertical stepper
+Stepper also has a vertical version enabled by parameter Vertical.
+
+
+1
+Select campaign settings
+
+For each ad campaign that you create, you can control how much you're willing to spend on clicks and conversions, which networks and geographical locations you want your ads to show on, and more.
+
+2
+Create an ad group
+
+Optional
+
+3
+Create an ad
+
+
+NonLinear
+<MudPaper Style="width: 400px">
+    <MudStepper Vertical ShowResetButton NonLinear="_nonLinear">
+        <ChildContent>
+            <MudStep Title="Select campaign settings">For each ad campaign that you create, you can control how much you're willing to spend on clicks and conversions, which networks and geographical locations you want your ads to show on, and more.</MudStep>
+            <MudStep Title="Create an ad group" SecondaryText="Optional" Skippable="true">An ad group contains one or more ads which target a shared set of keywords.</MudStep>
+            <MudStep Title="Create an ad">Try out different ad text to see what brings in the most customers, and learn how to enhance your ads using features like ad extensions. If you run into any problems with your ads, find out how to tell if they're running and how to resolve approval issues.</MudStep>
+        </ChildContent>
+        <CompletedContent>
+            Thank you for wasting your money on clicks!
+        </CompletedContent>
+    </MudStepper>
+</MudPaper>
+<br/>
+<MudSwitch @bind-Value="_nonLinear" Color="Color.Primary">NonLinear</MudSwitch>
+@code {
+    bool _nonLinear;
+}

@@ -1,0 +1,641 @@
+Tabs
+Organizes content across multiple tab pages.
+API
+<MudTabs>
+- <MudTabPanel>
+- <MudDynamicTabs>
+Simple Tabs
+Content One
+
+<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-6">
+    <MudTabPanel Text="Tab One">
+        <MudText>Content One</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab Two">
+        <MudText>Content Two</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab Three">
+        <MudText>Content Three</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab Disabled" Disabled="true">
+        <MudText>Content Disabled</MudText>
+    </MudTabPanel>
+</MudTabs>
+Icon Tabs
+Icons can be added alongside text in the tabs to enhance visuals.
+
+<MudTabs Outlined="true">
+    <MudTabPanel Text="Api" Icon="@Icons.Material.Filled.Api"/>
+    <MudTabPanel Icon="@Icons.Material.Filled.Build"/>
+    <MudTabPanel Text="Bug Report" Icon="@Icons.Material.Filled.BugReport"/>
+</MudTabs>
+Tabs Position
+The position of the tab bar can be changed with the Position property.
+
+Content One
+
+Left
+
+Tabs Position
+<MudTabs Outlined="true" Position="@Position" Rounded="true" Border="true"
+         ApplyEffectsToContainer="true" Class="mt-8" TabPanelsClass="pa-6">
+    <MudTabPanel Text="Item One">
+        <MudText>Content One</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Item Two">
+        <MudText>Content Two</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Item Three">
+        <MudText>Content Three</MudText>
+    </MudTabPanel>
+</MudTabs>
+
+<MudSelect Label="Tabs Position" @bind-Value="Position" Variant="Variant.Outlined">
+    <MudSelectItem T="Position" Value="@Position.Top">Top</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.Start">Start</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.Left">Left</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.Right">Right</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.End">End</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.Bottom">Bottom</MudSelectItem>
+</MudSelect>
+@code {
+    public Position Position { get; set; } = Position.Left;
+
+    private void OnSelectedValue(Position value)
+    {
+        switch (value)
+        {
+            case Position.Top:
+                Position = Position.Top;
+                break;
+            case Position.Start:
+                Position = Position.Start;
+                break;
+            case Position.Left:
+                Position = Position.Left;
+                break;
+            case Position.Right:
+                Position = Position.Right;
+                break;
+            case Position.End:
+                Position = Position.End;
+                break;
+            case Position.Bottom:
+                Position = Position.Bottom;
+                break;
+        }
+    }
+}
+Centered
+The Centered property aligns the tabs in the middle of the container.
+
+Centered
+<MudTabs Centered="_centered" Color="Color.Primary">
+    <MudTabPanel Text="One"/>
+    <MudTabPanel Text="Two"/>
+    <MudTabPanel Text="Three"/>
+</MudTabs>
+
+<MudSwitch @bind-Value="_centered" Color="Color.Primary">Centered</MudSwitch>
+@code{
+    bool _centered = true;
+}
+Tab Sorting
+TabPanels appear in the order they are processed by the RenderTreeBuilder, which can be affected by component nesting in complex scenarios. Use the SortDirection property to sort lexicographically by Text.
+
+Note that sorting is applied during initial rendering, when TabPanels are being added to the parent Tabs. Sorting is not re-evaluated if properties are changed at runtime.
+
+Content Three
+
+<MudTabs SortDirection="SortDirection.Descending" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-6">
+    <MudTabPanel Text="Tab 2">
+        <MudText>Content Two</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab 1">
+        <MudText>Content One</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab 3">
+        <MudText>Content Three</MudText>
+    </MudTabPanel>
+</MudTabs>
+Sort Keys
+The TabPanel's SortKey property is used in preference to the Text property, if set.
+
+Content Two, sorted as 'F'
+
+<MudTabs SortDirection="SortDirection.Ascending" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-6">
+    <MudTabPanel Text="Tab 2 (SortKey=F)" SortKey="F">
+        <MudText>Content Two, sorted as 'F'</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab 1 (SortKey=G)" SortKey="G">
+        <MudText>Content One, sorted as 'G'</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab 3 (no SortKey)">
+        <MudText>Content Three, sorted as 'Tab 3' as the SortKey is not set</MudText>
+    </MudTabPanel>
+</MudTabs>
+Custom Sorting
+Specify a custom SortComparer which implements IComparer<MudTabPanel> to override the default sorting behaviour. In this scenario, sort direction must be handled by the custom SortComparer.
+
+Content Three
+
+<MudTabs SortComparer="_customComparer" Elevation="2" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pa-6">
+    <MudTabPanel Text="Tab 2 (Tag=C)" Tag="@( "C" )">
+        <MudText>Content Two</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab 1 (Tag=B)" Tag="@( "B" )">
+        <MudText>Content One</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Tab 3 (Tag=A)" Tag="@( "A" )">
+        <MudText>Content Three</MudText>
+    </MudTabPanel>
+</MudTabs>
+@code {
+    private readonly IComparer<MudTabPanel> _customComparer = new CompareByTagAscending();
+
+    private class CompareByTagAscending : IComparer<MudTabPanel>
+    {
+        public int Compare(MudTabPanel x, MudTabPanel y)
+        {
+            return Comparer<string>.Default.Compare( x?.Tag as string, y?.Tag as string );
+        }
+    }
+}
+Tab Width
+The MinimumTabWidth property defines a minimum width for each tab.
+
+<MudStack>
+    <MudTabs Outlined="true" MinimumTabWidth="20px">
+        <MudTabPanel Icon="@Icons.Material.Filled.Build" />
+        <MudTabPanel Text="Api" Icon="@Icons.Material.Filled.Api" />
+        <MudTabPanel Icon="@Icons.Material.Filled.Settings" />
+    </MudTabs>
+
+
+    <MudTabs Outlined="true" MinimumTabWidth="20px" Position="Position.Left">
+        <MudTabPanel Icon="@Icons.Material.Filled.Build" />
+        <MudTabPanel Text="Api" Icon="@Icons.Material.Filled.Api" />
+        <MudTabPanel Icon="@Icons.Material.Filled.Settings" />
+    </MudTabs>
+</MudStack>
+Tooltips
+Tooltips can be added which will activate when the user hovers over the tab.
+
+<MudTabs>
+    <MudTabPanel Text="Item One" ToolTip="ToolTip One" />
+    <MudTabPanel Text="Item Two" ToolTip="ToolTip Two" />
+    <MudTabPanel Text="Item Three" ToolTip="ToolTip Three" />
+    <MudTabPanel Text="Item Disabled" ToolTip="ToolTip Disabled" Disabled="true" />
+</MudTabs>
+Badges
+Badges can be applied to icons or text within tabs for additional context.
+
+<MudTabs Elevation="2" Rounded="true" Centered="true">
+    <MudTabPanel Icon="@Icons.Material.Filled.Api" BadgeData='"live"' BadgeColor="Color.Info" />
+    <MudTabPanel Icon="@Icons.Material.Filled.Build" BadgeData='"..."' />
+    <MudTabPanel Icon="@Icons.Material.Filled.BugReport" BadgeData='"99+"' BadgeColor="Color.Error" />
+    <MudTabPanel Icon="@Icons.Material.Filled.AccessTime" BadgeData='string.Empty' BadgeDot="true" BadgeColor="Color.Success" />
+    <MudTabPanel Icon="@Icons.Material.Filled.InsertChartOutlined" BadgeIcon="@Icons.Material.Filled.WarningAmber" BadgeColor="Color.Warning" />
+</MudTabs>
+
+<MudTabs Elevation="2" Rounded="true" Centered="true" Class="my-6" Color="Color.Dark">
+    <MudTabPanel Icon="@Icons.Material.Filled.Api" Text="API" BadgeData='"!"' BadgeColor="Color.Error" />
+    <MudTabPanel Icon="@Icons.Material.Filled.Build" Text="Build" BadgeData="1" BadgeColor="Color.Success" />
+    <MudTabPanel Icon="@Icons.Material.Filled.BugReport" Text="Bugs" BadgeData="0" />
+    <MudTabPanel Icon="@Icons.Material.Filled.AccessTime" Text="Timing" BadgeDot="true" BadgeColor="Color.Error" />
+    <MudTabPanel Icon="@Icons.Material.Filled.InsertChartOutlined" Text="Metrics" BadgeIcon="@Icons.Material.Filled.Downloading" />
+</MudTabs>
+
+<MudTabs Elevation="2" Rounded="true" Centered="true">
+    <MudTabPanel Text="API" BadgeData='"S"' />
+    <MudTabPanel Text="Build" BadgeData='"..."' BadgeColor="Color.Dark" />
+    <MudTabPanel Text="Bugs" BadgeData='"N"' />
+    <MudTabPanel Text="Timing" BadgeDot="true" BadgeColor="Color.Primary" />
+    <MudTabPanel Text="Metrics" BadgeIcon="@Icons.Material.Filled.Check" BadgeColor="Color.Success" />
+</MudTabs>
+Drag and Drop Tabs
+Tab reordering can be enabled by setting EnableDragAndDrop to true. When enabled, users can rearrange tabs by dragging them to new positions. This is useful for dynamic interfaces where the number or order of tabs may change. The example below demonstrates drag-and-drop with a variable number of tabs that can be reordered interactively. An event is available that fires after a drag-and-drop operation is completed: OnItemDropped, which contains the original details of the operation.
+
+Tab One
+Left
+
+Tabs Position
+<MudTabs Outlined="true" Elevation="4" Rounded="true" Border="true" 
+         ApplyEffectsToContainer="true" Class="mt-8" TabPanelsClass="pa-6"
+         EnableDragAndDrop="true" Position="@Position">
+    <MudTabPanel Text="One">
+        <MudText Typo="Typo.h6">Tab One</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Two">
+        <MudText Typo="Typo.h6">Tab Two</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Three">
+        <MudText Typo="Typo.h6">Tab Three</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Four">
+        <MudText Typo="Typo.h6">Tab Four</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Five">
+        <MudText Typo="Typo.h6">Tab Five</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Six">
+        <MudText Typo="Typo.h6">Tab Six</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Seven">
+        <MudText Typo="Typo.h6">Tab Seven</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Eight">
+        <MudText Typo="Typo.h6">Tab Eight</MudText>
+    </MudTabPanel>
+    <MudTabPanel Text="Nine">
+        <MudText Typo="Typo.h6">Tab Nine</MudText>
+    </MudTabPanel>
+</MudTabs>
+
+<MudSelect Label="Tabs Position" @bind-Value="Position" Variant="Variant.Outlined">
+    <MudSelectItem T="Position" Value="@Position.Top">Top</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.Start">Start</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.Left">Left</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.Right">Right</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.End">End</MudSelectItem>
+    <MudSelectItem T="Position" Value="@Position.Bottom">Bottom</MudSelectItem>
+</MudSelect>
+@code {
+    public Position Position { get; set; } = Position.Left;
+    public int TabCount { get; set; } = 6;
+
+    private void OnSelectedValue(Position value)
+    {
+        switch (value)
+        {
+            case Position.Top:
+                Position = Position.Top;
+                break;
+            case Position.Start:
+                Position = Position.Start;
+                break;
+            case Position.Left:
+                Position = Position.Left;
+                break;
+            case Position.Right:
+                Position = Position.Right;
+                break;
+            case Position.End:
+                Position = Position.End;
+                break;
+            case Position.Bottom:
+                Position = Position.Bottom;
+                break;
+        }
+    }
+}
+Scrolling Tabs
+If the total size of all tabs exceeds the size of the container, scroll buttons are automatically added. The AlwaysShowScrollButtons property keeps the scroll buttons visible at all times.
+
+<MudTabs Elevation="4" Color="@Color.Secondary">
+    <MudTabPanel Text="One" />
+    <MudTabPanel Text="Two" />
+    <MudTabPanel Text="Three" />
+    <MudTabPanel Text="Four" />
+    <MudTabPanel Text="Five" />
+    <MudTabPanel Text="Six" />
+    <MudTabPanel Text="Seven" />
+    <MudTabPanel Text="Eight" />
+    <MudTabPanel Text="Nine" />
+    <MudTabPanel Text="Ten" />
+    <MudTabPanel Text="Eleven" />
+    <MudTabPanel Text="Thirteen" />
+</MudTabs>
+
+<MudTabs Elevation="4" AlwaysShowScrollButtons="true" Color="@Color.Info" Class="mt-4">
+    <MudTabPanel Text="One" />
+    <MudTabPanel Text="Two" />
+    <MudTabPanel Text="Three" />
+</MudTabs>
+Scroll Icons
+The scroll icons can be customized using the PrevIcon and NextIcon properties.
+
+<MudTabs Elevation="4" Color="@Color.Success" PrevIcon="@Icons.Material.Filled.SkipPrevious" NextIcon="@Icons.Material.Filled.SkipNext">
+    <MudTabPanel Text="One" />
+    <MudTabPanel Text="Two" />
+    <MudTabPanel Text="Three" />
+    <MudTabPanel Text="Four" />
+    <MudTabPanel Text="Five" />
+    <MudTabPanel Text="Six" />
+    <MudTabPanel Text="Seven" />
+    <MudTabPanel Text="Eight" />
+    <MudTabPanel Text="Nine" />
+    <MudTabPanel Text="Ten" />
+    <MudTabPanel Text="Eleven" />
+    <MudTabPanel Text="Thirteen" />
+</MudTabs>
+Render Fragments
+Custom tab header content can be provided for special scenarios. Specify only TabContent to customize the tab content, or specify TabWrapperContent to provide a wrapper around the entire tab header. The header of the active tab can be customized using ActiveTabClass.
+
+Custom tab content only
+
+<MudTabs Elevation="1" Rounded="true" TabPanelsClass="pa-6" ActiveTabClass="border-solid border-2 mud-border-primary">
+    <MudTabPanel>
+        <ChildContent>
+            <MudText>Custom tab content only</MudText>
+        </ChildContent>
+        <TabContent>
+            Item One
+        </TabContent>
+    </MudTabPanel>
+    <MudTabPanel>
+        <ChildContent>
+            <MudText>Both custom tab and wrapper content</MudText>
+        </ChildContent>
+        <TabWrapperContent>
+            <MudTooltip Text="ToolTip Two">
+                @context
+            </MudTooltip>
+        </TabWrapperContent>
+        <TabContent>
+            <MudText Typo="Typo.h6">Item Two</MudText>
+        </TabContent>
+    </MudTabPanel>
+    <MudTabPanel Text="Item Three">
+        <ChildContent>
+            <MudText>Custom wrapper content only</MudText>
+        </ChildContent>
+        <TabWrapperContent>
+            <MudTooltip Text="ToolTip Three">
+                @context
+            </MudTooltip>
+        </TabWrapperContent>
+    </MudTabPanel>
+</MudTabs>
+Visibility
+The Visible property defines whether the tab is visible or hidden.
+
+Tab Two Visible
+<div class="d-flex flex-column align-center gap-3">
+    <MudTabs>
+        <MudTabPanel Text="Item One" />
+        <MudTabPanel Text="Item Two" Visible="@_visible" />
+        <MudTabPanel Text="Item Three" />
+    </MudTabs>
+
+    <MudSwitch @bind-Value="_visible" Label="Tab Two Visible" Color="Color.Primary" />
+</div>
+@code {
+    private bool _visible = true;
+}
+Set Active Panel
+Programmatic selection of an active tab is supported through bindings.
+
+Set Active by Index
+
+Set Active by Instance
+
+Set Active by TabPanel ID
+
+<MudTabs Elevation="1" Rounded="true" @ref="_tabs">
+    <MudTabPanel Text="One" @ref="_panel01" ID="@("pn_one")" />
+    <MudTabPanel Text="Two" @ref="_panel02" ID="@("pn_two")" />
+    <MudTabPanel Text="Three" @ref="_panel03" ID="@("pn_three")" />
+</MudTabs>
+
+<MudText GutterBottom="true" Align="Align.Center" Class="mt-8"><b>Set Active by Index</b></MudText>
+<div class="d-flex justify-center">
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick="() => ActivateAsync(0)">Index 0</MudButton>
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick="() => ActivateAsync(1)" Class="mx-2">Index 1</MudButton>
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick="() => ActivateAsync(2)">Index 2</MudButton>
+</div>
+<MudText GutterBottom="true" Align="Align.Center" Class="mt-4"><b>Set Active by Instance</b></MudText>
+<div class="d-flex justify-center">
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick="() => ActivateAsync(_panel01)">Item One</MudButton>
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick="() => ActivateAsync(_panel02)" Class="mx-2">Item Two</MudButton>
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick="() => ActivateAsync(_panel03)">Item Three</MudButton>
+</div>
+<MudText GutterBottom="true" Align="Align.Center" Class="mt-4"><b>Set Active by TabPanel ID</b></MudText>
+<div class="d-flex justify-center">
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick='() => ActivateAsync("pn_one")'>Item One</MudButton>
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick='() => ActivateAsync("pn_two")' Class="mx-2">Item Two</MudButton>
+    <MudButton Variant="@Variant.Filled" Color="Color.Primary" OnClick='() => ActivateAsync("pn_three")'>Item Three</MudButton>
+</div>
+@code {
+    private MudTabs _tabs = null!;
+    private MudTabPanel _panel01 = null!;
+    private MudTabPanel _panel02 = null!;
+    private MudTabPanel _panel03 = null!;
+
+    private Task ActivateAsync(int index)
+    {
+        return _tabs.ActivatePanelAsync(index);
+    }
+
+    private Task ActivateAsync(MudTabPanel panel)
+    {
+        return _tabs.ActivatePanelAsync(panel);
+    }
+
+    private Task ActivateAsync(object id)
+    {
+        return _tabs.ActivatePanelAsync(id);
+    }
+}
+Binding Active Panel
+Two-way synchronization of the selected panel is possible using bindings.
+
+Active Index: 2
+
+Dynamic Tabs
+A browser-like tab experience can be enabled, allowing users to dynamically add and close tabs. The close icon can be hidden by disabling ShowCloseIcon.
+
+Tab B content
+Show Tab B's close icon
+UserTabs index: 1 / DynamicTabs ActivePanelIndex: 1
+
+UserTabs.Count: 3 / DynamicTabs Panels.Count: 3
+
+<MudDynamicTabs @ref="@_dynamicTabs" @bind-ActivePanelIndex="@_userIndex"
+                AddTab="@OnAddTab" CloseTab="@OnCloseTab"
+                AddIconToolTip="Click to add a new tab" CloseIconToolTip="Close tab. All data will be lost"
+                TabPanelsClass="px-4 py-6" Elevation="4" Rounded ApplyEffectsToContainer>
+    @foreach (var tab in _userTabs)
+    {
+        <MudTabPanel ID="@tab.Id" Text="@tab.Label" ShowCloseIcon="@tab.ShowCloseIcon">@tab.Content</MudTabPanel>
+    }
+</MudDynamicTabs>
+<MudButton OnClick="@RestoreUserTabs">Restore</MudButton>
+<MudSwitch T="bool" Color="Color.Primary" Value="@_showCloseIcon" ValueChanged="@ToggleShowCloseIcon">@($"Show {TabWithToggableCloseIcon}'s close icon")</MudSwitch>
+<MudText>UserTabs index: @_userIndex / DynamicTabs ActivePanelIndex: @_userIndex</MudText>
+<MudText>UserTabs.Count: @_userTabs.Count / DynamicTabs Panels.Count: @_dynamicTabs.Panels.Count</MudText>
+@code {
+    private int _userIndex;
+    private bool _showCloseIcon;
+    private bool _stateHasChanged;
+    private List<TabView> _userTabs = [];
+    private MudDynamicTabs _dynamicTabs = null!;
+    private const string TabWithToggableCloseIcon = "Tab B";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        RestoreUserTabs();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (_stateHasChanged)
+        {
+            _stateHasChanged = false;
+            StateHasChanged();
+        }
+    }
+
+    private void RestoreUserTabs()
+    {
+        _userTabs =
+        [
+            new TabView { Id = Guid.NewGuid(), Label = "Tab A", Content = "Tab A content" },
+            new TabView { Id = Guid.NewGuid(), Label = TabWithToggableCloseIcon, Content = $"{TabWithToggableCloseIcon} content", ShowCloseIcon = _showCloseIcon },
+            new TabView { Id = Guid.NewGuid(), Label = "Tab C", Content = "Tab C content" }
+        ];
+        // Start on 2nd tab: "Tab B"
+        _userIndex = 1;
+        _stateHasChanged = true;
+    }
+
+    private void ToggleShowCloseIcon(bool show)
+    {
+        var tab = _userTabs.FirstOrDefault(t => t.Label == TabWithToggableCloseIcon);
+        if (tab is not null)
+        {
+            tab.ShowCloseIcon = show;
+        }
+
+        _showCloseIcon = show;
+    }
+
+    private void AddTab(Guid id)
+    {
+        _userTabs.Add(new TabView { Id = id, Label = "dynamic tab", Content = $"Tab ID: {id}" });
+        // Automatically switch to the new tab.
+        _userIndex = _userTabs.Count - 1;
+        _stateHasChanged = true;
+    }
+
+    private void OnAddTab() => AddTab(Guid.NewGuid());
+
+    private void RemoveTab(Guid id)
+    {
+        var tabView = _userTabs.FirstOrDefault(t => t.Id == id);
+        if (tabView is not null)
+        {
+            _userTabs.Remove(tabView);
+            _stateHasChanged = true;
+        }
+    }
+
+    private void OnCloseTab(MudTabPanel panel)
+    {
+        if (panel.ID is Guid id)
+        {
+            RemoveTab(id);
+        }
+    }
+
+    public class TabView
+    {
+        public required Guid Id { get; init; }
+
+        public required string Label { get; init; }
+
+        public required string Content { get; init; }
+
+        public bool ShowCloseIcon { get; set; } = true;
+    }
+}
+Advanced Dynamic Tabs
+Flexibility in styling can be enhanced using Header and TabPanelHeader. Header positioning is adjustable through HeaderPosition or TabPanelHeaderPosition.
+
+First tab content
+<MudTabs @bind-ActivePanelIndex="_index" Border="true" Outlined="true" TabPanelsClass="px-4 py-6" ApplyEffectsToContainer="true">
+    <ChildContent>
+        @foreach (var item in _tabs)
+        {
+             <MudTabPanel Text="@item.Name" Tag="@item.Id">@item.Content</MudTabPanel>
+        }
+    </ChildContent>
+    <Header>
+        <MudButtonGroup>
+            <MudTooltip Text="Prepend a tab">
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="@( () => AddTabCallback(false) )" />
+            </MudTooltip>
+            <MudTooltip Text="Append a tab">
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="@( () => AddTabCallback(true) )"  />
+            </MudTooltip>
+        </MudButtonGroup>
+    </Header>
+    <TabPanelHeader>
+        @if(context.Text.StartsWith("Tab") == false)
+        {
+            <MudTooltip Text="only dynamic tabs can be closed">
+                <MudIconButton Class="ml-2 pa-1" Color="Color.Error" Icon="@Icons.Material.Filled.Remove" OnClick="(_) => RemoveTab(context)" />
+            </MudTooltip>
+        }
+  </TabPanelHeader>
+</MudTabs>
+@code {
+
+    private class TabView
+    {
+        public String Name { get; set; }
+        public String Content { get; set; }
+        public Guid Id { get; set; }
+    }
+
+    private List<TabView> _tabs = new();
+    private int _index = 0;
+    private int? _nextIndex = null;
+
+    private void RemoveTab(MudTabPanel tabPanel)
+    {
+        var tab = _tabs.FirstOrDefault(x => x.Id == (Guid)tabPanel.Tag);
+        if(tab != null)
+        {
+            _tabs.Remove(tab);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        _tabs.Add(new TabView { Content = "First tab content", Name = "Tab A", Id = Guid.NewGuid() });
+        _tabs.Add(new TabView { Content = "Second tab content", Name = "Tab B", Id = Guid.NewGuid() });
+        _tabs.Add(new TabView { Content = "Third tab content", Name = "Tab C", Id = Guid.NewGuid() });
+    }
+
+    private void AddTabCallback(Boolean append)
+    {
+        var tabView = new TabView { Name = "Dynamic content", Content = "A new tab", Id = Guid.NewGuid() };
+        
+        //the tab becomes available after it is rendered. Hence, we can't set the index here
+        if(append == true)
+        {
+            _tabs.Add(tabView);
+            _nextIndex = _tabs.Count - 1;
+        }
+        else
+        {
+            _tabs.Insert(0, tabView);
+            _nextIndex = 0;
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if(_nextIndex.HasValue == true)
+        {
+            _index = _nextIndex.Value;
+            _nextIndex = null;
+            StateHasChanged();
+        }
+    }
+}

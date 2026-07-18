@@ -1,0 +1,62 @@
+@using Beep.KocAiCommunity.Contracts.Studio
+@using Beep.KocAiCommunity.Web.Services
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_runs.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
+                No training runs yet. Train a model in <b>AutoML</b> first, then register it here.
+            </MudAlert>
+        }
+        else
+        {
+            <MudTextField @bind-Value="_name" Label="Model name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" Placeholder="ESP failure model" />
+            <MudSelect T="Guid?" @bind-Value="_runId" Label="From training run" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var r in _runs)
+                {
+                    <MudSelectItem T="Guid?" Value="@r.Id">@r.DatasetName · @r.Task · @r.PrimaryValue.ToString("0.###") @r.PrimaryMetric</MudSelectItem>
+                }
+            </MudSelect>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_name) || _runId is null)">Register version</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    private string _name = "";
+    private Guid? _runId;
+    private IReadOnlyList<ModelRunDto> _runs = [];
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _runs = await Api.GetModelRunsAsync(); }
+        catch { _runs = []; }
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private async Task Submit()
+    {
+        _busy = true;
+        try
+        {
+            await Api.RegisterModelAsync(new RegisterModelRequest(_name, _runId!.Value));
+            Dialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Register failed: {ex.Message}", Severity.Error);
+            _busy = false;
+        }
+    }
+}

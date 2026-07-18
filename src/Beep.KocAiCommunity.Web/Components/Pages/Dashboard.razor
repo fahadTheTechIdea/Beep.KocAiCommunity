@@ -1,0 +1,161 @@
+@page "/dashboard"
+@using MudBlazor
+@using Beep.KocAiCommunity.Contracts.Dashboard
+@using Beep.KocAiCommunity.Contracts.Supervision
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject DevIdentity Identity
+
+<PageTitle>Dashboard · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Your KOC AI journey" Title="Dashboard"
+            Subtitle="Where you stand across learning and competitions — and, if you lead a team, how your people are doing." />
+
+<MudTextField @bind-Value="Identity.UserId" Label="Acting as (dev user)" Variant="Variant.Outlined" Margin="Margin.Dense"
+              HelperText="Switch users to see different dashboards (try dev-user for a manager view)." Class="mb-4" Style="max-width:340px;" />
+<MudButton Variant="Variant.Text" Size="Size.Small" OnClick="LoadAsync" Class="mb-4 ml-2">Refresh</MudButton>
+
+@if (_me is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid Spacing="4" Class="mb-2">
+        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Tracks completed</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.TracksCompleted<span style="font-size:1rem;opacity:.5;">/@_me.TracksAvailable</span></MudText></BlueprintCard></MudItem>
+        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Competitions entered</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.CompetitionsEntered</MudText></BlueprintCard></MudItem>
+        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Submissions</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.Submissions</MudText></BlueprintCard></MudItem>
+        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Best rank</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@(_me.BestRank is { } r ? $"#{r}" : "—")</MudText></BlueprintCard></MudItem>
+    </MudGrid>
+
+    <BlueprintCard Class="pa-5 mb-6">
+        <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">At a glance</MudText>
+        @if (_me.TracksAvailable > 0 || _me.Standings.Count > 0)
+        {
+            <div class="d-flex gap-10 flex-wrap align-center">
+                @KocCharts.Donut(
+                    [new KocCharts.Seg("Completed", _me.TracksCompleted, "var(--koc-accent-700)"),
+                     new KocCharts.Seg("Remaining", Math.Max(0, _me.TracksAvailable - _me.TracksCompleted), "#dbe4ec")],
+                    $"{_me.TracksCompleted}/{_me.TracksAvailable}", "Learning tracks")
+                @if (_me.Standings.Count > 0)
+                {
+                    <div style="flex:1;min-width:280px;">
+                        <MudText Typo="Typo.caption" Class="d-block mb-2">Your best score per competition</MudText>
+                        @foreach (var s in _me.Standings)
+                        {
+                            @KocCharts.Bar(s.Title, s.BestScore ?? 0, _me.Standings.Max(x => x.BestScore ?? 0), "var(--koc-accent-500)")
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2">Start a track or enter a competition to see your progress charted here.</MudText>
+        }
+    </BlueprintCard>
+
+    <BlueprintCard Class="pa-0 mb-6">
+        <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">My competition standings</MudText></div>
+        @if (_me.Standings.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="pa-4">No competition entries yet. <MudLink Href="/compete">Find a competition →</MudLink></MudText>
+        }
+        else
+        {
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead><tr><th>Competition</th><th>Submissions</th><th>Best score</th><th style="text-align:right;">Rank</th></tr></thead>
+                <tbody>
+                    @foreach (var s in _me.Standings)
+                    {
+                        <tr>
+                            <td>@s.Title</td>
+                            <td>@s.Submissions</td>
+                            <td>@(s.BestScore?.ToString("0.###") ?? "—")</td>
+                            <td style="text-align:right;">@(s.Rank is { } rk ? $"#{rk}" : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </BlueprintCard>
+
+    @if (_rollup is not null)
+    {
+        <MudDivider Class="my-6" />
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Filled.SupervisorAccount" />
+            <MudText Typo="Typo.h5" Class="koc-heading">Team overview — @_rollup.ScopeLabel</MudText>
+        </div>
+
+        <MudGrid Spacing="4" Class="mb-2">
+            <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">People</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.MemberCount</MudText></BlueprintCard></MudItem>
+            <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Active learners</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.ActiveLearners</MudText></BlueprintCard></MudItem>
+            <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Tracks completed</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.TracksCompleted</MudText></BlueprintCard></MudItem>
+            <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Competitions entered</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.CompetitionsEntered</MudText></BlueprintCard></MudItem>
+        </MudGrid>
+
+        <BlueprintCard Class="pa-5 mb-4">
+            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">Team at a glance</MudText>
+            <div class="d-flex gap-10 flex-wrap align-center">
+                @{
+                    var completed = _rollup.Members.Count(m => m.TracksCompleted > 0);
+                    var inProgress = _rollup.Members.Count(m => m.TracksCompleted == 0 && m.Enrollments > 0);
+                    var notStarted = Math.Max(0, _rollup.MemberCount - completed - inProgress);
+                    var maxDone = Math.Max(1, _rollup.Members.Count == 0 ? 0 : _rollup.Members.Max(x => x.TracksCompleted));
+                    var maxSubs = Math.Max(1, _rollup.Members.Count == 0 ? 0 : _rollup.Members.Max(x => x.Submissions));
+                }
+                @KocCharts.Donut(
+                    [new KocCharts.Seg("Completed", completed, "var(--koc-accent-700)"),
+                     new KocCharts.Seg("In progress", inProgress, "var(--koc-accent-300)"),
+                     new KocCharts.Seg("Not started", notStarted, "#dbe4ec")],
+                    _rollup.MemberCount.ToString(), "Learning status")
+                <div style="flex:1;min-width:320px;">
+                    <MudText Typo="Typo.caption" Class="d-block mb-2">Tracks completed per person</MudText>
+                    @foreach (var m in _rollup.Members)
+                    {
+                        @KocCharts.Bar(m.UserId, m.TracksCompleted, maxDone, "var(--koc-accent-700)")
+                    }
+                    <MudText Typo="Typo.caption" Class="d-block mt-3 mb-2">Competition submissions per person</MudText>
+                    @foreach (var m in _rollup.Members)
+                    {
+                        @KocCharts.Bar(m.UserId, m.Submissions, maxSubs, "var(--koc-accent-500)")
+                    }
+                </div>
+            </div>
+        </BlueprintCard>
+
+        <BlueprintCard Class="pa-0">
+            <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">People</MudText></div>
+            <MudSimpleTable Dense="true" Hover="true">
+                <thead><tr><th>Person</th><th>Enrolled</th><th>Completed</th><th>Submissions</th><th style="text-align:right;">Best score</th></tr></thead>
+                <tbody>
+                    @foreach (var m in _rollup.Members)
+                    {
+                        <tr>
+                            <td>@m.UserId</td>
+                            <td>@m.Enrollments</td>
+                            <td>@m.TracksCompleted</td>
+                            <td>@m.Submissions</td>
+                            <td style="text-align:right;">@(m.BestScore?.ToString("0.###") ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </BlueprintCard>
+    }
+}
+
+@code {
+    private PersonalDashboardDto? _me;
+    private SupervisionRollupDto? _rollup;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _me = await Api.GetPersonalDashboardAsync();
+        _rollup = await Api.GetSupervisionRollupAsync(); // null when the user leads no one
+    }
+}

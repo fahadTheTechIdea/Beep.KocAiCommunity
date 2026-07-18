@@ -1,0 +1,223 @@
+Toggle Group
+Toggle buttons grouped to select one or multiple values.
+API
+<MudToggleGroup>
+- <MudToggleItem>
+Usage
+MudToggleGroup groups several MudToggleItem components together, allowing selection from multiple options. Each item can display text, icons, or custom content. Use CheckMark to display a checkmark beside selected items. If this pushes content too far, set FixedContent to balance spacing.
+If Text isn't set, items default to displaying their Value, unless custom content is defined.
+
+Medium
+Size
+Primary
+Color
+CheckMark
+FixedContent
+Outlined
+Delimiters
+Disabled
+Vertical
+<MudStack>
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center">
+        <MudStack Spacing="8" AlignItems="@AlignItems.Center">
+            <MudToggleGroup T="string" @bind-Value="_value1" Vertical="@_vertical" Outlined="@_outlined" Delimiters="@_delimiters" Size="@_size" Color="@_color" CheckMark="@_checkMark" FixedContent="@_fixedContent" Disabled="@_disabled" Style="width: 20rem">
+                <MudToggleItem Value="@("One")" />
+                <MudToggleItem Value="@("Two")" />
+                <MudToggleItem Value="@("Three")" />
+            </MudToggleGroup>
+
+            <MudToggleGroup T="string" Vertical="@_vertical" Outlined="@_outlined" Delimiters="@_delimiters" Size="@_size" Color="@_color" CheckMark="@_checkMark" FixedContent="@_fixedContent" Disabled="@_disabled">
+                <MudToggleItem Value="@("left")">
+                    <MudIcon Icon="@Icons.Material.Filled.FormatAlignLeft" />
+                </MudToggleItem>
+                <MudToggleItem Value="@("center")">
+                    <MudIcon Icon="@Icons.Material.Filled.FormatAlignCenter" />
+                </MudToggleItem>
+                <MudToggleItem Value="@("right")">
+                    <MudIcon Icon="@Icons.Material.Filled.FormatAlignRight" />
+                </MudToggleItem>
+                <MudToggleItem Value="@("justify")">
+                    <MudIcon Icon="@Icons.Material.Filled.FormatAlignJustify" />
+                </MudToggleItem>
+            </MudToggleGroup>
+        </MudStack>
+    </MudStack>
+
+    <MudDivider />
+
+    <MudStack>
+        <MudSelect @bind-Value="_size" Label="Size">
+            @foreach (var size in Enum.GetValues(typeof(Size)).Cast<Size>())
+            {
+                <MudSelectItem Value="@size">@size</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect @bind-Value="_color" Label="Color">
+            @foreach (var color in Enum.GetValues(typeof(Color)).Cast<Color>())
+            {
+                <MudSelectItem Value="@color">@color</MudSelectItem>
+            }
+        </MudSelect>
+    </MudStack>
+    <MudStack Row Wrap="Wrap.Wrap" AlignItems="AlignItems.Center">
+        <MudCheckBox @bind-Value="_checkMark" Label="CheckMark" />
+        <MudCheckBox @bind-Value="_fixedContent" Label="FixedContent" />
+        <MudCheckBox @bind-Value="_outlined" Label="Outlined" />
+        <MudCheckBox @bind-Value="_delimiters" Label="Delimiters" />
+        <MudCheckBox @bind-Value="_disabled" Label="Disabled" />
+        <MudCheckBox @bind-Value="_vertical" Label="Vertical" />
+    </MudStack>
+</MudStack>
+@code {
+    string _value1;
+    Size _size = Size.Medium;
+    Color _color = Color.Primary;
+    bool _checkMark = false;
+    bool _outlined = true;
+    bool _delimiters = true;
+    bool _fixedContent = false;
+    bool _disabled = false;
+    bool _vertical = false;
+}
+Selection Modes
+The MudToggleGroup offers three modes:
+SingleSelection (default): Only one item selected at a time.
+MultiSelection: Multiple items or none can be selected.
+ToggleSelection: Allows deselecting the current choice, resulting in no selection.
+Ensure each item's Value is unique and matches the group's type parameter (T).
+Bind the group's Value (single/toggle selection) or Values (multi-selection) properties appropriately.
+
+Single Selection
+
+Value: Yes
+
+Multi Selection
+
+Values: Vegan Menu, Carbon Offset
+
+Toggle Selection
+
+Value: null
+
+<MudStack>
+    <MudStack>
+        <MudText>Single Selection</MudText>
+        <MudText>Value: @_value1</MudText>
+        <MudToggleGroup T="string" SelectionMode="SelectionMode.SingleSelection" @bind-Value="_value1" Color="Color.Primary" CheckMark FixedContent>
+            <MudToggleItem Value="@("Yes")" Text="Yes" />
+            <MudToggleItem Value="@("No")" Text="No" />
+            <MudToggleItem Value="@("Don't know")" Text="Don't know" />
+        </MudToggleGroup>
+    </MudStack>
+
+    <MudDivider />
+
+    <MudStack>
+        <MudText>Multi Selection</MudText>
+        <MudText>Values: @string.Join(", ", _value2 ?? new List<string>())</MudText>
+        <MudToggleGroup T="string" SelectionMode="SelectionMode.MultiSelection" @bind-Values="_value2" Color="Color.Secondary" CheckMark>
+            <MudToggleItem Value="@("Extra Bag")" UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank" SelectedIcon="@Icons.Material.Filled.CheckBox"/>
+            <MudToggleItem Value="@("Vegan Menu")" UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank" SelectedIcon="@Icons.Material.Filled.CheckBox" />
+            <MudToggleItem Value="@("Carbon Offset")" UnselectedIcon="@Icons.Material.Filled.CheckBoxOutlineBlank" SelectedIcon="@Icons.Material.Filled.CheckBox" />
+        </MudToggleGroup>
+    </MudStack>
+
+    <MudDivider />
+
+    <MudStack>
+        <MudText>Toggle Selection</MudText>
+        <MudText>Value: @(_value3 == null ? "null" : _value3.ToString())</MudText>
+        <MudToggleGroup T="int?" SelectionMode="SelectionMode.ToggleSelection" @bind-Value="_value3" Color="Color.Tertiary" CheckMark>
+            <MudToggleItem Value="@((int?)1)" Text="Coffee (1)" />
+            <MudToggleItem Value="@((int?)2)" Text="Tee (2)" />
+            <MudToggleItem Value="@((int?)3)" Text="Water (3)" />
+        </MudToggleGroup>
+    </MudStack>
+</MudStack>
+@code {
+    private string _value1 = "Yes";
+    private IEnumerable<string> _value2 = new []{ "Vegan Menu", "Carbon Offset"};
+    private int? _value3;
+}
+Custom Selection Style
+Customize the appearance of selected items using SelectedClass.
+
+custom-striped
+
+<MudStack>
+    <MudToggleGroup T="string" SelectedClass="@_style" @bind-Value="_value">
+        <MudToggleItem Value="@("Antimatter")" />
+        <MudToggleItem Value="@("Dark Matter")" />
+        <MudToggleItem Value="@("Dark Energy")" />
+    </MudToggleGroup>
+
+    <MudSelect T="string" @bind-Value="_style" Variant="Variant.Outlined">
+        <MudSelectItem Value="@("mud-theme-primary")" />
+        <MudSelectItem Value="@("mud-theme-secondary")" />
+        <MudSelectItem Value="@("custom-gradient")" />
+        <MudSelectItem Value="@("custom-striped")" />
+    </MudSelect>
+</MudStack>
+
+<style>
+    .custom-gradient {
+        background-image: linear-gradient(to right top, #051937, #004d7a, #008793, #00bf72, #a8eb12);
+        color: white !important;
+    }
+
+    .custom-striped {
+        background: repeating-linear-gradient( 45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px );
+        color: white !important;
+    }
+</style>
+@code {
+    private string _style = "custom-striped";
+    private string _value = "Antimatter";
+}
+Custom Content
+Customize each MudToggleItem content using a RenderFragment<bool>, where the boolean parameter indicates selection state. This allows dynamic styling, such as coloring selected items. In the example the context variable was used to color the selected chip green.
+
+
+
+
+
+
+
+<MudToggleGroup  Class="mud-width-full" T="string" SelectedClass="black white-text">
+    <MudToggleItem Value="@("Basic Edition")">
+        <div class="mud-width-full mud-height-full">
+            <div class="d-flex align-center justify-space-between flex-wrap">
+                <MudText Class="ellipsis">Indie Developer</MudText>
+                <MudChip Color="@(context ? Color.Success : Color.Primary)" Icon="@(context ? Icons.Material.Filled.Check : "")">Basic</MudChip>
+            </div>
+            <MudText Typo="Typo.subtitle2">Perfect for lone wolves</MudText>
+        </div>
+    </MudToggleItem>
+    <MudToggleItem Value="@("Pro Edition")">
+        <div class="mud-width-full mud-height-full">
+            <div class="d-flex align-center justify-space-between flex-wrap">
+                <MudText Class="ellipsis">Small Team</MudText>
+                <MudChip Color="@(context ? Color.Success : Color.Primary)" Icon="@(context ? Icons.Material.Filled.Check : "")">Pro</MudChip>
+            </div>
+            <MudText Typo="Typo.subtitle2">Up to five devs and two interns</MudText>
+        </div>
+    </MudToggleItem>
+    <MudToggleItem Value="@("Enterprise Edition")">
+        <div class="mud-width-full mud-height-full">
+            <div class="d-flex align-center justify-space-between flex-wrap">
+                <MudText Class="ellipsis">Corporation</MudText>
+                <MudChip Color="@(context ? Color.Success : Color.Primary)" Icon="@(context ? Icons.Material.Filled.Check : "")">Enterprise</MudChip>
+            </div>
+            <MudText Typo="Typo.subtitle2">Unlimited edition</MudText>
+        </div>
+    </MudToggleItem>
+</MudToggleGroup>
+
+<style>
+    .ellipsis {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+</style>

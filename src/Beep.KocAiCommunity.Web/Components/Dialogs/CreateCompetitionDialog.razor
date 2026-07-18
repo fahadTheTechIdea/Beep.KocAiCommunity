@@ -1,0 +1,49 @@
+@using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Web.Services
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+        <MudTextField @bind-Value="_description" Label="What competitors predict" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Class="mb-2" />
+        <MudNumericField @bind-Value="_quota" Label="Daily submission quota" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Class="mb-2" />
+        <MudSelect @bind-Value="_scorer" Label="Scoring" Variant="Variant.Outlined" Margin="Margin.Dense"
+                   HelperText="Accuracy for classification, RMSE (lower is better) for regression.">
+            <MudSelectItem Value="@("accuracy")">Accuracy (classification)</MudSelectItem>
+            <MudSelectItem Value="@("rmse")">RMSE (regression)</MudSelectItem>
+        </MudSelect>
+        <MudText Typo="Typo.caption" Class="d-block mt-3">Created company-wide as a draft. Add data + a hidden answer key from the competition page, then activate it.</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(string.IsNullOrWhiteSpace(_title) || _busy)">Create competition</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    private string _title = "";
+    private string _description = "Predict the label";
+    private int _quota = 5;
+    private string _scorer = "accuracy";
+    private bool _busy;
+
+    private void Cancel() => Dialog.Cancel();
+
+    private async Task Submit()
+    {
+        _busy = true;
+        try
+        {
+            var dto = await Api.CreateCompetitionAsync(new CreateCompetitionRequest(_title, _description, "Company", null, null, _quota, _scorer));
+            Dialog.Close(DialogResult.Ok(dto?.Id));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Create failed: {ex.Message}", Severity.Error);
+            _busy = false;
+        }
+    }
+}

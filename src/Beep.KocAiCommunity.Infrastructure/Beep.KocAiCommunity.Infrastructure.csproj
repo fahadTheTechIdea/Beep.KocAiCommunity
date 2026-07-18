@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Domain\Beep.KocAiCommunity.Domain.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Workflow\Beep.KocAiCommunity.Workflow.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.ML\Beep.KocAiCommunity.ML.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+  </ItemGroup>
+
+</Project>

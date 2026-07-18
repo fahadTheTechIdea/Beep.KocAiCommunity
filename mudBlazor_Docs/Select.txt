@@ -1,0 +1,665 @@
+Select
+A dropdown input for selecting an item from a list of options.
+API
+<MudSelect>
+- <MudSelectItem>
+Visual Playground
+Text
+Filled
+
+Outlined
+None
+Margin
+Dense
+ReadOnly
+Disabled
+Placeholder
+HelperText
+HelperTextOnFocus
+Clearable
+FitContent
+Modal
+@using MudBlazor
+
+<MudStack Row Class="justify-space-between mud-width-full">
+    <MudStack Style="width: 300px">
+        @foreach (var variant in Enum.GetValues(typeof(Variant)).Cast<Variant>())
+        {
+            <MudSelect @bind-Value="_value"
+                       Variant="variant"
+                       Label="@variant.ToString()"
+                       Margin="_margin"
+                       Dense="_dense"
+                       FitContent="_fitContent"
+                       Disabled="_disabled"
+                       ReadOnly="_readonly"
+                       Placeholder="@(_placeholder ? "Placeholder" : null)"
+                       HelperText="@(_helperText ? "Helper Text" : null)"
+                       HelperTextOnFocus="_helperTextOnFocus"
+                       Clearable="_clearable"
+                       Modal="_modal">
+                @foreach (var state in _states)
+                {
+                    <MudSelectItem Value="state">@state</MudSelectItem>
+                }
+            </MudSelect>
+        }
+    </MudStack>
+
+    <MudStack>
+        <MudSelect @bind-Value="_margin" Label="Margin">
+            @foreach (var margin in Enum.GetValues(typeof(Margin)).Cast<Margin>())
+            {
+                <MudSelectItem Value="margin">@margin</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSwitch @bind-Value="_dense" Label="Dense" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_readonly" Label="ReadOnly" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_disabled" Label="Disabled" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_placeholder" Label="Placeholder" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_helperText" Label="HelperText" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_helperTextOnFocus" Label="HelperTextOnFocus" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_clearable" Label="Clearable" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_fitContent" Label="FitContent" Color="Color.Primary" />
+        <MudSwitch @bind-Value="_modal" Label="Modal" Color="Color.Primary" />
+    </MudStack>
+</MudStack>
+@code {
+    private string _value;
+    private Margin _margin;
+    private bool _dense;
+    private bool _disabled;
+    private bool _readonly;
+    private bool _placeholder;
+    private bool _helperText;
+    private bool _helperTextOnFocus;
+    private bool _clearable;
+    private bool _fitContent;
+    private bool _modal;
+
+    private readonly string[] _states =
+    {
+        "Alabama", "Alaska", "Arizona", "Arkansas", "California",
+        "Colorado", "Connecticut", "Delaware", "Florida", "Georgia",
+        "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas",
+        "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts",
+        "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana",
+        "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico",
+        "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma",
+        "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+        "Tennessee", "Texas", "Utah", "Vermont", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming"
+    };
+}
+Using Select
+Please Select
+Select fast-food
+String
+HotWater
+Select drink
+Enum
+Select culture
+CultureInfo
+Selected values:
+
+Select fast-food
+HotWater
+Select culture
+@using Microsoft.AspNetCore.Components
+@using System.Globalization;
+
+<MudSelect @bind-Value="stringValue" Label="Select fast-food" HelperText="String" Placeholder="Please Select" AdornmentIcon="@Icons.Material.Filled.Fastfood" AdornmentColor="Color.Primary">
+    <MudSelectItem Value="@("Pizza")" Disabled="true">Pizza (Disabled)</MudSelectItem>
+    <MudSelectItem Value="@("Burger")">Burger</MudSelectItem>
+    <MudSelectItem Value="@("Hotdog")">Hot Dog</MudSelectItem>
+</MudSelect>
+
+<MudSelect @bind-Value="enumValue" Label="Select drink" HelperText="Enum" OpenIcon="@Icons.Material.Filled.LocalDrink" AdornmentColor="Color.Secondary">
+    @foreach (Drink item in Enum.GetValues(typeof(Drink))) {
+        <MudSelectItem Value="@item">@item</MudSelectItem>
+    }
+</MudSelect>
+
+<MudSelect Placeholder="Select culture" @bind-Value="cultureValue" HelperText="CultureInfo" ToStringFunc="@convertFunc" CloseIcon="@Icons.Material.Filled.Flag" AdornmentColor="Color.Tertiary">
+    <MudSelectItem Value="@(CultureInfo.GetCultureInfo("en-US"))" />
+    <MudSelectItem Value="@(CultureInfo.GetCultureInfo("de-AT"))" />
+    <MudSelectItem Value="@(CultureInfo.GetCultureInfo("pt-BR"))" />
+    <MudSelectItem Value="@(CultureInfo.GetCultureInfo("zh-CN"))" />
+</MudSelect>
+
+<div class="d-flex mud-width-full align-center mt-8">
+    <MudText Typo="Typo.subtitle1" Class="mr-2">Selected values: </MudText>
+    <MudChip T="string">@(stringValue ?? "Select fast-food")</MudChip>
+    <MudChip T="string" Color="Color.Primary">@enumValue</MudChip>
+    <MudChip T="string" Color="Color.Secondary">@(cultureValue?.DisplayName ?? "Select culture")</MudChip>
+</div>
+@code {
+    private string stringValue { get; set; }
+    private Drink enumValue { get; set; } = Drink.HotWater;
+    public enum Drink { Tea, SparklingWater, SoftDrink, Cider, Beer, Wine, Moonshine, Wodka, Cola, GreeTea, FruitJuice, Lemonade, HotWater, SpringWater, IceWater, }
+    private CultureInfo cultureValue { get; set; }
+    private Func<CultureInfo, string> convertFunc = ci => ci?.DisplayName;
+}
+Multiselect
+If you set MultiSelection="true", you can select multiple values. The selected options are returned as concatenated comma-delimited string via Value and as a HashSet<string> via SelectedValues. The delimited string can be modified with the Delimiter parameter.
+
+Alaska
+US States
+Value:
+
+"
+
+Alaska
+
+"
+
+SelectedValues: IReadOnlyCollection<string>
+
+{
+
+"Alaska"
+
+}
+
+<MudSelect T="string" Label="US States" MultiSelection="true" @bind-Value="_value" @bind-SelectedValues="_options">
+    @foreach (var state in _states)
+    {
+        <MudSelectItem T="string" Value="@state">@state</MudSelectItem>
+    }
+</MudSelect>
+
+<MudGrid Class="mt-6 px-4">
+    <MudItem xs="6">
+        <MudText Typo="Typo.subtitle2">Value:</MudText>
+        <MudText Typo="Typo.subtitle2">"</MudText>
+        <MudText Typo="Typo.body2" Class="pl-4">@_value</MudText>
+        <MudText Typo="Typo.subtitle2">"</MudText>
+    </MudItem>
+    <MudItem xs="6">
+        <MudText Typo="Typo.subtitle2">SelectedValues: IReadOnlyCollection&lt;string&gt;</MudText>
+        <MudText Typo="Typo.subtitle2">{</MudText>
+        <MudText Typo="Typo.body2" Class="pl-4">@(string.Join(", ", _options.Select(x=>$"\"{x}\"")))</MudText>
+        <MudText Typo="Typo.subtitle2">}</MudText>
+    </MudItem>
+</MudGrid>
+@code {
+    private string _value = "Nothing selected";
+    private IReadOnlyCollection<string> _options = ["Alaska"];
+    private readonly string[] _states =
+    [
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming"
+    ];
+}
+Customized Selection Text
+If you set MultiSelection="true", you can select multiple values. By defining the MultiSelectionTextFunc method, the returned selection can be fully customized.
+
+1 state has been selected
+US States
+MultiSelection Text choice
+Value:
+
+"
+
+1 state has been selected
+
+"
+
+SelectedValues: IReadOnlyCollection<string>
+
+{
+
+"Alaska"
+
+}
+
+@using System.Linq
+
+<MudSelect MultiSelectionTextFunc="@(new Func<IReadOnlyList<string>, string>(GetMultiSelectionText))" MultiSelection="true" @bind-Value="_value" @bind-SelectedValues="_options" T="string" Label="US States" AdornmentIcon="@Icons.Material.Filled.Search">
+    @foreach (var state in _states)
+    {
+        <MudSelectItem T="string" Value="@state">@state</MudSelectItem>
+    }
+</MudSelect>
+
+<MudSwitch @bind-Value="_multiselectionTextChoice" Class="mud-width-full" Color="Color.Primary">MultiSelection Text choice</MudSwitch>  
+
+<MudGrid Class="mt-3 px-4">
+    <MudItem xs="6">
+        <MudText Typo="Typo.subtitle2">Value:</MudText>
+        <MudText Typo="Typo.subtitle2">"</MudText>
+        <MudText Typo="Typo.body2" Class="pl-4">@_value</MudText>
+        <MudText Typo="Typo.subtitle2">"</MudText>
+    </MudItem>
+    <MudItem xs="6">
+        <MudText Typo="Typo.subtitle2">SelectedValues: IReadOnlyCollection&lt;string&gt;</MudText>
+        <MudText Typo="Typo.subtitle2">{</MudText>
+        <MudText Typo="Typo.body2" Class="pl-4">@(string.Join(", ", _options.Select(x=>$"\"{x}\"")))</MudText>
+        <MudText Typo="Typo.subtitle2">}</MudText>
+    </MudItem>
+</MudGrid>
+@code {
+    private bool _multiselectionTextChoice;
+    private string _value = "Nothing selected";
+    private IReadOnlyCollection<string> _options = new List<string>() { "Alaska" };
+
+    private readonly string[] _states =
+    [
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming"
+    ];
+
+    private string GetMultiSelectionText(IReadOnlyList<string> selectedValues)
+    {
+        if (_multiselectionTextChoice)
+        {
+            return $"Selected state{(selectedValues.Count > 1 ? "s" : "")}: {string.Join(", ", selectedValues.Select(x => x))}";
+        }
+
+        return $"{selectedValues.Count} state{(selectedValues.Count > 1 ? "s have":" has")} been selected";
+    }
+}
+Select All
+If you set SelectAll="true", you can display a 'Select all' option to select or deselect all items. It is added at the top of the list of items. The text for this option can be customized by the SelectAllText parameter.
+
+1 feline has been selected
+Felines
+1 feline has been selected
+<MudSelect T="string" MultiSelection="true" SelectAll="true" SelectAllText="Select all felines" HelperText="@_value" @bind-Value="_value" @bind-SelectedValues="_options" MultiSelectionTextFunc="@(new Func<IReadOnlyList<string>, string>(GetMultiSelectionText))" Label="Felines" AdornmentIcon="@Icons.Material.Filled.Search">
+    @foreach (var feline in _felines)
+    {
+        <MudSelectItem T="string" Value="@feline">@feline</MudSelectItem>
+    }
+</MudSelect>
+@code { 
+    private string _value  = "Nothing selected";
+    private IReadOnlyCollection<string> _options = ["Lion"];
+
+    private readonly string[] _felines =
+    [
+        "Jaguar", "Leopard", "Lion", "Lynx", "Panther", "Puma", "Tiger"
+    ];
+
+    private static string GetMultiSelectionText(IReadOnlyList<string> selectedValues)
+    {
+        return $"{selectedValues.Count} feline{(selectedValues.Count > 1 ? "s have" : " has")} been selected";
+    }
+}
+Complex Object
+To handle complex objects, you should implement either IEquatable on a type or IEqualityComparer and pass it to the Comparer parameter. For displaying the selected values, you can override the ToString method or use the ToStringFunc parameter.
+
+Alaska
+US States
+SelectedValues: IReadOnlyCollection<State>
+
+{
+
+"Alaska"
+
+}
+
+<MudSelect T="State" Label="US States" MultiSelection="true" @bind-SelectedValues="_options">
+    @foreach (var state in _states)
+    {
+        <MudSelectItem T="State" Value="@state">@state</MudSelectItem>
+    }
+</MudSelect>
+
+<MudGrid Class="mt-6 px-4">
+    <MudItem xs="6">
+        <MudText Typo="Typo.subtitle2">SelectedValues: IReadOnlyCollection&lt;State&gt;</MudText>
+        <MudText Typo="Typo.subtitle2">{</MudText>
+        <MudText Typo="Typo.body2" Class="pl-4">@(string.Join(", ", _options.Select(x=>$"\"{x}\"")))</MudText>
+        <MudText Typo="Typo.subtitle2">}</MudText>
+    </MudItem>
+</MudGrid>
+@code {
+#nullable enable
+    private IReadOnlyCollection<State> _options = [new("Alaska")];
+
+    private readonly State[] _states =
+    [
+        new("Alabama"), new("Alaska"), new("Arizona"), new("Arkansas"), new("California"),
+        new("Colorado"), new("Connecticut"), new("Delaware"), new("Florida"), new("Georgia"),
+        new("Hawaii"), new("Idaho"), new("Illinois"), new("Indiana"), new("Iowa"), new("Kansas"),
+        new("Kentucky"), new("Louisiana"), new("Maine"), new("Maryland"), new("Massachusetts"),
+        new("Michigan"), new("Minnesota"), new("Mississippi"), new("Missouri"), new("Montana"),
+        new("Nebraska"), new("Nevada"), new("New Hampshire"), new("New Jersey"), new("New Mexico"),
+        new("New York"), new("North Carolina"), new("North Dakota"), new("Ohio"), new("Oklahoma"),
+        new("Oregon"), new("Pennsylvania"), new("Rhode Island"), new("South Carolina"), new("South Dakota"),
+        new("Tennessee"), new("Texas"), new("Utah"), new("Vermont"), new("Virginia"),
+        new("Washington"), new("West Virginia"), new("Wisconsin"), new("Wyoming")
+    ];
+
+    public class State(string name) : IEquatable<State>
+    {
+        // IEquatable is required for complex objects, because otherwise the framework will compare the references
+        // Which will not be equal when comparing the list of items and the selected item.
+        // Alternatively you can implement IEqualityComparer separately and pass it to Comparer in MudSelect if you have no control over the object
+
+        public string Name { get; } = name;
+
+        public bool Equals(State? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Name == other.Name;
+        }
+
+        public override bool Equals(object? obj) => obj is State state && Equals(state);
+
+        public override int GetHashCode() => Name.GetHashCode();
+
+        // Also important to override ToString, otherwise the object will be displayed as the full class name
+        // Alternatively you can use ToStringFunc="x => x.Name" in MudSelect
+        public override string ToString() => Name;
+    }
+}
+Dynamic Sizing
+The MudSelect component provides dynamic sizing capabilities through the FullWidth and FitContent parameters, allowing it to adapt to different layout needs:
+Default Behavior - FullWidth=False: The component expands to fill the available space within its container, adjusting dynamically based on its surroundings.
+Full-Width Mode - FullWidth=True: Forces the component to stretch and occupy 100% of its parent container’s width.
+Fit-Content Mode - FitContent=True: Instead of expanding, the component adjusts its width to fit only the necessary space required for its content.
+Note: When using FitContent, the width of the select component can depend on the Placeholder, Label, Adornment, and Clearable properties.
+
+
+Select a State
+
+Select a State
+
+Select a State
+Full Width
+Fit Content
+@using MudBlazor
+
+<MudSelect @bind-Value="_selectedState" Label="Select a State" FullWidth="_fullWidth" FitContent="_fitContent" Variant="Variant.Outlined" ShrinkLabel>
+    @foreach (var state in _states)
+    {
+        <MudSelectItem Value="@state">@state</MudSelectItem>
+    }
+</MudSelect>
+
+<MudSelect @bind-Value="_selectedState" Label="Select a State"  FullWidth="_fullWidth" FitContent="_fitContent" Variant="Variant.Outlined" Clearable>
+    @foreach (var state in _states)
+    {
+        <MudSelectItem Value="@state">@state</MudSelectItem>
+    }
+</MudSelect>
+
+<MudSelect @bind-Value="_selectedState" Label="Select a State"  FullWidth="_fullWidth" FitContent="_fitContent" Variant="Variant.Outlined" Clearable Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.LocationOn">
+    @foreach (var state in _states)
+    {
+        <MudSelectItem Value="@state">@state</MudSelectItem>
+    }
+</MudSelect>
+
+<MudStack Class="align-center mud-width-full" Row>
+    <MudSwitch @bind-Value="_fullWidth" Label="Full Width" Color="Color.Primary" />
+    <MudSwitch @bind-Value="_fitContent" Label="Fit Content" Color="Color.Primary" />
+</MudStack>
+@code {
+    private bool _fullWidth;
+    private bool _fitContent;
+    private string _selectedState;
+    private readonly string[] _states =
+    [
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming"
+    ];
+}
+Value presentation
+Both the ChildContent (Render Fragment) and ToStringFunc can control how values are displayed. 
+When used on their own, either one determines how items appear in the dropdown list and how the selected value is displayed in the MudSelect input.
+ 
+When both are used, ChildContent controls how items are rendered in the dropdown list, while ToStringFunc controls how the selected value is displayed.
+
+
+If neither is specified, the value’s default string representation is used.
+
+ Austria
+
+With render fragements
+Austria
+
+Without render fragements
+Austria
+
+Austria not representable
+AUT
+
+ToStringFunc Precedence
+<MudSelect @bind-Value="country" Label="With render fragements" Variant="Variant.Outlined">
+    <MudSelectItem Value="@("Austria")">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Flag_of_Austria.svg" height="14" class="mr-1" /> Austria
+    </MudSelectItem>
+    <MudSelectItem Value="@("Hungary")">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/00/Flag_of_Hungary.png" height="14" class="mr-1" /> Hungary
+    </MudSelectItem>
+    <MudSelectItem Value="@("Sweden")">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Flag_of_Sweden_fixed.svg" height="14" class="mr-1" /> Sweden
+    </MudSelectItem>
+</MudSelect>
+
+<MudSelect @bind-Value="country" Label="Without render fragements" Variant="Variant.Outlined">
+    <MudSelectItem Value="@("Austria")" />
+    <MudSelectItem Value="@("Hungary")" />
+    <MudSelectItem Value="@("Sweden")" />
+</MudSelect>
+
+<MudSelect @bind-Value="country" Label="Austria not representable" Variant="Variant.Outlined">
+    <MudSelectItem Value="@("Germany")">
+        <img src="https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg" height="14" class="mr-1" /> Germany
+    </MudSelectItem>
+    <MudSelectItem Value="@("Hungary")">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/00/Flag_of_Hungary.png" height="14" class="mr-1" /> Hungary
+    </MudSelectItem>
+    <MudSelectItem Value="@("Sweden")">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Flag_of_Sweden_fixed.svg" height="14" class="mr-1" /> Sweden
+    </MudSelectItem>
+</MudSelect>
+
+<MudSelect @bind-Value="country" Label="ToStringFunc Precedence" Variant="Variant.Outlined" ToStringFunc="@GetCountryCode">
+    <MudSelectItem Value="@("Austria")">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Flag_of_Austria.svg" height="14" class="mr-1" /> Austria
+    </MudSelectItem>
+    <MudSelectItem Value="@("Hungary")">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/00/Flag_of_Hungary.png" height="14" class="mr-1" /> Hungary
+    </MudSelectItem>
+    <MudSelectItem Value="@("Sweden")">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Flag_of_Sweden_fixed.svg" height="14" class="mr-1" /> Sweden
+    </MudSelectItem>
+</MudSelect>
+@code {
+    string country="Austria";
+
+    private string GetCountryCode(string name) => name switch
+    {
+        "Austria" => "AUT",
+        "Hungary" => "HUN",
+        "Sweden" => "SWE",
+        _ => name
+    };
+}
+Custom converter
+Select has a built-in DefaultConverter which converts the values from any primitive type to string for presentation of the selected value. You can customize that converter as described under Converters. Here, we use ToStringFunc to convert objects of type Pizza to their string representation. Note how the <MudSelectItem> uses that string representation if you don't specify a render fragment.
+
+Pizza: Diavolo
+Diavolo
+
+Select your pizza
+<MudText Typo="Typo.h6" Class="mud-width-full">@(_pizza is null ? "Nothing selected." : $"Pizza: {_pizza.Name}")</MudText>
+
+<MudSelect T="Pizza" @bind-Value="@_pizza" ToStringFunc="@_toStringFunc" Label="Select your pizza" Variant="Variant.Outlined" Clearable>
+    <MudSelectItem Value="@(new Pizza("Cardinale"))" />
+    <MudSelectItem Value="@(new Pizza("Diavolo"))" />
+    <MudSelectItem Value="@(new Pizza("Margarita"))" />
+    <MudSelectItem Value="@(new Pizza("Spinaci"))" />
+</MudSelect>
+@code {
+    private Pizza _pizza = new("Diavolo");
+    private readonly Func<Pizza, string> _toStringFunc = p => p?.Name;
+
+    public class Pizza(string name)
+    {
+        public string Name { get; } = name;
+
+        // Note: this is important so the select can compare pizzas
+        public override bool Equals(object obj) => obj is Pizza other && string.Equals(Name, other.Name, StringComparison.Ordinal);
+
+        // Note: this is important so the select can compare pizzas
+        public override int GetHashCode() => Name.GetHashCode();
+    }
+}
+Numeric collection
+When using the properties Required=true and Clearable=true in combination with a numeric collection, it is required that the items of the collection are of a nullable numeric type such as int? or double? in order for the Required property to behave as expected.
+
+0
+Price (Datatype: double)
+Price (Datatype: double?)
+<MudSelect T="double" Label="Price (Datatype: double)" Clearable="true" Required="true">
+    @foreach (var price in prices)
+    {
+    <MudSelectItem Value="@price" />
+    }
+</MudSelect>
+
+<MudSelect T="double?" Label="Price (Datatype: double?)" Clearable="true" Required="true">
+    @foreach (double? price in prices)
+    {
+    <MudSelectItem Value="@price" />
+    }
+</MudSelect>
+@code
+{
+    private double[] prices = { 4.50, 4.99, 3.60, 21.99 };
+}
+Placement
+The component uses MudPopover to place its list of items. It can be controlled with AnchorOrigin and TransformOrigin. To change where the popover should start from you only need to change the AnchorOrigin. Read more on popover's page.
+
+
+Search
+
+Open Warnings
+
+Check Code
+<MudSelect T="string" Label="Search" AnchorOrigin="Origin.CenterLeft" TransformOrigin="Origin.CenterRight" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary">
+    <MudSelectItem Value="@("foo")">Foo</MudSelectItem>
+    <MudSelectItem Value="@("bar")">Bar</MudSelectItem>
+</MudSelect>
+
+<MudSelect T="string" Label="Open Warnings" AnchorOrigin="Origin.CenterCenter" TransformOrigin="Origin.CenterCenter" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.OpenWith" Adornment="Adornment.Start" AdornmentColor="Color.Warning">
+    <MudSelectItem Value="@("foo")">Foo</MudSelectItem>
+    <MudSelectItem Value="@("bar")">Bar</MudSelectItem>
+</MudSelect>
+
+<MudSelect T="string" Label="Check Code" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Code" CloseIcon="@Icons.Material.Filled.SouthWest" Adornment="Adornment.Start" AdornmentColor="Color.Dark">
+    <MudSelectItem Value="@("foo")">Foo</MudSelectItem>
+    <MudSelectItem Value="@("bar")">Bar</MudSelectItem>
+</MudSelect>
+Keyboard Navigation
+MudSelect supports keyboard navigation.
+
+
+Space key to toggle dropdown open/close
+
+Escape or Alt+ArrowUp keys to close dropdown
+
+Enter or NumpadEnter or Alt+ArrowDown keys to open dropdown
+
+ArrowUp key to select/navigate previous item
+
+ArrowDown key to select/navigate next item
+
+Home key to select/navigate first item
+
+End key to select/navigate last item
+
+Enter or NumpadEnter keys to select item (MultiSelect only)
+
+Ctrl+A key to toggle select all/clear all items (MultiSelect only)
+
+Printable Characters to highlight the first item in the list whose text starts with that character. Press again to move to the next item with the same starting character.
+
+Set SelectionOnEnter="true" to move the visual highlight with arrow keys, requiring an Enter press to confirm the selection.
+
+
+*Disabled items cannot be selected by keys.
+
+
+Select Coffee With Keys
+Alaska
+US States
+Pick your favorite states with keys
+<MudSelect T="string" Label="Select Coffee With Keys">
+    <MudSelectItem Value="@("Cappuccino")" />
+    <MudSelectItem Value="@("Cafe Latte")" />
+    <MudSelectItem Value="@("Espresso")" />
+    <MudSelectItem Value="@("Irish Coffee")" />
+</MudSelect>
+
+<MudSelect T="string" Label="US States" HelperText="Pick your favorite states with keys" MultiSelection="true" @bind-Value="_value" @bind-SelectedValues="_options">
+    @foreach (var state in _states)
+    {
+        <MudSelectItem T="string" Value="@state">@state</MudSelectItem>
+    }
+</MudSelect>
+@code {
+
+    private string _value = "Nothing selected";
+    private IReadOnlyCollection<string> _options = ["Alaska"];
+
+    private readonly string[] _states =
+    [
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming"
+    ];
+}

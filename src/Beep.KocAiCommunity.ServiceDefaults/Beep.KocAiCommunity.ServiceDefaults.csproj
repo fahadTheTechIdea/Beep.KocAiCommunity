@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAspireSharedProject>true</IsAspireSharedProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Identity.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+  </ItemGroup>
+
+  <!-- OpenTelemetry, service discovery, and standard resilience handlers are layered in
+       when the Aspire package set is finalized; this baseline provides shared health
+       endpoints that both the Web and API hosts expose. -->
+
+</Project>

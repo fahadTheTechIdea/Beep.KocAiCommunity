@@ -1,0 +1,96 @@
+@page "/datasets"
+@using Beep.KocAiCommunity.Contracts.Datasets
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Web.Components.Dialogs
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject IDialogService DialogService
+@inject DevIdentity Identity
+
+<PageTitle>Datasets · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Community" Title="Datasets"
+            Subtitle="Share KOC data inside KOC. Every dataset shows who can see it — team, group, directorate, or the whole company — and its information-security classification.">
+    <Actions>
+        @if (Identity.HasAnyPosition)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">Create dataset</MudButton>
+        }
+    </Actions>
+</PageHeader>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Couldn't reach the API (@_error).</MudAlert>
+}
+
+@if (_datasets is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_datasets.Count == 0)
+{
+    <BlueprintCard Class="pa-8" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.Dataset" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">No datasets yet</MudText>
+        <MudText Typo="Typo.body2">No datasets are visible to you. @(Identity.HasAnyPosition ? "Create the first one with the button above." : "Sign in to add one.")</MudText>
+    </BlueprintCard>
+}
+else
+{
+    <MudGrid Spacing="4">
+        @foreach (var d in _datasets)
+        {
+            <MudItem xs="12" md="6">
+                <BlueprintCard Class="pa-4" Style="height:100%;">
+                    <div class="d-flex justify-space-between align-center">
+                        <MudText Typo="Typo.subtitle1" Class="koc-heading">@d.Name</MudText>
+                        <MudChip T="string" Size="Size.Small" Color="@ClassColor(d.Classification)" Variant="Variant.Text">@d.Classification</MudChip>
+                    </div>
+                    <MudText Typo="Typo.body2" Class="mb-2">@d.Description</MudText>
+                    <MudText Typo="Typo.caption">
+                        <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Class="mr-1" />visible to @d.Scope · owner @d.OwnerUserId
+                    </MudText>
+                </BlueprintCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private IReadOnlyList<DatasetDto>? _datasets;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _error = null;
+            _datasets = await Api.GetDatasetsAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task OpenCreate()
+    {
+        var dialog = await DialogService.ShowAsync<CreateDatasetDialog>("New dataset");
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private static Color ClassColor(string classification) => classification switch
+    {
+        "Restricted" => Color.Error,
+        "Confidential" => Color.Warning,
+        "Internal" => Color.Info,
+        _ => Color.Default,
+    };
+}

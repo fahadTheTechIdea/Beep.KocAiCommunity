@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Shared\Beep.KocAiCommunity.Ui.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,192 @@
+Field
+A component similar to MudTextField<T>
+ which supports custom content.
+API
+<MudField>
+Basic Usage
+MudField provides the foundation for creating custom input controls with consistent styling and behavior. It offers the same visual variants as text fields and numeric fields while allowing you to embed any custom content. Fields support labels, helper text, validation states, and adornments just like other input components.
+
+Some Content  follows here
+Standard
+Some Content  follows here
+Filled
+Some Content  follows here
+
+Outlined
+Standard
+Filled
+
+Outlined
+Standard
+Filled
+
+Outlined
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Standard" Variant="Variant.Text">Some Content <MudIcon Icon="@Icons.Material.Filled.Favorite" Color="@Color.Warning" /> follows here</MudField>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Filled" Variant="Variant.Filled">Some Content <MudIcon Icon="@Icons.Material.Filled.Favorite" Color="@Color.Warning" /> follows here</MudField>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Outlined" Variant="Variant.Outlined">Some Content <MudIcon Icon="@Icons.Material.Filled.Favorite" Color="@Color.Warning" /> follows here</MudField>
+    </MudItem>
+</MudGrid>
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Standard" Variant="Variant.Text"></MudField>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Filled" Variant="Variant.Filled"></MudField>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Outlined" Variant="Variant.Outlined"></MudField>
+    </MudItem>
+</MudGrid>
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Standard" Variant="Variant.Text" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CheckCircle" AdornmentColor="Color.Success"></MudField>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Filled" Variant="Variant.Filled" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Money"></MudField>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudField Label="Outlined" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Warning" AdornmentColor="Color.Warning"></MudField>
+    </MudItem>
+</MudGrid>
+Layout & Styling
+Customize the field's appearance and spacing to fit your design requirements.
+
+Content Padding
+Set InnerPadding="false" to minimize the internal padding around your content. This is particularly useful when embedding components that need to fill the available space, such as radio groups or custom controls.
+
+Option 1
+Option 2
+Option 3
+Example with RadioGroup
+Option 1
+Option 2
+Option 3
+Example with RadioGroup
+Option 1
+Option 2
+Option 3
+
+Example with RadioGroup
+<MudGrid>
+    <MudItem xs="12">
+        <MudField Label="Example with RadioGroup" Variant="Variant.Text" InnerPadding="false">
+            <MudRadioGroup T="string">
+                <MudRadio T="string">Option 1</MudRadio>
+                <MudRadio T="string">Option 2</MudRadio>
+                <MudRadio T="string">Option 3</MudRadio>
+            </MudRadioGroup>
+        </MudField>
+    </MudItem>
+    <MudItem xs="12">
+        <MudField Label="Example with RadioGroup" Variant="Variant.Filled" InnerPadding="false">
+            <MudRadioGroup T="string">
+                <MudRadio T="string">Option 1</MudRadio>
+                <MudRadio T="string">Option 2</MudRadio>
+                <MudRadio T="string">Option 3</MudRadio>
+            </MudRadioGroup>
+        </MudField>
+    </MudItem>
+    <MudItem xs="12">
+        <MudField Label="Example with RadioGroup" Variant="Variant.Outlined" InnerPadding="false">
+            <MudRadioGroup T="string">
+                <MudRadio T="string">Option 1</MudRadio>
+                <MudRadio T="string">Option 2</MudRadio>
+                <MudRadio T="string">Option 3</MudRadio>
+            </MudRadioGroup>
+        </MudField>
+    </MudItem>
+</MudGrid>
+Advanced Usage
+Build custom input controls by leveraging MudField's flexible content system. When ChildContent is null, the label automatically becomes a placeholder, enabling dynamic behavior based on content or adornment.
+
+Use the ShrinkLabel parameter to override this behavior: when set to true, the label remains inside the field regardless of state, which is useful when you want to suppress automatic shrinking without causing the content to re-render or you want to maintain a custom portion of your ChildContent such as an extra ending adornment.
+
+Anytime the <MudField> has focus within the label will shrink and not act as a placeholder.
+
+
+
+What am I?
+ChildContent
+Label
+Placeholder
+
+#6cf014
+
+Pick a color
+
+ShrinkLabel Override
+ShrinkLabel
+Label
+Placeholder
+@using MudBlazor.Resources
+@using MudBlazor.Utilities
+@inject InternalMudLocalizer Localizer
+
+<style>
+    .mud-input-control.mud-field .mud-input>input.mud-input-root-outlined {
+        padding: 0px 14px;
+    }
+</style>
+
+<MudGrid>
+    <MudItem xs="12" md="6" lg="4">
+        <MudStack>
+            <MudField Label="What am I?" ChildContent="@content"
+                      Variant="Variant.Outlined">
+            </MudField>
+            <MudText Typo="Typo.button">ChildContent</MudText>
+            <MudStack Row AlignItems="AlignItems.Center">
+                <MudSwitch T="bool" Label="Label" LabelPlacement="Placement.Start" Color="Color.Primary" ValueChanged="@((b) => content = b ? null : rf1)" />
+                Placeholder
+            </MudStack>
+        </MudStack>
+    </MudItem>
+    <MudItem xs="12" md="6" lg="4">
+        <MudField Label="Pick a color" Variant="Variant.Outlined">
+            <input type="color" @bind-value="color" /><span class="ml-3">@color</span>
+        </MudField>
+    </MudItem>
+    <MudItem xs="12" md="6" lg="4">
+        <MudStack>
+            <MudField Label="ShrinkLabel Override" Variant="Variant.Outlined" AdornmentAriaLabel="info icon"
+                      AdornmentIcon="@Icons.Material.Filled.Info" AdornmentColor="Color.Info"
+                      ShrinkLabel="@_shrinkLabel" Adornment="Adornment.End">
+                <MudStack Row Class="mud-input"
+                          Spacing="2" AlignItems="AlignItems.Center" tabindex="-1">
+                    <input class="@InputClassname" />
+                    <MudIconButton Color="@Color.Default"
+                                   Icon="@Icons.Material.Filled.Clear"
+                                   Size="@Size.Small"
+                                   aria-label="@Localizer[LanguageResource.MudInput_Clear]"
+                                   tabindex="-1"
+                                   @onmousedown:stopPropagation />
+                </MudStack>
+            </MudField>
+            <MudText Typo="Typo.button">ShrinkLabel</MudText>
+            <MudStack Row AlignItems="AlignItems.Center">
+                <MudSwitch @bind-Value="@_shrinkLabel" Label="Label" LabelPlacement="Placement.Start" Color="Color.Primary" />
+                Placeholder
+            </MudStack>
+        </MudStack>
+    </MudItem>
+</MudGrid>
+@code {
+    RenderFragment content = null;
+    RenderFragment rf1 = @<MudText Typo="@Typo.h6">I Am Field</MudText>;
+    string color = "#6cf014";
+    private bool _shrinkLabel = false;
+
+    protected string InputClassname =>
+        new CssBuilder("mud-input-slot")
+            .AddClass("mud-input-root")
+            .AddClass($"mud-input-root-{Variant.Outlined.ToStringFast(true)}")
+            .AddClass($"mud-input-root-adorned-{Adornment.End.ToStringFast(true)}")
+            .AddClass($"mud-input-root-margin-{Margin.Normal.ToStringFast(true)}")
+            .Build();
+}

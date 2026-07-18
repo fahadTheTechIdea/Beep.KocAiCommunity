@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" />
+    <PackageReference Include="Z.Blazor.Diagrams" />
+    <PackageReference Include="Markdig" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.ServiceDefaults\Beep.KocAiCommunity.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Shared\Beep.KocAiCommunity.Ui.Shared.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Community\Beep.KocAiCommunity.Ui.Community.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Studio\Beep.KocAiCommunity.Ui.Studio.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Admin\Beep.KocAiCommunity.Ui.Admin.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+  </ItemGroup>
+
+</Project>

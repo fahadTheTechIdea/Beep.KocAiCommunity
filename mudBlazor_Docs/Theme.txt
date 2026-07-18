@@ -1,0 +1,166 @@
+heming
+Customize MudBlazor so that it suits your needs. Change colors, typography, shapes and more.
+Theme Provider
+The ThemeProvider specifies all the colors, shapes, sizes, and shadows for your layout. No configuration or theme is needed. By default, it will use MudBlazor's default theme.
+
+<MudThemeProvider />
+Variables
+At the moment, it's possible to change the following theme types.
+
+Palette
+Shadows
+Typography
+Layout Properties
+z-index
+Pseudo CSS scope
+Pseudo CSS
+You can find all the Default Theme values under customization.
+
+Scrollbar
+The MudBlazor styled scrollbar can be turned off in the ThemeProvider with the DefaultScrollbar property.
+
+<MudThemeProvider DefaultScrollbar="true" />
+Dark Palette
+Dark palettes are integrated into MudTheme. Just set IsDarkMode to true.
+
+Toggle Light/Dark Mode
+This is an example text!
+
+<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme"/>
+<MudSwitch @bind-Value="_isDarkMode" Color="Color.Primary" Class="ma-4" T="bool" Label="Toggle Light/Dark Mode"/>
+
+<MudText Class="ma-4">This is an example text!</MudText>
+@code{
+    private MudTheme _theme = new();
+    private bool _isDarkMode;
+}
+System preference
+With GetSystemDarkModeAsync() you can get the user defined dark theme preference. Returns true if dark mode is preferred.
+
+<MudThemeProvider @ref="_mudThemeProvider" @bind-IsDarkMode="_isDarkMode"/>
+@code {
+    private bool _isDarkMode;
+    private MudThemeProvider _mudThemeProvider;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
+            StateHasChanged();
+        }
+    }
+}
+Watch system preference
+WatchSystemDarkModeAsync(Func) calls Func when the system preferences change. true if dark mode is preferred.
+
+<MudThemeProvider @ref="_mudThemeProvider" @bind-IsDarkMode="_isDarkMode" />
+@code {
+    private bool _isDarkMode;
+    private MudThemeProvider _mudThemeProvider;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _mudThemeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChanged);
+            StateHasChanged();
+        }
+    }
+
+    private Task OnSystemDarkModeChanged(bool newValue)
+    {
+        _isDarkMode = newValue;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+}
+Custom Themes
+To customize the theme, you need to give the ThemeProvider a new MudTheme class with the settings you want to change. PaletteLight defines the color of the Light Palette. PaletteDark on the other hand defines the colors of the Dark Palette.
+
+<MudThemeProvider Theme="MyCustomTheme" />
+@code{
+    MudTheme MyCustomTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = Colors.Blue.Default,
+            Secondary = Colors.Green.Accent4,
+            AppbarBackground = Colors.Red.Default,
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = Colors.Blue.Lighten1
+        },
+
+        LayoutProperties = new LayoutProperties()
+        {
+            DrawerWidthLeft = "260px",
+            DrawerWidthRight = "300px"
+        }
+    };
+}
+
+Pseudo CSS scopes
+When building Web Components you might want to scope the CSS using the shadow DOM, this setting will allow the MudThemeProvider to generate different Pseudo CSS scopes
+
+MudBlazor Pseudo CSS
+You can pass in any pseudo scope
+
+These values can be changed in the MudTheme.PseudoCss class, where :root is the default
+
+Typography
+Typography controls the text throughout the theme, like font-family, size, and other settings.
+How it works
+It's possible to change the following typography types in the theme, which affects all text across the library.
+
+
+H1
+H2
+H3
+H4
+H5
+H6
+Subtitle1
+Subtitle2
+Body1
+Body2
+Button
+Caption
+Overline
+Change Default Font
+To change the default font for all available typography change FontFamily for the Default typography.
+
+
+@code {
+    MudTheme MyCustomTheme = new MudTheme()
+    {
+        Typography = new Typography()
+        {
+            Default = new DefaultTypography()
+            {
+                FontFamily = new[] { "Poppins", "Helvetica", "Arial", "sans-serif" }
+            }
+        }
+    };
+}
+Typography Settings
+Each typography can be configured with five different settings.
+
+
+@code {
+    MudTheme MyCustomTheme = new MudTheme()
+    {
+        Typography = new Typography()
+        {
+            H6 = new H6Typography()
+            {
+                FontFamily = new[] { "Roboto", "Helvetica", "Arial", "sans-serif" },
+                FontSize = "1.25rem",
+                FontWeight = "500",
+                LineHeight = "1.6",
+                LetterSpacing = ".0075em"
+            }
+        }
+    };
+}

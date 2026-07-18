@@ -1,0 +1,27 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Beep.KocAiCommunity.Api/Beep.KocAiCommunity.Api.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.AppHost/Beep.KocAiCommunity.AppHost.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Application/Beep.KocAiCommunity.Application.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Contracts/Beep.KocAiCommunity.Contracts.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Domain/Beep.KocAiCommunity.Domain.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Infrastructure/Beep.KocAiCommunity.Infrastructure.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.ML/Beep.KocAiCommunity.ML.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.ServiceDefaults/Beep.KocAiCommunity.ServiceDefaults.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Ui.Admin/Beep.KocAiCommunity.Ui.Admin.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Ui.Community/Beep.KocAiCommunity.Ui.Community.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Ui.Shared/Beep.KocAiCommunity.Ui.Shared.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Ui.Studio/Beep.KocAiCommunity.Ui.Studio.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Web/Beep.KocAiCommunity.Web.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Worker/Beep.KocAiCommunity.Worker.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Workflow/Beep.KocAiCommunity.Workflow.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Beep.KocAiCommunity.ArchitectureTests/Beep.KocAiCommunity.ArchitectureTests.csproj" />
+    <Project Path="tests/Beep.KocAiCommunity.ComponentTests/Beep.KocAiCommunity.ComponentTests.csproj" />
+    <Project Path="tests/Beep.KocAiCommunity.EndToEndTests/Beep.KocAiCommunity.EndToEndTests.csproj" />
+    <Project Path="tests/Beep.KocAiCommunity.IntegrationTests/Beep.KocAiCommunity.IntegrationTests.csproj" />
+    <Project Path="tests/Beep.KocAiCommunity.UnitTests/Beep.KocAiCommunity.UnitTests.csproj" />
+  </Folder>
+</Solution>

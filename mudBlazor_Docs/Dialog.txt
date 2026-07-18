@@ -1,0 +1,396 @@
+Dialog
+Displays an overlay that prompts users to confirm an action or provide additional information.
+API
+<MudDialog>
+- <MudDialogContainer>
+- <MudDialogProvider>
+The Dialog component relies on IDialogService and MudDialogProvider for its functionality.
+
+See the Installation page for setup instructions.
+
+Usage
+To use a dialog, define a MudDialog in a Razor component (e.g., TermsOfServiceDialog.razor). Show it by calling:
+DialogService.Show<TermsOfServiceDialog>("Terms");
+
+This approach lets you reuse dialogs throughout your app and pass parameters for customization.
+Tip: For best results, use <MudDialog> as the root element of your dialog component.
+
+@inject IDialogService DialogService
+
+<MudButton @onclick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
+    Open simple dialog
+</MudButton>
+@code {
+
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<DialogUsageExample_Dialog>("Simple Dialog", options);
+    }
+}
+Configuration
+You can change dialog behavior globally by setting parameters on <MudDialogProvider/>, or per dialog by passing a DialogOptions instance when opening a dialog.
+
+Global Settings
+Set options on <MudDialogProvider/> to affect all dialogs. See the installation page for details.
+
+<MudDialogProvider
+    FullWidth="true"
+    MaxWidth="MaxWidth.ExtraSmall"
+    CloseButton="true"
+    BackdropClick="false"
+    NoHeader="true"
+    Position="DialogPosition.Center"
+    CloseOnEscapeKey="true"
+    BackgroundClass="my-custom-class"/>
+Per Dialog
+Pass a DialogOptions object when opening a dialog to override global settings for that instance.
+
+@inject IDialogService Dialog
+
+<MudButton OnClick="@(() => OpenDialogAsync(_maxWidth))">MaxWidth dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_closeButton))" Color="Color.Primary">Close Button dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_noHeader))" Color="Color.Secondary">No Header dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_backdropClick))" Color="Color.Tertiary">Disable Backdrop dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_fullScreen))" Color="Color.Info">Full Screen dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_topCenter))" Color="Color.Success">Top Center dialog</MudButton>
+@code {
+    private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private readonly DialogOptions _closeButton = new() { CloseButton = true };
+    private readonly DialogOptions _noHeader = new() { NoHeader = true };
+    private readonly DialogOptions _backdropClick = new() { BackdropClick = false };
+    private readonly DialogOptions _fullScreen = new() { FullScreen = true, CloseButton = true };
+    private readonly DialogOptions _topCenter = new() { Position = DialogPosition.TopCenter };
+
+    private Task OpenDialogAsync(DialogOptions options)
+    {
+        return Dialog.ShowAsync<DialogUsageExample_Dialog>("Custom Options Dialog", options);
+    }
+}
+From dialog
+You can update the dialog's title and options from within the dialog component using SetTitle and SetOptions on the MudDialogInstance.
+
+@inject IDialogService DialogService
+
+<MudButton OnClick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
+    Options dialog
+</MudButton>
+@code {
+
+    private Task OpenDialogAsync()
+    {
+        return DialogService.ShowAsync<DialogSetOptionsExample_Dialog>("Options Dialog");
+    }
+}
+Templating and Passing Simple Data
+Build a reusable dialog and pass simple data to it for different scenarios.
+
+@inject IDialogService DialogService
+
+
+<MudButton @onclick="DeleteUserAsync" Variant="Variant.Filled" Color="Color.Error">Delete records</MudButton>
+<MudButton @onclick="ConfirmAsync" Variant="Variant.Filled" Color="Color.Success">Remove email</MudButton>
+<MudButton @onclick="DownloadAsync" Variant="Variant.Filled" Color="Color.Warning">Slow computer</MudButton>
+@code {
+
+    private Task DeleteUserAsync()
+    {
+        var parameters = new DialogParameters<DialogTemplateExample_Dialog>
+        {
+            { x => x.ContentText, "Do you really want to delete these records? This process cannot be undone." },
+            { x => x.ButtonText, "Delete" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        return DialogService.ShowAsync<DialogTemplateExample_Dialog>("Delete", parameters, options);
+    }
+
+    private Task ConfirmAsync()
+    {
+        var parameters = new DialogParameters<DialogTemplateExample_Dialog>
+        {
+            { x => x.ContentText, "Are you sure you want to remove thisguy@emailz.com from this account?" },
+            { x => x.ButtonText, "Yes" },
+            { x => x.Color, Color.Success }
+        };
+
+        return DialogService.ShowAsync<DialogTemplateExample_Dialog>("Confirm", parameters);
+    }
+
+    private Task DownloadAsync()
+    {
+        var parameters = new DialogParameters<DialogTemplateExample_Dialog>
+        {
+            { x => x.ContentText, "Your computer seems very slow, click the download button to download free RAM." },
+            { x => x.ButtonText, "Download" },
+            { x => x.Color, Color.Info }
+        };
+
+        return DialogService.ShowAsync<DialogTemplateExample_Dialog>("Slow Computer Detected", parameters);
+    }
+}
+Passing Data
+Pass data to a dialog and use it for operations, such as confirming a delete action.
+
+Server1
+
+Server2
+
+Server3
+
+Server4
+
+@using MudBlazor.Examples.Data.Models
+
+@inject IDialogService DialogService
+
+<div class="d-flex flex-wrap">
+    @foreach (var item in Servers)
+    {
+        <MudPaper Class="d-flex align-center pa-2 mx-2 my-2">
+            <MudText>@item.Name</MudText>
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="@((e) => DeleteServerAsync(item))">Delete</MudButton>
+        </MudPaper>
+    }
+</div>
+@code {
+
+    private async Task DeleteServerAsync(Server server)
+    {
+        var parameters = new DialogParameters<DialogPassingDataExample_Dialog> { { x => x.Server, server } };
+
+        var dialog = await DialogService.ShowAsync<DialogPassingDataExample_Dialog>("Delete Server", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            //In a real world scenario we would reload the data from the source here since we "removed" it in the dialog already.
+            Guid.TryParse(result.Data.ToString(), out Guid deletedServer);
+            Servers.RemoveAll(item => item.Id == deletedServer);
+        }
+    }
+
+    //Pretend we are loading this data from a database or API
+    public List<Server> Servers { get; } = new List<Server>
+    {
+        new Server{ Id = Guid.NewGuid(), Name = "Server1", Location = "Denmark", IpAddress = "193.254.123.1" },
+        new Server{ Id = Guid.NewGuid(), Name = "Server2", Location = "Sweden", IpAddress = "127.0.0.1" },
+        new Server{ Id = Guid.NewGuid(), Name = "Server3", Location = "Russia", IpAddress = "173.164.2.1" },
+        new Server{ Id = Guid.NewGuid(), Name = "Server4", Location = "Germany", IpAddress = "193.168.1.1" },
+    };
+}
+Scrollable Dialog
+Dialogs automatically become scrollable if their content exceeds the available height.
+
+@inject IDialogService DialogService
+
+<MudButton OnClick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
+    Scrollable Dialog
+</MudButton>
+@code {
+    private bool _licenseAccepted = false;
+
+    private async Task OpenDialogAsync()
+    {
+        var dialog = await DialogService.ShowAsync<DialogScrollableExample_Dialog>("MudBlazor License");
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            _licenseAccepted = (bool)(result.Data ?? false);
+        }
+    }
+}
+Blurry Dialog
+Customize the dialog background using the BackgroundClass option.
+
+@inject IDialogService DialogService
+
+
+<MudButton @onclick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
+    Open blurry dialog
+</MudButton>
+
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+@code {
+
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
+
+        return DialogService.ShowAsync<DialogBlurryExample_Dialog>("Simple Dialog", options);
+    }
+}
+Inlining Dialog
+You can place a MudDialog directly in another component. This is useful for small, non-reusable dialogs and allows easy sharing of data and code. You can also override the dialog title with a render fragment.
+
+
+
+
+
+
+<div class="d-flex">
+    <MudButton OnClick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary">
+        Edit rating
+    </MudButton>
+    <MudRating SelectedValue="_rating" Disabled="true" Class="mt-1 ml-3" />
+</div>
+
+<MudDialog @bind-Visible="_visible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" /> Edit rating
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <p>How awesome are inline dialogs?</p>
+        <MudRating @bind-SelectedValue="_rating" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Class="px-10">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    private bool _visible;
+    private int _rating;
+    private readonly DialogOptions _dialogOptions = new() { FullWidth = true };
+
+    private void OpenDialog() => _visible = true;
+
+    private void Submit() => _visible = false;
+}
+Nested Inline Dialogs
+Inline dialogs can be nested within each other. This example demonstrates both single and multiple levels of nesting.
+
+@inject IDialogService DialogService
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Open">Open inline</MudButton>
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Open2Async">Open with show</MudButton>
+
+@*Outer inline dialog*@
+<MudDialog @bind-Visible="_visible">
+    <DialogContent>
+        <MudText>Hi There, I'm an inline dialog!</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Tertiary" OnClick="OpenNested">Open nested</MudButton>
+        @*Nested inline dialog*@
+        <MudDialog @bind-Visible="_nestedVisible">
+            <DialogContent>
+                <MudText Class="nested">Nested inline dialog!</MudText>
+            </DialogContent>
+            <DialogActions>
+                <MudButton Color="Color.Primary" OnClick="CloseNested">Close</MudButton>
+            </DialogActions>
+        </MudDialog>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    private bool _visible;
+    private bool _nestedVisible;
+
+    private void Open() => _visible = true;
+
+    private void Close() => _visible = false;
+
+    private void OpenNested() => _nestedVisible = true;
+
+    private void CloseNested() => _nestedVisible = false;
+
+    @*Open a non-inline dialog component that nests an inline dialog*@
+    private Task Open2Async() => DialogService.ShowAsync<DialogNestedInlineExample_Dialog>();
+}
+Nested Dialogs and Cancel All
+You can open multiple dialogs at once. This example also shows how to open a second dialog and close all dialogs simultaneously.
+
+@inject IDialogService DialogService
+
+<MudButton @onclick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
+    Open simple dialog
+</MudButton>
+@code {
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<DialogNestedExample_Dialog>("First Level Dialog", options);
+    }
+}
+Keyboard Accessibility
+MudDialog supports closing with the Escape key if CloseOnEscapeKey is enabled.
+
+When closed with Escape, the dialog returns DialogResult.Cancel().
+For custom keyboard handling, use OnKeyDown and OnKeyUp event handlers. The example below returns a value on Enter only if a selection is made.
+
+
+Dialog return value (not yet set)
+@inject IDialogService DialogService
+
+
+<MudButton @onclick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
+    Select coffee
+</MudButton>
+<MudChip T="string">@_returnValue</MudChip>
+@code {
+
+    string _returnValue = "Dialog return value (not yet set)";
+
+    private async Task OpenDialogAsync()
+    {    
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialogReference = await DialogService.ShowAsync<DialogKeyboardNavigationExample_Dialog>("Dialog Keyboard Accessibility Demo", options);
+        _returnValue = "Waiting for dialog to conclude ...";
+        StateHasChanged();
+        var dialogResult = await dialogReference.Result;
+        if (dialogResult.Canceled) {
+            _returnValue = "Dialog was canceled";
+            StateHasChanged();
+        }
+        else {
+            _returnValue = $"Dialog returned '{dialogResult.Data}'";
+            StateHasChanged();
+        }
+    }
+}
+Focus Trap
+Dialogs use a focus trap to keep keyboard focus inside. By default, the first element is focused, but you can change this with the DefaultFocus option.
+
+@inject IDialogService DialogService
+
+
+<MudButton @onclick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
+    Open dialog
+</MudButton>
+@code {
+
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+
+        return DialogService.ShowAsync<DialogFocusExample_Dialog>("Last element focused", options);
+    }
+}
+Custom Styling
+You can apply custom classes to the dialog's title, content, actions, or the dialog itself for advanced styling.
+
+@inject IDialogService DialogService
+
+<MudButton @onclick="OpenDialogAsync" Variant="Variant.Filled" Color="Color.Primary">
+    Open custom styled dialog
+</MudButton>
+@code {
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, CloseButton = true };
+
+        return DialogService.ShowAsync<DialogStylingExample_Dialog>("Styling Example Dialog", options);
+    }
+}

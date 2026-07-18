@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Domain\Beep.KocAiCommunity.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Infrastructure\Beep.KocAiCommunity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.ML\Beep.KocAiCommunity.ML.csproj" />
+  </ItemGroup>
+
+</Project>

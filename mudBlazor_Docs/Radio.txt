@@ -1,0 +1,168 @@
+Radio
+Allows the user to select a single choice from a group of options. Use radio buttons (not switches) when only one item can be selected from a list.
+API
+<MudRadio>
+- <MudRadioGroup>
+RadioGroup
+Primary
+Secondary
+Default
+Disabled
+Selected Option:
+
+<MudForm>
+    <MudRadioGroup @bind-Value="SelectedOption">
+        <MudRadio Value="@("Radio 1")" Color="Color.Primary">Primary</MudRadio>
+        <MudRadio Value="@("Radio 2")" Color="Color.Secondary">Secondary</MudRadio>
+        <MudRadio Value="@("Radio 3")">Default</MudRadio>
+        <MudRadio Value="@("Radio 4")" Color="Color.Primary" Disabled="true">Disabled</MudRadio>
+    </MudRadioGroup>
+</MudForm>
+
+<div class="d-flex align-center">
+    <MudButton Variant="Variant.Outlined" OnClick="Reset">Reset</MudButton>
+    <MudText Class="ml-4">Selected Option: @SelectedOption</MudText>
+</div>
+@code {
+    public string SelectedOption { get; set; }
+
+    private void Reset()
+    {
+        SelectedOption = null;
+    }
+}
+Color
+One
+Two
+Three
+Four
+<MudRadioGroup T="int">
+    <MudRadio Value="1" Color="Color.Primary" UncheckedColor="Color.Default">One</MudRadio>
+    <MudRadio Value="2" Color="Color.Secondary" UncheckedColor="Color.Default">Two</MudRadio>
+    <MudRadio Value="3" Color="Color.Success" UncheckedColor="Color.Error">Three</MudRadio>
+    <MudRadio Value="4" Color="Color.Primary" Disabled="true">Four</MudRadio>
+</MudRadioGroup>
+Dense
+Dense
+Normal
+<MudRadioGroup @bind-Value="Dense_Radio">
+    <MudRadio Value="true" Color="Color.Primary" Dense="true">Dense</MudRadio>
+    <MudRadio Value="false" Color="Color.Secondary" Dense="false">Normal</MudRadio>
+</MudRadioGroup>
+@code {
+    public bool Dense_Radio { get; set; } = true;
+}
+Sizes
+Small
+Medium
+Large
+<MudRadioGroup @bind-Value="Radio_Size">
+    <MudRadio Value="1" Color="Color.Primary" Size="Size.Small">Small</MudRadio>
+    <MudRadio Value="2" Color="Color.Secondary" Size="Size.Medium">Medium</MudRadio>
+    <MudRadio Value="3" Color="Color.Tertiary" Size="Size.Large">Large</MudRadio>
+</MudRadioGroup>
+@code { 
+    public int Radio_Size { get; set; } = 2;
+}
+Content Placement
+Top
+Bottom
+Start
+End
+Left
+Right
+Content Placement
+<MudGrid>
+    <MudItem xs="12" md="1">
+        <MudRadioGroup @bind-Value="Placement">
+            <MudRadio Color="Color.Primary" Value="@(Placement.Top)">Top</MudRadio>
+            <MudRadio Color="Color.Primary" Value="@(Placement.Bottom)">Bottom</MudRadio>
+            <MudRadio Color="Color.Primary" Value="@(Placement.Start)">Start</MudRadio>
+            <MudRadio Color="Color.Primary" Value="@(Placement.End)">End</MudRadio>
+            <MudRadio Color="Color.Primary" Value="@(Placement.Left)">Left</MudRadio>
+            <MudRadio Color="Color.Primary" Value="@(Placement.Right)">Right</MudRadio>
+        </MudRadioGroup>
+    </MudItem>
+    <MudItem xs="12" md="9" Class="d-flex justify-center align-center my-auto">
+        <MudRadioGroup T="string">
+            <MudRadio T="string" LabelPlacement="@Placement" Color="Color.Secondary">Content Placement</MudRadio>
+        </MudRadioGroup>
+    </MudItem>
+    <MudItem xs="12" md="2" Style="width:100%"></MudItem>
+</MudGrid>
+@code {
+    public Placement Placement { get; set; } = Placement.Right;
+}
+ReadOnly and Disabled mode
+All child MudRadio components can be Disabled or set as ReadOnly from the parent MudRadioGroup.
+
+
+Radio 1
+Radio 2
+Radio 3
+Radio 4
+ReadOnly
+Selected Option 1:
+
+Radio 1
+Radio 2
+Radio 3
+Radio 4
+Disabled
+Selected Option 2:
+
+<MudGrid>
+    <MudItem sm="12" md="6">
+        <MudRadioGroup @bind-Value="SelectedOption1" ReadOnly="ReadOnly">
+            <MudRadio Value="@("Radio 1")">Radio 1</MudRadio>
+            <MudRadio Value="@("Radio 2")">Radio 2</MudRadio>
+            <MudRadio Value="@("Radio 3")">Radio 3</MudRadio>
+            <MudRadio Value="@("Radio 4")">Radio 4</MudRadio>
+        </MudRadioGroup>
+        <MudSwitch @bind-Value="ReadOnly" Color="Color.Primary" Label="ReadOnly" />
+        <MudText>Selected Option 1: @SelectedOption1</MudText>
+    </MudItem>
+    <MudItem sm="12" md="6">
+        <MudRadioGroup @bind-Value="SelectedOption2" Disabled="Disabled">
+            <MudRadio Value="@("Radio 1")">Radio 1</MudRadio>
+            <MudRadio Value="@("Radio 2")">Radio 2</MudRadio>
+            <MudRadio Value="@("Radio 3")">Radio 3</MudRadio>
+            <MudRadio Value="@("Radio 4")">Radio 4</MudRadio>
+        </MudRadioGroup>
+        <MudSwitch @bind-Value="Disabled" Color="Color.Primary" Label="Disabled" />
+        <MudText>Selected Option 2: @SelectedOption2</MudText>
+    </MudItem>
+</MudGrid>
+@code {
+    public string SelectedOption1 { get; set; }
+    public string SelectedOption2 { get; set; }
+    public bool Disabled { get; set; }
+    public bool ReadOnly { get; set; }
+}
+Accessibility
+A MudRadioGroup accepts the following shortcuts:
+
+Keys	Action
+Tab, Shift+Tab	Move focus into or out of the radio group
+Enter, NumpadEnter, Space	Select the focused radio button
+Left Arrow, Up Arrow, Right Arrow, Down Arrow	Cycle focus between radio buttons
+Backspace	Unselect the focused radio button
+Note: Disabled radio buttons are unaffected by these shortcuts and cannot be focused
+
+Primary
+Secondary
+Tertiary
+Default
+Disabled
+<MudForm>
+    <MudRadioGroup @bind-Value="SelectedOption">
+        <MudRadio Value="@("Radio 1")" Color="Color.Primary">Primary</MudRadio>
+        <MudRadio Value="@("Radio 2")" Color="Color.Secondary">Secondary</MudRadio>
+        <MudRadio Value="@("Radio 3")" Color="Color.Tertiary">Tertiary</MudRadio>
+        <MudRadio Value="@("Radio 4")">Default</MudRadio>
+        <MudRadio Value="@("Radio 4")" Color="Color.Primary" Disabled="true">Disabled</MudRadio>
+    </MudRadioGroup>
+</MudForm>
+@code {
+    public string SelectedOption { get; set; }
+}

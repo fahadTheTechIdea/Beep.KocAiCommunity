@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-959278ac-a58b-4515-838f-a52740eae66f/styles.css">
+<script src="_ds/industry-959278ac-a58b-4515-838f-a52740eae66f/_ds_bundle.js"></script>
+<script src="image-slot.js"></script>
+<style>
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--color-bg); color: var(--color-text); text-wrap: pretty; }
+a { color: var(--color-accent-700); text-underline-offset: 3px; }
+a:hover { color: var(--color-accent); }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+.section-wrap { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px,5vw,72px); }
+@media (max-width: 900px) {
+  .hero-grid, .cap-grid, .wf-grid, .cta-grid, .learn-grid { grid-template-columns: 1fr !important; }
+  .pillar-grid, .gov-grid, .conn-grid, .track-grid { grid-template-columns: 1fr !important; }
+  .hero-shell { order: 2; }
+}
+@media (max-width: 620px) {
+  .nav a.nav-anchor { display: none; }
+  .flow-arrow { transform: rotate(90deg); }
+  .flow-row { flex-direction: column; }
+}
+</style>
+</helmet>
+
+<a href="#main" style="position:absolute;left:-9999px;top:0;background:var(--color-accent);color:var(--color-bg);padding:8px 14px;z-index:100;">Skip to content</a>
+
+<nav class="nav" style="{{ navStyle }}">
+  <span class="nav-brand" style="display:flex;align-items:center;gap:10px;">
+    <span style="display:inline-flex;width:26px;height:26px;border:1px solid var(--color-accent);align-items:center;justify-content:center;color:var(--color-accent-700);font-size:14px;">K</span>
+    KocAiCommunity
+  </span>
+  <a href="#learn" class="nav-anchor">Learn</a>
+  <a href="#capabilities" class="nav-anchor">What's inside</a>
+  <a href="#integrations" class="nav-anchor">Your data</a>
+  <a href="#workflows" class="nav-anchor">See it work</a>
+  <a href="#governance" class="nav-anchor">Trust</a>
+  <button type="button" class="btn btn-secondary" style="height:38px;" onClick="{{ toggleLang }}" aria-label="Switch language">{{ langLabel }}</button>
+  <button type="button" class="btn btn-primary" style="height:38px;gap:8px;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    {{ primaryCta }}
+  </button>
+</nav>
+
+<main id="main">
+
+<!-- ===================== ROLE SWITCHER ===================== -->
+<div style="background:var(--color-surface);border-bottom:1px solid var(--color-divider);position:sticky;top:63px;z-index:70;">
+  <div class="section-wrap" style="display:flex;align-items:center;gap:14px;padding-top:9px;padding-bottom:9px;flex-wrap:wrap;">
+    <span style="font-size:11px;letter-spacing:0.09em;text-transform:uppercase;font-weight:600;color:color-mix(in srgb,var(--color-text) 58%,transparent);white-space:nowrap;">View as</span>
+    <div role="tablist" aria-label="Choose your KOC role" style="display:flex;flex-wrap:wrap;border:1px solid var(--color-divider);background:var(--color-bg);">
+      <sc-for list="{{ roleTabs }}" as="rt" hint-placeholder-count="5">
+        <button type="button" role="tab" aria-selected="{{ rt.selected }}" onClick="{{ rt.onClick }}" style="{{ rt.style }}">{{ rt.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== HERO ===================== -->
+<section style="padding:clamp(40px,5.5vw,84px) 0 clamp(40px,6vw,80px);border-bottom:1px solid var(--color-divider);">
+  <div class="section-wrap hero-grid" style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(32px,5vw,72px);align-items:center;">
+    <div>
+      <span style="display:inline-block;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);border:1px solid var(--color-divider);padding:5px 10px;">{{ role.eyebrow }}</span>
+      <h1 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(36px,4.8vw,58px);line-height:1.05;letter-spacing:0.005em;text-transform:uppercase;margin:22px 0 0;">
+        <sc-for list="{{ role.headline }}" as="ln" hint-placeholder-count="2">
+          <span style="display:block;">{{ ln }}</span>
+        </sc-for>
+      </h1>
+      <p style="font-size:17px;line-height:1.6;max-width:54ch;margin:22px 0 0;color:color-mix(in srgb,var(--color-text) 82%,transparent);">{{ role.sub }}</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px;">
+        <button type="button" class="btn btn-primary" style="height:46px;gap:8px;padding-inline:18px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          {{ primaryCta }}
+        </button>
+        <a href="{{ role.ctaHref }}" class="btn btn-secondary" style="height:46px;padding-inline:18px;">{{ role.ctaSecondary }}</a>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:30px;padding-top:22px;border-top:1px solid var(--color-divider);font-size:13px;color:color-mix(in srgb,var(--color-text) 70%,transparent);">
+        <sc-for list="{{ role.trust }}" as="tr" hint-placeholder-count="3">
+          <span style="display:inline-flex;align-items:center;gap:7px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.5"><path d="M5 12l4 4 10-11"/></svg>{{ tr }}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <figure class="blueprint hero-shell" style="margin:0;padding:0;background:color-mix(in srgb,var(--color-surface) 55%,transparent);">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--color-divider);font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 62%,transparent);">
+        <span style="width:9px;height:9px;border:1px solid var(--color-accent);"></span>
+        Predicting pump failures — a worked example
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center;font-size:11px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-accent);"></span>Live</span>
+      </div>
+      <div style="display:grid;grid-template-columns:52px 1fr 128px;min-height:300px;">
+        <div style="border-right:1px solid var(--color-divider);display:flex;flex-direction:column;gap:14px;padding:14px 0;align-items:center;">
+          <span style="width:20px;height:20px;border:1.5px solid var(--color-accent-700);"></span>
+          <span style="width:20px;height:20px;border:1px solid var(--color-divider);"></span>
+          <span style="width:20px;height:20px;border:1px solid var(--color-divider);"></span>
+          <span style="width:20px;height:20px;border:1px solid var(--color-divider);"></span>
+        </div>
+        <div style="position:relative;padding:16px;display:flex;align-items:center;gap:12px;background-image:linear-gradient(var(--color-divider) 1px,transparent 1px),linear-gradient(90deg,var(--color-divider) 1px,transparent 1px);background-size:22px 22px;background-position:-1px -1px;">
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+            <div style="border:1px solid var(--color-accent);padding:8px 10px;font-size:11px;line-height:1.25;background:var(--color-bg);"><span style="color:var(--color-accent-700);letter-spacing:0.05em;">WELL DATA</span><br>PI sensor tags</div>
+            <div style="border:1px solid var(--color-divider);padding:8px 10px;font-size:11px;line-height:1.25;background:var(--color-bg);"><span style="color:var(--color-accent-700);letter-spacing:0.05em;">TIDY UP</span><br>Fill gaps</div>
+          </div>
+          <svg width="34" height="14" viewBox="0 0 34 14" fill="none" stroke="var(--color-accent)" stroke-width="1.5"><path d="M0 7h30"/><path d="M26 3l5 4-5 4"/></svg>
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+            <div style="border:1px solid var(--color-divider);padding:8px 10px;font-size:11px;line-height:1.25;background:var(--color-bg);"><span style="color:var(--color-accent-700);letter-spacing:0.05em;">TEACH</span><br>Learn patterns</div>
+            <div style="border:1px solid var(--color-accent);padding:8px 10px;font-size:11px;line-height:1.25;background:var(--color-bg);"><span style="color:var(--color-accent-700);letter-spacing:0.05em;">PREDICT</span><br>Failure risk</div>
+          </div>
+        </div>
+        <div style="border-left:1px solid var(--color-divider);padding:14px 12px;display:flex;flex-direction:column;gap:12px;">
+          <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent);">How good?</div>
+          <div><div style="font-family:var(--font-heading);font-size:24px;line-height:1;">94%</div><div style="font-size:10px;color:color-mix(in srgb,var(--color-text) 60%,transparent);">caught in test</div></div>
+          <div><div style="font-family:var(--font-heading);font-size:24px;line-height:1;">6 wks</div><div style="font-size:10px;color:color-mix(in srgb,var(--color-text) 60%,transparent);">earlier warning</div></div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:5px;">
+            <span style="height:6px;background:var(--color-accent-300);width:90%;"></span>
+            <span style="height:6px;background:var(--color-accent-500);width:70%;"></span>
+            <span style="height:6px;background:var(--color-accent-700);width:82%;"></span>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<!-- ===================== PARTICIPATION DASHBOARD (role-scoped) ===================== -->
+<section style="padding:clamp(48px,6vw,84px) 0;">
+  <div class="section-wrap">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:clamp(22px,3vw,32px);">
+      <div>
+        <span style="display:block;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">{{ dash.kicker }}</span>
+        <h2 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(28px,3.4vw,40px);text-transform:uppercase;letter-spacing:0.01em;margin:0;">{{ dash.title }}</h2>
+      </div>
+      <a href="#learn" class="btn btn-secondary" style="height:40px;">{{ dash.cta }}</a>
+    </div>
+
+    <div class="track-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,22px);margin-bottom:clamp(22px,3vw,32px);">
+      <sc-for list="{{ dash.stats }}" as="s" hint-placeholder-count="3">
+        <div class="blueprint" style="padding:22px;">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:clamp(28px,3.2vw,40px);line-height:1;color:var(--color-accent-700);">{{ s.value }}</div>
+          <div style="font-size:13px;line-height:1.45;margin-top:10px;color:color-mix(in srgb,var(--color-text) 72%,transparent);">{{ s.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- employee: personal competition cards -->
+    <sc-if value="{{ isEmployee }}" hint-placeholder-val="{{ true }}">
+      <div class="track-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,2.5vw,28px);">
+        <sc-for list="{{ myCompetitions }}" as="m" hint-placeholder-count="3">
+          <div class="blueprint" style="padding:24px;display:flex;flex-direction:column;">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;color:{{ m.statusColor }};"><span style="width:7px;height:7px;border-radius:50%;background:currentColor;"></span>{{ m.status }}</span>
+              <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);">{{ m.closes }}</span>
+            </div>
+            <h3 style="font-family:var(--font-heading);font-weight:600;font-size:20px;text-transform:uppercase;letter-spacing:0.01em;margin:14px 0 4px;">{{ m.title }}</h3>
+            <p style="font-size:13px;line-height:1.5;margin:0 0 18px;color:color-mix(in srgb,var(--color-text) 72%,transparent);">{{ m.focus }}</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--color-divider);margin-top:auto;">
+              <div style="padding:14px 0;border-right:1px solid var(--color-divider);">
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;line-height:1;color:var(--color-accent-700);">{{ m.rank }}</div>
+                <div style="font-size:11px;color:color-mix(in srgb,var(--color-text) 60%,transparent);margin-top:4px;">Your rank</div>
+              </div>
+              <div style="padding:14px 0 14px 16px;">
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;line-height:1;">{{ m.score }}</div>
+                <div style="font-size:11px;color:color-mix(in srgb,var(--color-text) 60%,transparent);margin-top:4px;">Best score</div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary" style="height:38px;width:100%;margin-top:16px;">{{ m.action }}</button>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- managerial: scoped participation table -->
+    <sc-if value="{{ isManagerial }}" hint-placeholder-val="{{ false }}">
+      <div class="blueprint" style="padding:0;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="padding:16px 20px;border-bottom:1px solid var(--color-divider);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 62%,transparent);">{{ dash.tableTitle }}</div>
+        <table class="table" style="table-layout:fixed;">
+          <colgroup><col><col style="width:20%"><col style="width:20%"><col style="width:22%"></colgroup>
+          <thead>
+            <tr>
+              <sc-for list="{{ dash.cols }}" as="c" hint-placeholder-count="4">
+                <th scope="col" style="{{ c.align }}">{{ c.label }}</th>
+              </sc-for>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ dash.rows }}" as="r" hint-placeholder-count="5">
+              <tr>
+                <td style="font-family:var(--font-heading);font-weight:600;font-size:16px;">{{ r.name }}</td>
+                <td style="font-size:14px;text-align:right;">{{ r.active }}</td>
+                <td style="font-size:14px;text-align:right;">{{ r.comps }}</td>
+                <td style="font-family:var(--font-heading);font-weight:600;font-size:16px;text-align:right;color:var(--color-accent-700);">{{ r.standing }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </sc-if>
+  </div>
+</section>
+
+<!-- ===================== VALUE PILLARS ===================== -->
+<section style="padding:clamp(48px,6vw,84px) 0;">
+  <div class="section-wrap">
+    <span style="display:block;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">01 · {{ role.pillarKicker }}</span>
+    <hr style="height:1px;border:0;background:var(--color-divider);margin:0 0 clamp(28px,4vw,44px);">
+    <div class="pillar-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,3vw,44px);">
+      <sc-for list="{{ role.pillars }}" as="p" hint-placeholder-count="3">
+        <div class="blueprint" style="padding:26px;">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <span style="display:flex;width:30px;height:30px;color:var(--color-accent-700);">{{ p.icon }}</span>
+          <h2 style="font-family:var(--font-heading);font-weight:600;font-size:23px;text-transform:uppercase;letter-spacing:0.01em;margin:20px 0 0;">{{ p.title }}</h2>
+          <p style="font-size:15px;line-height:1.6;margin:12px 0 18px;color:color-mix(in srgb,var(--color-text) 80%,transparent);">{{ p.body }}</p>
+          <a href="{{ p.href }}" style="font-size:13px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">{{ p.link }} →</a>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ROLE PRIORITIES ===================== -->
+<section style="padding:clamp(40px,5vw,72px) 0;background:var(--color-surface);border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);">
+  <div class="section-wrap wf-grid" style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(28px,4vw,56px);align-items:center;">
+    <div>
+      <span style="display:block;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">At your level</span>
+      <h2 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(26px,3vw,36px);text-transform:uppercase;letter-spacing:0.01em;margin:0 0 12px;">{{ role.prioritiesTitle }}</h2>
+      <p style="font-size:15px;line-height:1.6;margin:0;max-width:46ch;color:color-mix(in srgb,var(--color-text) 80%,transparent);">{{ role.prioritiesLede }}</p>
+      <ul style="list-style:none;margin:18px 0 0;padding:0;">
+        <sc-for list="{{ role.priorities }}" as="pr" hint-placeholder-count="3">
+          <li style="display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--color-divider);font-size:15px;line-height:1.5;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" style="flex:none;margin-top:3px;"><path d="M5 12l4 4 10-11"/></svg>
+            <span>{{ pr }}</span>
+          </li>
+        </sc-for>
+      </ul>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,22px);" class="track-grid">
+      <sc-for list="{{ role.stats }}" as="s" hint-placeholder-count="3">
+        <div class="blueprint" style="padding:22px;background:var(--color-bg);">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="font-family:var(--font-heading);font-weight:600;font-size:clamp(30px,3.4vw,42px);line-height:1;color:var(--color-accent-700);">{{ s.value }}</div>
+          <div style="font-size:13px;line-height:1.45;margin-top:10px;color:color-mix(in srgb,var(--color-text) 72%,transparent);">{{ s.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== LEARN & COMPETE ===================== -->
+<section id="learn" style="padding:clamp(48px,6vw,84px) 0;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);">
+  <div class="section-wrap">
+    <span style="display:block;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">02 · Learn &amp; compete</span>
+    <h2 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(28px,3.4vw,40px);text-transform:uppercase;letter-spacing:0.01em;margin:0 0 8px;">Start where you are. Build something real.</h2>
+    <p style="font-size:15px;line-height:1.6;margin:0 0 clamp(28px,4vw,40px);max-width:62ch;color:color-mix(in srgb,var(--color-text) 78%,transparent);">Three tracks grow with you — from your first look at data to a model your team can rely on. Then test yourself in KOC competitions judged on data no one sees until reveal day.</p>
+
+    <div class="track-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,2.5vw,28px);margin-bottom:clamp(28px,4vw,44px);">
+      <sc-for list="{{ tracks }}" as="tk" hint-placeholder-count="3">
+        <div class="blueprint" style="padding:24px;display:flex;flex-direction:column;">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:var(--font-heading);font-weight:600;font-size:34px;color:var(--color-accent-700);line-height:1;">{{ tk.no }}</span>
+            <span style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid var(--color-divider);padding:4px 8px;color:color-mix(in srgb,var(--color-text) 65%,transparent);">{{ tk.level }}</span>
+          </div>
+          <h3 style="font-family:var(--font-heading);font-weight:600;font-size:20px;text-transform:uppercase;letter-spacing:0.01em;margin:16px 0 8px;">{{ tk.title }}</h3>
+          <p style="font-size:14px;line-height:1.55;margin:0 0 16px;color:color-mix(in srgb,var(--color-text) 80%,transparent);">{{ tk.body }}</p>
+          <div style="margin-top:auto;display:flex;gap:16px;font-size:12px;color:color-mix(in srgb,var(--color-text) 62%,transparent);border-top:1px solid var(--color-divider);padding-top:12px;">
+            <span>{{ tk.lessons }} lessons</span><span>{{ tk.hours }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div class="learn-grid" style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(24px,3vw,40px);align-items:start;">
+      <div class="blueprint" style="padding:26px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-accent);"></span>Live challenge</div>
+        <h3 style="font-family:var(--font-heading);font-weight:600;font-size:24px;text-transform:uppercase;letter-spacing:0.01em;margin:14px 0 8px;">Spot the pump before it fails</h3>
+        <p style="font-size:14px;line-height:1.55;margin:0 0 18px;color:color-mix(in srgb,var(--color-text) 80%,transparent);">Use sensor readings to flag electric submersible pumps at risk. Scored on hidden wells. Winner revealed in 6 days.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div style="border:1px solid var(--color-divider);padding:12px;"><div style="font-family:var(--font-heading);font-size:26px;line-height:1;">48</div><div style="font-size:11px;color:color-mix(in srgb,var(--color-text) 62%,transparent);margin-top:4px;">Teams entered</div></div>
+          <div style="border:1px solid var(--color-divider);padding:12px;"><div style="font-family:var(--font-heading);font-size:26px;line-height:1;">312</div><div style="font-size:11px;color:color-mix(in srgb,var(--color-text) 62%,transparent);margin-top:4px;">Attempts so far</div></div>
+        </div>
+        <button type="button" class="btn btn-primary" style="height:42px;width:100%;margin-top:16px;">Join the challenge</button>
+      </div>
+
+      <div class="blueprint" style="padding:0;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="padding:16px 20px;border-bottom:1px solid var(--color-divider);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 62%,transparent);">Leaderboard — best results so far</div>
+        <table class="table" style="table-layout:fixed;">
+          <colgroup><col style="width:56px"><col><col style="width:28%"><col style="width:18%"></colgroup>
+          <thead><tr><th scope="col">Rank</th><th scope="col">Team</th><th scope="col">Accuracy</th><th scope="col">Trend</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ leaderboard }}" as="r" hint-placeholder-count="5">
+              <tr>
+                <td style="font-family:var(--font-heading);font-weight:600;font-size:18px;color:var(--color-accent-700);">{{ r.rank }}</td>
+                <td style="font-size:14px;">{{ r.team }}</td>
+                <td style="font-family:var(--font-heading);font-weight:600;font-size:17px;">{{ r.auc }}</td>
+                <td style="font-size:13px;color:color-mix(in srgb,var(--color-text) 65%,transparent);">{{ r.delta }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CAPABILITIES (tabs) ===================== -->
+<section id="capabilities" style="padding:clamp(48px,6vw,84px) 0;">
+  <div class="section-wrap">
+    <span style="display:block;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">03 · What's inside</span>
+    <h2 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(28px,3.4vw,40px);text-transform:uppercase;letter-spacing:0.01em;margin:0 0 24px;">Areas of the workspace.</h2>
+    <div role="tablist" aria-label="What's inside" style="display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--color-divider);margin-bottom:clamp(24px,3vw,36px);">
+      <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="5">
+        <button type="button" role="tab" aria-selected="{{ tab.selected }}" onClick="{{ tab.onClick }}" style="{{ tab.style }}">{{ tab.label }}</button>
+      </sc-for>
+    </div>
+    <div class="cap-grid" style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(28px,4vw,64px);align-items:start;">
+      <div>
+        <h3 style="font-family:var(--font-heading);font-weight:600;font-size:26px;text-transform:uppercase;letter-spacing:0.01em;margin:0 0 6px;">{{ active.title }}</h3>
+        <p style="font-size:15px;line-height:1.6;margin:0 0 20px;color:color-mix(in srgb,var(--color-text) 78%,transparent);">{{ active.lede }}</p>
+        <ul style="list-style:none;margin:0;padding:0;">
+          <sc-for list="{{ active.points }}" as="pt" hint-placeholder-count="5">
+            <li style="display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--color-divider);font-size:15px;line-height:1.5;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" style="flex:none;margin-top:3px;"><path d="M5 12l4 4 10-11"/></svg>
+              <span>{{ pt }}</span>
+            </li>
+          </sc-for>
+        </ul>
+      </div>
+      <figure class="blueprint duotone" style="margin:0;aspect-ratio:16/10;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <image-slot id="{{ active.slotId }}" shape="rect" placeholder="{{ active.caption }}" style="width:100%;height:100%;" role="img" aria-label="{{ active.caption }}"></image-slot>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== INTEGRATIONS ===================== -->
+<section id="integrations" style="padding:clamp(48px,6vw,84px) 0;border-top:1px solid var(--color-divider);">
+  <div class="section-wrap">
+    <span style="display:block;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">04 · Your data</span>
+    <h2 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(28px,3.4vw,40px);text-transform:uppercase;letter-spacing:0.01em;margin:0 0 8px;max-width:22ch;">The KOC systems you already work with.</h2>
+    <p style="font-size:15px;line-height:1.6;margin:0 0 clamp(28px,4vw,40px);max-width:62ch;color:color-mix(in srgb,var(--color-text) 78%,transparent);">Pull well, production, and maintenance data straight from KOC's own systems — already labelled and access-controlled. Open one to see what it covers.</p>
+    <div class="conn-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2vw,24px);">
+      <sc-for list="{{ connectors }}" as="c" hint-placeholder-count="6">
+        <div class="blueprint" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="width:38px;height:38px;flex:none;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;color:var(--color-accent-700);font-family:var(--font-heading);font-size:13px;">{{ c.abbr }}</span>
+            <div>
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.1;">{{ c.name }}</div>
+              <div style="font-size:12px;color:color-mix(in srgb,var(--color-text) 62%,transparent);">{{ c.kind }}</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary" style="height:36px;justify-content:space-between;" onClick="{{ c.onClick }}">
+            What it covers
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </sc-for>
+    </div>
+
+    <div class="flow-row" style="display:flex;align-items:stretch;gap:0;margin-top:clamp(32px,4vw,52px);flex-wrap:wrap;">
+      <div class="blueprint" style="flex:1;min-width:200px;padding:22px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);">Step 01</div>
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:22px;text-transform:uppercase;margin:6px 0 4px;">Bring your data</div>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 78%,transparent);">Choose a governed dataset from PPDM, OpenWells, or the PI historian.</p>
+      </div>
+      <div class="flow-arrow" style="display:flex;align-items:center;justify-content:center;padding:0 8px;"><svg width="30" height="16" viewBox="0 0 30 16" fill="none" stroke="var(--color-accent)" stroke-width="1.5"><path d="M0 8h25"/><path d="M21 3l5 5-5 5"/></svg></div>
+      <div class="blueprint" style="flex:1;min-width:200px;padding:22px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);">Step 02</div>
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:22px;text-transform:uppercase;margin:6px 0 4px;">Build a model</div>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 78%,transparent);">Drag steps onto the canvas and let it learn the patterns — no code to get going.</p>
+      </div>
+      <div class="flow-arrow" style="display:flex;align-items:center;justify-content:center;padding:0 8px;"><svg width="30" height="16" viewBox="0 0 30 16" fill="none" stroke="var(--color-accent)" stroke-width="1.5"><path d="M0 8h25"/><path d="M21 3l5 5-5 5"/></svg></div>
+      <div class="blueprint" style="flex:1;min-width:200px;padding:22px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);">Step 03</div>
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:22px;text-transform:uppercase;margin:6px 0 4px;">Put it to use</div>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 78%,transparent);">Save the model and share its predictions with your team.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WORKFLOW DESIGNER PREVIEW ===================== -->
+<section id="workflows" style="padding:clamp(48px,6vw,84px) 0;">
+  <div class="section-wrap">
+    <span style="display:block;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">05 · See it work</span>
+    <h2 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(28px,3.4vw,40px);text-transform:uppercase;letter-spacing:0.01em;margin:0 0 clamp(28px,4vw,40px);max-width:26ch;">From well data to a working prediction — on one screen.</h2>
+    <div class="wf-grid" style="display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:clamp(28px,4vw,56px);align-items:center;">
+      <figure class="blueprint" style="margin:0;padding:24px 20px;background:color-mix(in srgb,var(--color-surface) 50%,transparent);background-image:linear-gradient(var(--color-divider) 1px,transparent 1px),linear-gradient(90deg,var(--color-divider) 1px,transparent 1px);background-size:26px 26px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:4px;">
+          <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;">
+              <div style="border:1px solid {{ n.border }};background:var(--color-bg);padding:10px 12px;min-width:112px;">
+                <div style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-accent-700);">{{ n.kind }}</div>
+                <div style="font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.15;margin-top:2px;">{{ n.label }}</div>
+                <div style="display:flex;justify-content:space-between;margin-top:8px;"><span style="width:6px;height:6px;border-radius:50%;border:1px solid var(--color-accent);"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--color-accent);"></span></div>
+              </div>
+              <span style="{{ n.connStyle }}"><svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="var(--color-accent)" stroke-width="1.5"><path d="M0 6h20"/><path d="M17 2l4 4-4 4"/></svg></span>
+            </div>
+          </sc-for>
+        </div>
+      </figure>
+      <div>
+        <div style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 62%,transparent);margin-bottom:6px;">Why teams like it</div>
+        <ul style="list-style:none;margin:0;padding:0;">
+          <li style="display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--color-divider);font-size:15px;line-height:1.5;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" style="flex:none;margin-top:3px;"><path d="M5 12l4 4 10-11"/></svg><span>Each step connects only where it makes sense</span></li>
+          <li style="display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--color-divider);font-size:15px;line-height:1.5;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" style="flex:none;margin-top:3px;"><path d="M5 12l4 4 10-11"/></svg><span>Works the same on small and very large projects</span></li>
+          <li style="display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--color-divider);font-size:15px;line-height:1.5;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" style="flex:none;margin-top:3px;"><path d="M5 12l4 4 10-11"/></svg><span>Tries model settings for you, and stays repeatable</span></li>
+          <li style="display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);font-size:15px;line-height:1.5;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" style="flex:none;margin-top:3px;"><path d="M5 12l4 4 10-11"/></svg><span>Catches mistakes before anything runs</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GOVERNANCE + PLATFORM PLATE ===================== -->
+<section id="governance" style="padding:clamp(48px,6vw,84px) 0;border-top:1px solid var(--color-divider);">
+  <div class="section-wrap">
+    <span style="display:block;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:12px;">06 · Trust &amp; security</span>
+    <h2 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(28px,3.4vw,40px);text-transform:uppercase;letter-spacing:0.01em;margin:0 0 clamp(28px,4vw,40px);">Safe for KOC data, by design.</h2>
+    <div class="gov-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,2.5vw,28px);">
+      <div class="blueprint" style="padding:24px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;color:var(--color-accent-700);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16"/><path d="M9 9h6v6H9z"/></svg></div>
+        <h3 style="font-family:var(--font-heading);font-weight:600;font-size:19px;text-transform:uppercase;letter-spacing:0.01em;margin:16px 0 8px;">KOC only</h3>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 80%,transparent);">A private space for KOC alone — never shared with other companies.</p>
+      </div>
+      <div class="blueprint" style="padding:24px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;color:var(--color-accent-700);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="10" width="16" height="10"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+        <h3 style="font-family:var(--font-heading);font-weight:600;font-size:19px;text-transform:uppercase;letter-spacing:0.01em;margin:16px 0 8px;">Your KOC login</h3>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 80%,transparent);">Sign in with your existing KOC account. No new passwords to manage.</p>
+      </div>
+      <div class="blueprint" style="padding:24px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;color:var(--color-accent-700);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h11l5 5v11H4z"/><path d="M8 13h8M8 17h8M8 9h3"/></svg></div>
+        <h3 style="font-family:var(--font-heading);font-weight:600;font-size:19px;text-transform:uppercase;letter-spacing:0.01em;margin:16px 0 8px;">Data stays labelled</h3>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 80%,transparent);">KOC information-security labels are honoured on every download.</p>
+      </div>
+      <div class="blueprint" style="padding:24px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;color:var(--color-accent-700);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="16" height="16"/><path d="M8 12l3 3 5-6"/></svg></div>
+        <h3 style="font-family:var(--font-heading);font-weight:600;font-size:19px;text-transform:uppercase;letter-spacing:0.01em;margin:16px 0 8px;">Protected end to end</h3>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 80%,transparent);">Information is encrypted while stored and while moving.</p>
+      </div>
+      <div class="blueprint" style="padding:24px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;color:var(--color-accent-700);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h9l3 3v15H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></div>
+        <h3 style="font-family:var(--font-heading);font-weight:600;font-size:19px;text-transform:uppercase;letter-spacing:0.01em;margin:16px 0 8px;">Full record kept</h3>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 80%,transparent);">Every important action is logged with a clear before-and-after.</p>
+      </div>
+      <div class="blueprint" style="padding:24px;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;color:var(--color-accent-700);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg></div>
+        <h3 style="font-family:var(--font-heading);font-weight:600;font-size:19px;text-transform:uppercase;letter-spacing:0.01em;margin:16px 0 8px;">Hosted in Kuwait</h3>
+        <p style="font-size:14px;line-height:1.55;margin:0;color:color-mix(in srgb,var(--color-text) 80%,transparent);">Runs in Microsoft's Kuwait region, with backups held locally.</p>
+      </div>
+    </div>
+
+    <div id="models" class="blueprint plate" style="margin-top:clamp(32px,4vw,52px);">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <header style="display:flex;flex-wrap:wrap;align-items:stretch;border-bottom:1px solid var(--color-divider);">
+        <span style="flex:1;min-width:16ch;padding:12px 20px;font-size:13px;line-height:24px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">KocAiCommunity — at a glance</span>
+        <span style="border-left:1px solid var(--color-divider);white-space:nowrap;padding:12px 20px;font-size:13px;line-height:24px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;color:color-mix(in srgb,var(--color-text) 70%,transparent);">KOC internal</span>
+        <span style="border-left:1px solid var(--color-divider);white-space:nowrap;padding:12px 20px;font-size:13px;line-height:24px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;color:color-mix(in srgb,var(--color-text) 70%,transparent);">Hosted in Kuwait</span>
+      </header>
+      <table class="table" style="table-layout:fixed;">
+        <colgroup><col style="width:72px"><col style="width:34%"><col style="width:22%"><col></colgroup>
+        <thead><tr><th scope="col">No.</th><th scope="col">What</th><th scope="col">Detail</th><th scope="col">Note</th></tr></thead>
+        <tbody>
+          <sc-for list="{{ facts }}" as="f" hint-placeholder-count="5">
+            <tr>
+              <td style="font-size:13px;font-weight:600;letter-spacing:0.08em;color:var(--color-accent-700);">{{ f.no }}</td>
+              <td style="font-size:15px;">{{ f.prop }}</td>
+              <td style="font-family:var(--font-heading);font-weight:600;font-size:22px;letter-spacing:0.02em;white-space:nowrap;">{{ f.val }}</td>
+              <td style="font-size:14px;color:color-mix(in srgb,var(--color-text) 78%,transparent);">{{ f.rem }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <p style="margin:0;padding:12px 20px;border-top:1px solid var(--color-divider);font-size:13px;line-height:24px;color:color-mix(in srgb,var(--color-text) 70%,transparent);">Details reflect the current KOC setup. Contact the platform team for the full service description.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CTA BAND ===================== -->
+<section style="background:var(--color-accent-900);color:var(--color-bg);padding:clamp(52px,6vw,88px) 0;">
+  <div class="section-wrap cta-grid" style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:clamp(28px,4vw,64px);align-items:center;">
+    <div>
+      <h2 style="font-family:var(--font-heading);font-weight:600;font-size:clamp(30px,3.6vw,46px);text-transform:uppercase;letter-spacing:0.01em;margin:0;color:var(--color-bg);">Signing in.</h2>
+      <p style="font-size:16px;line-height:1.6;margin:16px 0 0;max-width:56ch;color:color-mix(in srgb,#ffffff 82%,transparent);">Use your KOC account to enter the workspace. If sign-in doesn't work, your access may not be enabled yet — contact your division head or the platform team.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <button type="button" class="btn" style="height:48px;gap:8px;background:var(--color-bg);color:var(--color-accent-900);border-color:var(--color-bg);font-size:15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        {{ primaryCta }}
+      </button>
+      <a href="mailto:koc-ai-platform@kockw.com" class="btn" style="height:48px;background:transparent;color:var(--color-bg);border-color:color-mix(in srgb,#ffffff 45%,transparent);font-size:15px;">Contact the platform team</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer style="padding:clamp(40px,5vw,64px) 0 clamp(28px,3vw,40px);">
+  <div class="section-wrap">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:clamp(24px,3vw,48px);" class="conn-grid">
+      <div>
+        <span class="nav-brand" style="display:flex;align-items:center;gap:10px;font-family:var(--font-heading);font-weight:600;font-size:18px;">
+          <span style="display:inline-flex;width:26px;height:26px;border:1px solid var(--color-accent);align-items:center;justify-content:center;color:var(--color-accent-700);font-size:14px;">K</span>
+          KocAiCommunity
+        </span>
+        <p style="font-size:13px;line-height:1.6;margin:14px 0 0;max-width:34ch;color:color-mix(in srgb,var(--color-text) 68%,transparent);">Kuwait Oil Company's internal workspace for learning and applying machine learning on company data. For KOC use only.</p>
+      </div>
+      <div>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent);margin-bottom:12px;">Platform</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:14px;"><a href="#learn">Learn</a><a href="#capabilities">What's inside</a><a href="#integrations">Your data</a><a href="#workflows">See it work</a></div>
+      </div>
+      <div>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent);margin-bottom:12px;">Help</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:14px;"><a href="#">Getting started</a><a href="#">Guides</a><a href="#">FAQ</a><a href="mailto:koc-ai-platform@kockw.com">Contact</a></div>
+      </div>
+      <div>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent);margin-bottom:12px;">Policies</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:14px;"><a href="#governance">Information security</a><a href="#">Acceptable use</a><a href="#">Privacy (internal)</a></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;margin-top:clamp(28px,4vw,44px);padding-top:20px;border-top:1px solid var(--color-divider);font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);">
+      <span>© 2026 Kuwait Oil Company. Internal use only.</span>
+      <span>KocAiCommunity · v1.0</span>
+    </div>
+  </div>
+</footer>
+
+</main>
+
+<!-- ===================== CONNECTOR DRAWER ===================== -->
+<sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeConnector }}" style="position:fixed;inset:0;background:color-mix(in srgb,var(--color-neutral-900) 50%,transparent);z-index:90;"></div>
+  <aside role="dialog" aria-label="Connector detail" style="position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--color-bg);border-left:1px solid var(--color-divider);z-index:91;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);">
+    <div style="display:flex;align-items:center;gap:12px;padding:20px;border-bottom:1px solid var(--color-divider);">
+      <span style="width:40px;height:40px;flex:none;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;color:var(--color-accent-700);font-family:var(--font-heading);font-size:14px;">{{ drawer.abbr }}</span>
+      <div style="flex:1;">
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:20px;line-height:1.1;">{{ drawer.name }}</div>
+        <div style="font-size:12px;color:color-mix(in srgb,var(--color-text) 62%,transparent);">{{ drawer.kind }}</div>
+      </div>
+      <button type="button" class="btn btn-icon btn-secondary" onClick="{{ closeConnector }}" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div style="padding:20px;overflow:auto;">
+      <p style="font-size:14px;line-height:1.6;margin:0 0 20px;color:color-mix(in srgb,var(--color-text) 80%,transparent);">{{ drawer.desc }}</p>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid var(--color-divider);font-size:13px;"><span style="color:color-mix(in srgb,var(--color-text) 60%,transparent);text-transform:uppercase;letter-spacing:0.06em;">What it holds</span><span style="text-align:right;max-width:60%;">{{ drawer.entities }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid var(--color-divider);font-size:13px;"><span style="color:color-mix(in srgb,var(--color-text) 60%,transparent);text-transform:uppercase;letter-spacing:0.06em;">Default label</span><span style="text-align:right;">{{ drawer.classification }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);font-size:13px;"><span style="color:color-mix(in srgb,var(--color-text) 60%,transparent);text-transform:uppercase;letter-spacing:0.06em;">Sign-in</span><span style="text-align:right;">{{ drawer.auth }}</span></div>
+      </div>
+    </div>
+  </aside>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { lang: 'en', activeTab: 0, drawerKey: null, role: 'employee' };
+
+  icon(paths) {
+    return React.createElement('svg', { width: 30, height: 30, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 },
+      paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  get roleList() {
+    return [
+      { key: 'employee', label: 'Employee' },
+      { key: 'lead', label: 'Team Leader' },
+      { key: 'manager', label: 'Manager' },
+      { key: 'dceo', label: 'DCEO' },
+      { key: 'ceo', label: 'CEO' },
+    ];
+  }
+
+  get dashConfig() {
+    const colsR = (a, b, c, d) => ([
+      { label: a, align: 'text-align:left;' },
+      { label: b, align: 'text-align:right;' },
+      { label: c, align: 'text-align:right;' },
+      { label: d, align: 'text-align:right;' },
+    ]);
+    return {
+      employee: {
+        kicker: 'Your dashboard', title: "Competitions you're in.", cta: 'Browse all challenges',
+        stats: [ { value: '3', label: 'Competitions entered' }, { value: '4th', label: 'Your best current rank' }, { value: '11', label: 'Submissions made' } ],
+      },
+      lead: {
+        kicker: 'Your team', title: "Your team's participation.", cta: 'Browse challenges',
+        stats: [ { value: '7/9', label: 'Team members active' }, { value: '3', label: 'Competitions your team is in' }, { value: '2nd', label: 'Best team standing' } ],
+        tableTitle: 'Members — current activity',
+        cols: colsR('Member', 'Active', 'Competitions', 'Best rank'),
+        rows: [
+          { name: 'A. Al-Rashidi', active: 'Yes', comps: '3', standing: '4th' },
+          { name: 'M. Fernandes', active: 'Yes', comps: '2', standing: '9th' },
+          { name: 'S. Al-Otaibi', active: 'Yes', comps: '2', standing: '12th' },
+          { name: 'R. Kapoor', active: 'Yes', comps: '1', standing: '15th' },
+          { name: 'D. Haidar', active: 'No', comps: '0', standing: '—' },
+        ],
+      },
+      manager: {
+        kicker: 'Your teams', title: "Your department's participation.", cta: 'Browse challenges',
+        stats: [ { value: '5', label: 'Teams in your department' }, { value: '38', label: 'People active this quarter' }, { value: '9', label: 'Competitions entered' } ],
+        tableTitle: 'Teams — participation this quarter',
+        cols: colsR('Team', 'People active', 'Competitions', 'Best standing'),
+        rows: [
+          { name: 'Reservoir Analytics', active: '9', comps: '4', standing: '1st' },
+          { name: 'Production Engineering', active: '8', comps: '3', standing: '4th' },
+          { name: 'Facilities Reliability', active: '7', comps: '3', standing: '3rd' },
+          { name: 'HSE Data', active: '6', comps: '2', standing: '5th' },
+          { name: 'Well Integrity', active: '8', comps: '2', standing: '8th' },
+        ],
+      },
+      dceo: {
+        kicker: 'Your groups', title: "Your directorate's participation.", cta: 'Browse challenges',
+        stats: [ { value: '4', label: 'Groups in your directorate' }, { value: '210', label: 'People active' }, { value: '9', label: 'Use cases in production' } ],
+        tableTitle: 'Groups — participation and outcomes',
+        cols: colsR('Group', 'People active', 'Competitions', 'Models in use'),
+        rows: [
+          { name: 'Subsurface', active: '74', comps: '12', standing: '5' },
+          { name: 'Field Development', active: '58', comps: '9', standing: '3' },
+          { name: 'Operations', active: '46', comps: '7', standing: '1' },
+          { name: 'HSE & Integrity', active: '32', comps: '5', standing: '0' },
+        ],
+      },
+      ceo: {
+        kicker: 'Across KOC', title: 'Company-wide participation.', cta: 'Browse challenges',
+        stats: [ { value: '11', label: 'Directorates onboard' }, { value: '1,840', label: 'People upskilled' }, { value: '26', label: 'Competitions run' } ],
+        tableTitle: 'Directorates — engagement and value',
+        cols: colsR('Directorate', 'People active', 'Competitions', 'Models in use'),
+        rows: [
+          { name: 'Exploration & Subsurface', active: '410', comps: '9', standing: '14' },
+          { name: 'Field Development', active: '360', comps: '7', standing: '9' },
+          { name: 'Operations', active: '520', comps: '6', standing: '11' },
+          { name: 'HSE', active: '190', comps: '3', standing: '4' },
+          { name: 'Corporate & Support', active: '360', comps: '1', standing: '2' },
+        ],
+      },
+    };
+  }
+
+  get roleConfig() {
+    const iLearn = ['M3 6l9-3 9 3-9 3-9-3z', 'M21 6v6', 'M6 8v5c0 1.5 3 3 6 3s6-1.5 6-3V8'];
+    const iTrophy = ['M6 3h12v4a6 6 0 0 1-12 0z', 'M6 5H3v2a3 3 0 0 0 3 3', 'M18 5h3v2a3 3 0 0 1-3 3', 'M9 20h6', 'M12 15v5'];
+    const iPeople = ['M9 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M3 20c0-3 3-5 6-5s6 2 6 5', 'M16 5a3 3 0 0 1 0 6', 'M18 20c0-2-1-3.5-2.5-4.4'];
+    const iChart = ['M4 20V10', 'M10 20V4', 'M16 20v-7', 'M22 20H2'];
+    const iShield = ['M12 3l7 4v5c0 4-3 7-7 9-4-2-7-5-7-9V7z', 'M9 12l2 2 4-4'];
+    const iGlobe = ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M3 12h18', 'M12 3c2.5 2.5 4 5.5 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.5-4-9s1.5-6.5 4-9z'];
+    const iTarget = ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', 'M12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z'];
+    const iFlag = ['M5 21V4', 'M5 4h11l-2 4 2 4H5'];
+    const iBook = ['M4 4h11a2 2 0 0 1 2 2v14a3 3 0 0 0-3-3H4z', 'M20 4h-3a2 2 0 0 0-2 2v11'];
+
+    return {
+      employee: {
+        eyebrow: 'KOC internal · engineers, geologists & analysts',
+        headline: ['Your AI & ML', 'workspace.'],
+        sub: 'The KOC environment for learning machine learning on real subsurface, production, and facilities data — take a track, enter an internal competition, and share your work with colleagues. Sign in with your KOC account to begin.',
+        ctaSecondary: 'Browse learning tracks', ctaHref: '#learn',
+        trust: ['KOC data stays inside KOC', 'Your KOC account', 'Fully auditable'],
+        pillarKicker: 'What you can do here',
+        pillars: [
+          { icon: this.icon(iBook), title: 'Learn on your own work', body: 'Short, guided tracks take you from a spreadsheet of well data to a working prediction. Built for engineers and geologists, not programmers.', link: 'Explore tracks', href: '#learn' },
+          { icon: this.icon(iTrophy), title: 'Compete with colleagues', body: 'Friendly internal challenges on real KOC questions, scored on a live leaderboard. A hands-on way to sharpen skills across teams.', link: 'See competitions', href: '#learn' },
+          { icon: this.icon(iPeople), title: 'Share across KOC', body: 'Projects, datasets, and discussions stay inside KOC. Nothing leaves the company, and every step is recorded for peace of mind.', link: "How it's protected", href: '#governance' },
+        ],
+        prioritiesTitle: 'Your first month',
+        prioritiesLede: 'A simple path from curious to capable — a few hours a week, all on real KOC data.',
+        priorities: ['Finish a starter track and build your first model', 'Join a live challenge and see where you land', 'Publish a project your team can reuse'],
+        stats: [ { value: '3', label: 'Learning tracks, beginner to advanced' }, { value: '0', label: 'Lines of code to get started' }, { value: '24/7', label: 'Available on the KOC network' } ],
+      },
+      lead: {
+        eyebrow: 'KOC internal · team leader view',
+        headline: ["Your team's", 'AI & ML workspace.'],
+        sub: 'Follow how your team is learning machine learning on KOC data — see progress across tracks, keep track of the competitions they have entered, and help turn new skills into shared projects.',
+        ctaSecondary: 'Browse learning tracks', ctaHref: '#learn',
+        trust: ['See who is learning', 'Team competition activity', 'All within KOC'],
+        pillarKicker: 'What you can see and do',
+        pillars: [
+          { icon: this.icon(iBook), title: 'Upskill the whole team', body: 'Assign tracks that fit each person and watch skills build on real subsurface, production, and facilities data — at a pace that fits the workload.', link: 'Explore tracks', href: '#learn' },
+          { icon: this.icon(iTrophy), title: 'Run team challenges', body: 'Set a friendly internal challenge on a question your team cares about, and let a live leaderboard bring out their best work.', link: 'See competitions', href: '#learn' },
+          { icon: this.icon(iChart), title: 'Turn skills into results', body: 'Shared projects mean the models your team builds are visible, reusable, and ready to hand over — not stuck on one laptop.', link: 'See it work', href: '#workflows' },
+        ],
+        prioritiesTitle: 'Lead a capable team',
+        prioritiesLede: 'Practical ways to raise your team’s machine-learning skills without pulling anyone off the job.',
+        priorities: ['Set tracks and see who is progressing', 'Run a challenge on a real team question', 'Move winning ideas into shared projects'],
+        stats: [ { value: '3', label: 'Tracks to assign across skill levels' }, { value: '1', label: 'Shared space for the team’s projects' }, { value: 'Live', label: 'Progress and leaderboard visibility' } ],
+      },
+      manager: {
+        eyebrow: 'KOC internal · manager view',
+        headline: ["Your department's", 'AI & ML workspace.'],
+        sub: 'See how machine-learning skills are building across your department on KOC data — who is learning, what teams are working on, and the models coming into use. All governed and kept inside KOC.',
+        ctaSecondary: 'View governance', ctaHref: '#governance',
+        trust: ['Adoption across teams', 'Governed by default', 'No data leaves KOC'],
+        pillarKicker: 'What you can see and do',
+        pillars: [
+          { icon: this.icon(iChart), title: 'Capability at scale', body: 'Move a whole department up the learning curve with structured tracks and challenges — building lasting skills on your own operational data.', link: 'Explore tracks', href: '#learn' },
+          { icon: this.icon(iTarget), title: 'Adoption you can see', body: 'Understand who is engaged, which teams are building, and where machine learning is starting to change how work gets done.', link: 'See it work', href: '#workflows' },
+          { icon: this.icon(iShield), title: 'Governed by default', body: 'Every model is promoted with approvals and can be rolled back, and every action is recorded — so scaling up never means losing control.', link: 'How it’s governed', href: '#governance' },
+        ],
+        prioritiesTitle: 'Scale capability with control',
+        prioritiesLede: 'Build department-wide machine-learning skills while keeping data, models, and access firmly governed.',
+        priorities: ['Raise skills across teams with guided tracks', 'See adoption and active projects at a glance', 'Keep every model approved, audited, and reversible'],
+        stats: [ { value: '6', label: 'KOC systems available as governed data' }, { value: '100%', label: 'Of actions captured for audit' }, { value: '1', label: 'Sanctioned workspace, not scattered tools' } ],
+      },
+      dceo: {
+        eyebrow: 'KOC internal · deputy chief executive view',
+        headline: ["Your directorate's", 'AI & ML workspace.'],
+        sub: 'See how machine-learning capability is building across your directorate on KOC data — participation by group, use cases coming into production, and the governance that keeps every model inside the company.',
+        ctaSecondary: 'View governance', ctaHref: '#governance',
+        trust: ['Capability retained in-house', 'Risk under control', 'Data stays in Kuwait'],
+        pillarKicker: 'What you can see',
+        pillars: [
+          { icon: this.icon(iPeople), title: 'Directorate-wide capability', body: 'Grow a broad base of skilled people who understand both the operations and the models — capability that stays with KOC.', link: 'Explore tracks', href: '#learn' },
+          { icon: this.icon(iTarget), title: 'Value on real problems', body: 'Point learning and competitions at questions that matter to the directorate, turning training time into applied results.', link: 'See it work', href: '#workflows' },
+          { icon: this.icon(iShield), title: 'Risk under control', body: 'Single-tenant, KOC-only, and fully audited — capability grows without adding exposure or reliance on external platforms.', link: 'How it’s governed', href: '#governance' },
+        ],
+        prioritiesTitle: 'Capability without dependency',
+        prioritiesLede: 'Advance the directorate’s AI readiness while keeping data, models, and expertise firmly within KOC.',
+        priorities: ['Build in-house skills instead of buying them repeatedly', 'Direct effort at directorate priorities and use cases', 'Hold data residency, governance, and audit throughout'],
+        stats: [ { value: 'In-house', label: 'Capability built and retained at KOC' }, { value: 'Kuwait', label: 'Where the platform and data reside' }, { value: '7 yrs', label: 'Audit history retained' } ],
+      },
+      ceo: {
+        eyebrow: 'KOC internal · chief executive view',
+        headline: ["KOC's", 'AI & ML workspace.'],
+        sub: 'A company-wide view of KOC’s own machine-learning environment — participation across directorates, skills building on company data, and the governance keeping everything sovereign, accountable, and inside KOC.',
+        ctaSecondary: 'View governance', ctaHref: '#governance',
+        trust: ['A sovereign capability', 'A skilled KOC workforce', 'Accountable and audited'],
+        pillarKicker: 'What you can see',
+        pillars: [
+          { icon: this.icon(iGlobe), title: 'A sovereign AI capability', body: 'A single KOC-owned platform where data and models stay in Kuwait — reducing dependence on external vendors and their environments.', link: 'How it’s governed', href: '#governance' },
+          { icon: this.icon(iPeople), title: 'A skilled national workforce', body: 'Thousands of KOC people gaining practical machine-learning skills on the company’s own challenges — a durable investment in people.', link: 'Explore tracks', href: '#learn' },
+          { icon: this.icon(iShield), title: 'Governed and accountable', body: 'Every model approved, every action recorded, every dataset labelled — AI adoption that stands up to scrutiny from day one.', link: 'The record', href: '#governance' },
+        ],
+        prioritiesTitle: 'AI, on KOC’s terms',
+        prioritiesLede: 'A company-wide capability that advances the digital agenda while protecting KOC’s data, people, and reputation.',
+        priorities: ['One sanctioned workspace for the whole company', 'A workforce that builds, not just buys, AI', 'Sovereignty, governance, and accountability by design'],
+        stats: [ { value: '1', label: 'Sanctioned, company-wide AI workspace' }, { value: 'Kuwait', label: 'Data residency and hosting' }, { value: '100%', label: 'Of activity governed and audited' } ],
+      },
+    };
+  }
+
+  get connectorData() {
+    return [
+      { key:'ppdm', abbr:'PP', name:'PPDM 39', kind:'Well master data',
+        desc:'The company well and log catalogue in the PPDM 39 standard — the starting point for most subsurface work.',
+        entities:'Wells, wellbores, logs, formations', classification:'KOC — Confidential', auth:'KOC service account' },
+      { key:'openwells', abbr:'OW', name:'OpenWells', kind:'Drilling & completions',
+        desc:'Daily drilling and completion reporting, ready to bring into a project as a governed dataset.',
+        entities:'Daily reports, BHA, mud, casing', classification:'KOC — Confidential', auth:'KOC service account' },
+      { key:'pi', abbr:'PI', name:'AVEVA PI', kind:'Live sensor history',
+        desc:'Time-series readings from facilities and production equipment — the raw material for condition and failure models.',
+        entities:'Tags, events, summaries', classification:'KOC — Restricted', auth:'PI Web API (KOC)' },
+      { key:'ecosys', abbr:'EC', name:'EcoSys', kind:'Projects & cost',
+        desc:'Project controls and cost data for planning and portfolio questions.',
+        entities:'Projects, forecasts, actuals', classification:'KOC — Confidential', auth:'KOC service account' },
+      { key:'sap', abbr:'SAP', name:'SAP (PM/MM)', kind:'Maintenance & materials',
+        desc:'Maintenance orders and materials movements — useful context for reliability and inventory work.',
+        entities:'Work orders, notifications, materials', classification:'KOC — Confidential', auth:'KOC service account' },
+      { key:'adls', abbr:'AD', name:'ADLS Gen2', kind:'Model & file store',
+        desc:'The governed lake where datasets, artefacts, and trained models are kept.',
+        entities:'Files, datasets, model artefacts', classification:'Inherited from source', auth:'Managed identity (KOC)' },
+    ];
+  }
+
+  get tabData() {
+    return [
+      { title:'Community', slotId:'cap-community', caption:'Community — discussions and shared projects',
+        lede:'A place to ask, share, and learn together — without anything leaving KOC.',
+        points:['Discussions and questions by team and topic','Shared projects other people can follow','Mentions and a clear activity trail','Notifications that respect who can see what'] },
+      { title:'Datasets', slotId:'cap-datasets', caption:'Datasets — versioned and labelled',
+        lede:'Bring in real KOC data that keeps its security label and its history.',
+        points:['Every dataset carries its KOC information-security label','See where the data came from at a glance','A quick profile of each column before you start','Older versions are kept, never overwritten'] },
+      { title:'Workflows', slotId:'cap-workflows', caption:'Workflows — the visual canvas',
+        lede:'Build a model by connecting steps on screen — no code needed to begin.',
+        points:['Drag steps and connect them in order','The canvas checks the pieces fit together','Automatic help finding good settings','Each version is saved exactly as it ran'] },
+      { title:'Experiments & models', slotId:'cap-models', caption:'Experiments and models — results and history',
+        lede:'Compare attempts, keep the best, and roll back whenever you need to.',
+        points:['See results for every attempt side by side','Clear version names you can refer to','One-click return to an earlier model','A full trail of what produced each result'] },
+      { title:'Competitions', slotId:'cap-competitions', caption:'Competitions — challenges and leaderboards',
+        lede:'Friendly KOC challenges scored on data kept hidden until reveal day.',
+        points:['Real KOC questions, set by the community','Scored on a fair, hidden test set','A live leaderboard as entries come in','Results revealed on a set date'] },
+    ];
+  }
+
+  navStyle() {
+    return 'position:sticky;top:0;z-index:80;background:color-mix(in srgb,var(--color-bg) 88%,transparent);backdrop-filter:saturate(1.1) blur(8px);-webkit-backdrop-filter:saturate(1.1) blur(8px);border-bottom:1px solid var(--color-divider);';
+  }
+
+  renderVals() {
+    const tabs = this.tabData.map((t, i) => ({
+      label: t.title,
+      selected: i === this.state.activeTab ? 'true' : 'false',
+      onClick: () => this.setState({ activeTab: i }),
+      style: 'flex:1;min-width:120px;cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:14px;letter-spacing:0.02em;text-transform:uppercase;padding:14px 12px;border:0;'
+        + (i > 0 ? 'border-left:1px solid var(--color-divider);' : '')
+        + (i === this.state.activeTab
+            ? 'background:var(--color-accent);color:var(--color-bg);'
+            : 'background:transparent;color:color-mix(in srgb,var(--color-text) 75%,transparent);'),
+    }));
+
+    const connectors = this.connectorData.map(c => ({
+      abbr: c.abbr, name: c.name, kind: c.kind,
+      onClick: () => this.setState({ drawerKey: c.key }),
+    }));
+
+    const drawer = this.connectorData.find(c => c.key === this.state.drawerKey) || {};
+
+    const nodeDefs = [
+      { kind:'Well data', label:'PI tags', accent:true },
+      { kind:'Tidy up', label:'Fill gaps', accent:false },
+      { kind:'Split', label:'By time', accent:false },
+      { kind:'Teach', label:'Learn patterns', accent:false },
+      { kind:'Save', label:'Model registry', accent:true },
+    ];
+    const nodes = nodeDefs.map((n, i) => ({
+      kind: n.kind, label: n.label,
+      border: n.accent ? 'var(--color-accent)' : 'var(--color-divider)',
+      connStyle: i === nodeDefs.length - 1 ? 'display:none;' : 'display:inline-flex;align-items:center;',
+    }));
+
+    const roleTabs = this.roleList.map(r => ({
+      label: r.label,
+      selected: r.key === this.state.role ? 'true' : 'false',
+      onClick: () => this.setState({ role: r.key }),
+      style: 'cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:13px;letter-spacing:0.03em;text-transform:uppercase;padding:9px 16px;border:0;white-space:nowrap;'
+        + (r.key === this.state.role
+            ? 'background:var(--color-accent);color:var(--color-bg);'
+            : 'background:transparent;color:color-mix(in srgb,var(--color-text) 72%,transparent);'),
+    }));
+
+    return {
+      noop: () => {},
+      roleTabs,
+      role: this.roleConfig[this.state.role],
+      isEmployee: this.state.role === 'employee',
+      isManagerial: this.state.role !== 'employee',
+      dash: this.dashConfig[this.state.role],
+      myCompetitions: [
+        { status: 'In progress', statusColor: 'var(--color-accent-700)', closes: 'Closes in 6 days', title: 'Spot the pump before it fails', focus: 'Flag ESP failures from PI sensor readings.', rank: '12th', score: '0.921', action: 'Improve your entry' },
+        { status: 'In progress', statusColor: 'var(--color-accent-700)', closes: 'Closes in 19 days', title: 'Forecast daily production', focus: 'Predict next-day oil rate for North Kuwait wells.', rank: '4th', score: '2.1% err', action: 'Submit a run' },
+        { status: 'Awaiting reveal', statusColor: 'color-mix(in srgb,var(--color-text) 55%,transparent)', closes: 'Reveal in 2 days', title: 'Classify well log facies', focus: 'Label rock facies from wireline logs.', rank: '7th', score: '0.884', action: 'View submission' },
+      ],
+      langLabel: this.state.lang === 'en' ? 'العربية' : 'English',
+      primaryCta: this.state.lang === 'en' ? 'Sign in with KOC' : 'الدخول عبر KOC',
+      toggleLang: () => this.setState({ lang: this.state.lang === 'en' ? 'ar' : 'en' }),
+      navStyle: this.navStyle(),
+      tabs,
+      active: this.tabData[this.state.activeTab],
+      connectors,
+      drawerOpen: !!this.state.drawerKey,
+      drawer,
+      closeConnector: () => this.setState({ drawerKey: null }),
+      nodes,
+      tracks: [
+        { no:'01', level:'Start here', title:'Getting started with data', lessons:6, hours:'~3 hours',
+          body:'Read, clean, and make sense of a dataset. For anyone curious about AI, no coding needed.' },
+        { no:'02', level:'Hands-on', title:'Solve a real problem', lessons:8, hours:'~6 hours',
+          body:'Build a model for a production, facilities, or subsurface question using your own data.' },
+        { no:'03', level:'Go further', title:'Make it dependable', lessons:7, hours:'~8 hours',
+          body:'Tune, check, and package a model your team can trust and reuse day to day.' },
+      ],
+      leaderboard: [
+        { rank:'01', team:'Reservoir Analytics', auc:'0.947', delta:'▲ 2' },
+        { rank:'02', team:'North Kuwait Ops', auc:'0.941', delta:'▲ 1' },
+        { rank:'03', team:'Facilities Reliability', auc:'0.933', delta:'▼ 2' },
+        { rank:'04', team:'Production Eng. Guild', auc:'0.928', delta:'—' },
+        { rank:'05', team:'HSE Data Team', auc:'0.915', delta:'▲ 3' },
+      ],
+      facts: [
+        { no:'01', prop:'Who it is for', val:'KOC staff', rem:'Engineers, geologists, analysts, and business teams' },
+        { no:'02', prop:'Learning tracks', val:'3', rem:'From first steps to dependable models' },
+        { no:'03', prop:'Connected systems', val:'6', rem:'PPDM, OpenWells, PI, EcoSys, SAP, ADLS' },
+        { no:'04', prop:'Where it runs', val:'Kuwait', rem:'Microsoft Azure Kuwait region' },
+        { no:'05', prop:'Activity kept', val:'7 yrs', rem:'Full audit trail retained' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

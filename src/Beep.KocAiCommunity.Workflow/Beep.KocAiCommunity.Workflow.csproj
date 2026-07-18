@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Domain\Beep.KocAiCommunity.Domain.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+  </ItemGroup>
+
+</Project>

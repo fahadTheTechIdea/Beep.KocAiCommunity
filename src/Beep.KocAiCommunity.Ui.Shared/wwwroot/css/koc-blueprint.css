@@ -1,0 +1,106 @@
+/* KOC "blueprint" design system — engineering-drawing aesthetic.
+   Tokens map onto the MudBlazor KOC theme; the corner-tick cards and grid-paper
+   figures are the signature look used across dashboards and the home page. */
+
+:root {
+    --koc-accent: #1466A5;
+    --koc-accent-300: #5FA3D4;
+    --koc-accent-500: #2A7CBE;
+    --koc-accent-700: #1466A5;
+    --koc-accent-900: #0B2E4C;
+    --koc-bg: #FFFFFF;
+    --koc-surface: #F6F8FA;
+    --koc-divider: #E1E7EC;
+    --koc-text: #10222F;
+    --koc-font-heading: "Inter", "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+.koc-eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--koc-accent-700);
+}
+
+.koc-heading {
+    font-family: var(--koc-font-heading);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+}
+
+/* Blueprint card: thin border with corner ticks at each corner. */
+.koc-blueprint {
+    position: relative;
+    border: 1px solid var(--koc-divider);
+    background: var(--koc-bg);
+}
+
+.koc-blueprint .koc-corner {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--koc-accent);
+}
+
+.koc-blueprint .koc-corner.tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.koc-blueprint .koc-corner.tr { top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
+.koc-blueprint .koc-corner.bl { bottom: -1px; left: -1px; border-right: 0; border-top: 0; }
+.koc-blueprint .koc-corner.br { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+/* Grid-paper background for canvas / worked-example figures. */
+.koc-gridpaper {
+    background-image:
+        linear-gradient(var(--koc-divider) 1px, transparent 1px),
+        linear-gradient(90deg, var(--koc-divider) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: -1px -1px;
+}
+
+.koc-stat-value {
+    font-family: var(--koc-font-heading);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--koc-accent-700);
+}
+
+/* Competition data download links */
+.koc-data-link {
+    color: var(--koc-accent-700);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px dashed var(--koc-accent-300);
+    padding-bottom: 1px;
+}
+
+.koc-data-link:hover {
+    color: var(--koc-accent-900);
+    border-bottom-style: solid;
+}
+
+/* Notification feed items */
+.koc-notif:hover { background: var(--koc-surface); }
+.koc-notif-unread { border-left: 3px solid var(--koc-accent-500); }
+
+/* Rendered lesson markdown */
+.koc-lesson h1 { font-size: 1.4rem; margin: .2rem 0 .6rem; color: var(--koc-accent-900); }
+.koc-lesson h2 { font-size: 1.1rem; margin: 1rem 0 .4rem; color: var(--koc-accent-700); }
+.koc-lesson p { margin: .5rem 0; line-height: 1.6; }
+.koc-lesson ul { margin: .4rem 0 .4rem 1.2rem; }
+.koc-lesson li { margin: .2rem 0; }
+.koc-lesson blockquote { border-left: 3px solid var(--koc-accent-300); margin: .6rem 0; padding: .2rem .8rem; background: var(--koc-surface); }
+.koc-lesson pre { background: var(--koc-accent-900); color: #dfeaf3; padding: .7rem; border-radius: 6px; overflow-x: auto; }
+.koc-lesson code { font-family: ui-monospace, monospace; }
+
+/* Leaderboard rank medals (gold/silver/bronze) */
+.koc-rank {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; font-weight: 700; font-size: 13px;
+    background: var(--koc-surface); color: var(--koc-text);
+}
+.koc-rank-1 { background: linear-gradient(135deg, #f6d365, #d4af37); color: #4a3b00; box-shadow: 0 1px 4px rgba(212,175,55,.5); }
+.koc-rank-2 { background: linear-gradient(135deg, #e6e9ec, #b8c0c8); color: #33393f; }
+.koc-rank-3 { background: linear-gradient(135deg, #f0b892, #cd7f32); color: #40220a; }
+.koc-podium td { background: color-mix(in srgb, var(--koc-accent-300) 8%, transparent); }

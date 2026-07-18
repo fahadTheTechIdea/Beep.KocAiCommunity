@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- SQL Server-specific EF migrations (production). Dev uses the SQLite migrations that live
+       in the Infrastructure project. Selected at runtime via MigrationsAssembly. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Infrastructure\Beep.KocAiCommunity.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

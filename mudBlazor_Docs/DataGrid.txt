@@ -1,0 +1,2895 @@
+DataGrid
+Represents a sortable, filterable data grid with multiselection, pagination, editing, grouping, aggregation, and server-side IQueryable<T>
+ support.
+For a simpler, template-driven table with responsive breakpoint layout, see MudTable.
+
+API
+<MudDataGrid>
+- <Column>
+- <FilterHeaderCell>
+- <FooterCell>
+- <HeaderCell>
+- <HierarchyColumn>
+- <MudDataGridPager>
+- <TemplateColumn>
+Default Data Grid
+The <MudDataGrid> is used to display and work with small amounts of data up to very large datasets, easily and efficiently. In its simplest form, the data grid is just a table, displaying data from a data source. In its most complex form, the data grid allows filtering, editing, grouping, and much more.
+
+Using the data grid is pretty simple to start with and just requires setting the Items property to a collection of data as IEnumerable, and adding Columns.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+1	H	Hydrogen	0	1.00794
+2	He	Helium	17	4.002602
+3	Li	Lithium	0	6.941
+4	Be	Beryllium	1	9.012182
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid Items="@Elements.Take(4)">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+    </Columns>
+</MudDataGrid>
+@code { 
+    private IEnumerable<Element> Elements = new List<Element>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+}
+Column Types
+There are two main column types: <PropertyColumn> and <TemplateColumn>. PropertyColumns are typically used to display a single property defined by the parameter, Property. You would use TemplateColumns when you want to display a column without linking it directly to a property in the data source. For example, if you wanted to show a column that has action buttons. TemplateColumn cannot infer things such as Title and SortBy like the PropertyColumn.
+
+You can pass a format string in the Format parameter on PropertyColumn to format the value for the cells.
+
+Name
+Position
+Years Employed
+Salary
+Total Earned
+Sam	CPA	23	$87,000.00	$2,001,000.00
+
+
+
+
+
+Alicia	Product Manager	11	$143,000.00	$1,573,000.00
+
+
+
+
+
+Ira	Developer	4	$92,000.00	$368,000.00
+
+
+
+
+
+John	IT Director	17	$229,000.00	$3,893,000.00
+
+
+
+
+
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid Items="@employees" Filterable="false" SortMode="@SortMode.None" Groupable="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.YearsEmployed" Title="Years Employed" />
+        <PropertyColumn Property="x => x.Salary" Format="C" />
+        <PropertyColumn Property="x => x.Salary * x.YearsEmployed" Title="Total Earned" Format="C" />
+        <TemplateColumn CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudRating Size="@Size.Small" SelectedValue="@context.Item.Rating" />
+                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">Hire</MudButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+@code {
+    public record Employee(string Name, string Position, int YearsEmployed, int Salary, int Rating);
+    public IEnumerable<Employee> employees;
+
+    protected override void OnInitialized()
+    {
+        employees = new List<Employee>
+        {
+            new Employee("Sam", "CPA", 23, 87_000, 4),
+            new Employee("Alicia", "Product Manager", 11, 143_000, 5),
+            new Employee("Ira", "Developer", 4, 92_000, 3),
+            new Employee("John", "IT Director", 17, 229_000, 4),
+        };
+    }
+}
+Advanced Data Grid
+In a more advanced scenario, the data grid offers sorting, filtering, pagination and selection. There are two ways to filter the data fed into the data grid. A QuickFilter function allows filtering the items in the grid globally. Data can also be filtered by specifying column filters, enabling a more robust filtration.
+
+In this example, we turn sorting and filtering off for the Nr column using the boolean Sortable and Filterable properties as well as hide the column options icon button by setting the ShowColumnOptions property to false (which is hidden by default). Additionally, we can override the default SortBy function for each column, seen in the Name column where we show how you can switch to a sort by the Name's length.
+
+To hide the filter icons unless a column is currently filtered, you can set the ShowFilterIcons property to false.
+
+Selection Note: For multi-selection with custom objects, override Equals and GetHashCode methods in your data model or provide a custom Comparer.
+
+Periodic Elements
+Nr
+Sign
+Name
+Position
+Molar mass
+Category
+1	H	Hydrogen	0	1.00794	Other
+2	He	Helium	17	4.002602	Noble Gas (p)
+3	Li	Lithium	0	6.941	Alkaline Earth Metal (s)
+4	Be	Beryllium	1	9.012182	Alkaline Metal (s)
+5	B	Boron	12	10.811	Metalloid Boron (p)
+6	C	Carbon	13	12.0107	Nonmetal Carbon (p)
+7	N	Nitrogen	14	14.0067	Nonmetal Pnictogen (p)
+8	O	Oxygen	15	15.9994	Nonmetal Chalcogen (p)
+9	F	Fluorine	16	18.998404	Halogen (p)
+10	Ne	Neon	17	20.1797	Noble Gas (p)
+Rows per page:
+
+10
+1-10 of 88
+
+ 
+ 
+ 
+Sort Name Column By Length
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid T="Element" MultiSelection="true" Items="@Elements" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+    Hideable="true" RowClick="@RowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Periodic Elements</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+        <SelectColumn T="Element" />
+        <PropertyColumn Property="x => x.Number" Title="Nr" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <PropertyColumn Property="x => x.Group" Title="Category" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudSwitch @bind-Value="@_sortNameByLength" Color="Color.Primary">Sort Name Column By Length</MudSwitch>
+</div>
+
+<MudExpansionPanels Style="flex:1">
+    <MudExpansionPanel Text="Show Events">
+        @foreach (var message in _events)
+        {
+            <MudText Typo="@Typo.body2">@message</MudText>
+        }
+        @if(_events.Count > 0) 
+        {
+            <div class="d-flex">
+                <MudSpacer/>
+                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => _events.Clear())">Clear</MudButton>
+            </div>
+        }
+    </MudExpansionPanel>
+</MudExpansionPanels>
+@code {
+    private IEnumerable<Element> Elements = new List<Element>();
+    private string _searchString;
+    private bool _sortNameByLength;
+    private List<string> _events = new();
+    // custom sort by name length
+    private Func<Element, object> _sortBy => x =>
+    {
+        if (_sortNameByLength)
+            return x.Name.Length;
+        else
+            return x.Name;
+    };
+    // quick filter - filter globally across multiple columns with the same input
+    private Func<Element, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Sign.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if ($"{x.Number} {x.Position} {x.Molar}".Contains(_searchString))
+            return true;
+
+        return false;
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+
+    // events
+    void RowClicked(DataGridRowClickEventArgs<Element> args)
+    {
+        _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+    }
+    
+    void RowRightClicked(DataGridRowClickEventArgs<Element> args)
+    {
+        _events.Insert(0, $"Event = RowRightClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+    }
+
+    void SelectedItemsChanged(HashSet<Element> items)
+    {
+        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+    }
+}
+Visual Styling
+The <MudDataGrid> has many built in properties to change its style and also allows for custom styling as well.
+
+Row level classes and styles can be applied using the RowClass and RowStyle properties respectively. To style rows according to the data of the row, you would use the RowClassFunc and RowStyleFunc properties. For even finer grain control, you can style at the header, cell and footer level as well by using the HeaderClass, HeaderStyle, HeaderClassFunc, HeaderStyleFunc, CellClass, CellStyle, CellClassFunc, CellStyleFunc, FooterClass, FooterStyle, FooterClassFunc and FooterStyleFunc properties.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+1	H	Hydrogen	0	1.00794
+2	He	Helium	17	4.002602
+3	Li	Lithium	0	6.941
+4	Be	Beryllium	1	9.012182
+Hover
+Dense
+Striped
+Bordered
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid Items="@Elements.Take(4)" Hover="@_hover" Dense="@_dense" Striped="@_striped" Bordered="@_bordered"
+    RowStyleFunc="@_rowStyleFunc">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" CellStyleFunc="@_cellStyleFunc" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+    </Columns>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudSwitch @bind-Value="_hover" Color="Color.Primary">Hover</MudSwitch>
+    <MudSwitch @bind-Value="_dense" Color="Color.Secondary">Dense</MudSwitch>
+    <MudSwitch @bind-Value="_striped" Color="Color.Tertiary">Striped</MudSwitch>
+    <MudSwitch @bind-Value="_bordered" Color="Color.Warning">Bordered</MudSwitch>
+</div>
+@code {
+    private IEnumerable<Element> Elements = new List<Element>();
+    private bool _hover;
+    private bool _dense;
+    private bool _striped;
+    private bool _bordered;
+    // style the rows where the Element.Position == 0 to have italic text.
+    private Func<Element, int, string> _rowStyleFunc => (x, i) =>
+    {
+        if (x.Position == 0)
+            return "font-style:italic";
+
+        return "";
+    };
+    // style the cells according to the element's physical classification and the molar mass.
+    private Func<Element, string> _cellStyleFunc => x =>
+    {
+        string style = "";
+
+        if (x.Number == 1)
+            style += "background-color:#8CED8C";
+
+        else if (x.Number == 2)
+            style += "background-color:#E5BDE5";
+
+        else if (x.Number == 3)
+            style += "background-color:#EACE5D";
+
+        else if (x.Number == 4)
+            style += "background-color:#F1F165";
+
+        if (x.Molar > 5)
+            style += ";font-weight:bold";
+
+        return style;
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+}
+Editing
+Enable editing with ReadOnly="false". Use DataGridEditMode.Form for dialog editing or DataGridEditMode.Cell for inline editing.
+
+Edit events:
+•StartedEditingItem: editing begins
+•FormFieldChanged: a field changes in form mode
+•CommittedItemChanges: runs before applying changes
+•CommittedItemChanged: runs after a successful commit
+•CanceledEditingItem: editing is canceled
+In form mode, CommittedItemChanges receives the edited copy and returns Close to save or KeepOpen to keep the dialog open. In this example, a negative Molar mass keeps the form open.
+
+Set Editable to false to disable editing for a column. Set Required to false to make a field optional.
+
+Editable cells use a matching input by default. Use an <EditTemplate> for custom editors. In cell mode, standard columns commit automatically, but controls inside an <EditTemplate> must handle commits in their value-changed callback.
+
+To add and edit a new row programmatically, call SetEditingItemAsync with a new T instance in form mode. In cell mode, add the new item directly to Items.
+
+Periodic Elements
+Nr
+Sign
+Name
+Position
+Molar mass
+1	H	Hydrogen	0	1.00794
+2	He	Helium	17	4.002602
+3	Li	Lithium	0	6.941
+4	Be	Beryllium	1	9.012182
+Read Only
+Form
+
+Cell
+Manual
+
+On Row Click
+Validate On Commit
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid @ref="_elementGrid" T="Element" Items="@_elements" ReadOnly="@_readOnly" 
+    EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
+    StartedEditingItem="@StartedEditingItem" CanceledEditingItem="@CanceledEditingItem" CommittedItemChanges="@CommittedItemChanges"
+    Bordered="true" Dense="true" EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Periodic Elements</MudText>
+        <MudSpacer />
+        <MudButtonGroup Class="ma-0 pa-0" Color="Color.Success" Variant="Variant.Filled">
+            <MudButton OnClick="NewItemAsync">
+                Add New Item
+            </MudButton>
+        </MudButtonGroup>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" Editable="false" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position">
+            <EditTemplate>
+                <MudSelect @bind-Value="context.Item.Position" Required RequiredError="You must select a Position!!!" Margin="@Margin.Dense">
+                    <MudSelectItem Value="0">zero</MudSelectItem>
+                    <MudSelectItem Value="1">one</MudSelectItem>
+                    <MudSelectItem Value="17">seventeen</MudSelectItem>
+                </MudSelect>
+            </EditTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <TemplateColumn Hidden="@_readOnly" CellClass="d-flex justify-between">
+            <CellTemplate>
+                    @if (!_isCellEditMode && !_editTriggerRowClick)
+                    {
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
+                    }
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteItem(context.Item))" />
+            </CellTemplate>
+            <EditTemplate>
+                    @if (!_isCellEditMode && !_editTriggerRowClick)
+                    {
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
+                    }
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteItem(context.Item))" />
+            </EditTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudSwitch @bind-Value="_readOnly" Color="Color.Primary">Read Only</MudSwitch>
+    <div class="d-flex justify-start align-center ml-4">
+        <p class="mud-typography mud-typography-body1 mud-inherit-text mr-2">Form</p>
+        <MudSwitch @bind-Value="_isCellEditMode" Color="Color.Primary">Cell</MudSwitch>
+    </div>
+    <div class="d-flex justify-start align-center ml-4">
+        <p class="mud-typography mud-typography-body1 mud-inherit-text mr-2">Manual</p>
+        <MudSwitch @bind-Value="_editTriggerRowClick" Color="Color.Primary">On Row Click</MudSwitch>
+    </div>
+    <MudSwitch @bind-Value="_validateOnCommit" Color="Color.Primary">Validate On Commit</MudSwitch>
+</div>
+
+<MudExpansionPanels Style="flex:1">
+    <MudExpansionPanel Text="Show Events">
+        @foreach (var message in _events)
+        {
+            <MudText Typo="@Typo.body2">@message</MudText>
+        }
+        @if(_events.Count > 0) 
+        {
+            <div class="d-flex">
+                <MudSpacer/>
+                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="@(() => _events.Clear())">Clear</MudButton>
+            </div>
+        }
+    </MudExpansionPanel>
+</MudExpansionPanels>
+@code {
+    private IEnumerable<Element> _elementMasterList = [];
+    private List<Element> _elements = [];
+    private bool _readOnly;
+    private bool _isCellEditMode;
+    private List<string> _events = new();
+    private bool _editTriggerRowClick;
+    private bool _validateOnCommit;
+    private MudDataGrid<Element> _elementGrid = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _elementMasterList = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+        _elements = _elementMasterList.Take(4).ToList();
+    }
+
+    private async Task NewItemAsync()
+    {
+        var elem = new Element();
+        if (_isCellEditMode)
+        {
+            _elements.Insert(0, elem);
+        }
+        else
+        {
+            await _elementGrid.SetEditingItemAsync(elem);
+        }        
+    }
+
+    private void DeleteItem(Element item)
+    {
+        _elements.Remove(item);
+    }
+
+    // events
+    private void StartedEditingItem(Element item)
+    {        
+        _events.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)}");
+    }
+
+    private void CanceledEditingItem(Element item)
+    {
+        // update code for backing data here if needed
+        _events.Insert(0, $"Event = CanceledEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)}");
+    }
+
+    private Task<DataGridEditFormAction> CommittedItemChanges(Element item)
+    {
+        // update code for the backing data here
+        if (item.Number == 0) // new item
+        {
+            bool cellMode = _elements.Remove(item); // for cell mode
+            var maxMaster = _elementMasterList.Any() ? _elementMasterList.Max(x => x.Number) : 0;
+            var maxElements = _elements.Any() ? _elements.Max(x => x.Number) : 0;
+            item.Number = Math.Max(maxMaster, maxElements) + 1;          
+            if (cellMode)
+            {
+                _elements.Insert(0, item);
+            }
+            else
+            {
+                _elements.Add(item);
+            }            
+        }   
+        _events.Insert(0, $"Event = CommittedItemChanges, Data = {System.Text.Json.JsonSerializer.Serialize(item)}");
+
+        if (_validateOnCommit && item.Molar < 0)
+            return Task.FromResult(DataGridEditFormAction.KeepOpen);
+
+        return Task.FromResult(DataGridEditFormAction.Close);
+    }
+}
+Grouping
+The <MudDataGrid> allows users to organize data by grouping rows that share common values in selected columns. Grouping collapses similar data into expandable sections, making large datasets more manageable.
+Enabling Grouping
+To enable grouping functionality across the grid set the Groupable property on <MudDataGrid> to true. This activates the grouping feature globally, allowing all columns to be groupable unless explicitly overridden. Each column also supports its own Groupable property. This column-level property takes precedence over the grid-level setting. For example, if the grid’s Groupable is true but a column’s Groupable is set to false, that column will not be groupable via the UI.
+
+Default Grouping State
+To define whether a column should start grouped by default, set its Grouping property to true. This property supports two-way binding @bind-Grouping, meaning it updates if the user groups or ungroups the column via the grid’s UI.
+
+Note that for Grouping to take effect, either the column or grid must have Groupable enabled.
+Additional Features
+Multi-level grouping is supported, allowing hierarchical organization by multiple columns simultaneously
+
+Group headers display the grouped column name or GroupTemplate, with expansion controls
+
+Grouping, GroupExpanded, and GroupByOrder are two-way bindable column parameters.
+
+
+US States Information2025
+State
+Counties
+Population
+Primary Industry
+Region
+Climate
+Year Inducted
+Primary Industry: Manufacturing
+Climate: Humid Subtropical
+Alabama	67	5,024,279	Manufacturing	Southeast	Humid Subtropical	1819
+Primary Industry: Oil and Gas
+Climate: Subarctic
+Alaska	30	733,406	Oil and Gas	Pacific	Subarctic	1959
+Primary Industry: Healthcare
+Climate: Desert
+Arizona	15	7,151,502	Healthcare	Southwest	Desert	1912
+Primary Industry: Agriculture
+Climate: Humid Subtropical
+Arkansas	75	3,011,524	Agriculture	Southeast	Humid Subtropical	1836
+Georgia	159	10,711,908	Agriculture	Southeast	Humid Subtropical	1788
+Primary Industry: Technology
+Climate: Mediterranean
+California	58	39,538,223	Technology	West	Mediterranean	1850
+Primary Industry: Tourism
+Climate: Semi-arid
+Colorado	64	5,773,714	Tourism	West	Semi-arid	1876
+Climate: Tropical
+Florida	67	21,538,187	Tourism	Southeast	Tropical	1845
+Primary Industry: Finance and Insurance
+Climate: Continental
+Connecticut	8	3,605,944	Finance and Insurance	Northeast	Continental	1788
+Delaware	3	989,948	Finance and Insurance	Northeast	Continental	1787
+Customize Group Template
+Customize Group By Industry
+Customize Group Style
+@using System.Collections.Generic
+@using MudBlazor.Utilities
+
+<MudDataGrid @ref="@_dataGrid" T="USState"
+             ServerData="@ServerReload"
+             Hover FixedHeader Groupable
+             Height="500px" 
+             GroupClass="@(_customizeGroupStyle ? "pa-4" : null)"
+             GroupStyle="@(_customizeGroupStyle ? "background-color: var(--mud-palette-info);" : null)"
+             GroupClassFunc="@(_customizeGroupStyle ? GroupClassFunc : null)"
+             GroupStyleFunc="@(_customizeGroupStyle ? GroupStyleFunc : null)">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">US States Information<span class="ml-2" style="color: var(--mud-palette-warning);font-size: smaller;">2025</span></MudText>
+        <MudSpacer />
+        <MudTextField AdornmentIcon="@Icons.Material.Outlined.Search" Adornment="Adornment.End" Placeholder="Filter Results"
+                      @bind-Value="_searchString" @bind-Value:after="@(() => _dataGrid.ReloadServerData())" 
+                      DebounceInterval="100" Variant="Variant.Outlined" Clearable />
+    </ToolBarContent>
+    <GroupTemplate>
+        <span style="font-weight:bold">
+            @context.Title: @context.Grouping.Key Count: @context.Grouping.Count()
+            @if (context.DataGrid.FilteredItems.Count() != 0)
+            {
+                @string.Format(" Percentage: {0:P1}", context.Grouping.Count() / ((double)context.DataGrid.FilteredItems.Count()))
+            }
+            </span>
+    </GroupTemplate>
+    <Columns>
+        <PropertyColumn Property="x => x.State" Title="State" Groupable="false" />
+        <PropertyColumn Property="x => x.Counties" Groupable="true" />
+        <PropertyColumn Property="x => x.Population" Groupable="false" Format="N0" />
+        <PropertyColumn Property="x => x.PrimaryIndustry" Title="Primary Industry"
+                        @bind-Grouping="_primaryIndustryGrouping" GroupBy="_groupBy1"
+                        @bind-GroupByOrder="_primaryIndustryOrder"
+                        @bind-GroupExpanded="_primaryIndustryExpanded">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    var color = context.Grouping.Key?.ToString() switch
+                    {
+                        "Healthcare" => Color.Primary,
+                        "Tech" => Color.Secondary,
+                        "Tourism" => Color.Info,
+                        _ => Color.Dark
+                    };
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Business" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">@context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() states
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Region" Title="Region"
+                        @bind-Grouping="_regionGrouping" 
+                        @bind-GroupByOrder="_regionOrder"
+                        @bind-GroupExpanded="_regionExpanded">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    var (icon, color) = context.Grouping.Key?.ToString() switch
+                    {
+                        "Northeast" or "Southeast" => (Icons.Material.Filled.East, Color.Warning),
+                        "West" or "Pacific" => (Icons.Material.Filled.West, Color.Success),
+                        "Midwest" => (Icons.Material.Filled.LocationOn, Color.Info),
+                        "Southwest" => (Icons.Material.Filled.South, Color.Error),
+                        _ => (Icons.Material.Filled.Public, Color.Default)
+                    };
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@icon" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">@context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() states
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Climate" Title="Climate"
+                        @bind-Grouping="_climateGrouping" 
+                        @bind-GroupByOrder="_climateOrder"
+                        @bind-GroupExpanded="_climateExpanded">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    var (icon, color) = context.Grouping.Key?.ToString() switch
+                    {
+                        "Continental" => (Icons.Material.Filled.AcUnit, Color.Primary),
+                        "Humid Subtropical" => (Icons.Material.Filled.WbSunny, Color.Warning),
+                        "Mediterranean" or "Tropical" => (Icons.Material.Filled.WaterDrop, Color.Info),
+                        "Desert" or "Semi-arid" or "Arid" => (Icons.Material.Filled.Landscape, Color.Error),
+                        _ => (Icons.Material.Filled.Cloud, Color.Default)
+                    };
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@icon" Color="@color" Size="Size.Small" Class="mr-2" />
+                        <span style="font-weight:bold">@context.Grouping.Key</span>
+                        <MudChip Variant="Variant.Outlined" Color="@color" Size="Size.Small" Class="ml-2">
+                            @context.Grouping.Count() states
+                        </MudChip>
+                    </div>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.YearInducted" Title="Year Inducted">
+            <GroupTemplate>
+                @if (_customizeGroupTemplate)
+                {
+                    <span style="font-weight:bold">Year Inducted: @context.Grouping.Key <MudChip Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">total @context.Grouping.Count()</MudChip></span>
+                }
+                else
+                {
+                    <span style="font-weight:bold">@context.Title: @(context.Grouping.Key)</span>
+                }
+            </GroupTemplate>
+        </PropertyColumn>
+    </Columns>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudSwitch T="bool" @bind-Value="_customizeGroupTemplate" Color="@Color.Primary">Customize Group Template</MudSwitch>
+    <MudSwitch T="bool" Value="@_customizeGroupBy" Color="@Color.Primary" ValueChanged="@CustomizeByGroupChanged">Customize Group By Industry</MudSwitch>
+    <MudSwitch T="bool" @bind-Value="_customizeGroupStyle" Color="@Color.Primary">Customize Group Style</MudSwitch>
+    <MudButton OnClick="@ExpandAllGroupsAsync" Color="@Color.Primary" Disabled="@(!(_dataGrid?.IsGrouped ?? false))">Expand all</MudButton>
+    <MudButton OnClick="@CollapseAllGroupsAsync" Color="@Color.Primary" Disabled="@(!(_dataGrid?.IsGrouped ?? false))">Collapse all</MudButton>
+</div>
+@code {
+#nullable enable
+    public static string __description__ = "Multi Level Grouping within DataGrid";
+    // For the Grid
+    private MudDataGrid<USState> _dataGrid = null!;
+    private string? _searchString = string.Empty;
+    // Bound Properties @bind-
+    private bool _customizeGroupTemplate;
+    private bool _customizeGroupBy;
+    private bool _customizeGroupStyle;
+    private bool _primaryIndustryGrouping = true;
+    private bool _regionGrouping;
+    private bool _climateGrouping = true;
+    private int _primaryIndustryOrder ;
+    private int _climateOrder = 1;
+    private int _regionOrder = 2;
+    // Display Options
+    private bool _primaryIndustryExpanded = true;
+    private bool _regionExpanded = true;
+    private bool _climateExpanded = true;
+
+    // Primary grouping by industry type
+    private Func<USState, object>? _groupBy1;
+
+    protected override void OnInitialized()
+    {
+        _groupBy1 = x =>
+        {
+            if (_customizeGroupBy)
+            {
+                return x.PrimaryIndustry switch
+                {
+                    "Healthcare" => "Health",
+                    "Technology" => "Tech",
+                    "Tourism" => "Vacay",
+                    _ => "Other"
+                };
+            }
+
+            return x.PrimaryIndustry;
+        };
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            // Check if the dataGrid is grouped and update the state accordingly (for IsGrouped)
+            if (_dataGrid?.IsGrouped == true)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task<GridData<USState>> ServerReload(GridState<USState> state, CancellationToken token)
+    {
+        // call API
+        var data = GetAllStates(_searchString, state.SortDefinitions);
+        // simulate some wait time
+        await Task.Delay(150);
+
+        var totalItems = data.Count;        
+        var pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
+        return new()
+        {
+            TotalItems = totalItems,
+            Items = pagedData
+        };
+    }
+
+    private static string GroupClassFunc(GroupDefinition<USState> item)
+    {
+        var key = item.Grouping.Key?.ToString();
+
+        return item.Title switch
+        {
+            "Primary Industry" => key switch
+            {
+                "Healthcare" => "mud-theme-primary",
+                "Tech" => "mud-theme-secondary",
+                "Tourism" => "mud-theme-info",
+                _ => "mud-theme-dark"
+            },
+            "Region" => key switch
+            {
+                "Northeast" or "Southeast" => "mud-theme-warning",
+                "West" or "Pacific" => "mud-theme-success",
+                "Midwest" => "mud-theme-info",
+                "Southwest" => "mud-theme-error",
+                _ => string.Empty
+            },
+            _ => key switch
+            {
+                "Continental" => "mud-theme-primary",
+                "Humid Subtropical" => "mud-theme-warning",
+                "Mediterranean" or "Tropical" => "mud-theme-info",
+                "Desert" or "Semi-arid" or "Arid" => "mud-theme-error",
+                _ => string.Empty
+            }
+        };
+    }
+
+    private static string GroupStyleFunc(GroupDefinition<USState> item)
+    {
+        var indent = item.Level * 16; // 16px per level
+        var borderWidth = Math.Max(1, 4 - item.Level); // Decrease border width with depth
+
+        var style = new StyleBuilder()
+            .AddStyle("padding-left", $"{indent}px")
+            .AddStyle("border-left", $"{borderWidth}px solid")
+            .AddStyle("border-color", GetBorderColor(item))
+            .AddStyle("opacity", $"{1 - (item.Level - 1) * 0.2}") // Fade out deeper levels slightly
+            .Build();
+
+        return style;
+    }
+
+    private static string GetBorderColor(GroupDefinition<USState> item)
+    {
+        var key = item.Grouping.Key?.ToString();
+
+        return item.Title switch
+        {
+            // Primary level (Industry)
+            "Primary Industry" => key switch
+            {
+                "Healthcare" => "var(--mud-palette-primary)",
+                "Tech" => "var(--mud-palette-secondary)",
+                "Tourism" => "var(--mud-palette-info)",
+                _ => "var(--mud-palette-dark)"
+            },
+            "Region" => key switch
+            {
+                "Northeast" or "Southeast" => "var(--mud-palette-warning)",
+                "West" or "Pacific" => "var(--mud-palette-success)",
+                "Midwest" => "var(--mud-palette-info)",
+                "Southwest" => "var(--mud-palette-error)",
+                _ => "var(--mud-palette-dark)"
+            },
+            "Climate" => key switch
+            {
+                "Continental" => "var(--mud-palette-primary)",
+                "Humid Subtropical" => "var(--mud-palette-warning)",
+                "Mediterranean" or "Tropical" => "var(--mud-palette-info)",
+                "Desert" or "Semi-arid" or "Arid" => "var(--mud-palette-error)",
+                _ => "var(--mud-palette-dark)"
+            },
+            _ => "var(--mud-palette-dark)"
+        };
+    }    
+
+    private Task ExpandAllGroupsAsync()
+    {
+        return _dataGrid.ExpandAllGroupsAsync();
+    }
+
+    private Task CollapseAllGroupsAsync()
+    {
+        return _dataGrid.CollapseAllGroupsAsync();
+    }
+
+    private void CustomizeByGroupChanged(bool isChecked)
+    {
+        _customizeGroupBy = isChecked;
+        _dataGrid.GroupItems();
+    }
+
+    private static List<USState> GetAllStates(string? searchString, ICollection<SortDefinition<USState>>? sortDefinitions)
+    {
+        List<USState> data =
+        [
+            new USState(Id: 1, State: "Alabama", Counties: 67, Population: 5024279, PrimaryIndustry: "Manufacturing", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1819),
+            new USState(Id: 2, State: "Alaska", Counties: 30, Population: 733406, PrimaryIndustry: "Oil and Gas", Region: "Pacific", Climate: "Subarctic", YearInducted: 1959),
+            new USState(Id: 3, State: "Arizona", Counties: 15, Population: 7151502, PrimaryIndustry: "Healthcare", Region: "Southwest", Climate: "Desert", YearInducted: 1912),
+            new USState(Id: 4, State: "Arkansas", Counties: 75, Population: 3011524, PrimaryIndustry: "Agriculture", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1836),
+            new USState(Id: 5, State: "California", Counties: 58, Population: 39538223, PrimaryIndustry: "Technology", Region: "West", Climate: "Mediterranean", YearInducted: 1850),
+            new USState(Id: 6, State: "Colorado", Counties: 64, Population: 5773714, PrimaryIndustry: "Tourism", Region: "West", Climate: "Semi-arid", YearInducted: 1876),
+            new USState(Id: 7, State: "Connecticut", Counties: 8, Population: 3605944, PrimaryIndustry: "Finance and Insurance", Region: "Northeast", Climate: "Continental", YearInducted: 1788),
+            new USState(Id: 8, State: "Delaware", Counties: 3, Population: 989948, PrimaryIndustry: "Finance and Insurance", Region: "Northeast", Climate: "Continental", YearInducted: 1787),
+            new USState(Id: 9, State: "Florida", Counties: 67, Population: 21538187, PrimaryIndustry: "Tourism", Region: "Southeast", Climate: "Tropical", YearInducted: 1845),
+            new USState(Id: 10, State: "Georgia", Counties: 159, Population: 10711908, PrimaryIndustry: "Agriculture", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1788),
+            new USState(Id: 11, State: "Hawaii", Counties: 5, Population: 1455271, PrimaryIndustry: "Tourism", Region: "Pacific", Climate: "Tropical", YearInducted: 1959),
+            new USState(Id: 12, State: "Idaho", Counties: 44, Population: 1839106, PrimaryIndustry: "Agriculture", Region: "West", Climate: "Continental", YearInducted: 1890),
+            new USState(Id: 13, State: "Illinois", Counties: 102, Population: 12812508, PrimaryIndustry: "Manufacturing", Region: "Midwest", Climate: "Continental", YearInducted: 1818),
+            new USState(Id: 14, State: "Indiana", Counties: 92, Population: 6785528, PrimaryIndustry: "Manufacturing", Region: "Midwest", Climate: "Continental", YearInducted: 1816),
+            new USState(Id: 15, State: "Iowa", Counties: 99, Population: 3190369, PrimaryIndustry: "Agriculture", Region: "Midwest", Climate: "Continental", YearInducted: 1846),
+            new USState(Id: 16, State: "Kansas", Counties: 105, Population: 2937880, PrimaryIndustry: "Agriculture", Region: "Midwest", Climate: "Continental", YearInducted: 1861),
+            new USState(Id: 17, State: "Kentucky", Counties: 120, Population: 4505836, PrimaryIndustry: "Manufacturing", Region: "Southeast", Climate: "Humid Continental", YearInducted: 1792),
+            new USState(Id: 18, State: "Louisiana", Counties: 64, Population: 4657757, PrimaryIndustry: "Oil and Gas", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1812),
+            new USState(Id: 19, State: "Maine", Counties: 16, Population: 1362359, PrimaryIndustry: "Healthcare", Region: "Northeast", Climate: "Continental", YearInducted: 1820),
+            new USState(Id: 20, State: "Maryland", Counties: 24, Population: 6177224, PrimaryIndustry: "Healthcare", Region: "Northeast", Climate: "Continental", YearInducted: 1788),
+            new USState(Id: 21, State: "Massachusetts", Counties: 14, Population: 7029917, PrimaryIndustry: "Healthcare", Region: "Northeast", Climate: "Continental", YearInducted: 1788),
+            new USState(Id: 22, State: "Michigan", Counties: 83, Population: 10077331, PrimaryIndustry: "Manufacturing", Region: "Midwest", Climate: "Continental", YearInducted: 1837),
+            new USState(Id: 23, State: "Minnesota", Counties: 87, Population: 5706494, PrimaryIndustry: "Healthcare", Region: "Midwest", Climate: "Continental", YearInducted: 1858),
+            new USState(Id: 24, State: "Mississippi", Counties: 82, Population: 2961279, PrimaryIndustry: "Agriculture", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1817),
+            new USState(Id: 25, State: "Missouri", Counties: 115, Population: 6154913, PrimaryIndustry: "Healthcare", Region: "Midwest", Climate: "Continental", YearInducted: 1821),
+            new USState(Id: 26, State: "Montana", Counties: 56, Population: 1084225, PrimaryIndustry: "Agriculture", Region: "West", Climate: "Continental", YearInducted: 1889),
+            new USState(Id: 27, State: "Nebraska", Counties: 93, Population: 1961504, PrimaryIndustry: "Agriculture", Region: "Midwest", Climate: "Continental", YearInducted: 1867),
+            new USState(Id: 28, State: "Nevada", Counties: 17, Population: 3104614, PrimaryIndustry: "Tourism", Region: "West", Climate: "Desert", YearInducted: 1864),
+            new USState(Id: 29, State: "New Hampshire", Counties: 10, Population: 1377529, PrimaryIndustry: "Healthcare", Region: "Northeast", Climate: "Continental", YearInducted: 1788),
+            new USState(Id: 30, State: "New Jersey", Counties: 21, Population: 9288994, PrimaryIndustry: "Finance and Insurance", Region: "Northeast", Climate: "Continental", YearInducted: 1787),
+            new USState(Id: 31, State: "New Mexico", Counties: 33, Population: 2117522, PrimaryIndustry: "Oil and Gas", Region: "Southwest", Climate: "Arid", YearInducted: 1912),
+            new USState(Id: 32, State: "New York", Counties: 62, Population: 20201249, PrimaryIndustry: "Finance and Insurance", Region: "Northeast", Climate: "Continental", YearInducted: 1788),
+            new USState(Id: 33, State: "North Carolina", Counties: 100, Population: 10439388, PrimaryIndustry: "Manufacturing", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1789),
+            new USState(Id: 34, State: "North Dakota", Counties: 53, Population: 779094, PrimaryIndustry: "Agriculture", Region: "Midwest", Climate: "Continental", YearInducted: 1889),
+            new USState(Id: 35, State: "Ohio", Counties: 88, Population: 11799448, PrimaryIndustry: "Manufacturing", Region: "Midwest", Climate: "Continental", YearInducted: 1803),
+            new USState(Id: 36, State: "Oklahoma", Counties: 77, Population: 3959353, PrimaryIndustry: "Oil and Gas", Region: "Southwest", Climate: "Continental", YearInducted: 1907),
+            new USState(Id: 37, State: "Oregon", Counties: 36, Population: 4237256, PrimaryIndustry: "Technology", Region: "West", Climate: "Mediterranean", YearInducted: 1859),
+            new USState(Id: 38, State: "Pennsylvania", Counties: 67, Population: 13002700, PrimaryIndustry: "Healthcare", Region: "Northeast", Climate: "Continental", YearInducted: 1787),
+            new USState(Id: 39, State: "Rhode Island", Counties: 5, Population: 1097379, PrimaryIndustry: "Healthcare", Region: "Northeast", Climate: "Continental", YearInducted: 1790),
+            new USState(Id: 40, State: "South Carolina", Counties: 46, Population: 5118425, PrimaryIndustry: "Manufacturing", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1788),
+            new USState(Id: 41, State: "South Dakota", Counties: 66, Population: 886667, PrimaryIndustry: "Agriculture", Region: "Midwest", Climate: "Continental", YearInducted: 1889),
+            new USState(Id: 42, State: "Tennessee", Counties: 95, Population: 6910840, PrimaryIndustry: "Healthcare", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1796),
+            new USState(Id: 43, State: "Texas", Counties: 254, Population: 29145505, PrimaryIndustry: "Oil and Gas", Region: "Southwest", Climate: "Subtropical", YearInducted: 1845),
+            new USState(Id: 44, State: "Utah", Counties: 29, Population: 3271616, PrimaryIndustry: "Healthcare", Region: "West", Climate: "Semi-arid", YearInducted: 1896),
+            new USState(Id: 45, State: "Vermont", Counties: 14, Population: 643077, PrimaryIndustry: "Tourism", Region: "Northeast", Climate: "Continental", YearInducted: 1791),
+            new USState(Id: 46, State: "Virginia", Counties: 133, Population: 8631393, PrimaryIndustry: "Technology", Region: "Southeast", Climate: "Humid Subtropical", YearInducted: 1788),
+            new USState(Id: 47, State: "Washington", Counties: 39, Population: 7705281, PrimaryIndustry: "Technology", Region: "West", Climate: "Oceanic", YearInducted: 1889),
+            new USState(Id: 48, State: "West Virginia", Counties: 55, Population: 1793716, PrimaryIndustry: "Healthcare", Region: "Southeast", Climate: "Continental", YearInducted: 1863),
+            new USState(Id: 49, State: "Wisconsin", Counties: 72, Population: 5893718, PrimaryIndustry: "Manufacturing", Region: "Midwest", Climate: "Continental", YearInducted: 1848),
+            new USState(Id: 50, State: "Wyoming", Counties: 23, Population: 576851, PrimaryIndustry: "Mining", Region: "West", Climate: "Semi-arid", YearInducted: 1890)
+        ];
+
+        if (sortDefinitions != null && sortDefinitions.Any())
+        {
+            // on server or actual API would be IQueryable likely
+            IOrderedEnumerable<USState>? orderedQuery = null;
+            foreach (var sort in sortDefinitions)
+            {
+                orderedQuery = data.OrderByDirection(sort.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                                                     obj => GetPropertyValue(obj, sort.SortBy));
+            }
+            data = orderedQuery!.ToList();
+        }
+
+        return data.Where(x => MatchesSearch(x, searchString)).ToList();
+    }
+
+    private static bool MatchesSearch(USState obj, string? searchString)
+    {
+        if (string.IsNullOrEmpty(searchString))
+        {
+            return true;
+        }
+
+        return obj.State.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+               obj.PrimaryIndustry.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+               obj.YearInducted.ToString().Contains(searchString) ||
+               obj.Climate.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+               obj.Region.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static object? GetPropertyValue<TT>(TT obj, string propertyName)
+    {
+        return typeof(TT).GetProperty(propertyName)?.GetValue(obj);
+    }
+
+    private record USState(int Id, string State, int Counties, int Population, string PrimaryIndustry, string Region, string Climate, int YearInducted);
+}
+Sorting
+The <MudDataGrid> allows you to either disable sorting entirely, sort by single column or by multiple columns via the SortMode property. The default (SortMode.Multiple) allows sorting on more than one column (Hold Ctrl-Key) while clicking on a header column to extend the sort operation to another column.
+Clicking on the column header while Alt-Key is pressed, will un-sort a column (or remove it from the set of sorted columns) when multiple sorting is enabled. In the case of multiple sorting, a small index-number next to the sort direction arrow will indicate the order in which columns are sorted.
+When mode is set to SortMode.Single, only a single column can be used for sorting at a time. Using another column for sorting will automatically un-sort any former sorted column. In single mode, the number indicator next to the direction arrow will not be shown.
+
+In both active modes, single columns can be excluded from sorting by setting the Sortable property to false for that column. When SortMode is set to SortMode.None sorting is disabled globally and setting the Sortable property on a column has no effect.
+
+You can also use the SortBy parameter on a TemplateColumn to allow sorting on that column.
+
+When using PropertyColumn, if the Property lambda expression returns a primitive type, the SortDefinition's SortBy will return the Property's nameof value. Instead, if the Property lamda expression contains a complex value, the SortBy will return the column GUID. In this case, if you need to retrieve the column, you have several options:
+
+
+
+Changing the SortMode at runtime will reset any former sort orders on all columns.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+Category
+Custom
+1	H	Hydrogen	0	1.00794	Other	H - Hydrogen
+2	He	Helium	17	4.002602	Noble Gas (p)	He - Helium
+3	Li	Lithium	0	6.941	Alkaline Earth Metal (s)	Li - Lithium
+4	Be	Beryllium	1	9.012182	Alkaline Metal (s)	Be - Beryllium
+5	B	Boron	12	10.811	Metalloid Boron (p)	B - Boron
+6	C	Carbon	13	12.0107	Nonmetal Carbon (p)	C - Carbon
+7	N	Nitrogen	14	14.0067	Nonmetal Pnictogen (p)	N - Nitrogen
+8	O	Oxygen	15	15.9994	Nonmetal Chalcogen (p)	O - Oxygen
+9	F	Fluorine	16	18.998404	Halogen (p)	F - Fluorine
+10	Ne	Neon	17	20.1797	Noble Gas (p)	Ne - Neon
+Rows per page:
+
+10
+1-10 of 88
+
+ 
+ 
+ 
+Sort Name Column By Length
+Multiple
+Single
+None
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid T="Element" Items="@Elements" SortMode="@_sortMode">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" Sortable="false" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" SortBy="@_sortBy" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <PropertyColumn Property="x => x.Group" Title="Category" />
+        <TemplateColumn Title="Custom" SortBy="@(x => $"{x.Sign} - {x.Name}")">
+            <CellTemplate>
+                @context.Item.Sign - @context.Item.Name
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudSwitch @bind-Value="_sortNameByLength" Color="Color.Primary">Sort Name Column By Length</MudSwitch>
+    <MudRadioGroup T=SortMode @bind-Value="@_sortMode">
+        <MudRadio Dense=true Value=@SortMode.Multiple Color="Color.Primary">Multiple</MudRadio>
+        <MudRadio Dense=true Value=@SortMode.Single Color="Color.Tertiary">Single</MudRadio>
+        <MudRadio Dense=true Value=@SortMode.None>None</MudRadio>
+    </MudRadioGroup>
+</div>
+@code {
+    private IEnumerable<Element> Elements = new List<Element>();
+    private bool _sortNameByLength;
+    private SortMode _sortMode = SortMode.Multiple;
+
+    // custom sort by name length
+    private Func<Element, object> _sortBy => x =>
+    {
+        if (_sortNameByLength)
+            return x.Name.Length;
+        else
+            return x.Name;
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+}
+Advanced Sorting
+The <MudDataGrid> allows you to provide your own Comparer for advanced sorting. Keep in mind that the Comparer will use the same object passed by the SortBy parameter. If SortBy is not supplied, it will use the column item for its comparison. You can also manually call SetSortAsync on the DataGrid while passing your Comparer. Comparer must implement IComparer<object>. This example uses a natural sorting algorithm to sort strings with numbers properly.
+
+Name
+Value
+Misc
+1	42	555
+10	73	7
+2	11	4444
+1_10	33	33333
+1_2	99	66
+1_11	44	1111111
+0	55	222222
+Enable Natural Sorting
+@using System.Globalization;
+
+<MudDataGrid @ref="DataGrid" Items="@_items" SortMode="SortMode.Multiple">
+    <Columns>
+        <PropertyColumn Property="x => x.Name" Comparer="@(NaturalSortingEnabled ? new MudBlazor.Utilities.NaturalComparer() : null)" />
+        <PropertyColumn Property="x => x.Value" />
+        <PropertyColumn Property="x => x.Misc" />
+    </Columns>
+</MudDataGrid>
+<MudStack Row="true">
+    <MudSwitch T="bool" Value="@NaturalSortingEnabled" ValueChanged="OnCheckedChanged" Color="Color.Primary">Enable Natural Sorting</MudSwitch>
+</MudStack>
+@code {
+    private MudDataGrid<Item> DataGrid;
+
+    private bool NaturalSortingEnabled = true;
+
+    private IEnumerable<Item> _items = new List<Item>()
+    {
+        new Item("1", 42, "555"), 
+        new Item("10", 73, "7"), 
+        new Item("2", 11, "4444"), 
+        new Item("1_10", 33, "33333"),
+        new Item("1_2", 99, "66"), 
+        new Item("1_11", 44, "1111111"),
+        new Item("0", 55, "222222")
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (firstRender)
+        {
+            await DataGrid.SetSortAsync(nameof(Item.Name), SortDirection.Ascending, x => x.Name, NaturalSortingEnabled ? new MudBlazor.Utilities.NaturalComparer() : null);
+        }
+    }
+
+    private async Task OnCheckedChanged(bool value)
+    {
+        NaturalSortingEnabled = value;
+        if (DataGrid.SortDefinitions.ContainsKey(nameof(Item.Name)))
+        {
+            if (DataGrid.SortDefinitions[nameof(Item.Name)].Descending)
+            {
+                DataGrid.SortDefinitions.Clear();
+                await DataGrid.SetSortAsync(nameof(Item.Name), SortDirection.Descending, x => x.Name, NaturalSortingEnabled ? new MudBlazor.Utilities.NaturalComparer() : null);
+            }
+            else
+            {
+                DataGrid.SortDefinitions.Clear();
+                await DataGrid.SetSortAsync(nameof(Item.Name), SortDirection.Ascending, x => x.Name, NaturalSortingEnabled ? new MudBlazor.Utilities.NaturalComparer() : null);
+            }
+        }
+        else
+        {
+            await DataGrid.SetSortAsync(nameof(Item.Name), SortDirection.Ascending, x => x.Name, NaturalSortingEnabled ? new MudBlazor.Utilities.NaturalComparer() : null);
+        }
+    }
+
+    public class Item
+    {
+        public string Name { get; set; }
+        public int Value { get; set; }
+        public string Misc { get; set; }
+
+        public Item(string name, int value, String misc)
+        {
+            Name = name;
+            Value = value;
+            Misc = misc;
+        }
+    }   
+}
+Filtering
+<MudDataGrid> supports filtering with several DataGridFilterMode settings through the FilterMode parameter.
+• Simple is the default. All filters are managed in a single popover, and you can set multiple filters across multiple columns.
+• ColumnFilterMenu provides a dedicated popover for each column.
+• ColumnFilterRow places the filtering UI inline in the grid.
+
+String filtering case sensitivity can be configured globally with FilterCaseSensitivity.
+
+For backend data scenarios, see Server Side Filtering, Sorting and Pagination.
+
+QuickFilter is shown in Advanced Data Grid.
+
+Basic
+This example demonstrates the built-in filtering UI using the same items and paging setup. Use it to compare each DataGridFilterMode option and see how FilterCaseSensitivity affects string filtering.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+Category
+1	H	Hydrogen	1	1.008	Nonmetal
+2	He	Helium	18	4.0026	Noble Gas
+3	Li	Lithium	1	6.94	Alkali Metal
+4	Be	Beryllium	2	9.0122	Alkaline Earth Metal
+5	B	Boron	13	10.81	Metalloid
+Rows per page:
+
+5
+1-5 of 10
+
+ 
+ 
+ 
+Simple
+Column Menu
+Column Row
+(Default) Case Sensitivity
+Case Insensitive
+@using MudBlazor.Examples.Data.Models
+
+<MudDataGrid @ref="_dataGrid" Items="@_elements" Filterable="true" 
+             FilterMode="@_filterMode" FilterCaseSensitivity="@_caseSensitivity" 
+             RowsPerPage="5">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" Filterable="false" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" Filterable="false" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <PropertyColumn Property="x => x.Group" Title="Category" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" PageSizeOptions="new[] { 5 }" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudRadioGroup T="DataGridFilterMode" @bind-Value="_filterMode">
+        <MudRadio Dense="true" Value="@DataGridFilterMode.Simple" Color="Color.Primary">Simple</MudRadio>
+        <MudRadio Dense="true" Value="@DataGridFilterMode.ColumnFilterMenu" Color="Color.Tertiary">Column Menu</MudRadio>
+        <MudRadio Dense="true" Value="@DataGridFilterMode.ColumnFilterRow">Column Row</MudRadio>
+    </MudRadioGroup>
+</div>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudRadioGroup T="DataGridFilterCaseSensitivity" @bind-Value="_caseSensitivity">
+        <MudRadio Dense="true" Value="@DataGridFilterCaseSensitivity.Default" Color="Color.Primary"><b>(Default)</b> Case Sensitivity</MudRadio>
+        <MudRadio Dense="true" Value="@DataGridFilterCaseSensitivity.CaseInsensitive" Color="Color.Tertiary">Case Insensitive</MudRadio>
+    </MudRadioGroup>
+</div>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudButton Variant="Variant.Filled" OnClick="ResetGridAndFilters" Color="Color.Default">Reset</MudButton>
+</div>
+@code {
+    private readonly List<Element> _elements = CreateElements();
+    private DataGridFilterMode _filterMode = DataGridFilterMode.Simple;
+    private DataGridFilterCaseSensitivity _caseSensitivity = DataGridFilterCaseSensitivity.Default;
+    private MudDataGrid<Element> _dataGrid = default!;
+
+    private static List<Element> CreateElements() =>
+    [
+        new() { Number = 1, Sign = "H", Name = "Hydrogen", Position = 1, Molar = 1.008, Group = "Nonmetal" },
+        new() { Number = 2, Sign = "He", Name = "Helium", Position = 18, Molar = 4.0026, Group = "Noble Gas" },
+        new() { Number = 3, Sign = "Li", Name = "Lithium", Position = 1, Molar = 6.94, Group = "Alkali Metal" },
+        new() { Number = 4, Sign = "Be", Name = "Beryllium", Position = 2, Molar = 9.0122, Group = "Alkaline Earth Metal" },
+        new() { Number = 5, Sign = "B", Name = "Boron", Position = 13, Molar = 10.81, Group = "Metalloid" },
+        new() { Number = 6, Sign = "C", Name = "Carbon", Position = 14, Molar = 12.011, Group = "Nonmetal" },
+        new() { Number = 7, Sign = "N", Name = "Nitrogen", Position = 15, Molar = 14.007, Group = "Nonmetal" },
+        new() { Number = 8, Sign = "O", Name = "Oxygen", Position = 16, Molar = 15.999, Group = "Nonmetal" },
+        new() { Number = 9, Sign = "F", Name = "Fluorine", Position = 17, Molar = 18.998, Group = "Halogen" },
+        new() { Number = 10, Sign = "Ne", Name = "Neon", Position = 18, Molar = 20.180, Group = "Noble Gas" }
+    ];
+
+    private async Task ResetGridAndFilters()
+    {
+        // reset external options
+        _filterMode = DataGridFilterMode.Simple;
+        _caseSensitivity = DataGridFilterCaseSensitivity.Default;
+        // reset all active filters and sorting
+        await _dataGrid.ClearFiltersAsync();        
+        foreach (var field in _dataGrid.SortDefinitions.Keys.ToList())
+        {
+            await _dataGrid.RemoveSortAsync(field);
+        }
+    }
+
+}
+Simple FilterTemplate
+In DataGridFilterMode.Simple, you can keep the built-in simple filter panel and customize a column with <Column>.<FilterTemplate>, or replace the panel with <MudDataGrid>.<FilterTemplate>. This example uses a toggle to switch between those two approaches.
+
+<MudDataGrid>.<FilterTemplate> receives MudDataGrid<T>, while <Column>.<FilterTemplate> receives FilterContext<T>. FilterContext<T> provides the active filter definition and actions to apply, clear, or close the current filter UI. These actions operate on the filter UI surface that owns the template.
+
+The Category column template maps selected values to the active filter definition and applies a custom FilterFunction for multi-select matching. The grid template replaces the built-in panel and syncs the custom Name and Category inputs to the grid filters. For exact member details, see the API section.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+Category
+1	H	Hydrogen	1	1.008	Nonmetal
+2	He	Helium	18	4.0026	Noble Gas
+3	Li	Lithium	1	6.94	Alkali Metal
+4	Be	Beryllium	2	9.0122	Alkaline Earth Metal
+5	B	Boron	13	10.81	Metalloid
+Rows per page:
+
+5
+1-5 of 10
+
+ 
+ 
+ 
+Column FilterTemplate
+MudDataGrid FilterTemplate
+@using MudBlazor.Examples.Data.Models
+
+<MudDataGrid @ref="_dataGrid" T="Element" Items="@_elements" Filterable="true" FilterMode="DataGridFilterMode.Simple" RowsPerPage="5"
+             FilterTemplate="@(_useCustomGridTemplate ? GridFilterTemplate : null)">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" Filterable="false" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" Filterable="false" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <PropertyColumn Property="x => x.Group" Title="Category">
+            <FilterTemplate>
+                <MudSelect T="string" MultiSelection="true"
+                            SelectedValues="@GetFilterValues(context.FilterDefinition!)"
+                            SelectedValuesChanged="@(values => SetColumnFilterValues(context, values))"
+                            FullWidth="true" Dense="true" Margin="@Margin.Dense"
+                            Class="filter-input category-filter"
+                            Label="Categories" Clearable="true" Placeholder="Select categories">
+                    @foreach (var category in _categories)
+                    {
+                        <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+                    }
+                </MudSelect>
+            </FilterTemplate>
+        </PropertyColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" PageSizeOptions="new[] { 5 }" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex justify-start mt-4">
+    <MudRadioGroup T="bool" Value="@_useCustomGridTemplate" ValueChanged="@FilterTemplateModeChanged">
+        <MudRadio Dense="true" Value="false" Color="Color.Primary">Column FilterTemplate</MudRadio>
+        <MudRadio Dense="true" Value="true" Color="Color.Tertiary">MudDataGrid FilterTemplate</MudRadio>
+    </MudRadioGroup>
+</div>
+@code {
+    private RenderFragment<MudDataGrid<Element>> GridFilterTemplate => grid => @<MudStack Spacing="2" Class="pa-2">
+        <MudText Typo="Typo.subtitle2">Custom Grid Filter Panel</MudText>
+        <MudTextField T="string" Label="Name Contains" Clearable="true" Margin="@Margin.Dense"
+                      @bind-Value="_nameFilter"
+                      @bind-Value:after="() => SyncGridFiltersAsync(grid)"
+                      Immediate="true" DebounceInterval="250" />
+        <MudSelect T="string" MultiSelection="true"
+                   SelectedValues="@_gridCategories"
+                   SelectedValuesChanged="@(values => SetGridCategoriesAsync(grid, values))"
+                   Label="Categories" Clearable="true" Margin="@Margin.Dense">
+            @foreach (var category in _categories)
+            {
+                <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+            }
+        </MudSelect>
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton OnClick="@(async () => await ClearGridFiltersAsync(grid))">Clear</MudButton>
+            <MudButton Color="@Color.Primary" OnClick="@(async () => await grid.CloseFilterAsync())">Close</MudButton>
+        </MudStack>
+    </MudStack>
+    ;
+
+    private MudDataGrid<Element> _dataGrid = null!;
+    private readonly List<Element> _elements = CreateElements();
+    private readonly List<string> _categories = [];
+    private HashSet<string> _gridCategories = [];
+    private bool _useCustomGridTemplate;
+    private string _nameFilter = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _categories.AddRange(_elements.Select(x => x.Group).Distinct().OrderBy(x => x).ToList());
+    }
+
+    private Task FilterTemplateModeChanged(bool value)
+    {
+        // Example toggle: switches between the column-level template and the grid-level template.
+        _useCustomGridTemplate = value;
+        _nameFilter = string.Empty;
+        _gridCategories = [];
+        return _dataGrid.ClearFiltersAsync();
+    }
+
+    private IReadOnlyCollection<string> GetFilterValues(IFilterDefinition<Element> filterDefinition)
+    {
+        // Column FilterTemplate: reads the current values from the built-in simple filter row.
+        return filterDefinition.Value as IReadOnlyCollection<string> ?? Array.Empty<string>();
+    }
+
+    private Task SetColumnFilterValues(FilterContext<Element> context, IEnumerable<string> values)
+    {
+        // Column FilterTemplate: maps selected values to the active filter row and custom predicate.
+        var filterDefinition = context.FilterDefinition!;
+        var selectedValues = values?.ToList() ?? [];
+        filterDefinition.Value = selectedValues.Count > 0 ? selectedValues : null;
+
+        if (filterDefinition is FilterDefinition<Element> filterDef)
+        {
+            if (selectedValues.Count > 0)
+            {
+                filterDef.FilterFunction = item => item.Group is not null && selectedValues.Contains(item.Group);
+            }
+            else
+            {
+                filterDef.FilterFunction = null;
+            }
+        }
+
+        return context.Actions.ApplyFilterAsync(filterDefinition);
+    }
+
+    private Task SetGridCategoriesAsync(MudDataGrid<Element> grid, IEnumerable<string> values)
+    {
+        // MudDataGrid FilterTemplate: updates the selected categories and resyncs the curated filters.
+        _gridCategories = values?.ToHashSet() ?? [];
+        return SyncGridFiltersAsync(grid);
+    }
+
+    private async Task SyncGridFiltersAsync(MudDataGrid<Element> grid)
+    {
+        // MudDataGrid FilterTemplate: rebuilds the curated grid filters from the custom panel state.
+        await grid.ClearFiltersAsync();
+
+        if (!string.IsNullOrWhiteSpace(_nameFilter))
+        {
+            var nameColumn = GetRenderedColumn(grid, nameof(Element.Name));
+            await grid.AddFilterAsync(new FilterDefinition<Element>
+            {
+                Column = nameColumn,
+                Operator = FilterOperator.String.Contains,
+                Title = nameColumn.Title,
+                Value = _nameFilter
+            });
+        }
+
+        if (_gridCategories.Any())
+        {
+            var categoryColumn = GetRenderedColumn(grid, nameof(Element.Group));
+            await grid.AddFilterAsync(new FilterDefinition<Element>
+            {
+                Column = categoryColumn,
+                Operator = FilterOperator.String.Equal,
+                Title = categoryColumn.Title,
+                Value = _gridCategories.ToList(),
+                FilterFunction = item => item.Group is not null && _gridCategories.Contains(item.Group)
+            });
+        }
+    }
+
+    private static Column<Element> GetRenderedColumn(MudDataGrid<Element> grid, string propertyName)
+    {
+        // MudDataGrid FilterTemplate: resolves the rendered column used to create custom filter definitions.
+        return grid.RenderedColumns.First(x => x.PropertyName == propertyName);
+    }
+
+    private async Task ClearGridFiltersAsync(MudDataGrid<Element> grid)
+    {
+        // MudDataGrid FilterTemplate: clears the custom panel state and the grid filters together.
+        _nameFilter = string.Empty;
+        _gridCategories = [];
+        await grid.ClearFiltersAsync();
+    }
+
+    private static List<Element> CreateElements() =>
+    [
+        new() { Number = 1, Sign = "H", Name = "Hydrogen", Position = 1, Molar = 1.008, Group = "Nonmetal" },
+        new() { Number = 2, Sign = "He", Name = "Helium", Position = 18, Molar = 4.0026, Group = "Noble Gas" },
+        new() { Number = 3, Sign = "Li", Name = "Lithium", Position = 1, Molar = 6.94, Group = "Alkali Metal" },
+        new() { Number = 4, Sign = "Be", Name = "Beryllium", Position = 2, Molar = 9.0122, Group = "Alkaline Earth Metal" },
+        new() { Number = 5, Sign = "B", Name = "Boron", Position = 13, Molar = 10.81, Group = "Metalloid" },
+        new() { Number = 6, Sign = "C", Name = "Carbon", Position = 14, Molar = 12.011, Group = "Nonmetal" },
+        new() { Number = 7, Sign = "N", Name = "Nitrogen", Position = 15, Molar = 14.007, Group = "Nonmetal" },
+        new() { Number = 8, Sign = "O", Name = "Oxygen", Position = 16, Molar = 15.999, Group = "Nonmetal" },
+        new() { Number = 9, Sign = "F", Name = "Fluorine", Position = 17, Molar = 18.998, Group = "Halogen" },
+        new() { Number = 10, Sign = "Ne", Name = "Neon", Position = 18, Molar = 20.180, Group = "Noble Gas" }
+    ];
+}
+Row and Menu FilterTemplate
+<Column>.<FilterTemplate> also works in DataGridFilterMode.ColumnFilterRow and DataGridFilterMode.ColumnFilterMenu. These modes also use FilterContext<T>, so the same context shape is reused while Actions operate on the currently rendered filter UI.
+
+This example keeps the built-in filter behavior for most columns and overrides one column with a custom multi-select filter. In DataGridFilterMode.ColumnFilterMenu, the filter is applied manually through the grid so the menu can stay open while selections change. For exact member details, see the API section.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+Category
+Filter Categories
+1	H	Hydrogen	1	1.008	Nonmetal
+2	He	Helium	18	4.0026	Noble Gas
+3	Li	Lithium	1	6.94	Alkali Metal
+4	Be	Beryllium	2	9.0122	Alkaline Earth Metal
+5	B	Boron	13	10.81	Metalloid
+Rows per page:
+
+5
+1-5 of 10
+
+ 
+ 
+ 
+Column Filter Row
+Column Filter Menu
+@using MudBlazor.Examples.Data.Models
+
+<MudDataGrid @ref="@_dataGrid" Items="@_elements" Filterable="true" FilterMode="@_filterMode" RowsPerPage="5">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" Filterable="false" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" Filterable="false" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <PropertyColumn Property="x => x.Group" Title="Category">
+            <FilterTemplate>
+                <MudSelect T="string" MultiSelection="true"
+                           SelectedValues="@GetFilterValues(context.FilterDefinition!)"
+                           SelectedValuesChanged="@(values => SetColumnFilterValues(context, values))"
+                           FullWidth="true" Dense="true" Margin="@Margin.Dense"
+                           Class="filter-input category-filter"
+                           Placeholder="Filter Categories" Clearable="true">
+                    @foreach (var category in _categories)
+                    {
+                        <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+                    }
+                </MudSelect>
+            </FilterTemplate>
+        </PropertyColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" PageSizeOptions="new[] { 5 }" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex justify-start mt-4">
+    <MudRadioGroup T="DataGridFilterMode" Value="@_filterMode" ValueChanged="@FilterModeChanged">
+        <MudRadio Dense="true" Value="@DataGridFilterMode.ColumnFilterRow" Color="Color.Primary">Column Filter Row</MudRadio>
+        <MudRadio Dense="true" Value="@DataGridFilterMode.ColumnFilterMenu" Color="Color.Tertiary">Column Filter Menu</MudRadio>
+    </MudRadioGroup>
+</div>
+@code {
+    private readonly List<Element> _elements = CreateElements();
+    private readonly List<string> _categories = [];
+    private MudDataGrid<Element> _dataGrid = default!;
+    private DataGridFilterMode _filterMode = DataGridFilterMode.ColumnFilterRow;
+
+    protected override void OnInitialized()
+    {
+        _categories.AddRange(_elements.Select(x => x.Group).Distinct().OrderBy(x => x).ToList());
+    }
+
+    private Task FilterModeChanged(DataGridFilterMode value)
+    {
+        // Example toggle: switches between the row and menu column filter modes.
+        _filterMode = value;
+        return _dataGrid.ClearFiltersAsync();
+    }
+
+    private IReadOnlyCollection<string> GetFilterValues(IFilterDefinition<Element> filterDefinition)
+    {
+        // Column FilterTemplate: reads the current values from the active filter UI.
+        return filterDefinition.Value as IReadOnlyCollection<string> ?? Array.Empty<string>();
+    }
+
+    private Task SetColumnFilterValues(FilterContext<Element> context, IEnumerable<string> values)
+    {
+        // Column FilterTemplate: maps selected values to the active filter definition and applies through the grid so the menu can stay open for multi-selection.
+        var filterDefinition = context.FilterDefinition!;
+        var selectedValues = values?.ToList() ?? [];
+        filterDefinition.Value = selectedValues.Count > 0 ? selectedValues : null;
+
+        if (filterDefinition is FilterDefinition<Element> filterDef)
+        {
+            if (selectedValues.Count > 0)
+            {
+                filterDef.FilterFunction = item => item.Group is not null && selectedValues.Contains(item.Group);
+            }
+            else
+            {
+                filterDef.FilterFunction = null;
+            }
+        }
+
+        return ApplyColumnFilterWithoutClosingAsync(context, filterDefinition);
+    }
+
+    private Task ApplyColumnFilterWithoutClosingAsync(FilterContext<Element> context, IFilterDefinition<Element> filterDefinition)
+    {
+        // Column FilterTemplate: refreshes filtering through the grid instead of the menu action so the menu stays open while selections change.
+        if (context.FilterDefinitions.All(x => x.Id != filterDefinition.Id))
+        {
+            context.FilterDefinitions.Add(filterDefinition);
+        }
+
+        return _dataGrid.AddFilterAsync(filterDefinition);
+    }
+
+    private static List<Element> CreateElements() =>
+    [
+        new() { Number = 1, Sign = "H", Name = "Hydrogen", Position = 1, Molar = 1.008, Group = "Nonmetal" },
+        new() { Number = 2, Sign = "He", Name = "Helium", Position = 18, Molar = 4.0026, Group = "Noble Gas" },
+        new() { Number = 3, Sign = "Li", Name = "Lithium", Position = 1, Molar = 6.94, Group = "Alkali Metal" },
+        new() { Number = 4, Sign = "Be", Name = "Beryllium", Position = 2, Molar = 9.0122, Group = "Alkaline Earth Metal" },
+        new() { Number = 5, Sign = "B", Name = "Boron", Position = 13, Molar = 10.81, Group = "Metalloid" },
+        new() { Number = 6, Sign = "C", Name = "Carbon", Position = 14, Molar = 12.011, Group = "Nonmetal" },
+        new() { Number = 7, Sign = "N", Name = "Nitrogen", Position = 15, Molar = 14.007, Group = "Nonmetal" },
+        new() { Number = 8, Sign = "O", Name = "Oxygen", Position = 16, Molar = 15.999, Group = "Nonmetal" },
+        new() { Number = 9, Sign = "F", Name = "Fluorine", Position = 17, Molar = 18.998, Group = "Halogen" },
+        new() { Number = 10, Sign = "Ne", Name = "Neon", Position = 18, Molar = 20.180, Group = "Noble Gas" }
+    ];
+}
+Row Selection
+The <MudDataGrid> component supports both single and multi-row selection.
+
+Selection can be triggered either by row clicks or by checkboxes.
+Row clicks are enabled by default via the SelectOnRowClick property (default: true). This allows users to select a row by clicking anywhere on it.
+To provide visual feedback and explicit selection controls, add a SelectColumn in the <Columns> definition. This renders a checkbox for each row.
+
+Use the MultiSelection property (default: false) to control whether users can select one or multiple rows. Single selection is enabled by default.
+
+To disable selection for specific rows, use the DisabledFunc parameter on the SelectColumn.
+For example, rows 5 and 10 can be disabled by returning true for those rows in the function.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+1	H	Hydrogen	0	1.00794
+2	He	Helium	17	4.002602
+3	Li	Lithium	0	6.941
+4	Be	Beryllium	1	9.012182
+5	B	Boron	12	10.811
+6	C	Carbon	13	12.0107
+7	N	Nitrogen	14	14.0067
+8	O	Oxygen	15	15.9994
+9	F	Fluorine	16	18.998404
+10	Ne	Neon	17	20.1797
+No items selected.
+
+﻿@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@using System.Linq
+@inject HttpClient httpClient
+
+<MudDataGrid T="Element" Items="@Elements.Take(10)" MultiSelection="true" SelectedItemsChanged="@SelectedItemsChanged">
+    <Columns>
+        <SelectColumn DisabledFunc="@(item => item.Number % 5 == 0)" />
+        <PropertyColumn Property="x => x.Number" Title="Nr" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+    </Columns>
+</MudDataGrid>
+
+@if (_selectedItems != null && _selectedItems.Any())
+{
+    <MudText Typo="Typo.subtitle1" Class="mt-4">Selected Items:</MudText>
+    foreach (var item in _selectedItems)
+    {
+        <MudText Typo="Typo.body2">@item.Name</MudText>
+    }
+}
+else
+{
+    <MudText Typo="Typo.body2" Class="mt-4">No items selected.</MudText>
+}
+@code {
+    private IEnumerable<Element> Elements = new List<Element>();
+    private HashSet<Element> _selectedItems = new HashSet<Element>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+
+    private void SelectedItemsChanged(HashSet<Element> items)
+    {
+        _selectedItems = items;
+    }
+}
+Row Detail View
+The <MudDataGrid> allows you to create hierarchical layouts. To do that the HierarchyColumn has to be added in the Columns definitions.
+
+You can customize the icon to toggle the RowDetail, disable the toggle button and also initially expand the RowDetail. In addition most customization options are available including EnableHeaderToggle that puts a Toggle Icon in the header row to Expand/Collapse all.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+1	H	Hydrogen	0	1.00794
+2	He	Helium	17	4.002602
+3	Li	Lithium	0	6.941
+Lithium
+This element is number 3
+
+This element has a molar mass of 6.941
+
+4	Be	Beryllium	1	9.012182
+5	B	Boron	12	10.811
+6	C	Carbon	13	12.0107
+7	N	Nitrogen	14	14.0067
+8	O	Oxygen	15	15.9994
+9	F	Fluorine	16	18.998404
+10	Ne	Neon	17	20.1797
+Rows per page:
+
+10
+1-10 of 88
+
+ 
+ 
+ 
+Read Only
+Enable header toggle
+Expand single row
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid @ref="_dataGrid" Items="@Elements" ReadOnly="@_isReadOnly" EditMode="@DataGridEditMode.Cell" ExpandSingleRow="_expandSingleRow">
+    <Columns>
+        <HierarchyColumn T="Element" ButtonDisabledFunc="@(x => x.Sign == "He")" InitiallyExpandedFunc="@(x => x.Sign == "Li")" EnableHeaderToggle="@_enableHeaderToggle" />
+        <PropertyColumn Property="x => x.Number" Title="Nr" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+    </Columns>
+    <ChildRowContent>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">@context.Item.Name</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText>This element is number @context.Item.Number</MudText>
+                <MudText>This element has a molar mass of @context.Item.Molar</MudText>
+            </MudCardContent>
+        </MudCard>
+    </ChildRowContent>
+    <PagerContent>
+        <MudDataGridPager T="Element" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudSwitch T="bool" @bind-Value="_isReadOnly" Color="@Color.Primary">Read Only</MudSwitch>
+    <MudButton OnClick="@ExpandAll" Color="@Color.Primary">Expand all</MudButton>
+    <MudButton OnClick="@CollapseAll" Color="@Color.Primary">Collapse all</MudButton>
+    <MudSwitch @bind-Value="@_enableHeaderToggle" Label="Enable header toggle" Color="@Color.Primary" />
+    <MudSwitch @bind-Value="@_expandSingleRow" Label="Expand single row" Color="@Color.Primary" />
+</div>
+@code {
+
+    private bool _isReadOnly = true;
+    private bool _expandSingleRow = false;
+    private bool _enableHeaderToggle = false;
+    private MudDataGrid<Element> _dataGrid = null!;
+    private IEnumerable<Element> Elements = new List<Element>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+
+    private Task ExpandAll()
+    {
+        return _dataGrid.ExpandAllHierarchy();
+    }
+
+    private Task CollapseAll()
+    {
+        return _dataGrid.CollapseAllHierarchy();
+    }
+}
+Row Detail Renderer
+The <MudDataGrid> allows you to create hierarchical layouts. To do that the HierarchyColumn has to be added in the Columns definitions.
+
+You can customize the icon to toggle the RowDetail, disable the toggle button and also initially expand the RowDetail. In addition most customization options are available including EnableHeaderToggle that puts a Toggle Icon in the header row to Expand/Collapse all.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+1	H	Hydrogen	0	1.00794
+2	He	Helium	17	4.002602
+3	Li	Lithium	0	6.941
+Child row 1	Sub 1	Molar
+Child row 2	Sub 2	Molar
+4	Be	Beryllium	1	9.012182
+5	B	Boron	12	10.811
+6	C	Carbon	13	12.0107
+7	N	Nitrogen	14	14.0067
+8	O	Oxygen	15	15.9994
+9	F	Fluorine	16	18.998404
+10	Ne	Neon	17	20.1797
+Rows per page:
+
+10
+1-10 of 88
+
+ 
+ 
+ 
+Read Only
+Enable header toggle
+Expand single row
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid @ref="_dataGrid" Items="@Elements" ReadOnly="@_isReadOnly" EditMode="@DataGridEditMode.Cell" ExpandSingleRow="_expandSingleRow">
+    <Columns>
+        <HierarchyColumn T="Element" ButtonDisabledFunc="@(x => x.Sign == "He")" InitiallyExpandedFunc="@(x => x.Sign == "Li")" EnableHeaderToggle="@_enableHeaderToggle" />
+        <PropertyColumn Property="x => x.Number" Title="Nr" />
+        <PropertyColumn Property="x => x.Sign" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+    </Columns>
+    <ChildRowRenderer>
+        <tr class="mud-table-row">
+            <td class="mud-table-cell mud-table-child-content"></td>
+            <td class="mud-table-cell mud-table-child-content" colspan="2">
+                Child row 1
+            </td>
+            <td class="mud-table-cell mud-table-child-content">
+                Sub 1
+            </td>
+            <td class="mud-table-cell mud-table-child-content" colspan="2">
+                Molar
+            </td>
+        </tr>
+        <tr class="mud-table-row">
+            <td class="mud-table-cell mud-table-child-content"></td>
+            <td class="mud-table-cell mud-table-child-content" colspan="2">
+                Child row 2
+            </td>
+            <td class="mud-table-cell mud-table-child-content">
+                Sub 2
+            </td>
+            <td class="mud-table-cell mud-table-child-content" colspan="2">
+                Molar
+            </td>
+        </tr>
+    </ChildRowRenderer>
+    <PagerContent>
+        <MudDataGridPager T="Element" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudSwitch T="bool" @bind-Value="_isReadOnly" Color="@Color.Primary">Read Only</MudSwitch>
+    <MudButton OnClick="@ExpandAll" Color="@Color.Primary">Expand all</MudButton>
+    <MudButton OnClick="@CollapseAll" Color="@Color.Primary">Collapse all</MudButton>
+    <MudSwitch @bind-Value="@_enableHeaderToggle" Label="Enable header toggle" Color="@Color.Primary" />
+    <MudSwitch @bind-Value="@_expandSingleRow" Label="Expand single row" Color="@Color.Primary" />
+</div>
+@code {
+
+    private bool _isReadOnly = true;
+    private bool _expandSingleRow = false;
+    private bool _enableHeaderToggle = false;
+    private MudDataGrid<Element> _dataGrid = null!;
+    private IEnumerable<Element> Elements = new List<Element>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+
+    private Task ExpandAll()
+    {
+        return _dataGrid.ExpandAllHierarchy();
+    }
+
+    private Task CollapseAll()
+    {
+        return _dataGrid.CollapseAllHierarchy();
+    }
+}
+Column Sizing
+Use the <ColGroup> render fragment to set the initial widths of each column. Widths can be expressed as percentages (e.g. width: 20%) or fixed values (e.g. width: 120px). When columns are also resizable, these values serve as the initial widths before the user drags the resize handles.
+
+To prevent long text from wrapping inside a cell, apply white-space: nowrap via the column's CellStyle parameter. Combine it with overflow: hidden and text-overflow: ellipsis (and max-width: 0 to make the ellipsis work together with a percentage-based column width) for a cleaner truncated display.
+
+ID
+Name
+Notes
+Salary
+1	Alice Johnson	Joined in 2020, works remotely, leads the frontend team and mentors junior developers.	95000
+2	Bob Smith	10 years of experience in backend development, specialized in distributed systems.	105000
+3	Carol White	Project manager with a background in agile methodologies and cross-functional team coordination.	88000
+4	David Brown	Recently onboarded, still completing onboarding tasks and equipment setup.	72000
+<MudDataGrid T="Employee" Items="@_employees" ColumnResizeMode="ResizeMode.Column" HorizontalScrollbar="true">
+    <ColGroup>
+        <col style="width: 5%;" />
+        <col style="width: 30%;" />
+        <col style="width: 50%;" />
+        <col style="width: 15%;" />
+    </ColGroup>
+    <Columns>
+        <PropertyColumn Property="x => x.Id" Title="ID" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Notes" CellStyle="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;" />
+        <PropertyColumn Property="x => x.Salary" />
+    </Columns>
+</MudDataGrid>
+@code {
+    private readonly IEnumerable<Employee> _employees = new List<Employee>
+    {
+        new Employee { Id = 1, Name = "Alice Johnson", Notes = "Joined in 2020, works remotely, leads the frontend team and mentors junior developers.", Salary = 95_000 },
+        new Employee { Id = 2, Name = "Bob Smith", Notes = "10 years of experience in backend development, specialized in distributed systems.", Salary = 105_000 },
+        new Employee { Id = 3, Name = "Carol White", Notes = "Project manager with a background in agile methodologies and cross-functional team coordination.", Salary = 88_000 },
+        new Employee { Id = 4, Name = "David Brown", Notes = "Recently onboarded, still completing onboarding tasks and equipment setup.", Salary = 72_000 },
+    };
+
+    public class Employee
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+        public int Salary { get; set; }
+    }
+}
+Resizing
+The <MudDataGrid> allows you to resize columns interactively when ColumnResizeMode is not set to None, which is the default. There are two modes for resizing: ResizeMode.Container and ResizeMode.Column. ResizeMode.Container resizes the entire data grid while ResizeMode.Column only resizes columns using available space within the data grid. Initial column widths for resizable grids can be set using <ColGroup> as shown in the Column Sizing example above.
+
+Nr
+Sign
+Name
+Position
+Molar mass
+Category
+1	H	Hydrogen	0	1.00794	Other
+2	He	Helium	17	4.002602	Noble Gas (p)
+3	Li	Lithium	0	6.941	Alkaline Earth Metal (s)
+4	Be	Beryllium	1	9.012182	Alkaline Metal (s)
+5	B	Boron	12	10.811	Metalloid Boron (p)
+Rows per page:
+
+5
+1-5 of 88
+
+ 
+ 
+ 
+ResizeMode.Container
+
+ResizeMode.Column
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid T="Element" Items="@Elements" ColumnResizeMode="@(_resizeColumn ? ResizeMode.Column : ResizeMode.Container)" RowsPerPage="5">
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" />
+        <PropertyColumn Property="x => x.Sign" Resizable="false" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <PropertyColumn Property="x => x.Group" Title="Category" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" PageSizeOptions=@(new int[] {5, 10, 20}) />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-wrap mt-4">
+    <div class="d-flex justify-start align-center">
+        <p class="mud-typography mud-typography-body1 mud-inherit-text mr-2">ResizeMode.Container</p>
+        <MudSwitch @bind-Value="_resizeColumn" Color="Color.Primary">ResizeMode.Column</MudSwitch>
+    </div>
+</div>
+@code {
+    private IEnumerable<Element> Elements = new List<Element>();
+    private bool _resizeColumn;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+}
+Data Aggregation
+The <MudDataGrid> allows you to aggregate data in several different ways. Data aggregation happens in the footer of the grid for the most part. By setting an AggregateDefinition, you can easily add a quick built-in aggregate or choose to tailor the display to your needs. There are 6 different AggregateTypes that can be used with the AggregateDefinition: Avg, Count, Custom, Max, Min and Sum. For more control over the data aggregation, you can choose the AggregationType.Custom and supply your own function which will return a formatted string to display. Lastly, for complete control over the data aggregation including the look and feel, you use <FooterTemplate> which has its context set to the CurrentPageItems.
+
+Aggregation is automatically applied to groups when the data grid is grouped by a column. Try it out by grouping the Status column!
+
+Name
+Age
+Status
+Salary
+Hired
+Manager
+Sam	56	Normal	50000.00	3/5/2005	False
+Alicia	54	Info	75000.00	1/17/2010	False
+Ira	27	Success	102000.00	6/15/2017	True
+John	32	Warning	132000.00	12/23/2021	True
+Fred	65	Warning	87000.00	7/3/2003	False
+Tabitha	33	Info	157000.00	2/12/2015	True
+Hunter	22	Success	43000.00	9/20/2017	False
+Esme	55	Warning	149000.00	8/1/2017	True
+amliciaraohnredabithauntersme	Average age is 43		Highest: $157,000 | 4 Over $100,000		
+@using System.Net.Http.Json
+@inject HttpClient httpClient
+
+<MudDataGrid Items="@_items" Groupable="true" Filterable="true">
+    <Columns>
+        <PropertyColumn Property="x => x.Name" AggregateDefinition="@(new AggregateDefinition<Model>())">
+            <AggregateTemplate>
+                @{
+                    var names = context.Select(x => x.Name).ToArray();
+                    var index = 1;
+                }
+                @foreach (var name in names)
+                {
+                    <MudAvatar Color="@((Color)index++)" Variant="Variant.Outlined" Size="Size.Small" Class="ml-2 mr-1">
+                        @name.First()
+                    </MudAvatar>
+                    @name.Substring(1)
+                }
+            </AggregateTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Age" AggregateDefinition="_ageAggregation" />
+        <PropertyColumn Property="x => x.Status"></PropertyColumn>
+        <PropertyColumn Property="x => x.Salary" AggregateDefinition="_salaryAggregation" />
+        <PropertyColumn Property="x => x.HireDate" Title="Hired">
+            <CellTemplate>
+                @context.Item.HireDate.ToString("d")
+            </CellTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.IsManager" Title="Manager" />
+    </Columns>
+</MudDataGrid>
+@code { 
+    public record Model (string Name, int Age, Severity Status, decimal Salary, DateTime HireDate, bool IsManager);
+
+    IEnumerable<Model> _items = new List<Model>()
+    {
+        new Model("Sam", 56, Severity.Normal, 50_000.00M, new DateTime(2005, 3, 5), false), 
+        new Model("Alicia", 54, Severity.Info, 75_000.00M, new DateTime(2010, 1, 17), false), 
+        new Model("Ira", 27, Severity.Success, 102_000.00M, new DateTime(2017, 6, 15), true),
+        new Model("John", 32, Severity.Warning, 132_000.00M, new DateTime(2021, 12, 23), true),
+        new Model("Fred", 65, Severity.Warning, 87_000.00M, new DateTime(2003, 7, 3), false), 
+        new Model("Tabitha", 33, Severity.Info, 157_000.00M, new DateTime(2015, 2, 12), true), 
+        new Model("Hunter", 22, Severity.Success, 43_000.00M, new DateTime(2017, 9, 20), false),
+        new Model("Esme", 55, Severity.Warning, 149_000.00M, new DateTime(2017, 8, 1), true)
+    };
+
+    AggregateDefinition<Model> _ageAggregation = new AggregateDefinition<Model>
+    {
+        Type = AggregateType.Avg,
+        DisplayFormat = "Average age is {value}"
+    };
+
+    AggregateDefinition<Model> _salaryAggregation = new AggregateDefinition<Model>
+    {
+        Type = AggregateType.Custom,
+        CustomAggregate = x =>
+        {
+            var highestSalary = x.Max(z => z.Salary);
+            var countOver100Grand = x.Count(z => z.Salary > 100_000);
+            return $"Highest: {highestSalary:C0} | {countOver100Grand} Over {100000:C0}";
+        }
+    };
+}
+Sticky Columns
+The <MudDataGrid> allows you to make a column stick to the left or right. Setting the StickyLeft or StickyRight properties to true will make those columns "sticky". You must turn on HorizontalScrollbar to see the columns stick to either side.
+
+There are a couple of things to keep in mind with sticky columns. First, if there are not enough columns and data to force the data grid to scroll, you will not see the columns stick, and that is by design and simply how sticky works in CSS. Secondly, there is nothing stopping you from making multiple columns sticky, but it will not have the effect you presumably intend. Instead, each column will be sticky when it reached the left or right side of the data grid and will overlap the sticky column before it.
+
+Name
+Age
+This is a really long column                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ...
+Salary
+Sam	56	...	50000.00	
+Alicia	54	...	75000.00	
+Ira	27	...	102000.00	
+John	32	...	132000.00	
+@using System.Net.Http.Json
+
+<MudDataGrid Items="@_users" HorizontalScrollbar="true" Bordered="true" Dense="true">
+    <Columns>
+        <PropertyColumn Property="x => x.Name" StickyLeft="true" />
+        <PropertyColumn Property="x => x.Age" />
+        <PropertyColumn Property="x => x.FillerColumn" HeaderStyle="white-space:nowrap">
+            <HeaderTemplate>
+                @((MarkupString)$"This is a really long column{string.Join("", Enumerable.Repeat("&nbsp;", 1000))}...")
+            </HeaderTemplate>
+        </PropertyColumn>
+        <PropertyColumn Property="x => x.Salary" />
+        <TemplateColumn StickyRight="true">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="@Size.Small" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+@code {
+    public record User(string Name, int Age, string FillerColumn, decimal Salary);
+
+    private IEnumerable<User> _users = new List<User>
+    {
+        new User("Sam", 56, "...", 50_000.00M), 
+        new User("Alicia", 54, "...", 75_000.00M), 
+        new User("Ira", 27, "...", 102_000.00M),
+        new User("John", 32, "...", 132_000.00M),
+    };
+}
+Server Side Filtering, Sorting and Pagination
+Set ServerData to load data from the backend that is filtered, sorted and paginated. DataGrid will call this async function whenever the user navigates the pager or changes sorting by clicking on the sort header icons. In this example, we also show how to force the datagrid to update when the search textfield blurs, so that the datagrid reloads server-filtered data.
+The parameter ServerData is incompatible with the parameters Items and QuickFilter. If ServerData is mixed with Items and QuickFilter, a InvalidOperationException is throw at runtime.
+The example show a solution to replace QuickFilter when ServerData is used.
+
+Periodic Elements
+Nr
+Sign
+Name
+Position
+Molar mass
+Category
+1	H	
+Hydrogen
+
+0	1.00794	Other
+2	He	
+Helium
+
+17	4.002602	Noble Gas (p)
+3	Li	
+Lithium
+
+0	6.941	Alkaline Earth Metal (s)
+4	Be	
+Beryllium
+
+1	9.012182	Alkaline Metal (s)
+5	B	
+Boron
+
+12	10.811	Metalloid Boron (p)
+6	C	
+Carbon
+
+13	12.0107	Nonmetal Carbon (p)
+7	N	
+Nitrogen
+
+14	14.0067	Nonmetal Pnictogen (p)
+8	O	
+Oxygen
+
+15	15.9994	Nonmetal Chalcogen (p)
+9	F	
+Fluorine
+
+16	18.998404	Halogen (p)
+10	Ne	
+Neon
+
+17	20.1797	Noble Gas (p)
+Rows per page:
+
+10
+1-10 of 88
+
+ 
+ 
+ 
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid @ref="dataGrid" T="Element" ServerData="ServerReload" Filterable="false">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Periodic Elements</MudText>
+        <MudSpacer />
+        <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Number" Title="Nr" />
+        <PropertyColumn Property="x => x.Sign" />
+        <TemplateColumn Title="@(nameof(Element.Name))" Sortable="true">
+            <CellTemplate>
+                <MudText>@(context.Item.Name ?? "-")</MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <PropertyColumn Property="x => x.Group" Title="Category" Sortable="true">
+            <CellTemplate>
+                @(context.Item.Group ?? "-")
+            </CellTemplate>
+        </PropertyColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" />
+    </PagerContent>
+</MudDataGrid>
+@code {
+    MudDataGrid<Element> dataGrid;
+    string searchString = null;
+
+    /// <summary>
+    /// Here we simulate getting the paged, filtered and ordered data from the server
+    /// </summary>
+    private async Task<GridData<Element>> ServerReload(GridState<Element> state, CancellationToken token)
+    {
+        IEnumerable<Element> data = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable", token);
+        await Task.Delay(300, token);
+        data = data.Where(element =>
+        {
+            if(string.IsNullOrWhiteSpace(searchString))
+                return true;
+            if(element.Sign.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if(element.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if($"{element.Number} {element.Position} {element.Molar}".Contains(searchString))
+                return true;
+            return false;
+        }).ToArray();
+        var totalItems = data.Count();
+
+        var sortDefinition = state.SortDefinitions.FirstOrDefault();
+        if(sortDefinition != null)
+        {
+            switch(sortDefinition.SortBy)
+            {
+                case nameof(Element.Number):
+                    data = data.OrderByDirection(
+                        sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                        o => o.Number
+                    );
+                    break;
+                case nameof(Element.Sign):
+                    data = data.OrderByDirection(
+                        sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                        o => o.Sign
+                    );
+                    break;
+                case nameof(Element.Position):
+                    data = data.OrderByDirection(
+                        sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                        o => o.Position
+                    );
+                    break;
+                case nameof(Element.Molar):
+                    data = data.OrderByDirection(
+                        sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                        o => o.Molar
+                    );
+                    break;
+                case nameof(Element.Group):
+                    data = data.OrderByDirection(
+                        sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                        o => o.Group
+                    );
+                    break;
+                default:
+                    var sortByColumn = dataGrid.RenderedColumns.First(c => c.PropertyName == sortDefinition.SortBy);
+                    switch (sortByColumn.Title) 
+                    {
+                        case nameof(Element.Name):
+                            data = data.OrderByDirection(
+                                sortDefinition.Descending ? SortDirection.Descending : SortDirection.Ascending,
+                                o => o.Name
+                            );
+                            break; 
+                    }
+                    break;
+            }
+        }
+
+        var pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
+        return new GridData<Element> {
+            TotalItems = totalItems,
+            Items = pagedData
+        };
+    }
+
+    private Task OnSearch(string text)
+    {
+        searchString = text;
+        return dataGrid.ReloadServerData();
+    }
+}
+Virtualization
+The items in the <MudDataGrid> can be virtualized to provide better rendering performance. Setting the Virtualize property to true will cause the items to be rendered virtually. You must restrict the height for virtualization to work.
+
+Column1
+Column2
+Column3
+Column4
+Column5
+Value_0	Value_0	Value_0	Value_0	Value_0
+Value_1	Value_1	Value_1	Value_1	Value_1
+Value_2	Value_2	Value_2	Value_2	Value_2
+Value_3	Value_3	Value_3	Value_3	Value_3
+Value_4	Value_4	Value_4	Value_4	Value_4
+Value_5	Value_5	Value_5	Value_5	Value_5
+Value_6	Value_6	Value_6	Value_6	Value_6
+Value_7	Value_7	Value_7	Value_7	Value_7
+Value_8	Value_8	Value_8	Value_8	Value_8
+Value_9	Value_9	Value_9	Value_9	Value_9
+Value_10	Value_10	Value_10	Value_10	Value_10
+Value_11	Value_11	Value_11	Value_11	Value_11
+Value_12	Value_12	Value_12	Value_12	Value_12
+Value_13	Value_13	Value_13	Value_13	Value_13
+Value_14	Value_14	Value_14	Value_14	Value_14
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+
+<MudDataGrid Items="@_items" Virtualize="true" FixedHeader="true" Height="350px">
+    <Columns>
+        <PropertyColumn Property="x => x.Column1" />
+        <PropertyColumn Property="x => x.Column2" />
+        <PropertyColumn Property="x => x.Column3" />
+        <PropertyColumn Property="x => x.Column4" />
+        <PropertyColumn Property="x => x.Column5" />
+    </Columns>
+</MudDataGrid>
+@code {
+    public record Model(string Column1, string Column2, string Column3, string Column4, string Column5);
+
+    private List<Model> _items = new List<Model>();
+
+    protected override void OnInitialized()
+    {
+        for (var i = 0; i < 20000; i++)
+            _items.Add(new Model($"Value_{i}", $"Value_{i}", $"Value_{i}", $"Value_{i}", $"Value_{i}"));
+    }
+}
+Virtualize server data
+The <MudDataGrid> supports virtualization of data fetched from a server, enhancing the grid's performance for large datasets. For this feature to work, the Virtualize property must be set to true, the VirtualizeServerData parameter should be used to facilitate data retrieval and streaming from the server, and the ItemSize should be specified to optimize virtualization. Please make sure to constrain the grid's height, as virtualization relies on this dimension.
+
+Number
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+@using System.Threading
+
+<MudDataGrid T="int" VirtualizeServerData="ServerDataFunc" Virtualize="true" Filterable FixedHeader Height="400px" ItemSize="52.68f">
+    <Columns>
+        <PropertyColumn Property="x => x" Title="Number" />
+    </Columns>
+    <RowLoadingContent>
+        <tr class="mud-table-row">
+            <td class="mud-table-cell" colspan="1000">
+                Loading...
+            </td>
+        </tr>
+    </RowLoadingContent>
+</MudDataGrid>
+@code {
+    private readonly List<int> _items = Enumerable.Range(0, 51).ToList();
+    
+    private async Task<GridData<int>> ServerDataFunc(GridStateVirtualize<int> gridState, CancellationToken token)
+    {
+        try
+        {
+            var result = _items.ToList();
+
+            await Task.Delay(1000, token);
+
+            if (gridState.SortDefinitions.Count > 0) 
+            {
+                var firstSort = gridState.SortDefinitions.First();
+                result = firstSort.Descending 
+                    ? result.OrderByDescending(firstSort.SortFunc).ToList() 
+                    : result.OrderBy(firstSort.SortFunc).ToList();
+            }
+
+            if (gridState.FilterDefinitions.Any())
+            {
+                var filterFunctions = gridState.FilterDefinitions.Select(x => x.GenerateFilterFunction());
+                result = result
+                    .Where(x => filterFunctions.All(f => f(x)))
+                    .ToList();
+            }
+
+            var totalNumberOfFilteredItems = result.Count;
+            
+            result = result
+                .Skip(gridState.StartIndex)
+                .Take(gridState.Count)
+                .ToList();
+
+            return new GridData<int>
+            {
+                Items = result,
+                TotalItems = totalNumberOfFilteredItems
+            };
+        }
+        catch (TaskCanceledException)
+        {
+            return new GridData<int>
+            {
+                Items = [],
+                TotalItems = 0
+            };
+        }
+    }
+}
+Observability
+When loading the <MudDataGrid> with a collection that implements INotifyCollectionChanged, changes to the underlying collection will automatically be reflected in the <MudDataGrid>.
+
+ 
+Name
+Age
+Status
+Salary
+Hired
+Manager
+Sam	56	Normal	50000.00	3/5/2005 12:00:00 AM	False
+Alicia	54	Info	75000.00	1/17/2010 12:00:00 AM	False
+Ira	27	Success	102000.00	6/15/2017 12:00:00 AM	True
+John	32	Warning	132000.00	12/23/2021 12:00:00 AM	True
+Fred	65	Warning	87000.00	7/3/2003 12:00:00 AM	False
+Tabitha	33	Info	157000.00	2/12/2015 12:00:00 AM	True
+Hunter	22	Success	43000.00	9/20/2017 12:00:00 AM	False
+Esme	55	Warning	149000.00	8/1/2017 12:00:00 AM	True
+@using System.Net.Http.Json
+@using System.Collections.ObjectModel
+@inject HttpClient httpClient
+
+<MudButton OnClick="@AddItem" Color="@Color.Success" Class="add-item-btn">Add Item</MudButton>
+<MudButton OnClick="@RemoveItem" Color="@Color.Error" Class="remove-item-btn">Remove Item</MudButton>
+
+<MudDataGrid Items="@_items">
+    <Columns>
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Age" />
+        <PropertyColumn Property="x => x.Status" />
+        <PropertyColumn Property="x => x.Salary" />
+        <PropertyColumn Property="x => x.HireDate" Title="Hired" />
+        <PropertyColumn Property="x => x.IsManager" Title="Manager" />
+    </Columns>
+</MudDataGrid>
+@code {
+
+    public record Model (string Name, int Age, Severity Status, decimal Salary, DateTime HireDate, bool IsManager);
+
+    ObservableCollection<Model> _items = new ObservableCollection<Model>()
+    {
+        new Model("Sam", 56, Severity.Normal, 50_000.00M, new DateTime(2005, 3, 5), false), 
+        new Model("Alicia", 54, Severity.Info, 75_000.00M, new DateTime(2010, 1, 17), false), 
+        new Model("Ira", 27, Severity.Success, 102_000.00M, new DateTime(2017, 6, 15), true),
+        new Model("John", 32, Severity.Warning, 132_000.00M, new DateTime(2021, 12, 23), true),
+        new Model("Fred", 65, Severity.Warning, 87_000.00M, new DateTime(2003, 7, 3), false), 
+        new Model("Tabitha", 33, Severity.Info, 157_000.00M, new DateTime(2015, 2, 12), true), 
+        new Model("Hunter", 22, Severity.Success, 43_000.00M, new DateTime(2017, 9, 20), false),
+        new Model("Esme", 55, Severity.Warning, 149_000.00M, new DateTime(2017, 8, 1), true)
+    };
+
+    void AddItem()
+    {
+        _items.Add(new Model("New Person", 44, Severity.Warning, 85_000.00M, new DateTime(2022, 1, 1), true));
+    }
+
+    void RemoveItem()
+    {
+        if (_items.Any())
+        {
+            _items.RemoveAt(0);
+        }
+    }
+}
+CultureInfo
+DataGrid Culture (CultureInfo) property is used to display and editing/filter columns data. Each <Column> can define his own culture, to allow to specify its format individually.
+
+Name
+Age
+Amount (es-ES culture)
+Total (invariant culture)
+Sam	56	2,3	3.2
+Alicia	54	4,5	4.9
+Ira	27	2,1	2.5
+John	32	5,9	6.1
+@using System.Globalization
+
+<MudDataGrid Items="@_items" Filterable="true">
+    <Columns>
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.Age" />
+        <PropertyColumn Property="x => x.Amount" Title="Amount (es-ES culture)" Culture="@(new CultureInfo("es-ES"))" />
+        <PropertyColumn Property="x => x.Total" Title="Total (invariant culture)" Culture="@CultureInfo.InvariantCulture" />
+    </Columns>
+</MudDataGrid>
+@code {
+    private IEnumerable<Model> _items = new List<Model>()
+    {
+        new Model("Sam", 56, 2.3, 3.2), 
+        new Model("Alicia", 54, 4.5, 4.9), 
+        new Model("Ira", 27, 2.1, 2.5),
+        new Model("John", 32, 5.9, 6.1)
+    };
+
+    public record Model(string Name, int? Age, double? Amount, double? Total);
+}
+Column Reordering
+To enable Column Reordering via Drag and Drop, set the DragDropColumnReordering parameter to true. Columns can override this parameter with their DragAndDropEnabled parameter if necessary. In the example all but two fixed columns can be reordered by dragging their header onto another column header to swap places. On mouse-over the draggable columns show their DragIndicatorIcon and when dragging a header over another column header, it will signal its ability to swap places by changing its text color. The drag-over effect can be customized by setting parameters DropAllowedClass and DropNotAllowedClass to your own CSS classes.
+
+1	H	Hydrogen	0	1.00794	Other
+2	He	Helium	17	4.002602	Noble Gas (p)
+3	Li	Lithium	0	6.941	Alkaline Earth Metal (s)
+4	Be	Beryllium	1	9.012182	Alkaline Metal (s)
+5	B	Boron	12	10.811	Metalloid Boron (p)
+6	C	Carbon	13	12.0107	Nonmetal Carbon (p)
+7	N	Nitrogen	14	14.0067	Nonmetal Pnictogen (p)
+8	O	Oxygen	15	15.9994	Nonmetal Chalcogen (p)
+9	F	Fluorine	16	18.998404	Halogen (p)
+10	Ne	Neon	17	20.1797	Noble Gas (p)
+Rows per page:
+
+10
+1-10 of 88
+
+ 
+ 
+ 
+DragDropColumnReordering
+ApplyDropClassesOnDragStarted
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid T="Element" Items="@_elements" DragDropColumnReordering="@_reorderingEnabled" ApplyDropClassesOnDragStarted="@_applyDropClassesOnDragStarted" 
+                    DragIndicatorIcon="@_dragIndicatorIcon" Dense ColumnResizeMode="ResizeMode.Container">
+    <Columns>
+        <SelectColumn T="Element"/>
+        <PropertyColumn Property="x => x.Number" Title="Nr (fixed)" DragAndDropEnabled="false"/>
+        <PropertyColumn Property="x => x.Sign"/>
+        <PropertyColumn Property="x => x.Name" Title="Name (fixed)" DragAndDropEnabled="false" />
+        <PropertyColumn Property="x => x.Position" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" />
+        <PropertyColumn Property="x => x.Group" Title="Category" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-column mt-4">
+    <MudSwitch @bind-Value="_reorderingEnabled" Color="Color.Primary">DragDropColumnReordering</MudSwitch>
+    <MudSwitch @bind-Value="_applyDropClassesOnDragStarted" Color="Color.Primary">ApplyDropClassesOnDragStarted</MudSwitch>
+</div>
+@code {
+    IEnumerable<Element> _elements = new List<Element>();
+    bool _applyDropClassesOnDragStarted = false;
+
+    string _dragIndicatorIcon = Icons.Material.Filled.DragIndicator;
+
+    bool _reorderingEnabled = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+}
+Columns Panel
+The <MudDataGrid> can open a columns panel using ShowColumnsPanel. The panel allows the re-ordering, hiding, filtering and grouping of columns. The enabled functionality matches the grid and column options except column re-ordering.
+
+Column re-ordering is enabled in the panel using the ColumnsPanelReordering property. Re-ordering is on an insert basis, so it does not respect the column level DragAndDropEnabled property which swaps columns.
+
+1	Hydrogen	0	1.00794	Other	
+2	Helium	17	4.002602	Noble Gas (p)	
+3	Lithium	0	6.941	Alkaline Earth Metal (s)	
+4	Beryllium	1	9.012182	Alkaline Metal (s)	
+5	Boron	12	10.811	Metalloid Boron (p)	
+6	Carbon	13	12.0107	Nonmetal Carbon (p)	
+7	Nitrogen	14	14.0067	Nonmetal Pnictogen (p)	
+8	Oxygen	15	15.9994	Nonmetal Chalcogen (p)	
+9	Fluorine	16	18.998404	Halogen (p)	
+10	Neon	17	20.1797	Noble Gas (p)	
+Rows per page:
+
+10
+1-10 of 88
+
+ 
+ 
+ 
+Drag Drop Column Reordering
+Columns Panel Column Reordering
+Filterable
+Hideable
+Molar Mass Visible
+Category Visible
+Groupable
+Group By Molar
+Group By Category
+Simple
+Column Menu
+Column Row
+@using System.Net.Http.Json
+@using MudBlazor.Examples.Data.Models
+@inject HttpClient httpClient
+
+<MudDataGrid T="Element" @ref="_grid" Items="_elements" DragDropColumnReordering="_dragDropReorderingEnabled" ColumnsPanelReordering="_columnsPanelReorderingEnabled"
+             ColumnResizeMode="ResizeMode.Container" Hideable="_hideable" Filterable="_filterable" Groupable="_groupable" FilterMode="_filterMode" ShowMenuIcon="true">
+    <Columns>
+        <SelectColumn T="Element"/>
+        <PropertyColumn Property="x => x.Number" Title="Nr" />
+        <PropertyColumn Property="x => x.Sign" Hidden="true" DragAndDropEnabled="false" Groupable="false" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.Name" Title="Name" Hidden="false" DragAndDropEnabled="true" Groupable="true" Sortable="true" Filterable="true" Grouping="false" />
+        <PropertyColumn Property="x => x.Position" Filterable="false" Hideable="false" />
+        <PropertyColumn Property="x => x.Molar" Title="Molar mass" @bind-Hidden="_hideMolar" @bind-Grouping="_groupMolar" Hideable="true" />
+        <PropertyColumn Property="x => x.Group" Hidden="_hideCategory" Grouping="_groupCategory" Title="Category" />
+        <TemplateColumn Title="Template" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Element" />
+    </PagerContent>
+</MudDataGrid>
+
+<div class="d-flex flex-rows flex-wrap mr-4">
+    <MudSwitch @bind-Value="_dragDropReorderingEnabled" Color="Color.Primary">Drag Drop Column Reordering</MudSwitch>
+    <MudSwitch @bind-Value="_columnsPanelReorderingEnabled" Color="Color.Primary">Columns Panel Column Reordering</MudSwitch>
+    <MudSwitch @bind-Value="_filterable" Color="Color.Primary">Filterable</MudSwitch>
+</div>
+
+<div class="d-flex flex-rows flex-wrap mr-4">
+    <MudSwitch @bind-Value="_hideable" Color="Color.Primary">Hideable</MudSwitch>
+    <MudSwitch @bind-Value="_hideMolar" Color="Color.Primary" Converter="_oppositeBoolConverter">Molar Mass Visible</MudSwitch>
+    <MudSwitch @bind-Value="_hideCategory" Color="Color.Primary" Converter="_oppositeBoolConverter">Category Visible</MudSwitch>
+</div>
+
+<div class="d-flex flex-wrap mt-4 gap-1">
+    <MudButton OnClick="@(() => HideColumnsAsync(false))" Variant="Variant.Filled" Color="Color.Primary">Show all columns</MudButton>
+    <MudButton OnClick="@(() => HideColumnsAsync(true))" Variant="Variant.Filled" Color="Color.Primary">Hide all columns</MudButton>
+</div>
+
+<div class="d-flex flex-rows flex-wrap mr-4">
+    <MudSwitch @bind-Value="_groupable" Color="Color.Primary">Groupable</MudSwitch>
+    <MudSwitch @bind-Value="_groupMolar" Color="Color.Primary">Group By Molar</MudSwitch>
+    <MudSwitch @bind-Value="_groupCategory" Color="Color.Primary">Group By Category</MudSwitch>
+</div>
+
+<div class="d-flex flex-wrap mt-4">
+    <MudRadioGroup T="DataGridFilterMode" @bind-Value="_filterMode">
+        <MudRadio Dense="true" Value="@DataGridFilterMode.Simple" Color="Color.Primary">Simple</MudRadio>
+        <MudRadio Dense="true" Value="@DataGridFilterMode.ColumnFilterMenu" Color="Color.Tertiary">Column Menu</MudRadio>
+        <MudRadio Dense="true" Value="@DataGridFilterMode.ColumnFilterRow">Column Row</MudRadio>
+    </MudRadioGroup>
+</div>
+@code {
+    private IEnumerable<Element> _elements = new List<Element>();
+
+    private DataGridFilterMode _filterMode = DataGridFilterMode.Simple;
+    private bool _dragDropReorderingEnabled = true;
+    private bool _columnsPanelReorderingEnabled = true;
+    private bool _hideable = true;
+    private bool _filterable = true;
+    private bool _groupable = true;
+    private bool _hideMolar;
+    private bool _hideCategory;
+    private bool _groupMolar;
+    private bool _groupCategory;
+    private MudDataGrid<Element> _grid = null!;
+
+    private readonly IConverter<bool, bool?> _oppositeBoolConverter = Conversions.From(value => !value, (bool? value) => !value ?? true);
+    protected override async Task OnInitializedAsync()
+    {
+        _elements = await httpClient.GetFromJsonAsync<List<Element>>("webapi/periodictable");
+    }
+
+    private async Task HideColumnsAsync(bool hide)
+    {        
+        foreach (var column in _grid.RenderedColumns)
+        {
+            if (hide)
+            {
+                await column.HideAsync();
+            }
+            else
+            {
+                await column.ShowAsync();
+            }
+        };
+    }
+}
+Context Menu
+A context menu can be added to increase the flexibility and efficiency that the <MudDataGrid> offers. There are several scenarios where a context menu can be beneficial such as performing row level actions, accessing additional information, or just providing a more intuitive user experience.
+
+Username
+HWID
+Status
+user123	000-000-000-000	
+Offline
+joedoe	111-000-111-000	
+Offline
+Activator:   Left Click
+
+Right Click
+@inject ISnackbar Snackbar
+
+<MudDataGrid T="ClientInfo" Items="Clients" Filterable="true"
+             RowContextMenuClick="@((_rightClick ? OpenMenuContent : null)!)"
+             RowClick="@((!_rightClick ? OpenMenuContent : null)!)">
+    <Columns>
+        <PropertyColumn Property="x => x.Username" Title="Username" />
+        <PropertyColumn Property="x => x.HwId" Title="HWID" />
+        <TemplateColumn T="ClientInfo" Title="Status">
+            <CellTemplate>
+                <MudChip Color="Color.Error" Size="Size.Small">Offline</MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudStack Row AlignItems="AlignItems.Center" Class="ml-2">
+            <MudText><strong>Activator:&nbsp;&nbsp;</strong> Left Click</MudText>
+            <MudSwitch Class="ml-n3" @bind-Value="_rightClick" Label="Right Click" />
+        </MudStack>
+    </PagerContent>
+</MudDataGrid>
+<MudMenu PositionAtCursor="true" @ref="_contextMenu" id="_contextMenu">
+    <MudMenuItem Icon="@Icons.Material.Filled.Block">
+        Ban @_contextRow?.Username
+    </MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.Info" OnClick="@ShowHiddenInfo">
+        View Details for @_contextRow?.HwId
+    </MudMenuItem>
+</MudMenu>
+@code {
+#nullable enable
+    private ClientInfo? _contextRow;
+    private bool _rightClick = true;
+    private MudMenu _contextMenu = null!;
+
+    public List<ClientInfo> Clients =
+    [
+        new() { Username = "user123", HwId = "000-000-000-000", HiddenInformation = "Not good Grid info for user123" },
+        new() { Username = "joedoe", HwId = "111-000-111-000", HiddenInformation = "Not good Grid info for joedoe" }
+    ];
+
+    private async Task OpenMenuContent(DataGridRowClickEventArgs<ClientInfo> args)
+    {
+        _contextRow = args.Item;
+        await _contextMenu.OpenMenuAsync(args.MouseEventArgs);
+    }
+
+    private void ShowHiddenInfo()
+    {
+        if (_contextRow is not null)
+        {
+            Snackbar.Add($"Hidden information for {_contextRow.HwId}: {_contextRow.HiddenInformation}", Severity.Info);
+        }
+    }
+
+    public class ClientInfo
+    {
+        public string Username { get; set; } = string.Empty;
+
+        public string HwId { get; set; } = string.Empty;
+
+        public string HiddenInformation { get; set; } = string.Empty;
+    }
+}
+Validator
+When a <MudDataGrid> is used as part of a MudForm you might want to bind the Validator property to the outer MudForm so that validation and IsTouched states are reflected in/propagated to the outer MudForm.
+
+Name
+valid
+invalid
+Bind MudDataGrid.Validator to MudForm?
+MudForm.IsTouched
+MudForm.IsValid
+<MudForm @ref="_form" ValidationDelay="0">
+    <MudDataGrid T="Item"
+                 Items="_items"
+                 Validator="@(_bindValidatorToForm ? _form : _defaultValidator)">
+        <Columns>
+            <TemplateColumn Title="Name">
+                <CellTemplate>
+                    <MudTextField @bind-Value="context.Item.Name"
+                                  Immediate="true"
+                                  Validation="(string name) => ValidateName(name)" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+</MudForm>
+
+<MudStack Row>
+    <MudSwitch Color="Color.Primary" @bind-Value="_bindValidatorToForm">Bind MudDataGrid.Validator to MudForm?</MudSwitch>
+    <MudSwitch ReadOnly="true" Value="_form?.IsTouched">MudForm.IsTouched</MudSwitch>
+    <MudSwitch ReadOnly="true" Value="_form?.IsValid">MudForm.IsValid</MudSwitch>
+</MudStack>
+@code
+{
+    private readonly Interfaces.IForm _defaultValidator = new DataGridRowValidator();
+    private MudForm _form;
+    private bool _bindValidatorToForm = true;
+
+    private Item[] _items =
+    [
+        new() { Name = "valid" },
+        new() { Name = "invalid" }
+    ];
+
+    private static string ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "Name is required";
+        }
+
+        if (name == "invalid")
+        {
+            return "Name must not be 'invalid'";
+        }
+
+        return null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnParametersSetAsync();
+        if (firstRender)
+        {
+            await _form.ValidateAsync();
+            _form.ResetTouched();
+        }
+    }
+
+    public class Item
+    {
+        public string Name { get; set; }
+    }
+}
+Other Options
+There are many options available for the <MudDataGrid> that are not covered in the examples above. The <ColGroup> component allows you to apply a span or style property to multiple columns. However, the available styles are limited to a few CSS properties, including width, visibility, background, and border. Additionally, the `span` property enables a column to extend across multiple columns. The Loading property displays a loading indicator while the data grid is retrieving data. You can bind this attribute to a `bool` variable set to `true` when initializing the page and toggle it once the data has loaded. The FixedHeader property ensures that the header remains fixed at the top of the grid, even when scrolling. These are just a few of the many available options. For a complete list and additional details, refer to the API documentation above.
+
+Dense
+Loading
+Id
+Name
+0	Name0
+1	Name1
+2	Name2
+3	Name3
+4	Name4
+5	Name5
+6	Name6
+7	Name7
+8	Name8
+9	Name9
+Rows per page:
+
+10
+1-10 of 100
+
+ 
+ 
+ 
+<MudDataGrid Items="@_persons" T="Person" Loading="_loading"
+             Filterable Dense="@_dense" FixedHeader ShowMenuIcon Height="350px">
+    <ToolBarContent>
+        <MudSwitch Class="ml-auto" @bind-Value="@_dense" Label="Dense" />
+        <MudSwitch Class="ml-2 mr-auto" @bind-Value="@_loading" Label="Loading" /> 
+    </ToolBarContent>
+    <ColGroup>
+        <col style="width: 50px; background: var(--mud-palette-tertiary);" />
+        <col />
+    </ColGroup>
+    <Columns>
+        <PropertyColumn Property="x => x.Id" Title="Id" />
+        <PropertyColumn Property="x => x.Name" Title="Name" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Person" PageSizeOptions="new[] {10, 1000}" />
+    </PagerContent>
+</MudDataGrid>
+@code {
+    private bool _dense = false;
+    private bool _loading = true;
+    private readonly List<Person> _persons = Enumerable.Repeat(0, 100)
+                .Select((_, i) => new Person { Id = i, Name = $"Name{i}" })
+                .ToList();
+
+    public class Person
+    {
+        public required int Id { get; init; }
+
+        public required string Name { get; init; }
+    }
+}

@@ -1,0 +1,458 @@
+Text Field
+An input for collecting text values.
+API
+<MudTextField>
+Basic Usage
+Text fields allow users to enter text input. MudBlazor provides three visual variants: Text (standard), Filled, and Outlined. Filled text fields naturally draw more attention, making them ideal for dialogs and short forms where their visual emphasis is beneficial. In contrast, outlined text fields have a subtler appearance, which helps simplify the layout in longer forms by reducing visual clutter.
+
+<MudTextField @bind-Value="TextValue" Label="Standard" Variant="Variant.Text"></MudTextField>
+<MudTextField @bind-Value="TextValue" Label="Filled" Variant="Variant.Filled"></MudTextField>
+<MudTextField @bind-Value="TextValue" Label="Outlined" Variant="Variant.Outlined"></MudTextField>
+@code {
+    public string TextValue { get; set; }
+}
+Common Properties
+These are the most frequently used properties that control the basic behavior and appearance of text fields.
+
+Helper Text
+Helper text provides additional context or instructions below the text field. It helps users understand what to enter or provides formatting guidance.
+
+<MudTextField @bind-Value="HelperText" Label="With Helper" HelperText="Some helping Text" Variant="Variant.Text" />
+<MudTextField @bind-Value="HelperText" Label="With Helper" HelperText="Some helping Text" Variant="Variant.Filled" />
+<MudTextField @bind-Value="HelperText" Label="With Helper" HelperText="Some helping Text" Variant="Variant.Outlined" />
+@code {
+    public string HelperText { get; set; }
+}
+Helper Text On Focus
+When HelperTextOnFocus is enabled, the helper text only appears when the field is focused, reducing visual clutter while still providing guidance when needed.
+
+<MudTextField T="string" Label="OnFocus Helper" HelperText="Some helping text" HelperTextOnFocus="true" Variant="Variant.Text" />
+<MudTextField T="string" Label="With Helper" HelperText="Some helping text" Variant="Variant.Text" />
+Disabled State
+Disabled text fields prevent user interaction and are typically used when a field should not be editable under certain conditions.
+
+<MudTextField @bind-Value="Disabled" Label="Disabled" Variant="Variant.Text" Disabled="true" />
+<MudTextField @bind-Value="Disabled" Label="Disabled" Variant="Variant.Filled" Disabled="true" />
+<MudTextField @bind-Value="Disabled" Label="Disabled" Variant="Variant.Outlined" Disabled="true" />
+@code {
+    public string Disabled { get; set; }
+}
+Read Only
+Read-only text fields display data that users can see and select but cannot modify. The field remains interactive for copying text.
+
+Can't change me
+Can't change me
+Can't change me
+<MudTextField @bind-Value="ReadOnly" Label="Read Only" ReadOnly="true" Variant="Variant.Text" />
+<MudTextField @bind-Value="ReadOnly" Label="Read Only" ReadOnly="true" Variant="Variant.Filled" />
+<MudTextField @bind-Value="ReadOnly" Label="Read Only" ReadOnly="true" Variant="Variant.Outlined" />
+@code {
+    public string ReadOnly { get; set; } = "Can't change me";
+}
+Clear Button
+Enable the Clearable property to add a clear button that allows users to quickly empty the text field. This works alongside other adornments.
+
+<MudTextField @bind-Value="_string" Label="Clearable Standard" Variant="Variant.Text" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Custom.Brands.MudBlazor" AdornmentColor="Color.Primary" Immediate="true" />
+<MudTextField @bind-Value="_string" Label="Clearable Filled" Variant="Variant.Filled" Clearable="true" Immediate="true" />
+<MudTextField @bind-Value="_string" Label="Clearable Outlined" Variant="Variant.Outlined" Clearable="true" />
+@code {
+    string _string;
+}
+Appearance & Styling
+Customize the visual appearance of text fields to match your design requirements.
+
+Dense Layout
+Use the Margin="Margin.Dense" property to reduce the text field height for compact layouts.
+
+<MudTextField @bind-Value="TextValue" Label="Standard" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+<MudTextField @bind-Value="TextValue" Label="Filled" Variant="Variant.Filled" Margin="Margin.Dense"></MudTextField>
+<MudTextField @bind-Value="TextValue" Label="Outlined" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+@code {
+    public string TextValue { get; set; }
+}
+Typography
+Control the text appearance with the Typo property to match different content hierarchies.
+
+Lorem ipsum dolor
+Lorem ipsum dolor
+Lorem ipsum dolor
+<MudTextField T="string" Text="Lorem ipsum dolor" Label="Typo.subtitle1" Typo="Typo.subtitle1"></MudTextField>
+<MudTextField T="string" Text="Lorem ipsum dolor" Label="Typo.caption" Typo="Typo.caption"></MudTextField>
+<MudTextField T="string" Text="Lorem ipsum dolor" Label="Typo.h5" Typo="Typo.h5"></MudTextField>
+Shrink Label
+When ShrinkLabel is enabled, the label remains in its reduced size position and doesn't move when the field is empty.
+
+<MudTextField ShrinkLabel @bind-Value="TextValue" Label="Standard" Variant="Variant.Text"></MudTextField>
+<MudTextField ShrinkLabel @bind-Value="TextValue" Label="Filled" Variant="Variant.Filled"></MudTextField>
+<MudTextField ShrinkLabel @bind-Value="TextValue" Label="Outlined" Variant="Variant.Outlined"></MudTextField>
+@code {
+    public string TextValue { get; set; }
+}
+Adornments
+Adornments allow you to add icons, text, or buttons to the start or end of text fields. They're perfect for adding context, actions, or visual cues.
+
+
+••••••••••••••
+
+••••••••••••••
+
+••••••••••••••
+<div class="d-flex">
+    <MudTextField @bind-Value="Amount" Label="Amount" Variant="Variant.Text" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+    <MudTextField @bind-Value="Weight" HelperText="Weight" Variant="Variant.Text" Adornment="Adornment.End" AdornmentText="Kg" Class="mx-8" />
+    <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Text" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+</div>
+<div class="d-flex">
+    <MudTextField @bind-Value="Amount" Label="Amount" Variant="Variant.Filled" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+    <MudTextField @bind-Value="Weight" HelperText="Weight" Variant="Variant.Filled" Adornment="Adornment.End" AdornmentText="Kg" Class="mx-8" />
+    <MudTextField  @bind-Value="Password" Label="Password"  Variant="Variant.Filled" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+</div>
+<div class="d-flex">
+    <MudTextField @bind-Value="Amount" Label="Amount" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+    <MudTextField @bind-Value="Weight" HelperText="Weight" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="Kg" Class="mx-8" />
+    <MudTextField  @bind-Value="Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+</div>
+@code {
+    public double? Amount { get; set; }
+    public int? Weight { get; set; }
+    public string Password { get; set;} = "superstrong123";
+
+    bool isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void ButtonTestclick()
+    {
+        @if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+}
+Adornment Color
+The color of adornments can be customized independently from the text field using the AdornmentColor property.
+
+
+<MudTextField @bind-Value="Amount" Label="Amount" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" AdornmentColor="Color.Warning" />
+<MudTextField @bind-Value="Weight" Label="Weight" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="Kg" AdornmentColor="Color.Info" />
+<MudTextField  @bind-Value="Search" Label="Search" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Secondary" />
+@code {
+    public double? Amount { get; set; }
+    public int? Weight { get; set; }
+    public string Search { get; set;}
+}
+Character Counter
+Display character counts and enforce length limits to help users stay within content boundaries. Set Counter to show the count, and combine with MaxLength to enforce limits at the input level.
+
+<MudTextField T="string" Counter="25" HelperText="This field uses Counter prop" Immediate="true" Validation="@(new Func<string, IEnumerable<string>>(MaxCharacters))" Label="Regular" Variant="Variant.Text" />
+<MudTextField T="string" Counter="25" MaxLength="25" HelperText="This field uses Counter and MaxLength prop" Immediate="true" Label="Limited" Variant="Variant.Text" />
+<MudTextField T="string" Counter="0" HelperText="This field has Counter set to 0" Immediate="true" Label="Counter" Variant="Variant.Text" />
+<MudTextField T="string" MaxLength="10" HelperText="This field uses MaxLength prop" Immediate="true" Label="Max Length" Variant="Variant.Text" />
+@code {
+    private IEnumerable<string> MaxCharacters(string ch)
+    {
+        if (!string.IsNullOrEmpty(ch) && 25 < ch?.Length)
+            yield return "Max 25 characters";
+    }
+}
+Data Binding
+Text fields support comprehensive data binding patterns for different scenarios and data types.
+
+Object Properties
+Bind text fields to properties of objects (POCOs). Changes in the fields automatically update the model, and model changes reflect in the fields.
+Note: Always use two-way bindings (@bind-Value) with text fields.
+
+Hydrogen
+1.00794
+1
+2026/04/22
+Name: Hydrogen
+
+Mass: 1.00794 u
+
+Electrons: 1
+
+Last Update: 4/22/2026
+
+<MudTextField @bind-Value="element.Name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+<MudTextField @bind-Value="element.Mass" Label="Mass" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+<MudTextField @bind-Value="element.Electrons" Label="Electrons" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+<MudTextField @bind-Value="element.Changed" Format="yyyy/MM/dd" Label="Last Update" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+
+<div class="d-flex align-end justify-space-between mud-width-full">
+    <div class="d-flex flex-column">
+        <MudText><b>Name:</b> @element.Name</MudText>
+        <MudText><b>Mass:</b> @element.Mass u</MudText>
+        <MudText><b>Electrons:</b> @element.Electrons</MudText>
+        <MudText><b>Last Update:</b> @element.Changed.ToShortDateString()</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" DropShadow="false" OnClick="Reset">Reset Model</MudButton>
+</div>
+@code {
+    Atom element = new Atom { Name = "Hydrogen", Mass = 1.00794, Electrons = 1, Changed=DateTime.Today };
+
+    // A typical POCO
+    public class Atom
+    {
+        public string Name { get; set; }
+        public double Mass { get; set; }
+        public int Electrons { get; set; }
+        public DateTime Changed { get; set; }
+    }
+
+    private void Reset()
+    {
+        element = new Atom { Name = "Hydrogen", Mass = 1.00794, Electrons = 1, Changed = DateTime.Today };
+        StateHasChanged();
+    }
+}
+Value Types vs Nullables
+Value types always have a default value (e.g., 0 for int), so text fields won't appear empty initially. Use nullable types (e.g., int?) when you want fields to start empty until the user enters a value.
+
+0
+0.0
+Maybe
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudTextField @bind-Value="intValue" Label="Enter an int" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudTextField @bind-Value="doubleValue" Label="Enter a double" Format="F1"/>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudTextField @bind-Value="enumValue" Label="Enum (Yes|No|Maybe)" />
+    </MudItem>
+</MudGrid>
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudTextField @bind-Value="nullableInt" HelperText="Enter an int" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudTextField @bind-Value="nullableDouble" HelperText="Enter a double" Format="F1" />
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudTextField @bind-Value="nullableEnum" HelperText="Enum (Yes|No|Maybe)" />
+    </MudItem>
+</MudGrid>
+@code { 
+    int intValue;
+    double doubleValue;
+    YesNoMaybe enumValue;
+    int? nullableInt;
+    double? nullableDouble;
+    YesNoMaybe? nullableEnum;
+
+    public enum YesNoMaybe { Maybe, Yes, No }
+}
+Update Timing
+By default, text fields update on Enter or blur. Use Immediate="true" for real-time updates, or set DebounceInterval to delay updates until the user stops typing. The debounced example updates 500ms after typing stops.
+
+w
+t
+f
+<MudTextField @bind-Value="_normalText" HelperText="@_normalText" Label="Normal" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"/>
+<MudTextField Immediate="true" @bind-Value="_immediateText" HelperText="@_immediateText" Label="Immediate" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" />
+<MudTextField DebounceInterval="500" OnDebounceIntervalElapsed="HandleIntervalElapsed" @bind-Value="_debouncedText" HelperText="@_debouncedText" Label="Debounced" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search" />
+@code {
+    string _normalText = "w";
+    string _immediateText = "t";
+    string _debouncedText = "f";
+
+    void HandleIntervalElapsed(string debouncedText)
+    {
+        // at this stage, interval has elapsed
+    }
+}
+Input Types
+You can change the InputType of MudTextField to use the native browser implementation of the HTML input element. Note that any Placeholder will be ignored where the browser provides a default placeholder.
+
+All inputs can be bound to string types; alternatively, input types Date and DateTimeLocal can be bound to a nullable DateTime?. When binding to a DateTime? you must set the Format property to yyyy-MM-dd for input type Date, and you must set the Format property to s (ISO 8601) for input type DateTimeLocal.
+
+<MudTextField T="string" Label="Color"  InputType="InputType.Color" />
+<MudTextField T="DateTime?" Format="yyyy-MM-dd" Label="Date"  InputType="InputType.Date"/>
+<MudTextField T="DateTime?" Format="s" Label="DateTimeLocal" InputType="InputType.DateTimeLocal"/>
+<MudTextField T="string" Label="Month" InputType="InputType.Month"/>
+<MudTextField T="string" Label="Time" InputType="InputType.Time"/>
+<MudTextField T="string" Label="Week" InputType="InputType.Week"/>
+Multiline
+Text fields can be expanded to accommodate multiple lines of text by setting the Lines property. Use Sizing to control whether the field grows with content.
+
+Fixed Sizing
+I am a multiline text area
+With exactly three lines
+No more, no less.
+Standard multiline behavior
+Fixed height
+Set by the 'Lines' parameter.
+Auto Sizing
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudStack Spacing="4">
+            <MudText Typo="Typo.h6">Fixed Sizing</MudText>
+            <MudTextField T="string"
+                          Label="Fixed (3 lines)"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          Sizing="InputSizing.Fixed"
+                          Text="@_fixedText" />
+            
+            <MudTextField T="string"
+                          Label="Fixed (5 lines)"
+                          Variant="Variant.Filled"
+                          Lines="5"
+                          Sizing="InputSizing.Fixed"
+                          Text="@_fixedText2" />
+        </MudStack>
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudStack Spacing="4">
+            <MudText Typo="Typo.h6">Auto Sizing</MudText>
+            <MudTextField T="string"
+                          Label="Auto (3 to 6 lines)"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          MaxLines="6"
+                          Sizing="InputSizing.Auto"
+                          Placeholder="Type to see it grow..." />
+
+            <MudTextField T="string"
+                          Label="Auto (Starts at 1, Max 10)"
+                          Variant="Variant.Text"
+                          MaxLines="10"
+                          Sizing="InputSizing.Auto"
+                          Placeholder="This one starts small but can grow large." />
+        </MudStack>
+    </MudItem>
+</MudGrid>
+@code {
+    private string _fixedText = "I am a multiline text area\nWith exactly three lines\nNo more, no less.";
+    private string _fixedText2 = "Standard multiline behavior\nFixed height\nSet by the 'Lines' parameter.";
+}
+If you use Blazor Server for your app, note that there is a default limit on the maximum message size SignalR can handle. If you want to support large texts in the input element (around 15k characters and more) you need to increase the message size limit by setting MaximumReceiveMessageSize accordingly in the HubOptions in your Program.cs file. For more details see this issue on github.
+Input Masking
+If you set the Mask property, the text field will apply formatting rules or input restrictions on-the-fly while the user is typing.
+Check out the Masking page for more info and examples.
+In this example we apply a PatternMask with a mask string of "0000 0000 0000 0000" prompting for blocks of digits and refusing invalid input. Note how the cursor automatically jumps over delimiters so you don't have to type them. You can also try pasting the test credit card number 4543474002249996.
+
+Credit Card Number:
+Expiration Date:
+CVC:
+<MudGrid Class="justify-space-between" Style="max-width: 400px;">
+    <MudItem xs="12">
+        <MudTextField Mask="@(new PatternMask("0000 0000 0000 0000"))" Label="Credit Card Number" 
+                      @bind-Value="creditCard"  Variant="@Variant.Text" Clearable />
+    </MudItem>
+    <MudItem xs="4">
+        <MudTextField Mask="@(new DateMask("MM/YY", 'Y', 'M'))" Label="Expires" 
+                      @bind-Value="expiration"  Variant="@Variant.Text" />
+    </MudItem>
+    <MudItem xs="4"/>
+    <MudItem xs="4">
+        <MudTextField Mask="@(new PatternMask("000"))" Label="CVC" 
+                      @bind-Value="cvc"  Variant="@Variant.Text" />
+    </MudItem>
+    <MudItem xs="12">
+        Credit Card Number: <b>@creditCard</b><br/>
+        Expiration Date: <b>@expiration</b><br/>
+        CVC: <b>@cvc</b>
+    </MudItem>
+</MudGrid>
+@code {
+    private string creditCard;
+    private string expiration;
+    private string cvc;
+}
+Programmatic Control
+Text fields provide methods for programmatically controlling focus and text selection. These are useful for creating better user experiences and accessibility features.
+
+Focus Control
+Use the FocusAsync() method to programmatically set focus to a text field. This is particularly useful for form validation feedback or guiding user attention.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+<MudTextField @ref="multilineReference" T="string" Label="Manual focus" Variant="Variant.Filled" Text="@sampleText" Lines="3" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CenterFocusWeak" OnAdornmentClick="@(() => multilineReference.FocusAsync())"  />
+<MudTextField @ref="singleLineReference" T="string" Label="Manual focus" Variant="Variant.Filled" Text="@sampleText" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CenterFocusWeak" OnAdornmentClick="@(() => singleLineReference.FocusAsync())" />
+@code
+{
+    private MudTextField<string> multilineReference;
+    private MudTextField<string> singleLineReference;
+
+    string sampleText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+}
+Text Selection
+The SelectAsync() method selects all text in the field, while SelectRangeAsync() allows you to select specific character ranges.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+<MudTextField @ref="multilineReference" T="string" Label="Multiline Select" Lines="3" Variant="Variant.Outlined" Text="@sampleText" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Api" OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
+<MudTextField @ref="singleLineReference" T="string" Label="Single Select" Variant="Variant.Outlined" Text="@sampleText" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Api" OnAdornmentClick="@(() => singleLineReference.SelectAsync())" />
+@code
+{
+    private MudTextField<string> multilineReference;
+    private MudTextField<string> singleLineReference;
+
+    string sampleText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+}
+Range Selection
+Select specific ranges of text using SelectRangeAsync(start, end). This example selects characters 5-10 when you click the button.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+<MudTextField @ref="multilineReference" T="string" Label="Multiline Select" Lines="3" Variant="Variant.Outlined" Text="@sampleText" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Api" OnAdornmentClick="@(() => multilineReference.SelectRangeAsync(5, 10))" />
+<MudTextField @ref="singleLineReference" T="string" Label="Single Select" Variant="Variant.Outlined" Text="@sampleText" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Api" OnAdornmentClick="@(() => singleLineReference.SelectRangeAsync(5, 10))" />
+@code
+{
+    private MudTextField<string> multilineReference;
+    private MudTextField<string> singleLineReference;
+
+    string sampleText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."; 
+}
+Text Insertion
+There are three functions which allow you to insert text: GetCurrentCaretPositionAsync, InsertAtCurrentCaretPositionAsync and InsertTextAsync.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+<MudTextField @ref="_textField" T="string" Label="Text insertion" Lines="3" Variant="Variant.Outlined" Text="@SampleText" HelperText="@($"Current caret position: {_currentCaretPosition}")"/>
+<MudStack Row="true" Justify="Justify.Center">
+    <MudButton OnClick="@GetCurrentCaretPositionAsync" Color="Color.Primary">Get caret position</MudButton>
+    <MudButton OnClick="@InsertAtCurrentCaretPositionAsync" Color="Color.Primary">Insert at caret position</MudButton>
+    <MudButton OnClick="@InsertAtPosition56Async" Color="Color.Primary">Insert at position 56</MudButton>
+</MudStack>
+@code
+{
+    private const string SampleText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+    private MudTextField<string> _textField;
+    private int _currentCaretPosition = -1;
+
+    private async Task GetCurrentCaretPositionAsync()
+    {
+        _currentCaretPosition = await _textField.GetCurrentCaretPositionAsync();
+    }
+
+    private async Task InsertAtCurrentCaretPositionAsync()
+    {
+        await _textField.InsertTextAtCurrentCaretPositionAsync(" [this text was inserted at caret position] ");
+    }
+
+    private async Task InsertAtPosition56Async()
+    {
+        await _textField.InsertTextAsync(" [this text was inserted at position 56] ", 56);
+    }
+}
+Building Blocks
+MudInput is the underlying component that powers MudTextField, providing a simpler interface without labels or helper text for when you need basic input functionality.
+
+Basic Input
+Placeholder
+Disabled
+Error
+<MudInput Value="@("Basic Input")" />
+<MudInput T="string" Placeholder="Placeholder" />
+<MudInput Value="@("Disabled")" Disabled="true" />
+<MudInput Value="@("Error")" Error="true" />

@@ -1,0 +1,241 @@
+@page "/"
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Contracts.Competitions
+@inject DevIdentity Identity
+@inject IKocApiClient Api
+@inject NavigationManager Nav
+@implements IDisposable
+
+<PageTitle>@KocBrand.ProductName</PageTitle>
+
+<!-- Hero -->
+<MudGrid Class="mb-8" Spacing="6">
+    <MudItem xs="12" md="6" Class="d-flex flex-column justify-center">
+        <span class="koc-eyebrow mb-3">KOC internal · @(Identity.IsGuest ? "Guest preview" : Identity.Current.Label)</span>
+        <MudText Typo="Typo.h3" Class="koc-heading mb-4">@Content.Headline</MudText>
+        <MudText Typo="Typo.body1" Class="mb-6" Style="max-width:54ch;">@Content.Sub</MudText>
+        <div class="d-flex gap-3 flex-wrap">
+            @if (Identity.IsGuest)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.Login" OnClick="PrimaryCta">Sign in with KOC</MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.Dashboard" OnClick="PrimaryCta">Go to your workspace</MudButton>
+            }
+            <MudButton Href="/learn" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large">@Content.SecondaryCta</MudButton>
+        </div>
+        <MudText Typo="Typo.caption" Class="mt-6" Style="color:var(--koc-text);opacity:.7;">
+            Single KOC tenant • Entra sign-in • Hosted in Kuwait • Audit retained 7 years
+        </MudText>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <BlueprintCard Class="koc-gridpaper pa-6" Style="min-height:260px;">
+            <MudText Typo="Typo.overline" Class="mb-4">Predicting pump failures — a worked example</MudText>
+            <div class="d-flex align-center gap-2 flex-wrap">
+                @foreach (var (kind, label, i) in _flow.Select((f, i) => (f.kind, f.label, i)))
+                {
+                    <BlueprintCard Class="pa-2" Style="min-width:104px;background:var(--koc-bg);">
+                        <div class="koc-eyebrow" style="font-size:10px;">@kind</div>
+                        <div class="koc-heading" style="font-size:14px;">@label</div>
+                    </BlueprintCard>
+                    @if (i < _flow.Count - 1)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" Color="Color.Primary" />
+                    }
+                }
+            </div>
+            <div class="d-flex gap-8 mt-6">
+                <div><div class="koc-stat-value" style="font-size:30px;">94%</div><MudText Typo="Typo.caption">caught in test</MudText></div>
+                <div><div class="koc-stat-value" style="font-size:30px;">6 wks</div><MudText Typo="Typo.caption">earlier warning</MudText></div>
+            </div>
+        </BlueprintCard>
+    </MudItem>
+</MudGrid>
+
+<!-- What you can do -->
+<span class="koc-eyebrow">01 · @Content.PillarKicker</span>
+<MudDivider Class="mt-2 mb-6" />
+<MudGrid Spacing="6" Class="mb-10">
+    @foreach (var p in Content.Pillars)
+    {
+        <MudItem xs="12" md="4">
+            <BlueprintCard Class="pa-6" Style="height:100%;">
+                <MudIcon Icon="@p.Icon" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h6" Class="koc-heading mt-4 mb-2">@p.Title</MudText>
+                <MudText Typo="Typo.body2">@p.Body</MudText>
+            </BlueprintCard>
+        </MudItem>
+    }
+</MudGrid>
+
+@if (!Identity.IsGuest && _activeCompetitions is { Count: > 0 })
+{
+    <div class="d-flex align-center justify-space-between mt-10">
+        <span class="koc-eyebrow">02 · Live competitions</span>
+        <MudLink Href="/compete">See all →</MudLink>
+    </div>
+    <MudDivider Class="mt-2 mb-6" />
+    <MudGrid Spacing="6" Class="mb-10">
+        @foreach (var c in _activeCompetitions.Take(3))
+        {
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-5" Style="height:100%;">
+                    <div class="d-flex justify-space-between align-center mb-1">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@c.Status</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@(c.TaskType == "Regression" ? "RMSE" : "Accuracy")</MudChip>
+                    </div>
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">@c.Title</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3">@c.Description</MudText>
+                    <MudButton Href="/compete" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.EmojiEvents">Enter</MudButton>
+                </BlueprintCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+<!-- Learn & compete teaser -->
+<span class="koc-eyebrow">@(Identity.IsGuest ? "02" : "03") · Learn &amp; compete</span>
+<MudDivider Class="mt-2 mb-6" />
+<MudGrid Spacing="6">
+    @foreach (var t in _tracks)
+    {
+        <MudItem xs="12" md="4">
+            <BlueprintCard Class="pa-6" Style="height:100%;">
+                <div class="d-flex justify-space-between align-center">
+                    <span class="koc-stat-value" style="font-size:32px;">@t.No</span>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@t.Level</MudChip>
+                </div>
+                <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-2">@t.Title</MudText>
+                <MudText Typo="Typo.body2">@t.Body</MudText>
+            </BlueprintCard>
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    private enum RoleView { Employee, TeamLeader, Manager, DCEO, CEO }
+
+    // The landing content follows whoever you're signed in as (guests see the Employee preview).
+    private RoleView _role => Identity.Current.Key switch
+    {
+        "teamleader" => RoleView.TeamLeader,
+        "manager" or "platformadmin" => RoleView.Manager,
+        "dceo" => RoleView.DCEO,
+        "ceo" => RoleView.CEO,
+        _ => RoleView.Employee,
+    };
+
+    private IReadOnlyList<CompetitionDto>? _activeCompetitions;
+
+    protected override void OnInitialized() => Identity.Changed += OnChanged;
+
+    protected override async Task OnInitializedAsync() => await LoadCompetitionsAsync();
+
+    private async Task LoadCompetitionsAsync()
+    {
+        if (Identity.IsGuest)
+        {
+            _activeCompetitions = null;
+            return;
+        }
+
+        try
+        {
+            var all = await Api.GetCompetitionsAsync();
+            _activeCompetitions = all.Where(c => c.Status == "active").ToList();
+        }
+        catch
+        {
+            _activeCompetitions = null;
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(async () =>
+    {
+        await LoadCompetitionsAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => Identity.Changed -= OnChanged;
+
+    private void PrimaryCta()
+    {
+        if (Identity.IsGuest)
+        {
+            Identity.SetPersona("employee");
+        }
+
+        Nav.NavigateTo("/dashboard");
+    }
+
+    private readonly List<(string kind, string label)> _flow =
+    [
+        ("Well data", "PI tags"),
+        ("Tidy up", "Fill gaps"),
+        ("Teach", "Learn patterns"),
+        ("Predict", "Failure risk"),
+    ];
+
+    private readonly (string No, string Level, string Title, string Body)[] _tracks =
+    [
+        ("01", "Start here", "Getting started with data", "Read, clean, and make sense of a dataset. No coding needed."),
+        ("02", "Hands-on", "Solve a real problem", "Build a model for a production, facilities, or subsurface question."),
+        ("03", "Go further", "Make it dependable", "Tune, check, and package a model your team can trust and reuse."),
+    ];
+
+    private sealed record Pillar(string Icon, string Title, string Body);
+    private sealed record RoleContent(string Headline, string Sub, string SecondaryCta, string PillarKicker, Pillar[] Pillars);
+
+    private RoleContent Content => _content[_role];
+
+    private readonly Dictionary<RoleView, RoleContent> _content = new()
+    {
+        [RoleView.Employee] = new(
+            "Your AI & ML workspace.",
+            "Learn machine learning on real KOC subsurface, production, and facilities data — take a track, enter an internal competition, and share your work with colleagues.",
+            "Browse learning tracks", "What you can do here",
+            [
+                new(Icons.Material.Filled.School, "Learn on your own work", "Short, guided tracks from a spreadsheet of well data to a working prediction."),
+                new(Icons.Material.Filled.EmojiEvents, "Compete with colleagues", "Friendly internal challenges on real KOC questions, scored on a live leaderboard."),
+                new(Icons.Material.Filled.Groups, "Share across KOC", "Projects, datasets, and discussions stay inside KOC, and every step is recorded."),
+            ]),
+        [RoleView.TeamLeader] = new(
+            "Your team's AI & ML workspace.",
+            "Follow how your team is learning machine learning on KOC data — progress across tracks, competitions entered, and the projects they build.",
+            "View team activity", "What you can see and do",
+            [
+                new(Icons.Material.Filled.School, "Upskill the whole team", "Assign tracks that fit each person and watch skills build on real data."),
+                new(Icons.Material.Filled.EmojiEvents, "Run team challenges", "Set a friendly internal challenge and let a live leaderboard bring out their best."),
+                new(Icons.Material.Filled.Insights, "Turn skills into results", "Shared projects mean the models your team builds are visible and reusable."),
+            ]),
+        [RoleView.Manager] = new(
+            "Your department's AI & ML workspace.",
+            "See how machine-learning skills are building across your department on KOC data — who is learning, what teams are working on, and models coming into use.",
+            "View governance", "What you can see and do",
+            [
+                new(Icons.Material.Filled.Insights, "Capability at scale", "Move a whole department up the learning curve with structured tracks and challenges."),
+                new(Icons.Material.Filled.TrackChanges, "Adoption you can see", "Understand who is engaged and where ML is starting to change how work gets done."),
+                new(Icons.Material.Filled.Shield, "Governed by default", "Every model is promoted with approvals and can be rolled back; every action recorded."),
+            ]),
+        [RoleView.DCEO] = new(
+            "Your directorate's AI & ML workspace.",
+            "See how machine-learning capability is building across your directorate — participation by group, use cases coming into production, and the governance behind them.",
+            "View governance", "What you can see",
+            [
+                new(Icons.Material.Filled.Groups, "Directorate-wide capability", "Grow a broad base of people who understand both the operations and the models."),
+                new(Icons.Material.Filled.TrackChanges, "Value on real problems", "Point learning and competitions at questions that matter to the directorate."),
+                new(Icons.Material.Filled.Shield, "Risk under control", "Single-tenant, KOC-only, fully audited — capability grows without added exposure."),
+            ]),
+        [RoleView.CEO] = new(
+            "KOC's AI & ML workspace.",
+            "A company-wide view of KOC's own machine-learning environment — participation across directorates, skills building on company data, and governance keeping it sovereign.",
+            "View governance", "What you can see",
+            [
+                new(Icons.Material.Filled.Public, "A sovereign AI capability", "One KOC-owned platform where data and models stay in Kuwait."),
+                new(Icons.Material.Filled.Groups, "A skilled workforce", "Thousands of KOC people gaining practical ML skills on the company's own challenges."),
+                new(Icons.Material.Filled.Shield, "Governed and accountable", "Every model approved, every action recorded, every dataset labelled."),
+            ]),
+    };
+}

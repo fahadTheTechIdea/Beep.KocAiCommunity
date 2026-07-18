@@ -1,0 +1,619 @@
+@page "/workflow"
+@using System.Globalization
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Blazor.Diagrams
+@using Blazor.Diagrams.Components
+@using Blazor.Diagrams.Core.Anchors
+@using Blazor.Diagrams.Core.Models
+@using Beep.KocAiCommunity.Web.Diagrams
+@using Beep.KocAiCommunity.Web.Components.Dialogs
+@using Beep.KocAiCommunity.Contracts.Workflow
+@using Beep.KocAiCommunity.Contracts.Studio
+@using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@implements IDisposable
+@inject IKocApiClient Api
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Studio · @KocBrand.ProductName</PageTitle>
+
+@if (_openProject is null)
+{
+    <!-- ===== Project browse ===== -->
+    <div class="d-flex justify-space-between align-start mb-6 flex-wrap gap-3">
+        <div>
+            <span class="koc-eyebrow">Studio</span>
+            <MudText Typo="Typo.h4" Class="koc-heading mt-2 mb-1">Projects</MudText>
+            <MudText Typo="Typo.body1" Style="max-width:64ch;">
+                Every model you build lives in a project — a <b>personal</b> one to explore your own data, or one that
+                targets a <b>competition</b>. Open a project to design its pipeline in the node editor.
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="NewProject">New project</MudButton>
+    </div>
+
+    @if (_projects is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (_projects.Count == 0)
+    {
+        <BlueprintCard Class="pa-8" Style="text-align:center;">
+            <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6" Class="koc-heading mb-1">No projects yet</MudText>
+            <MudText Typo="Typo.body2">Create your first project to start building an ML pipeline.</MudText>
+        </BlueprintCard>
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            @foreach (var p in _projects)
+            {
+                <MudItem xs="12" md="4">
+                    <BlueprintCard Class="pa-4" Style="height:100%;">
+                        <div class="d-flex justify-space-between align-center mb-1">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(p.CompetitionId is null ? Color.Default : Color.Primary)">
+                                @(p.CompetitionId is null ? "Personal" : "Competition")
+                            </MudChip>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteProject(p.Id)" aria-label="Delete project" />
+                        </div>
+                        <MudText Typo="Typo.h6" Class="koc-heading mb-1" Style="cursor:pointer;" @onclick="() => OpenProject(p.Id)">@p.Name</MudText>
+                        @if (p.CompetitionTitle is not null)
+                        {
+                            <MudText Typo="Typo.caption" Class="d-block">🏆 @p.CompetitionTitle</MudText>
+                        }
+                        <MudText Typo="Typo.caption" Class="d-block mb-3">@p.TaskType · updated @p.UpdatedUtc.ToLocalTime().ToString("g")</MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.OpenInNew" OnClick="() => OpenProject(p.Id)">Open</MudButton>
+                    </BlueprintCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+}
+else
+{
+    <!-- ===== Node editor ===== -->
+    <div class="d-flex align-center gap-2 mb-3 flex-wrap">
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="CloseProject">Projects</MudButton>
+        <MudText Typo="Typo.h5" Class="koc-heading">@_openProject.Name</MudText>
+        @if (_openProject.CompetitionTitle is not null)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">🏆 @_openProject.CompetitionTitle</MudChip>
+        }
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveProject" Disabled="_saving">Save</MudButton>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;">
+        <!-- Palette -->
+        <BlueprintCard Class="pa-3" Style="width:200px;flex:0 0 200px;max-height:540px;overflow:auto;">
+            <MudText Typo="Typo.overline" Class="mb-2 d-block">Nodes</MudText>
+            @foreach (var (category, kinds) in _palette)
+            {
+                <MudText Typo="Typo.caption" Class="koc-heading d-block mt-2 mb-1">@category</MudText>
+                @foreach (var kind in kinds)
+                {
+                    <MudButton FullWidth="true" Class="justify-start mb-1" Size="Size.Small" Variant="Variant.Outlined"
+                               Color="Color.Default" StartIcon="@Icons.Material.Filled.Add" OnClick="() => AddNode(kind)">@kind</MudButton>
+                }
+            }
+        </BlueprintCard>
+
+        <!-- Canvas -->
+        <BlueprintCard Style="flex:1 1 420px;min-width:320px;position:relative;min-height:540px;">
+            <div style="position:absolute;inset:8px;">
+                <CascadingValue Value="_diagram" IsFixed="true">
+                    <DiagramCanvas></DiagramCanvas>
+                </CascadingValue>
+            </div>
+        </BlueprintCard>
+
+        <!-- Properties -->
+        <BlueprintCard Class="pa-3" Style="width:310px;flex:0 0 310px;max-height:540px;overflow:auto;">
+            <MudText Typo="Typo.overline" Class="mb-2 d-block">Properties</MudText>
+            @if (_selected is null)
+            {
+                <MudText Typo="Typo.body2">Select a node on the canvas to configure it. Your feature-engineering, algorithm and validation choices are what make a pipeline yours.</MudText>
+            }
+            else
+            {
+                <div class="d-flex align-center gap-2 mb-2">
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading"><b>@_selected.Kind</b></MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="DeleteSelected" aria-label="Delete node" />
+                </div>
+
+                @switch (_selected.Kind)
+                {
+                    case "train":
+                    case "cross-validate":
+                        <MudSelect T="string" Label="Algorithm" Value="@(CfgGet("algorithm") is { Length: > 0 } a ? a : "sdca")"
+                                   ValueChanged="@(v => CfgSet("algorithm", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
+                            @foreach (var alg in AlgorithmsForTask())
+                            {
+                                <MudSelectItem Value="@alg">@alg</MudSelectItem>
+                            }
+                        </MudSelect>
+                        @if (_selected.Kind == "cross-validate")
+                        {
+                            <MudTextField T="string" Label="Folds (2–10)" Value="@(CfgGet("folds") is { Length: > 0 } f ? f : "5")"
+                                          ValueChanged="@(v => CfgSet("folds", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                        }
+                        <MudText Typo="Typo.caption" Class="d-block mt-1 mb-1">Hyperparameters (blank = default)</MudText>
+                        @if (SelectedAlgo() is "fasttree" or "fastforest")
+                        {
+                            <MudTextField T="string" Label="Trees" Value="@CfgGet("trees")" ValueChanged="@(v => CfgSet("trees", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1" Placeholder="100" />
+                            <MudTextField T="string" Label="Leaves" Value="@CfgGet("leaves")" ValueChanged="@(v => CfgSet("leaves", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1" Placeholder="20" />
+                        }
+                        @if (SelectedAlgo() == "fasttree")
+                        {
+                            <MudTextField T="string" Label="Learning rate" Value="@CfgGet("learningRate")" ValueChanged="@(v => CfgSet("learningRate", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="0.2" />
+                        }
+                        @if (SelectedAlgo() is "sdca" or "lbfgs")
+                        {
+                            <MudTextField T="string" Label="L2 regularization" Value="@CfgGet("l2")" ValueChanged="@(v => CfgSet("l2", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="auto" />
+                        }
+                        break;
+
+                    case "split":
+                        <MudTextField T="string" Label="Test fraction (0.05–0.9)" Value="@(CfgGet("testFraction") is { Length: > 0 } tf ? tf : "0.25")"
+                                      ValueChanged="@(v => CfgSet("testFraction", v))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        break;
+
+                    case "sample":
+                        <MudTextField T="string" Label="Row fraction to keep (0–1)" Value="@(CfgGet("fraction") is { Length: > 0 } sf ? sf : "0.5")"
+                                      ValueChanged="@(v => CfgSet("fraction", v))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        break;
+
+                    case "select-columns":
+                        <MudTextField T="string" Label="Feature columns to keep" Value="@CfgGet("columns")" ValueChanged="@(v => CfgSet("columns", v))"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="x1, x2, x3" />
+                        break;
+
+                    case "drop-columns":
+                        <MudTextField T="string" Label="Feature columns to drop" Value="@CfgGet("columns")" ValueChanged="@(v => CfgSet("columns", v))"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="noise, id" />
+                        break;
+
+                    case "filter-rows":
+                        <MudTextField T="string" Label="Column" Value="@CfgGet("column")" ValueChanged="@(v => CfgSet("column", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1" Placeholder="x1" />
+                        <MudTextField T="string" Label="Keep rows ≥ min" Value="@CfgGet("min")" ValueChanged="@(v => CfgSet("min", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1" Placeholder="(none)" />
+                        <MudTextField T="string" Label="Keep rows < max" Value="@CfgGet("max")" ValueChanged="@(v => CfgSet("max", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="(none)" />
+                        break;
+
+                    default:
+                        <MudText Typo="Typo.body2">This step has no options — it acts on the columns flowing into it.</MudText>
+                        break;
+                }
+            }
+        </BlueprintCard>
+    </div>
+
+    <MudGrid Spacing="6" Class="mt-2">
+        <MudItem xs="12" md="5">
+            <BlueprintCard Class="pa-5">
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Run pipeline</MudText>
+                <MudTextField @bind-Value="_labelColumn" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                <MudSelect @bind-Value="_task" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
+                    <MudSelectItem Value="@("BinaryClassification")">Binary classification</MudSelectItem>
+                    <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
+                    <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
+                </MudSelect>
+                <MudText Typo="Typo.caption" Class="d-block mb-1">Upload a dataset CSV and run it node by node.</MudText>
+                <InputFile OnChange="OnRun" accept=".csv" />
+                @if (_running)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mt-2" />
+                }
+            </BlueprintCard>
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            <BlueprintCard Class="pa-0">
+                <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">Node-by-node execution</MudText></div>
+                @if (_result is null)
+                {
+                    <MudText Typo="Typo.body2" Class="pa-4">Build a pipeline and run it to see each node execute.</MudText>
+                }
+                else
+                {
+                    <MudList T="string" Dense="true">
+                        @foreach (var n in _result.Nodes)
+                        {
+                            <MudListItem T="string" Icon="@StatusIcon(n.Status)" IconColor="@StatusColor(n.Status)">
+                                <b>@n.Kind</b> — @n.Detail
+                            </MudListItem>
+                        }
+                    </MudList>
+                    @if (_result.Success)
+                    {
+                        <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="ma-3">
+                            Pipeline complete · @_result.Algorithm · @_result.PrimaryMetric @_result.PrimaryValue.ToString("0.###")
+                        </MudAlert>
+                    }
+                }
+            </BlueprintCard>
+        </MudItem>
+    </MudGrid>
+
+    @if (_openProject.CompetitionId is { } compId)
+    {
+        <BlueprintCard Class="pa-5 mt-4">
+            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Submit to @_openProject.CompetitionTitle</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:70ch;">
+                The server trains and scores your exact node graph on the competition's <b>hidden test set</b> — the same
+                data for everyone — so only your modelling choices move your rank.
+            </MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EmojiEvents"
+                       OnClick="() => OnSubmitPipeline(compId)" Disabled="_submitting">Train &amp; submit</MudButton>
+            @if (_submitting)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
+            }
+            @if (_submissionResult is not null)
+            {
+                <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="mt-3">
+                    Scored <b>@_submissionResult.Score?.ToString("0.###")</b> — your best result is on the leaderboard.
+                </MudAlert>
+            }
+            @if (_submitError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Text" Dense="true" Class="mt-3">@_submitError</MudAlert>
+            }
+        </BlueprintCard>
+    }
+}
+
+@code {
+    private static readonly (string Category, string[] Kinds)[] _palette =
+    [
+        ("Data", ["dataset", "select-columns", "drop-columns", "sample", "filter-rows"]),
+        ("Transform", ["one-hot", "replace-missing", "normalize", "standardize"]),
+        ("Split", ["split"]),
+        ("Model", ["train", "cross-validate"]),
+        ("Evaluate", ["score", "evaluate"]),
+    ];
+    private static readonly string[] _binaryAlgorithms = ["sdca", "fasttree", "fastforest", "lbfgs", "perceptron"];
+    private static readonly string[] _regressionAlgorithms = ["sdca", "fasttree", "fastforest", "lbfgs"];
+    private static readonly string[] _multiclassAlgorithms = ["sdca", "lbfgs", "naivebayes"];
+    private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web);
+
+    private BlazorDiagram _diagram = null!;
+    private MlNode? _selected;
+    private double _nextX = 40;
+    private int _seedRow;
+
+    private IReadOnlyList<ProjectDto>? _projects;
+    private ProjectDetailDto? _openProject;
+    private bool _saving;
+
+    private string _labelColumn = "label";
+    private string _task = "BinaryClassification";
+    private bool _running;
+    private PipelineExecutionResult? _result;
+
+    private bool _submitting;
+    private SubmissionResultDto? _submissionResult;
+    private string? _submitError;
+
+    protected override void OnInitialized()
+    {
+        _diagram = new BlazorDiagram();
+        _diagram.SelectionChanged += OnSelectionChanged;
+    }
+
+    protected override async Task OnInitializedAsync() => await LoadProjects();
+
+    public void Dispose() => _diagram.SelectionChanged -= OnSelectionChanged;
+
+    // ---- Projects ----
+
+    private async Task LoadProjects()
+    {
+        try { _projects = await Api.GetProjectsAsync(); }
+        catch (Exception ex) { Snackbar.Add($"Couldn't load projects: {ex.Message}", Severity.Warning); }
+    }
+
+    private async Task NewProject()
+    {
+        var dialog = await DialogService.ShowAsync<CreateProjectDialog>("New project");
+        var result = await dialog.Result;
+        if (result is null || result.Canceled)
+        {
+            return;
+        }
+
+        await LoadProjects();
+        if (result.Data is Guid id)
+        {
+            await OpenProject(id);
+        }
+    }
+
+    private async Task OpenProject(Guid id)
+    {
+        var project = await Api.GetProjectAsync(id);
+        if (project is null)
+        {
+            Snackbar.Add("Project not found.", Severity.Error);
+            return;
+        }
+
+        _openProject = project;
+        _labelColumn = project.LabelColumn;
+        _task = project.TaskType;
+        _result = null;
+        _submissionResult = null;
+        _submitError = null;
+        _selected = null;
+        LoadDefinition(project.DefinitionJson);
+    }
+
+    private void CloseProject()
+    {
+        _openProject = null;
+        _selected = null;
+        _ = LoadProjects();
+    }
+
+    private async Task SaveProject()
+    {
+        if (_openProject is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var json = JsonSerializer.Serialize(BuildDefinition(), _json);
+            await Api.SaveProjectAsync(_openProject.Id, new SaveProjectRequest(json, _labelColumn, _task));
+            Snackbar.Add("Project saved.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task DeleteProject(Guid id)
+    {
+        try
+        {
+            await Api.DeleteProjectAsync(id);
+            await LoadProjects();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ---- Canvas load/save ----
+
+    private void LoadDefinition(string json)
+    {
+        _diagram.Nodes.Clear();
+        _diagram.Links.Clear();
+        _nextX = 40;
+        _seedRow = 0;
+
+        WorkflowDefinition? def = null;
+        try { def = JsonSerializer.Deserialize<WorkflowDefinition>(json, _json); } catch { /* fall through to starter */ }
+
+        if (def is null || def.Nodes.Count == 0)
+        {
+            SeedStarter();
+            return;
+        }
+
+        var map = new Dictionary<string, MlNode>(StringComparer.Ordinal);
+        foreach (var wn in def.Nodes)
+        {
+            var x = wn.Config is not null && wn.Config.TryGetValue("_x", out var xs) && double.TryParse(xs, NumberStyles.Any, CultureInfo.InvariantCulture, out var xv) ? xv : _nextX;
+            var y = wn.Config is not null && wn.Config.TryGetValue("_y", out var ys) && double.TryParse(ys, NumberStyles.Any, CultureInfo.InvariantCulture, out var yv) ? yv : 60;
+            var node = PlaceNode(wn.Id, wn.Kind, x, y);
+            if (wn.Config is not null)
+            {
+                foreach (var kv in wn.Config.Where(kv => kv.Key is not ("_x" or "_y")))
+                {
+                    node.Config[kv.Key] = kv.Value;
+                }
+            }
+            map[wn.Id] = node;
+            _nextX = Math.Max(_nextX, x + 170);
+        }
+
+        foreach (var e in def.Edges)
+        {
+            if (map.TryGetValue(e.FromNodeId, out var a) && map.TryGetValue(e.ToNodeId, out var b))
+            {
+                Connect(a, b);
+            }
+        }
+    }
+
+    private WorkflowDefinition BuildDefinition()
+    {
+        var nodes = _diagram.Nodes.OfType<MlNode>().Select(n =>
+        {
+            var cfg = new Dictionary<string, string>(n.Config)
+            {
+                ["_x"] = n.Position.X.ToString(CultureInfo.InvariantCulture),
+                ["_y"] = n.Position.Y.ToString(CultureInfo.InvariantCulture),
+            };
+            return new WorkflowNode { Id = n.NodeId, Kind = n.Kind, Config = cfg };
+        }).ToList();
+
+        var edges = new List<WorkflowEdge>();
+        foreach (var link in _diagram.Links)
+        {
+            if ((link.Source as SinglePortAnchor)?.Port?.Parent is MlNode src && (link.Target as SinglePortAnchor)?.Port?.Parent is MlNode dst)
+            {
+                edges.Add(new WorkflowEdge(src.NodeId, dst.NodeId));
+            }
+        }
+
+        return new WorkflowDefinition { Name = _openProject?.Name ?? "Pipeline", Nodes = nodes, Edges = edges };
+    }
+
+    private void SeedStarter()
+    {
+        var d = AddNode("dataset");
+        var sp = AddNode("split");
+        var tr = AddNode("train");
+        var ev = AddNode("evaluate");
+        Connect(d, sp);
+        Connect(sp, tr);
+        Connect(tr, ev);
+    }
+
+    private MlNode AddNode(string kind)
+    {
+        var node = PlaceNode("n" + Guid.NewGuid().ToString("N")[..8], kind, _nextX, 60 + (_seedRow++ % 2) * 120);
+        _nextX += 170;
+        return node;
+    }
+
+    private MlNode PlaceNode(string id, string kind, double x, double y)
+    {
+        var node = new MlNode(id, kind, new Blazor.Diagrams.Core.Geometry.Point(x, y));
+        node.AddPort(PortAlignment.Left);
+        node.AddPort(PortAlignment.Right);
+        _diagram.Nodes.Add(node);
+        return node;
+    }
+
+    private void Connect(MlNode a, MlNode b) =>
+        _diagram.Links.Add(new LinkModel(a.GetPort(PortAlignment.Right)!, b.GetPort(PortAlignment.Left)!));
+
+    private void DeleteSelected()
+    {
+        if (_selected is not null)
+        {
+            _diagram.Nodes.Remove(_selected);
+            _selected = null;
+        }
+    }
+
+    private void OnSelectionChanged(Blazor.Diagrams.Core.Models.Base.SelectableModel _)
+    {
+        _selected = _diagram.GetSelectedModels().OfType<MlNode>().FirstOrDefault();
+        InvokeAsync(StateHasChanged);
+    }
+
+    // ---- Config helpers ----
+
+    private string[] AlgorithmsForTask() => _task switch
+    {
+        "Regression" => _regressionAlgorithms,
+        "MulticlassClassification" => _multiclassAlgorithms,
+        _ => _binaryAlgorithms,
+    };
+
+    private string SelectedAlgo() => CfgGet("algorithm") is { Length: > 0 } a ? a : "sdca";
+
+    private string CfgGet(string key) => _selected is not null && _selected.Config.TryGetValue(key, out var v) ? v : string.Empty;
+
+    private void CfgSet(string key, string? value)
+    {
+        if (_selected is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _selected.Config.Remove(key);
+        }
+        else
+        {
+            _selected.Config[key] = value.Trim();
+        }
+    }
+
+    // ---- Run / submit ----
+
+    private async Task OnRun(InputFileChangeEventArgs e)
+    {
+        _running = true;
+        _result = null;
+        foreach (var n in _diagram.Nodes.OfType<MlNode>())
+        {
+            n.SetStatus("idle");
+        }
+        StateHasChanged();
+
+        try
+        {
+            using var ms = new MemoryStream();
+            await using (var stream = e.File.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024))
+            {
+                await stream.CopyToAsync(ms);
+            }
+            ms.Position = 0;
+
+            _result = await Api.ExecuteWorkflowAsync(BuildDefinition(), ms, e.File.Name, _labelColumn, _task);
+            if (_result is not null)
+            {
+                var byId = _diagram.Nodes.OfType<MlNode>().ToDictionary(n => n.NodeId);
+                foreach (var nr in _result.Nodes)
+                {
+                    if (byId.TryGetValue(nr.NodeId, out var node))
+                    {
+                        node.SetStatus(nr.Status, nr.Detail);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Run failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _running = false;
+        }
+    }
+
+    private async Task OnSubmitPipeline(Guid competitionId)
+    {
+        _submitting = true;
+        _submissionResult = null;
+        _submitError = null;
+        try
+        {
+            _submissionResult = await Api.SubmitPipelineAsync(competitionId, BuildDefinition());
+        }
+        catch (Exception ex)
+        {
+            _submitError = ex.Message;
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private static string StatusIcon(string status) => status switch
+    {
+        "done" => Icons.Material.Filled.CheckCircle,
+        "failed" => Icons.Material.Filled.Error,
+        "skipped" => Icons.Material.Filled.RemoveCircleOutline,
+        _ => Icons.Material.Filled.RadioButtonUnchecked,
+    };
+
+    private static Color StatusColor(string status) => status switch
+    {
+        "done" => Color.Success,
+        "failed" => Color.Error,
+        _ => Color.Default,
+    };
+}

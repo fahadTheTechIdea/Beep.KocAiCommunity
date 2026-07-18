@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ML.NET runtime and the O&G node catalog arrive in Phase 08. Heavy ML.NET
+       packages are intentionally deferred; this skeleton only defines contracts. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML" />
+    <PackageReference Include="Microsoft.ML.AutoML" />
+    <PackageReference Include="Microsoft.ML.FastTree" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Domain\Beep.KocAiCommunity.Domain.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Workflow\Beep.KocAiCommunity.Workflow.csproj" />
+  </ItemGroup>
+
+</Project>

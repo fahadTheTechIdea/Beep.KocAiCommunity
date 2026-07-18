@@ -1,0 +1,9 @@
+html, body {
+    margin: 0;
+    font-family: "Inter", "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+.gap-3 { gap: 12px; }
+.gap-8 { gap: 32px; }
+
+a { text-underline-offset: 3px; }

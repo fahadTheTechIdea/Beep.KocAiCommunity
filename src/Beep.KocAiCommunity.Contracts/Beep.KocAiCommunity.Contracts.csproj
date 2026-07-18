@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- DTOs shared across Web, API, Worker. No EF Core, no ML.NET, no Domain. -->
+
+</Project>

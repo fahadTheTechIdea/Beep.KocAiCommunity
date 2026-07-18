@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Pure domain: entity types and enums only. No EF Core, no ML.NET, no Infrastructure. -->
+
+</Project>

@@ -1,0 +1,535 @@
+Drawer
+Represents a navigation panel docked to the side of the page.
+API
+<MudDrawer>
+- <MudDrawerHeader>
+- <MudDrawerContainer>
+Usage
+If you use two-way binding @bind-Open="...", you can toggle the Drawer and it will close itself on navigation. If you set its Open parameter without two-way binding, you effectively force it to stay open or closed, depending on the provided value.
+Always use @bind-Open instead of Open for auto-closing to work.
+
+Variants
+The drawer can be displayed in many different ways, like other components you can set the different variants with Variant property but uses DrawerVariant enum.
+
+Temporary
+The Temporary Drawers can be opened temporarily above all other content until a section is selected, or until the overlay is clicked if OverlayAutoClose is set to true. This drawer type is not responsive. Temporary Drawers will stay open until the Open parameter is set to false again.
+
+Overlay Autoclose
+My App
+Store
+Library
+Community
+Close Drawer
+<MudButton Variant="Variant.Text" OnClick="@(() => OpenDrawer(Anchor.Start))">Start</MudButton>
+<MudButton Variant="Variant.Text" OnClick="@(() => OpenDrawer(Anchor.End))">End</MudButton>
+<MudButton Variant="Variant.Text" OnClick="@(() => OpenDrawer(Anchor.Top))">Top</MudButton>
+<MudButton Variant="Variant.Text" OnClick="@(() => OpenDrawer(Anchor.Bottom))">Bottom</MudButton>
+<MudSwitch @bind-Value="_overlayAutoClose" Label="Overlay Autoclose" Color="Color.Secondary" />
+<MudDrawer @bind-Open="@_open" Anchor="@_anchor" Elevation="1" Variant="@DrawerVariant.Temporary" OverlayAutoClose="@_overlayAutoClose">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6">My App</MudText>
+    </MudDrawerHeader>
+    <MudNavMenu>
+        <MudNavLink Match="NavLinkMatch.All">Store</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.All">Library</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.All">Community</MudNavLink>
+        <MudNavLink OnClick="_ => _open = false">Close Drawer</MudNavLink>
+    </MudNavMenu>
+</MudDrawer>
+@code{ 
+    private bool _open;
+    private Anchor _anchor;
+    private bool _overlayAutoClose = true;
+
+    private void OpenDrawer(Anchor anchor)
+    {
+        _open = true;
+        _anchor = anchor;
+    }
+}
+Persistent
+The Persistent Drawer is outside its container. When opened, it forces other contents to change their size. This drawer type is not responsive. Persistent Drawers will stay open until the Open parameter is set to false again.
+
+My App
+Dashboard
+Library
+Community
+<MudPaper Height="200px" Style="overflow:hidden; position:relative;">
+    <MudDrawerContainer Class="mud-height-full">
+        <MudDrawer @bind-Open="@_open" Elevation="0" Variant="@DrawerVariant.Persistent" Color="Color.Primary">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">My App</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" IconColor="Color.Inherit">Dashboard</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.LocalLibrary" IconColor="Color.Inherit">Library</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.People" IconColor="Color.Inherit">Community</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <div class="d-flex justify-center align-center mud-height-full">
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleDrawer">Persistent drawer</MudButton>
+        </div>
+    </MudDrawerContainer>
+</MudPaper>
+@code
+{
+    private bool _open = false;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+    }
+}
+Responsive
+Responsive Drawers behaves persistently on wider screens and responsively on smaller ones. Opened Responsive Drawers close automatically when the window size becomes small, and opens after the original state has been restored according to its breakpoint configuration.
+
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_open" Elevation="1">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">My App</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu>
+            <MudNavLink Match="NavLinkMatch.All">Store</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All">Library</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All">Community</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent Class="pt-16 px-16">
+        <MudContainer Class="mt-6">
+            <MudAlert Severity="Severity.Success" Class="mt-16">Text inside MudContainer</MudAlert>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+@code{
+    private bool _open = false;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+    }
+}
+Mini
+The Mini variant is a streamlined version of the Responsive Drawer. It automatically shrinks to a narrow strip (default width: 56px) according to its breakpoint configuration.
+Currently, Mini Drawers have built-in style support only for MudNavLink components. To control whether the Mini Drawer is open or closed, use the Open parameter.
+To disable automatic responsiveness and manage the open state manually, set Breakpoint="Breakpoint.None".
+
+<MudPaper Height="200px" Style="overflow:hidden; position:relative;">
+    <MudDrawerContainer Class="mud-height-full">
+        <MudDrawer @bind-Open="@_open" Fixed="false" Elevation="1" Variant="@DrawerVariant.Mini" OpenMiniOnHover="true" Breakpoint="Breakpoint.None">
+            <MudNavMenu>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Store">Store</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.LibraryBooks">Library</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Group">Community</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <div class="d-flex justify-center align-center mud-height-full">
+            <MudButton OnClick="@ToggleDrawer" Color="Color.Primary">Toggle</MudButton>
+        </div>
+    </MudDrawerContainer>
+</MudPaper>
+@code
+{ 
+    private bool _open = false;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+    } 
+}
+Hide overlay
+With Overlay="false" the overlay can be turned off for Responsive and Temporary Drawers.
+
+My App
+Store
+Library
+Community
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => ToggleDrawer())">Toggle drawer</MudButton>
+
+<MudDrawer @bind-Open="@_open" Overlay="false" Elevation="1" Variant="@DrawerVariant.Temporary">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6">My App</MudText>
+    </MudDrawerHeader>
+    <MudNavMenu>
+        <MudNavLink Match="NavLinkMatch.All">Store</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.All">Library</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.All">Community</MudNavLink>
+    </MudNavMenu>
+</MudDrawer>
+@code{ 
+    private bool _open;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+    }
+}
+Anchor Drawer
+With the Anchor property, you can set the Drawer to left or right. The default mode is left. This example uses Persistent Drawers.
+
+My App
+Store
+Library
+Community
+Settings
+Profile
+Orders
+Order History
+<MudPaper Height="200px" Class="mud-theme-primary" Style="overflow:hidden; position:relative;">
+    <MudDrawerContainer Class="mud-height-full">
+        <MudDrawer @bind-Open="@_openStart" Anchor="Anchor.Start" Elevation="0" Variant="@DrawerVariant.Persistent">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">My App</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Store">Store</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.LocalLibrary">Library</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Forum">Community</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <MudDrawer @bind-Open="@_openEnd" Fixed="false" Anchor="Anchor.End" Elevation="0" Variant="@DrawerVariant.Persistent">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">Settings</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AccountBox">Profile</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ShoppingCart">Orders</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.History">Order History</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <div class="d-flex justify-center align-center mud-height-full">
+            <MudButton Color="Color.Inherit" OnClick="@ToggleStartDrawer" StartIcon="@(Rtl ? Icons.Material.Filled.East : Icons.Material.Filled.West)" Class="mx-2">Toggle start</MudButton>
+            <MudButton Color="Color.Inherit" OnClick="@ToggleEndDrawer" EndIcon="@(Rtl ? Icons.Material.Filled.West : Icons.Material.Filled.East)" Class="mx-2">Toggle end</MudButton>
+        </div>
+    </MudDrawerContainer>
+</MudPaper>
+@code
+{
+    private bool _openStart = false;
+    private bool _openEnd = false;
+
+    [CascadingParameter]
+    public bool Rtl { get; set; }
+
+    private void ToggleStartDrawer()
+    {
+        _openStart = !_openStart;
+    }
+
+    private void ToggleEndDrawer()
+    {
+        _openEnd = !_openEnd;
+    }
+}
+Left/Right Drawer
+Anchor.Left and Anchor.Right makes Drawer's position absolute, they will not follow RTL-LTR changes.
+
+My App
+Store
+Library
+Community
+Settings
+Profile
+Orders
+Order History
+<MudPaper Height="200px" Class="mud-theme-primary" Style="overflow:hidden; position:relative;">
+    <MudDrawerContainer Class="mud-height-full">
+        <MudDrawer @bind-Open="@_openLeft" Anchor="Anchor.Left" Elevation="0" Variant="@DrawerVariant.Persistent">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">My App</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Store">Store</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.LocalLibrary">Library</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Forum">Community</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <MudDrawer @bind-Open="@_openRight" Fixed="false" Anchor="Anchor.Right" Elevation="0" Variant="@DrawerVariant.Persistent">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">Settings</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AccountBox">Profile</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ShoppingCart">Orders</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.History">Order History</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <div class="d-flex justify-center align-center mud-height-full">
+            @if (Rtl)
+            {
+                <MudButton Color="Color.Inherit" OnClick="@ToggleRightDrawer" StartIcon="@Icons.Material.Filled.East" Class="mx-2">Toggle right</MudButton>
+                <MudButton Color="Color.Inherit" OnClick="@ToggleLeftDrawer" EndIcon="@Icons.Material.Filled.West" Class="mx-2">Toggle left</MudButton>
+            }
+            else
+            {
+                <MudButton Color="Color.Inherit" OnClick="@ToggleLeftDrawer" StartIcon="@Icons.Material.Filled.West" Class="mx-2">Toggle left</MudButton>
+                <MudButton Color="Color.Inherit" OnClick="@ToggleRightDrawer" EndIcon="@Icons.Material.Filled.East" Class="mx-2">Toggle right</MudButton>
+            }
+        </div>
+    </MudDrawerContainer>
+</MudPaper>
+@code
+{
+    private bool _openLeft = false;
+    private bool _openRight = false;
+
+    [CascadingParameter]
+    public bool Rtl { get; set; }
+
+    private void ToggleLeftDrawer()
+    {
+        _openLeft = !_openLeft;
+    }
+
+    private void ToggleRightDrawer()
+    {
+        _openRight = !_openRight;
+    }
+}
+Clipping
+A Drawer with ClipMode="Docked" or ClipMode="Always" will not push the AppBar to the side when opening. This parameter is evaluated only when Drawers are used inside a MudLayout directly. This example shows how different options work with a Responsive Drawer. Change the size of the window to test all possibilities.
+
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="@_dense">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_open" ClipMode="_clipMode" Elevation="1" Variant="@DrawerVariant.Responsive">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">My App</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu>
+            <MudNavLink Match="NavLinkMatch.All">Store</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All">Library</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All">Community</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent Class="pt-16 px-16">
+        <MudContainer Class="mt-6">
+            <MudSelect Label="Select clip mode" @bind-Value="_clipMode">
+                <MudSelectItem Value="@DrawerClipMode.Never">Not clipped (DrawerClipMode.Never)</MudSelectItem>
+                <MudSelectItem Value="@DrawerClipMode.Docked">Drawer is docked (DrawerClipMode.Docked)</MudSelectItem>
+                <MudSelectItem Value="@DrawerClipMode.Always">Always (DrawerClipMode.Always)</MudSelectItem>
+            </MudSelect>
+            <MudSwitch @bind-Value="_dense" Label="Dense appbar" Color="Color.Primary" Style="width:100%;" />
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+@code{
+    private bool _open = false;
+    private bool _dense = false;
+    private DrawerClipMode _clipMode = DrawerClipMode.Never;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+    }
+}
+Custom Breakpoint
+The switching point for Responsive Drawers (DrawerVariant.Mini and DrawerVariant.Responsive) can be changed using the Breakpoint parameter. The default is Breakpoint.Md.
+
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_open" Breakpoint="@_breakpoint" Elevation="1" Variant="@DrawerVariant.Responsive">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">My App</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu>
+            <MudNavLink Match="NavLinkMatch.All">Store</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All">Library</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All">Community</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent Class="pt-16 px-16">
+        <MudContainer Class="mt-6">
+            <MudSelect Label="Select breakpoint" @bind-Value="_breakpoint">
+                <MudSelectItem Value="@Breakpoint.Sm">Breakpoint.Sm</MudSelectItem>
+                <MudSelectItem Value="@Breakpoint.Md">Breakpoint.Md</MudSelectItem>
+                <MudSelectItem Value="@Breakpoint.Lg">Breakpoint.Lg</MudSelectItem>
+                <MudSelectItem Value="@Breakpoint.Xl">Breakpoint.Xl</MudSelectItem>
+            </MudSelect>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+@code{
+    private bool _open = false;
+    private Breakpoint _breakpoint = Breakpoint.Lg;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+    }
+}
+Mini Drawer Customization
+This example demonstrates how the combination of several parameters will affect the behaviour of a Mini Drawer.
+
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="@_dense">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_open" ClipMode="_clipMode" Breakpoint="@_breakpoint" Elevation="1" Variant="@DrawerVariant.Mini">
+        <MudNavMenu>
+            <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Store">Store</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.LibraryBooks">Library</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Group">Community</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent Class="pt-16 px-16">
+        <MudContainer Class="mt-6">
+            <MudSelect Label="Select clip mode" @bind-Value="_clipMode">
+                <MudSelectItem Value="@DrawerClipMode.Never">Not clipped (DrawerClipMode.Never)</MudSelectItem>
+                <MudSelectItem Value="@DrawerClipMode.Docked">Drawer is docked (DrawerClipMode.Docked)</MudSelectItem>
+                <MudSelectItem Value="@DrawerClipMode.Always">Always (DrawerClipMode.Always)</MudSelectItem>
+            </MudSelect>
+            <MudSelect Label="Select breakpoint" @bind-Value="_breakpoint">
+                <MudSelectItem Value="@Breakpoint.Sm">Breakpoint.Sm</MudSelectItem>
+                <MudSelectItem Value="@Breakpoint.Md">Breakpoint.Md</MudSelectItem>
+                <MudSelectItem Value="@Breakpoint.Lg">Breakpoint.Lg</MudSelectItem>
+                <MudSelectItem Value="@Breakpoint.Xl">Breakpoint.Xl</MudSelectItem>
+            </MudSelect>
+            <MudSwitch @bind-Value="_dense" Label="Dense appbar" Color="Color.Primary" Style="width:100%;" />
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+@code{
+    private bool _open = false;
+    private bool _dense = false;
+    private Breakpoint _breakpoint = Breakpoint.Lg;
+    private DrawerClipMode _clipMode = DrawerClipMode.Never;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+    }
+}
+Sizing Drawers
+It is possible to set custom width/height values for Sizing Drawers. The following examples demonstrate how to do it for different types of Drawers.
+
+Inside MudLayout
+Changing the default width (240px) of a left and/or right Drawer is possible by setting the DrawerWidthLeft and/or DrawerWidthRight layout properties. For Mini Drawers, DrawerMiniWidthLeft and/or DrawerMiniWidthRight can be used. For more information, see customization page.
+
+Temporary Drawers
+Changing the default size is possible by setting the Width or Height parameters.
+
+My App
+Store
+Library
+Community
+<MudButton Variant="Variant.Text" OnClick="@(() => OpenDrawer(Anchor.Start))">Start</MudButton>
+<MudButton Variant="Variant.Text" OnClick="@(() => OpenDrawer(Anchor.End))">End</MudButton>
+<MudButton Variant="Variant.Text" OnClick="@(() => OpenDrawer(Anchor.Top))">Top</MudButton>
+<MudButton Variant="Variant.Text" OnClick="@(() => OpenDrawer(Anchor.Bottom))">Bottom</MudButton>
+
+<MudDrawer @bind-Open="@_open" Width="@_width" Height="@_height" Anchor="@_anchor" Elevation="1" Variant="@DrawerVariant.Temporary">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6">My App</MudText>
+    </MudDrawerHeader>
+    <MudNavMenu>
+        <MudNavLink Match="NavLinkMatch.All">Store</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.All">Library</MudNavLink>
+        <MudNavLink Match="NavLinkMatch.All">Community</MudNavLink>
+    </MudNavMenu>
+</MudDrawer>
+@code{ 
+    private bool _open;
+    private Anchor _anchor;
+    private string _width, _height;
+
+    private void OpenDrawer(Anchor anchor)
+    {
+        _open = true;
+        _anchor = anchor;
+
+        switch (anchor)
+        {
+            case Anchor.Start:
+                _width = "300px";
+                _height = "100%";
+                break;
+            case Anchor.End:
+                _width = "400px";
+                _height = "100%";
+                break;
+            case Anchor.Bottom:
+                _width = "100%";
+                _height = "200px";
+                break;
+            case Anchor.Top:
+                _width = "100%";
+                _height = "350px";
+                break;
+        }
+    }
+}
+Persistent Drawers Inside MudDrawerContainer
+Changing the default size is possible by setting the Width parameter.
+
+My App
+Store
+Library
+Community
+Settings
+Profile
+Orders
+Order History
+<MudPaper Height="200px" Class="mud-theme-primary" Style="overflow:hidden; position:relative;">
+    <MudDrawerContainer Class="mud-height-full">
+        <MudDrawer @bind-Open="@_openStart" Width="150px" Fixed="false" Anchor="Anchor.Start" Elevation="0" Variant="@DrawerVariant.Persistent">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">My App</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Store">Store</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.LocalLibrary">Library</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Forum">Community</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <MudDrawer @bind-Open="@_openEnd" Width="300px" Fixed="false" Anchor="Anchor.End" Elevation="0" Variant="@DrawerVariant.Persistent">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">Settings</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AccountBox">Profile</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ShoppingCart">Orders</MudNavLink>
+                <MudNavLink Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.History">Order History</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <div class="d-flex justify-center align-center mud-height-full">
+            <MudButton Color="Color.Inherit" OnClick="@ToggleStartDrawer" StartIcon="@(Rtl ? Icons.Material.Filled.East : Icons.Material.Filled.West)" Class="mx-2">Toggle start</MudButton>
+            <MudButton Color="Color.Inherit" OnClick="@ToggleEndDrawer" EndIcon="@(Rtl ? Icons.Material.Filled.West : Icons.Material.Filled.East)" Class="mx-2">Toggle end</MudButton>
+        </div>
+    </MudDrawerContainer>
+</MudPaper>
+@code
+{
+    private bool _openStart = false;
+    private bool _openEnd = false;
+
+    [CascadingParameter]
+    public bool Rtl { get; set; }
+
+    private void ToggleStartDrawer()
+    {
+        _openStart = !_openStart;
+    }
+
+    private void ToggleEndDrawer()
+    {
+        _openEnd = !_openEnd;
+    } 
+}

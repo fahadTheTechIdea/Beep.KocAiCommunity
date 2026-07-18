@@ -1,0 +1,45 @@
+@using Beep.KocAiCommunity.Web.Services
+@inject DevIdentity Identity
+@implements IDisposable
+
+<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="/learn" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.School">Learn</MudNavLink>
+    <MudNavLink Href="/community" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Forum">Community</MudNavLink>
+
+    @if (Identity.HasAnyPosition)
+    {
+        <MudNavLink Href="/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+        <MudNavLink Href="/compete" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">Compete</MudNavLink>
+        <MudNavLink Href="/datasets" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dataset">Datasets</MudNavLink>
+        <MudNavLink Href="/workflow" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AccountTree">Studio</MudNavLink>
+        <MudNavLink Href="/studio" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Hub">AutoML</MudNavLink>
+        <MudNavLink Href="/models" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2">Models</MudNavLink>
+    }
+
+    @if (Identity.IsSupervisor)
+    {
+        <MudNavLink Href="/supervision" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SupervisorAccount">Supervision</MudNavLink>
+    }
+
+    @if (Identity.IsPlatformAdmin)
+    {
+        <MudNavLink Href="/admin" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings">Admin</MudNavLink>
+    }
+
+    @if (Identity.IsGuest)
+    {
+        <MudDivider Class="my-2" />
+        <div class="pa-3">
+            <MudText Typo="Typo.caption">Sign in to learn, compete, and build models.</MudText>
+        </div>
+    }
+</MudNavMenu>
+
+@code {
+    protected override void OnInitialized() => Identity.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Identity.Changed -= OnChanged;
+}

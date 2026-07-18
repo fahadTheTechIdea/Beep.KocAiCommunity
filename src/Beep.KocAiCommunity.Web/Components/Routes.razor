@@ -1,0 +1,17 @@
+<Router AppAssembly="typeof(Program).Assembly"
+        AdditionalAssemblies="new[]
+        {
+            typeof(Beep.KocAiCommunity.Ui.Community.UiCommunityAssembly).Assembly,
+            typeof(Beep.KocAiCommunity.Ui.Studio.UiStudioAssembly).Assembly,
+            typeof(Beep.KocAiCommunity.Ui.Admin.UiAdminAssembly).Assembly,
+        }">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <MudText Typo="Typo.h5" Class="koc-heading pa-8">Page not found</MudText>
+        </LayoutView>
+    </NotFound>
+</Router>

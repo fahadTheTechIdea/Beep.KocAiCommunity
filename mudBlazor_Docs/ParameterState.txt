@@ -1,0 +1,169 @@
+Parameter State
+Parameter state allows for adhering to Blazor best practices when working with the Parameter attribute.
+When submitting a Pull Request that includes a new component, please review the Contribution Guide on GitHub for additional Parameter State guidelines.
+Parameter Best Practices
+MudBlazor implemented a ParameterState framework to improve how component parameters are managed, ensuring reliable updates, preventing unobserved async discards, and enforcing best practices in Blazor development. This page explains the core issue in Blazor, how ParameterState addresses it in MudBlazor, and how you should interact with parameter values as an end user.
+
+Review this article for some of the best practices for working with Parameters in Blazor.
+
+
+Parameter Do's
+Store parameter values in a private field instead of modifying parameters directly
+
+Default parameter values should be set directly on the parameter, in the components constructor or SetParametersAsync().
+
+Use OnParametersSet if the component needs to react to external parameter changes.
+
+Implement two-way binding for parameters that should be updated both internally and externally.
+
+Minimize unnecessary re-renders by avoiding direct parameter modifications.
+
+Parameter Don'ts
+Don't modify a parameter directly inside the child component.
+
+Don't assume that a parameter's value will persist after a parent component re-renders.
+
+Don't forget that calling StateHasChanged in a parent resets child parameters unless state is stored separately or two-way binding is used.
+
+Don't store mutable objects (like RenderFragment) as parameters if you want to avoid unnecessary re-renders.
+
+Don't expect the component to reflect new parameter values unless explicitly handled in OnParametersSet.
+
+Why Parameter State Exists
+Parameters are typically simple properties, sometimes with logic inside their setters. However, this approach leads to issues such as:
+Property auto-complete warnings (BL0007): If a [Parameter] property has setter logic, the setter could be used to cause side effects that create problems, such as infinite rendering loops.
+Parameter resets: When a parent component re-renders, parameters reset unexpectedly.
+Unobserved async discards: Discarding Task results inside property setters can cause lost exceptions and unpredictable behavior.
+Direct parameter modification warnings (BL0005): Imperative updates to parameters on component references go against Blazor best practices.
+
+
+@code {
+    [Parameter]
+    public bool Expanded { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ExpandedChanged { get; set; }
+
+    private Task ToggleAsync()
+    {
+        Expanded = !Expanded; // ❌ Modifies parameter directly
+        return ExpandedChanged.InvokeAsync(Expanded);
+    }
+}
+If the parent re-renders, Expanded might revert to its original value, leading to unexpected UI behavior.
+How Parameter State Resolves These Issues
+ParameterState tracks and manages parameter changes reliably. Instead of using traditional property setters, parameters are registered with handlers that:
+Change Tracking: Properly track changes without triggering infinite loops.
+Async Handling: Ensure async operations are observed.
+State Management: Prevent parameter resets by storing values internally.
+Avoid Overwrites: Prevents direct parameter modification inside the component.
+
+@using MudBlazor.State
+@inherits ComponentBaseWithState
+@code {
+    private readonly ParameterState<bool> _expandedState; //separate field for storing parameter state
+
+    [Parameter, ParameterState]
+    public bool Expanded { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ExpandedChanged { get; set; }
+
+    public ParameterStateUsageExample()
+    {
+        using var registerScope = CreateRegisterScope();
+        _expandedState = registerScope.RegisterParameter<bool>(nameof(Expanded))
+            .WithParameter(() => Expanded)
+            .WithEventCallback(() => ExpandedChanged);
+    }
+
+    private Task ToggleAsync() => _expandedState.SetValueAsync(!_expandedState.Value); //✔ Do NOT modify parameters directly.
+}
+Using ParameterState ensures that the parameter remains consistent and does not reset unexpectedly when the parent re-renders.
+How You Should Interact with Parameter Values
+As an end user of MudBlazor components, ParameterState ensures that binding and event handling work seamlessly. Here’s what you need to know:
+
+Avoid Direct Parameter Modifications
+You should NOT modify a component’s parameters through its reference. Use two-way binding instead
+
+
+@code {
+    private MudCollapse _collapseRef = null!;
+
+#pragma warning disable BL0005
+    private void Update()
+    {
+        //Parameter modifications such as this are ignored on components utilizing parameter state.
+        _collapseRef.Expanded = true; // ❌ Not recommended
+    }
+#pragma warning restore BL0005
+}
+Use Two-Way Binding Where Needed
+MudBlazor components fully support two-way binding with bind-Value. This ensures parameter changes propagate correctly
+
+<MudContainer Class="mt-8" Style="justify-items: center">
+    <MudPaper Class="pa-4" MaxWidth="400px">
+        <MudStack Spacing="2">
+            <MudButton OnClick="Update">@(_isExpanded ? "Collapse" : "Expand")</MudButton>
+            <MudDivider />
+            <MudCollapse @bind-Expanded="@_isExpanded">
+                This content is collapsible.
+            </MudCollapse>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+@code {
+    private bool _isExpanded;
+
+    private void Update()
+    {
+        _isExpanded = !_isExpanded;
+    }
+}
+Reading Parameter Values
+MudBlazor provides GetState methods (Component.GetState(x => x.Parameter)) to retrieve parameter values safely.
+However, this is not our first recommendation.
+
+We recommend using two-way binding wherever possible, as it is the approach intended by Microsoft. Two-way binding ensures proper synchronization between parent and child components. When the parent subscribes to bind-Completed, it will receive updates from the child, re-render itself, and trigger a re-render of the child with the updated parameter value. You can read more about this approach here.
+
+
+
+
+Introductory Step
+<MudContainer Class="mt-8" Style="justify-items: center">
+    <MudPaper Class="mt-4 px-8">
+        <MudStepper @ref="_stepper" NonLinear Class="mr-4">
+            <ChildContent>
+                <MudStep Title="Step 1" CompletedChanged="@(() => StateHasChanged())">Introductory Step</MudStep>
+                <MudStep Title="Step 2" CompletedChanged="@(() => StateHasChanged())">More Details</MudStep>
+                <MudStep Title="Step 3" CompletedChanged="@(() => StateHasChanged())">Wrap things up</MudStep>
+            </ChildContent>
+        </MudStepper>
+
+        @if (_stepper is not null)
+        {
+            <MudStack Row Class="justify-center">
+                @foreach (var step in _stepper.Steps)
+                {
+                    <MudChip T="string" Color="@GetColor(step.Completed)">
+                        @step.Title
+                    </MudChip>
+                }
+            </MudStack>
+
+            <MudStack Row Class="justify-center">
+                @foreach (var step in _stepper.Steps)
+                {
+                    <MudChip T="string" Color="@GetColor(step.Completed)">
+                        @step.Title
+                    </MudChip>
+                }
+            </MudStack>
+        }
+    </MudPaper>
+</MudContainer>
+@code {
+    private MudStepper _stepper = null!;
+
+    private static Color GetColor(bool completed) => completed ? Color.Success : Color.Error;
+}

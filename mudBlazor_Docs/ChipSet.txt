@@ -1,0 +1,330 @@
+Chip Set
+A collection of multiple MudChip<T>
+ components that allows single or multi-selection.
+API
+<MudChipSet>
+Single selection
+Chipset will maintain a selection of chips for you. By default, the SelectionMode is SelectionMode.SingleSelection. In this mode you can choose a single value. Similar to a radio button you can switch the value by clicking on a different chip but it is not possible to unselect the selected choice by clicking a second time. SelectionMode="SelectionMode.ToggleSelection" is a single selection which also allows you to unselect the selected chip. To get or set the selected value use @bind-SelectedValue.
+Note: If you use the toggle selection and unselect the selected item the SelectedValue will become default(T). If that collides with a valid choice (i.e. 0 for type int) you should use a nullable type (i.e. T="int?").
+
+ 
+ 
+ 
+ 
+ 
+ 
+Nothing selected.
+
+SingleSelection
+ToggleSelection
+<MudChipSet T="Color" @bind-SelectedValue="SelectedColor" CheckMark SelectionMode="@SelectionMode">
+    <MudChip Text="purple" Color="Color.Primary" Value="@Color.Primary">Primary</MudChip>
+    <MudChip Text="pink" Color="Color.Secondary" Value="@Color.Secondary">Secondary</MudChip>
+    <MudChip Text="blue" Color="Color.Info" Value="@Color.Info">Info</MudChip>
+    <MudChip Text="green" Color="Color.Success" Value="@Color.Success">Success</MudChip>
+    <MudChip Text="orange" Color="Color.Warning" Value="@Color.Warning">Warning</MudChip>
+    <MudChip Text="red" Color="Color.Error" Value="@Color.Error">Error</MudChip>
+    <MudChip Text="black" Color="Color.Dark" Value="@Color.Dark">Dark</MudChip>
+</MudChipSet>
+
+<div class="d-flex flex-column align-center">
+    @if (SelectedColor != default) {
+        <MudText>You selected the <MudText Color="@SelectedColor" Inline>@SelectedColor.ToStringFast(true)</MudText> chip.</MudText>
+    }
+    else {
+        <MudText>Nothing selected.</MudText>
+    }
+    <MudRadioGroup @bind-Value="SelectionMode">
+        <MudRadio Value="@SelectionMode.SingleSelection" Color="Color.Primary">SingleSelection</MudRadio>
+        <MudRadio Value="@SelectionMode.ToggleSelection" Color="Color.Primary">ToggleSelection</MudRadio>
+    </MudRadioGroup>
+</div>
+@code
+{
+    public SelectionMode SelectionMode = SelectionMode.SingleSelection;
+    public Color SelectedColor;
+}
+Multiselection
+When you set SelectionMode="MultiSelection" the chip set will maintain a selection of multiple values. To utilize or manipulate the selection use @bind-SelectedValues (with an 's' at the end). No matter the selection mode, you can set CheckMark="true" if you want the selected chips to display a check mark.
+
+ 
+ 
+ 
+ 
+ 
+ 
+Nothing selected.
+
+Check marks
+<MudChipSet @bind-SelectedValues="_selected" SelectionMode="SelectionMode.MultiSelection" CheckMark="_checkMark" Variant="Variant.Text" Color="Color.Info">
+    <MudChip Value="@("Milk")" />
+    <MudChip Value="@("Eggs")" />
+    <MudChip Value="@("Soap")" />
+    <MudChip Value="@("Corn flakes")" />
+    <MudChip Value="@("Salad")" />
+    <MudChip Value="@("Apples")" />
+    <MudChip Value="@("Red wine")" />
+</MudChipSet>
+
+<div class="d-flex flex-column align-center">
+    @if (_selected is { Count: > 0 }) {
+        <MudText>You selected @string.Join(", ", _selected.OrderBy(x => x))</MudText>
+    }
+    else {
+        <MudText>Nothing selected.</MudText>
+    }
+    <MudCheckBox @bind-Value="_checkMark">Check marks</MudCheckBox>
+</div>
+@code
+{
+    private bool _checkMark = true;
+    private IReadOnlyCollection<string> _selected;
+}
+Adding and removing chips
+<MudChipSet T="string" AllClosable OnClose="Closed">
+    @foreach (var value in _values)
+    {
+        <MudChip Text="@value"></MudChip>
+    }
+</MudChipSet>
+
+<div class="d-flex flex-column align-center">
+    <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="Add">Add chip</MudButton>
+</div>
+@code
+{
+    private int _i = 1;
+    private List<string> _values = new();
+    public void Add() => _values.Add("Value " + (_i++));
+    public void Closed(MudChip<string> chip) => _values.Remove(chip.Text);
+}
+Default chips
+Chips that have Default="true" will be initially selected.
+
+ 
+ 
+ 
+ 
+ 
+ 
+You selected Milk, Cornflakes.
+
+<MudChipSet @bind-SelectedValues="_selected" SelectionMode="SelectionMode.MultiSelection" CheckMark>
+    <MudChip Value="@("Milk")" />
+    <MudChip Value="@("Eggs")" />
+    <MudChip Value="@("Soap")" />
+    <MudChip Value="@("Cornflakes")" />
+    <MudChip Value="@("Salad")" />
+    <MudChip Value="@("Apples")" />
+    <MudChip Value="@("Red wine")" />
+</MudChipSet>
+
+<div class="d-flex justify-center">
+    @if (_selected is { Count: > 0 })
+    {
+        <MudText>You selected @string.Join(", ", _selected).</MudText>
+    }
+    else
+    {
+        <MudText>Nothing selected.</MudText>
+    }
+</div>
+@code
+{
+    private IReadOnlyCollection<string> _selected = ["Milk", "Cornflakes"];
+}
+Binding chips in a selection
+You can bind a Chip's Selected parameter to manipulate the selection.
+
+Add ingredients to your coctail.
+
+Vodka
+Tomato Juice
+Olive
+Peppermint
+Vermouth
+Coconut Milk
+Port Wine
+<MudChipSet @bind-SelectedValues="_selected" SelectionMode="SelectionMode.MultiSelection">
+    @for (int i = 0; i < _included.Length; i++) 
+    {
+        var index = i;
+        <MudChip Value="@_ingredients[index]" @bind-Selected="_included[index]" Color="Color.Primary" Variant="@Variant.Text" />
+    }
+</MudChipSet>
+
+<div class="d-flex flex-column align-center">
+    @if (_selected is { Count: > 0 }) 
+    {
+        <MudText>Your special coctail recipe: <b>@string.Join(", ", _selected.OrderBy(x => x))</b></MudText>
+    }
+    else 
+    {
+        <MudText>Add ingredients to your coctail.</MudText>
+    }
+    <div class="d-flex">
+        @for (int i = 0; i < _included.Length; i++) 
+        {
+            var index = i;
+            <MudCheckBox Color="Color.Secondary" @bind-Value="_included[index]">@_ingredients[index]</MudCheckBox>
+        }
+    </div>
+</div>
+@code
+{
+    private string[] _ingredients = ["Vodka", "Tomato Juice", "Olive", "Peppermint", "Vermouth", "Coconut Milk", "Port Wine"];
+    private bool[] _included = new bool[7];
+    private IReadOnlyCollection<string> _selected;
+}
+Variants
+Chips look different when selected depending on their initial Variant.
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Check marks
+<MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" CheckMark="_checkMark">
+    <MudChip Text="gray" Variant="Variant.Text" Color="Color.Default">Default</MudChip>
+    <MudChip Text="purple" Variant="Variant.Text" Color="Color.Primary">Primary</MudChip>
+    <MudChip Text="pink" Variant="Variant.Text" Color="Color.Secondary">Secondary</MudChip>
+    <MudChip Text="blue" Variant="Variant.Text" Color="Color.Info">Info</MudChip>
+    <MudChip Text="green" Variant="Variant.Text" Color="Color.Success">Success</MudChip>
+    <MudChip Text="orange" Variant="Variant.Text" Color="Color.Warning">Warning</MudChip>
+    <MudChip Text="red" Variant="Variant.Text" Color="Color.Error">Error</MudChip>
+    <MudChip Text="black" Variant="Variant.Text" Color="Color.Dark">Dark</MudChip>
+</MudChipSet>
+<MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" CheckMark="_checkMark">
+    <MudChip Text="gray" Variant="Variant.Outlined" Color="Color.Default">Default</MudChip>
+    <MudChip Text="purple" Variant="Variant.Outlined" Color="Color.Primary">Primary</MudChip>
+    <MudChip Text="pink" Variant="Variant.Outlined" Color="Color.Secondary">Secondary</MudChip>
+    <MudChip Text="blue" Variant="Variant.Outlined" Color="Color.Info">Info</MudChip>
+    <MudChip Text="green" Variant="Variant.Outlined" Color="Color.Success">Success</MudChip>
+    <MudChip Text="orange" Variant="Variant.Outlined" Color="Color.Warning">Warning</MudChip>
+    <MudChip Text="red" Variant="Variant.Outlined" Color="Color.Error">Error</MudChip>
+    <MudChip Text="black" Variant="Variant.Outlined" Color="Color.Dark">Dark</MudChip>
+</MudChipSet>
+<MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" CheckMark="_checkMark">
+    <MudChip Text="gray" Variant="Variant.Filled" Color="Color.Default">Default</MudChip>
+    <MudChip Text="purple" Variant="Variant.Filled" Color="Color.Primary">Primary</MudChip>
+    <MudChip Text="pink" Variant="Variant.Filled" Color="Color.Secondary">Secondary</MudChip>
+    <MudChip Text="blue" Variant="Variant.Filled" Color="Color.Info">Info</MudChip>
+    <MudChip Text="green" Variant="Variant.Filled" Color="Color.Success">Success</MudChip>
+    <MudChip Text="orange" Variant="Variant.Filled" Color="Color.Warning">Warning</MudChip>
+    <MudChip Text="red" Variant="Variant.Filled" Color="Color.Error">Error</MudChip>
+    <MudChip Text="black" Variant="Variant.Filled" Color="Color.Dark">Dark</MudChip>
+</MudChipSet>
+<MudCheckBox @bind-Value="_checkMark">Check marks</MudCheckBox>
+@code
+{
+    private bool _checkMark = true;
+}
+Selected Color
+You can change the chip's selected color with the SelectedColor property; by default it has the same color as the chip.
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Check marks
+<MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" CheckMark="_checkMark">
+    <MudChip Text="Brunsås" Variant="Variant.Text" Color="Color.Default" SelectedColor="Color.Primary"></MudChip>
+    <MudChip Text="Spotted Dick" Variant="Variant.Text" Color="Color.Primary" SelectedColor="Color.Secondary"></MudChip>
+    <MudChip Text="Sushi" Variant="Variant.Text" Color="Color.Dark" SelectedColor="Color.Warning"></MudChip>
+    <MudChip Text="Schnitzel" Variant="Variant.Text" Color="Color.Info" SelectedColor="Color.Error"></MudChip>
+    <MudChip Text="Hamburger" Variant="Variant.Text" Color="Color.Success" SelectedColor="Color.Error"></MudChip>
+</MudChipSet>
+<MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" CheckMark="_checkMark">
+    <MudChip Text="Brunsås" Variant="Variant.Outlined" Color="Color.Default" SelectedColor="Color.Primary"></MudChip>
+    <MudChip Text="Spotted Dick" Variant="Variant.Outlined" Color="Color.Primary" SelectedColor="Color.Secondary"></MudChip>
+    <MudChip Text="Sushi" Variant="Variant.Outlined" Color="Color.Dark" SelectedColor="Color.Warning"></MudChip>
+    <MudChip Text="Schnitzel" Variant="Variant.Outlined" Color="Color.Info" SelectedColor="Color.Error"></MudChip>
+    <MudChip Text="Hamburger" Variant="Variant.Outlined" Color="Color.Success" SelectedColor="Color.Error"></MudChip>
+</MudChipSet>
+<MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" CheckMark="_checkMark">
+    <MudChip Text="Brunsås" Variant="Variant.Filled" Color="Color.Default" SelectedColor="Color.Primary"></MudChip>
+    <MudChip Text="Spotted Dick" Variant="Variant.Filled" Color="Color.Primary" SelectedColor="Color.Secondary"></MudChip>
+    <MudChip Text="Sushi" Variant="Variant.Filled" Color="Color.Dark" SelectedColor="Color.Warning"></MudChip>
+    <MudChip Text="Schnitzel" Variant="Variant.Filled" Color="Color.Info" SelectedColor="Color.Error"></MudChip>
+    <MudChip Text="Hamburger" Variant="Variant.Filled" Color="Color.Success" SelectedColor="Color.Error"></MudChip>
+</MudChipSet>
+<MudCheckBox @bind-Value="_checkMark">Check marks</MudCheckBox>
+@code
+{
+    private bool _checkMark = true;
+}
+Accessibility
+A MudChip accepts the following shortcuts:
+
+Keys	Action
+Space, Enter, NumpadEnter	Click, select, or toggle the state of the currently focused chip
+Backspace, Delete	Close the currently focused chip if it is closable
+
+<MudStack Justify="@Justify.Center"
+          Class="mud-width-full">
+    <MudChipSet T="string"
+                AllClosable="@true"
+                CheckMark="@true"
+                SelectionMode="@SelectionMode.MultiSelection"
+                OnClose="@OnChipClosed">
+        @for (var i = 0; i < _chips.Count; i++)
+        {
+            var localIndex = i;
+            <MudChip Value="@_chips[localIndex]"
+                     Color="@((Color)(localIndex % _numberOfColors))" />
+        }
+    </MudChipSet>
+    <MudButton OnClick="@AddChip"
+               Variant="@Variant.Filled">
+        Add chip
+    </MudButton>
+</MudStack>
+
+<MudDivider />
+
+<MudStack>
+    <MudChip T="string"
+             OnClick="@OpenDialogAsync"
+             Text="Click to open a dialog" />
+</MudStack>
+@code {
+    [Inject]
+    private IDialogService DialogService { get; set; }
+
+    private readonly List<string> _chips = ["Chip 1", "Chip 2", "Chip 3"];
+    private int _chipCounter = 3;
+    private int _numberOfColors = Enum.GetValues(typeof(Color)).Length;
+
+    private void AddChip()
+        => _chips.Add($"Chip {++_chipCounter}");
+
+    private void OnChipClosed(MudChip<string> chip)
+        => _chips.Remove(chip.Value);
+
+    private Task OpenDialogAsync()
+        => DialogService.ShowMessageBoxAsync("Dialog", "This is a dialog");

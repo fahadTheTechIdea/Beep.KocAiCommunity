@@ -1,0 +1,139 @@
+@page "/learn"
+@using Beep.KocAiCommunity.Contracts.Learning
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@using Markdig
+@inject IKocApiClient Api
+
+<PageTitle>Learn · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Learn &amp; compete" Title="Learning tracks"
+            Subtitle="Guided tracks from your first look at data to a model your team can rely on. Enroll, work through the lessons, and watch your progress." />
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">
+        Couldn't reach the API (@_error). Make sure the API is running and <code>KocApi:BaseUrl</code> is correct.
+    </MudAlert>
+}
+else if (_tracks is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid Spacing="6">
+        @foreach (var track in _tracks)
+        {
+            var progress = _mine.GetValueOrDefault(track.Id);
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-6" Style="height:100%;display:flex;flex-direction:column;">
+                    <div class="d-flex justify-space-between align-center">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@track.Level</MudChip>
+                        <MudText Typo="Typo.caption">@track.LessonCount lessons</MudText>
+                    </div>
+                    <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-2">@track.Title</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4">@track.Summary</MudText>
+
+                    @if (progress is not null)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Value="@Percent(progress)" Class="my-2" />
+                        <MudText Typo="Typo.caption" Class="mb-2">
+                            @progress.CompletedLessons / @progress.TotalLessons complete
+                            @if (progress.Status == "completed")
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">Completed</MudChip>
+                            }
+                        </MudText>
+                    }
+
+                    <div class="mt-auto d-flex gap-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenTrack(track.Id)">Open</MudButton>
+                        @if (progress is null)
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => Enroll(track.Id)">Enroll</MudButton>
+                        }
+                    </div>
+                </BlueprintCard>
+            </MudItem>
+        }
+    </MudGrid>
+
+    @if (_selected is not null)
+    {
+        <MudDivider Class="my-8" />
+        <MudText Typo="Typo.h5" Class="koc-heading mb-1">@_selected.Title</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4">@_selected.Summary</MudText>
+
+        <MudExpansionPanels MultiExpansion="true">
+            @foreach (var lesson in _selected.Lessons)
+            {
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div class="d-flex align-center justify-space-between" style="width:100%;">
+                            <span><b>@lesson.OrderNo.</b> @lesson.Title <MudText Typo="Typo.caption" Class="d-inline">(~@lesson.EstimatedMinutes min)</MudText></span>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        @if (!string.IsNullOrWhiteSpace(lesson.Content))
+                        {
+                            <div class="koc-lesson">@Md(lesson.Content)</div>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2">Content coming soon.</MudText>
+                        }
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="mt-2"
+                                   OnClick="() => Complete(_selected.Id, lesson.Id)">Mark complete</MudButton>
+                    </ChildContent>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    }
+}
+
+@code {
+    private IReadOnlyList<TrackDto>? _tracks;
+    private Dictionary<Guid, MyLearningDto> _mine = [];
+    private TrackDetailDto? _selected;
+    private string? _error;
+
+    private static readonly MarkdownPipeline _md = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+
+    private static MarkupString Md(string markdown) => (MarkupString)Markdown.ToHtml(markdown, _md);
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _error = null;
+            _tracks = await Api.GetTracksAsync();
+            var mine = await Api.GetMyLearningAsync();
+            _mine = mine.ToDictionary(m => m.TrackId);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task OpenTrack(Guid trackId) => _selected = await Api.GetTrackAsync(trackId);
+
+    private async Task Enroll(Guid trackId)
+    {
+        await Api.EnrollAsync(trackId);
+        await LoadAsync();
+    }
+
+    private async Task Complete(Guid trackId, Guid lessonId)
+    {
+        await Api.CompleteLessonAsync(trackId, lessonId);
+        await LoadAsync();
+        _selected = await Api.GetTrackAsync(trackId);
+    }
+
+    private static int Percent(MyLearningDto p) =>
+        p.TotalLessons == 0 ? 0 : (int)Math.Round(100.0 * p.CompletedLessons / p.TotalLessons);
+}

@@ -1,0 +1,143 @@
+Message Box
+A pop-up dialog with a simple message and button choices.
+API
+<MudMessageBox>
+The MessageBox component uses IDialogService and MudDialogProvider for its functionality.
+
+Global settings on MudDialogProvider affect all MessageBoxes in your app.
+
+See the Dialog Configuration section for details on global dialog setup.
+
+Message Box
+The easiest way to show a message box is with IDialogService.ShowMessageBox. This method displays a message box and waits for the user's response. You can control which buttons (Yes, No, Cancel) appear and their text. The result is a nullable bool: Yes = true, No = false, Cancel = null.
+
+Canceled
+<MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="OnButtonClicked" >Delete</MudButton>
+
+<MudChip T="string">@state</MudChip>
+@code
+{
+    [Inject] private IDialogService DialogService { get; set; }
+
+    string state = "Message box hasn't been opened yet";
+
+    private async void OnButtonClicked()
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Warning", 
+            "Deleting can not be undone!", 
+            yesText:"Delete!", cancelText:"Cancel");
+        state = result == null ? "Canceled" : "Deleted!";
+        StateHasChanged();
+    }
+}
+Custom Message Box
+You can inline MudMessageBox in Razor to fully customize its appearance using render fragments. For example, you can change the color and icon of the Yes button, or customize the title and message using TitleContent and MessageContent.
+
+Message box hasn't been opened yet
+<MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="OnButtonClickedAsync">Delete</MudButton>
+<MudChip T="string">@_state</MudChip>
+
+<MudMessageBox @ref="_mudMessageBox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can <b><i>not</i></b> be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>
+@code
+{
+    private MudMessageBox _mudMessageBox;
+    private string _state = "Message box hasn't been opened yet";
+
+    private async Task OnButtonClickedAsync()
+    {
+        bool? result = await _mudMessageBox.ShowAsync();
+        _state = result is null ? "Canceled" : "Deleted!";
+        StateHasChanged();
+    }
+}
+Multiline Message
+Use MarkupString for the message content to support multiline text or basic HTML styling. This is useful for highlighting parts of the message or displaying longer content without creating a custom dialog.
+
+Message box hasn't been opened yet
+<MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="OnButtonClicked">I am Balrog</MudButton>
+
+<MudChip T="string">@state</MudChip>
+@code
+{
+    [Inject] private IDialogService DialogService { get; set; }
+
+    string state = "Message box hasn't been opened yet";
+
+    private async void OnButtonClicked()
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Secure The Ring", 
+            (MarkupString) $"You <br /> Shall <br /> not <br /> <b>Pass!<b/>",
+            yesText:"Fire Whip!", cancelText:"Smash Ground");
+        state= result==null ? "Returned to Moria" : "Fighting With Gandalf!";
+        StateHasChanged();
+    }
+}
+Message Box With DialogOptions
+Pass custom DialogOptions to override default or global settings, such as allowing the message box to close on Escape. This lets you tailor the behavior or appearance for specific message boxes.
+
+
+Inline
+Message box hasn't been opened yet
+
+<MudButton OnClick="@(() => OpenDialogAsync(_maxWidth))">MaxWidth Dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_closeOnEscape))" Color="Color.Primary">Close On Escape dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_noHeader))" Color="Color.Secondary">No Header dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_backdropClick))" Color="Color.Tertiary">Disable Backdrop dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_fullScreen))" Color="Color.Info">Full Screen dialog</MudButton>
+<MudButton OnClick="@(() => OpenDialogAsync(_topCenter))" Color="Color.Success">Top Center dialog</MudButton>
+<br />
+<MudSwitch @bind-Value="_isInline" Label="Inline" LabelPlacement="Placement.End" Color="Color.Primary" />
+<MudChip T="string">@_state</MudChip>
+<br />
+
+<MudMessageBox @ref="_mudMessageBox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can <b><i>not</i></b> be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>
+@code
+{
+    [Inject]
+    private IDialogService DialogService { get; set; }
+
+    private MudMessageBox _mudMessageBox;
+    private string _state = "Message box hasn't been opened yet";
+    private bool _isInline = true;
+
+    private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private readonly DialogOptions _closeOnEscape = new() { CloseOnEscapeKey = true };
+    private readonly DialogOptions _noHeader = new() { NoHeader = true };
+    private readonly DialogOptions _backdropClick = new() { BackdropClick = false };
+    private readonly DialogOptions _fullScreen = new() { FullScreen = true, CloseButton = true };
+    private readonly DialogOptions _topCenter = new() { Position = DialogPosition.TopCenter };
+
+    private async Task OpenDialogAsync(DialogOptions options)
+    {
+        bool? result;
+        if (_isInline)
+        {
+            result = await _mudMessageBox.ShowAsync(options);
+        }
+        else
+        {
+            result = await DialogService.ShowMessageBoxAsync(
+                        "Warning",
+                        (MarkupString)"Deleting can <b><i>not</i></b> be undone!",
+                        yesText: "Delete!", cancelText: "Cancel", options: options);
+        }
+        _state = result is null ? "Canceled" : "Deleted!";
+        StateHasChanged();
+    }
+}

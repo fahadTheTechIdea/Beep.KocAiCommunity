@@ -1,0 +1,432 @@
+Button
+Represents a button for actions, links, and commands.
+API
+<MudButton>
+Filled Buttons
+Filled Buttons have elevation (box shadow) and is raised on click by default.
+
+<MudButton Variant="Variant.Filled">Default</MudButton>
+<MudButton Variant="Variant.Filled" Color="Color.Primary">Primary</MudButton>
+<MudButton Variant="Variant.Filled" Color="Color.Secondary">Secondary</MudButton>
+<MudButton Variant="Variant.Filled" Disabled="true">Disabled</MudButton>
+Drop Shadow
+The drop shadow, sometimes also called elevation, can be controlled with the DropShadow bool.Color property only applies to the text.
+
+<MudButton Variant="Variant.Filled" DropShadow="false" Color="Color.Primary">Disable elevation</MudButton>
+Text Buttons
+Text Buttons have no drop shadow, background or border and only hover effect is used. The Color property only applies to the text.
+
+<MudButton Variant="Variant.Text">Default</MudButton>
+<MudButton Variant="Variant.Text" Color="Color.Primary">Primary</MudButton>
+<MudButton Variant="Variant.Text" Color="Color.Secondary">Secondary</MudButton>
+<MudButton Variant="Variant.Text" Disabled="true">Disabled</MudButton>
+Outlined Buttons
+Outlined Buttons are similar to Text Buttons except for the border that inherits its color from the set Color property.
+
+<MudButton Variant="Variant.Outlined">Default</MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Primary">Primary</MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Secondary">Secondary</MudButton>
+<MudButton Variant="Variant.Outlined" Disabled="true">Disabled</MudButton>
+Size
+The default button size is Size.Medium and, by default, the icon size uses the button size.
+
+<MudButton Variant="Variant.Filled" Size="Size.Small"  Color="Color.Primary">Small</MudButton>
+<MudButton Variant="Variant.Filled" Size="Size.Medium" Color="Color.Secondary">Medium</MudButton>
+<MudButton Variant="Variant.Filled" Size="Size.Large"  Color="Color.Tertiary">Large</MudButton>
+FullWidth
+Buttons that have FullWidth=true extend to 100% of available width.
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Full Width Button</MudButton>
+Icons
+You can define an icon for either the start or the end.
+Use IconSize to set a different icon size.
+
+<MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Delete</MudButton>
+<MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary">Send</MudButton>
+<MudButton Variant="Variant.Filled" StartIcon="@Icons.Custom.Uncategorized.Radioactive" Color="Color.Warning">Warning</MudButton>
+<MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Mic" IconColor="Color.Error">Talk</MudButton>
+<MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info"  Size="Size.Small">Save</MudButton>
+<MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" IconColor="Color.Secondary" Size="Size.Large">Save</MudButton>
+Customized Buttons
+Styled Button
+<MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.ArrowDownward" Style="background-color: yellowgreen; color: white; width: 200px; height: 60px;">
+    Download now
+</MudButton>
+Loading Button
+
+<MudButton Disabled="@_processing" OnClick="ProcessSomething" Variant="Variant.Filled" Color="Color.Primary">
+    @if (_processing)
+    {
+        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+        <MudText Class="ms-2">Processing</MudText>
+    }
+    else
+    {
+        <MudText>Click me</MudText>
+    }
+</MudButton>
+@code {
+    private bool _processing = false;
+
+    async Task ProcessSomething()
+    {
+        _processing = true;
+        await Task.Delay(2000);
+        _processing = false;
+    }
+}
+Split Button
+A MudMenu and MudButtonGroup can be used to create a split button.
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+    <MudButton>@_buttonText</MudButton>
+    <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;">
+        <MudMenuItem OnClick="() => SetButtonText(0)">Reply</MudMenuItem>
+        <MudMenuItem OnClick="() => SetButtonText(1)">Reply All</MudMenuItem>
+        <MudMenuItem OnClick="() => SetButtonText(2)">Forward</MudMenuItem>
+        <MudMenuItem OnClick="() => SetButtonText(3)">Reply & Delete</MudMenuItem>
+    </MudMenu>
+</MudButtonGroup>
+@code {
+    private string _buttonText = "Reply";
+
+    private void SetButtonText(int id)
+    {
+        switch (id)
+        {
+            case 0: _buttonText = "Reply";
+                break;
+            case 1:
+                _buttonText = "Reply All";
+                break;
+            case 2:
+                _buttonText = "Forward";
+                break;
+            case 3:
+                _buttonText = "Reply & Delete";
+                break;
+        }
+    }
+}
+Link Button
+Set the Href parameter and the MudButton will render an anchor element. If you also set the Target parameter to _blank, the component will add rel="noopener" automatically. If you set the Disabled parameter to true, the component will render a button with no href attribute.
+
+
+Disable
+<MudButton Href="https://github.com/MudBlazor/MudBlazor"
+           Target="_blank"
+           Variant="Variant.Filled"
+           EndIcon="@Icons.Custom.Brands.GitHub"
+           Color="Color.Primary"
+           Disabled=@disabled>
+    GitHub Link
+</MudButton>
+<MudButton Href="https://github.com/MudBlazor/MudBlazor"
+           Target="_blank"
+           Variant="Variant.Text"
+           EndIcon="@Icons.Custom.Brands.GitHub"
+           Color="Color.Secondary"
+           Style="text-transform:none"
+           Disabled=@disabled>
+    GitHub Link
+</MudButton>
+<MudButton Href="https://github.com/MudBlazor/MudBlazor"
+           Target="_blank"
+           Variant="Variant.Outlined"
+           EndIcon="@Icons.Custom.Brands.GitHub"
+           Color="Color.Tertiary"
+           Disabled=@disabled>
+    GitHub Link
+</MudButton>
+<br />
+<MudSwitch Color="Color.Primary" @bind-Value=@(disabled) Label="Disable" />
+@code{
+    bool disabled = false;
+}
+Custom Rel Content
+If you set a non-null string to Rel parameter, the component will add rel to the rendered button with the value you specified. This overrides the automatic addition of rel="noopener" when setting Target to _blank. If you want to preserve noopener, add it manually along with your custom Rel value, for example rel="nofollow noopener".
+
+<MudButton Href="https://github.com/MudBlazor/MudBlazor"
+           Rel="nofollow"
+           Variant="Variant.Filled"
+           EndIcon="@Icons.Custom.Brands.GitHub"
+           Color="Color.Primary">
+    GitHub Link
+</MudButton>
+<MudButton Href="https://github.com/MudBlazor/MudBlazor"
+           Target="_blank"
+           Rel="nofollow noopener"
+           Variant="Variant.Outlined"
+           EndIcon="@Icons.Custom.Brands.GitHub"
+           Color="Color.Tertiary">
+    GitHub Link
+</MudButton>
+
+Floating Action Button
+Represents a floating action button.
+API
+<MudFab>
+Simple FAB
+<MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" />
+<MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Edit" />
+<MudFab Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.ShoppingCart" DropShadow="false" />
+<MudFab StartIcon="@Icons.Material.Filled.Bookmark" Label="Bookmark" />
+<MudFab StartIcon="@Icons.Material.Filled.Save" Disabled="true" />
+Size
+<MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" />
+<MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Medium" />
+<MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Large" />
+
+
+Floating Action Button Menu
+A menu appearing from a MudFab
+ that displays a list of items.
+API
+<MudFabMenu>
+Basic usage
+Closed
+Relative
+<MudStack Row="true" Style="width: 300px;" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+    <MudStack Spacing="0">
+        <MudSwitch @bind-Value="_open" Label="@(_open ? "Opened" : "Closed")" Color="Color.Primary"/>
+        <MudSwitch @bind-Value="_fixed" Label="@(_fixed ? "Fixed" : "Relative")" Color="Color.Primary"/>
+    </MudStack>
+    <MudFabMenu StartIcon="@Icons.Material.Outlined.Send" Color="Color.Primary" @bind-Open="@_open" Fixed="@_fixed">
+        <MudFabMenuItem StartIcon="@Icons.Custom.Brands.Slack"/>
+        <MudFabMenuItem StartIcon="@Icons.Custom.Brands.Discord"/>
+        <MudFabMenuItem StartIcon="@Icons.Custom.Brands.Gmail"/>
+    </MudFabMenu>
+</MudStack>
+@code
+{
+    private bool _open;
+    private bool _fixed;
+}
+Styling
+<MudFabMenu StartIcon="@Icons.Material.Outlined.Settings" Color="Color.Primary" DampenItemsBackgroundColor="false" UseCloseIcon="false" Size="Size.Small">
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.LooksOne" Color="Color.Primary" Size="Size.Small"/>
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.LooksTwo" Color="Color.Primary" Size="Size.Small" />
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.Looks3" Color="Color.Primary" Size="Size.Small" />
+</MudFabMenu>
+
+<MudFabMenu StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" AlignItems="AlignItems.End">
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.LooksOne" Label="One" Color="Color.Secondary"/>
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.LooksTwo" Label="Two" Color="Color.Secondary"/>
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.Looks3" Label="Three" Color="Color.Secondary"/>
+</MudFabMenu>
+
+<MudFabMenu Label="Menu" Color="Color.Tertiary" AlignItems="AlignItems.End" OpenOnMouseHover="false" CloseOnMenuItemClicked="false">
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.LooksOne" Label="One" Color="Color.Tertiary" Style="color: rgb(33, 33, 33);"/>
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.LooksTwo" Label="Two" Color="Color.Tertiary" Style="color: rgb(33, 33, 33);"/>
+    <MudFabMenuItem EndIcon="@Icons.Material.Outlined.Looks3" Label="Three" Color="Color.Tertiary" Style="color: rgb(33, 33, 33);"/>
+</MudFabMenu>
+Direction
+Direction: Top
+
+<MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="width:400px;" Breakpoint="Breakpoint.SmAndDown">
+    <MudStack>
+        <MudText>Direction: @_direction</MudText>
+        <MudToggleGroup T="Direction" SelectionMode="SelectionMode.SingleSelection" @bind-Value="_direction" Color="Color.Primary" CheckMark FixedContent Vertical>
+            <MudToggleItem Value="@Direction.Top" Text="Top" />
+            <MudToggleItem Value="@Direction.Right" Text="Right" />
+            <MudToggleItem Value="@Direction.Bottom" Text="Bottom" />
+            <MudToggleItem Value="@Direction.Left" Text="Left" />
+        </MudToggleGroup>
+    </MudStack>
+    <MudFabMenu StartIcon="@Icons.Material.Outlined.Send" Color="Color.Primary" Direction="@_direction">
+        <MudFabMenuItem StartIcon="@Icons.Custom.Brands.Slack" Color="Color.Secondary" />
+        <MudFabMenuItem StartIcon="@Icons.Custom.Brands.Discord" Color="Color.Secondary" />
+        <MudFabMenuItem StartIcon="@Icons.Custom.Brands.Gmail" Color="Color.Secondary" />
+    </MudFabMenu>
+</MudStack>
+@code {
+    private Direction _direction = Direction.Top;
+}
+
+Button Group
+Groups related MudButton
+ components together visually.
+See also: Toggle Group
+
+
+API
+<MudButtonGroup>
+Basic Button Group
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Text">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+Vertical Orientation
+With Vertical="true" the buttons are displayed vertically.
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Filled" Vertical="true">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Text" Vertical="true">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Vertical="true">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+Sizes and Colors
+<MudButtonGroup Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+
+<MudButtonGroup Color="Color.Secondary" Size="Size.Medium" Variant="Variant.Filled">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+
+<MudButtonGroup Color="Color.Tertiary" Size="Size.Large" Variant="Variant.Filled">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+Icon Buttons
+MudButtonGroup can also make use of MudIconButton and MudToggleIconButton.
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+    <MudIconButton Icon="@Icons.Material.Filled.AccessAlarm"></MudIconButton>
+    <MudToggleIconButton Icon="@Icons.Material.Filled.AlarmOff" Color="@Color.Error"
+                         ToggledIcon="@Icons.Material.Filled.AlarmOn" ToggledColor="@Color.Success" />
+    <MudButton StartIcon="@Icons.Material.Filled.AlarmAdd" IconColor="Color.Warning">Add alarm</MudButton>
+</MudButtonGroup>
+Split Button
+A MudMenu can be used to create a split button.
+
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+    <MudButton>@_buttonText</MudButton>
+    <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown" Style="align-self: auto;">
+        <MudMenuItem OnClick="() => SetButtonText(0)">Reply</MudMenuItem>
+        <MudMenuItem OnClick="() => SetButtonText(1)">Reply All</MudMenuItem>
+        <MudMenuItem OnClick="() => SetButtonText(2)">Forward</MudMenuItem>
+        <MudMenuItem OnClick="() => SetButtonText(3)">Reply & Delete</MudMenuItem>
+    </MudMenu>
+</MudButtonGroup>
+@code {
+    private string _buttonText = "Reply";
+
+    private void SetButtonText(int id)
+    {
+        switch (id)
+        {
+            case 0: _buttonText = "Reply";
+                break;
+            case 1:
+                _buttonText = "Reply All";
+                break;
+            case 2:
+                _buttonText = "Forward";
+                break;
+            case 3:
+                _buttonText = "Reply & Delete";
+                break;
+        }
+    }
+}
+Drop Shadow
+With DropShadow="false" the drop shadow of button groups with Variant="Variant.Filled" is removed.
+
+Drop shadow
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Filled" DropShadow="@_dropShadow">
+    <MudButton>One</MudButton>
+    <MudButton>Two</MudButton>
+    <MudButton>Three</MudButton>
+</MudButtonGroup>
+
+<MudSwitch @bind-Value="_dropShadow" Label="Drop shadow" Color="Color.Primary" />
+@code {
+    private bool _dropShadow = false;
+}
+Custom Styles
+With OverrideStyles="false" the MudButtonGroup no longer overrides the styles of the individual buttons.
+
+Override styles
+<MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" OverrideStyles="_overrideStyles">
+    <MudButton Color="Color.Primary" Variant="Variant.Outlined">One</MudButton>
+    <MudButton Color="Color.Warning" Variant="Variant.Outlined">Two</MudButton>
+    <MudButton Color="Color.Secondary" Variant="Variant.Outlined">Three</MudButton>
+</MudButtonGroup>
+
+<MudSwitch @bind-Value="_overrideStyles" Label="Override styles" Color="Color.Primary" />
+@code {
+    private bool _overrideStyles;
+}
+
+Icon Button
+A clickable icon for actions and commands.
+Similar to MudButton
+ but with icons. For guidance and suggestions, go to Icons.
+
+API
+<MudIconButton>
+Simple Icon Buttons
+With the library's preloaded icons. Check out our icon page to find out what you can use.
+
+<MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" />
+<MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Primary" aria-label="github" />
+<MudIconButton Icon="@Icons.Material.Filled.Favorite" Color="Color.Secondary" aria-label="add to favorite" />
+<MudIconButton Icon="@Icons.Material.Filled.Share" Disabled="true" aria-label="share" />
+Using Font Icons
+In this example, we are passing down Font Awesome icon classes instead.
+
+<link href="https://use.fontawesome.com/releases/v5.14.0/css/all.css" rel="stylesheet">
+
+<MudIconButton Icon="fas fa-atom" Color="Color.Error" />
+<MudIconButton Icon="fas fa-fighter-jet" Color="Color.Dark" />
+<MudIconButton Icon="fas fa-globe-europe" Color="Color.Tertiary" />
+<MudIconButton Icon="fas fa-bug" Disabled="true" />
+Variant and Size
+If preferred, it's possible to apply the same style of a text button using the Variant parameter.
+
+<MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+<MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium"/>
+<MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" />
+<MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" />
+<MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Medium" />
+<MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" />
+
+Toggle Icon Button
+An icon button that toggles between two distinct states, useful for on/off or favorite/unfavorite scenarios.
+API
+<MudToggleIconButton>
+Basic Usage
+Use two-way binding @bind-Toggle="..." to update a value in the parent component.
+
+Alarm is Off
+<MudToggleIconButton @bind-Toggled="AlarmOn"
+                     Icon="@Icons.Material.Filled.AlarmOff"
+                     Color="@Color.Error"
+                     ToggledIcon="@Icons.Material.Filled.AlarmOn"
+                     ToggledColor="@Color.Success"
+                     title="@(AlarmOn ? "On" : "Off")" />
+
+<span>Alarm is @(AlarmOn ? "On" : "Off")</span>
+@code {
+    public bool AlarmOn { get; set; }
+}

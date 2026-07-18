@@ -1,0 +1,15 @@
+@* Signature KOC "blueprint" panel: thin border with corner ticks at all four corners. *@
+
+<div class="koc-blueprint @Class" style="@Style">
+    <i class="koc-corner tl" aria-hidden="true"></i>
+    <i class="koc-corner tr" aria-hidden="true"></i>
+    <i class="koc-corner bl" aria-hidden="true"></i>
+    <i class="koc-corner br" aria-hidden="true"></i>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+}

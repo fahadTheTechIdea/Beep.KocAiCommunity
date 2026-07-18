@@ -1,0 +1,134 @@
+@using Beep.KocAiCommunity.Contracts.Notifications
+@using Beep.KocAiCommunity.Web.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject IKocApiClient Api
+@inject NavigationManager Nav
+@inject DevIdentity Identity
+@inject RealtimeOptions Realtime
+
+<MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true">
+    <ActivatorContent>
+        <div @onclick="Load">
+            <MudBadge Content="_unread" Color="Color.Error" Overlap="true" Visible="_unread > 0" Bordered="true">
+                <MudIcon Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+            </MudBadge>
+        </div>
+    </ActivatorContent>
+    <ChildContent>
+        <div style="min-width:320px;max-width:380px;">
+            <div class="d-flex align-center px-3 py-2">
+                <MudText Typo="Typo.subtitle2" Class="koc-heading">Notifications</MudText>
+                <MudSpacer />
+                @if (_unread > 0)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="MarkAll">Mark all read</MudButton>
+                }
+            </div>
+            <MudDivider />
+            @if (_items.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="pa-3">You're all caught up.</MudText>
+            }
+            else
+            {
+                @foreach (var n in _items)
+                {
+                    <div class="px-3 py-2 koc-notif @(n.IsRead ? "" : "koc-notif-unread")" style="cursor:pointer;" @onclick="() => Open(n)">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@IconFor(n.Type)" Size="Size.Small" Color="@(n.IsRead ? Color.Default : Color.Primary)" />
+                            <MudText Typo="Typo.body2"><b>@n.Title</b></MudText>
+                        </div>
+                        <MudText Typo="Typo.caption" Class="d-block">@n.Message</MudText>
+                        <MudText Typo="Typo.caption" Style="opacity:.6;">@n.CreatedUtc.ToLocalTime().ToString("g")</MudText>
+                    </div>
+                    <MudDivider />
+                }
+            }
+        </div>
+    </ChildContent>
+</MudMenu>
+
+@code {
+    private int _unread;
+    private IReadOnlyList<NotificationDto> _items = [];
+    private HubConnection? _hub;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshCount();
+        await ConnectAsync();
+    }
+
+    private async Task ConnectAsync()
+    {
+        try
+        {
+            _hub = new HubConnectionBuilder().WithUrl(Realtime.HubUrl).WithAutomaticReconnect().Build();
+            _hub.On<string>("notification.created", async _ =>
+            {
+                await RefreshCount();
+                await InvokeAsync(StateHasChanged);
+            });
+            await _hub.StartAsync();
+            await _hub.SendAsync("JoinUser", Identity.UserId);
+        }
+        catch
+        {
+            // Live updates are best-effort; the bell still works by polling on open.
+        }
+    }
+
+    private async Task RefreshCount()
+    {
+        try { _unread = await Api.GetUnreadNotificationCountAsync(); }
+        catch { /* API may be unreachable; badge stays hidden */ }
+    }
+
+    private async Task Load()
+    {
+        try
+        {
+            _items = await Api.GetNotificationsAsync(unreadOnly: false, take: 20);
+            await RefreshCount();
+        }
+        catch { /* ignore */ }
+    }
+
+    private async Task Open(NotificationDto n)
+    {
+        if (!n.IsRead)
+        {
+            await Api.MarkNotificationReadAsync(n.Id);
+            await RefreshCount();
+        }
+
+        if (!string.IsNullOrWhiteSpace(n.LinkUrl))
+        {
+            Nav.NavigateTo(n.LinkUrl);
+        }
+    }
+
+    private async Task MarkAll()
+    {
+        await Api.MarkAllNotificationsReadAsync();
+        await Load();
+    }
+
+    private static string IconFor(string type) => type switch
+    {
+        "submission-scored" => Icons.Material.Filled.Leaderboard,
+        "competition-concluded" => Icons.Material.Filled.EmojiEvents,
+        "model-promoted" => Icons.Material.Filled.Verified,
+        "model-deployed" => Icons.Material.Filled.RocketLaunch,
+        _ => Icons.Material.Filled.Info,
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hub is not null)
+        {
+            await _hub.DisposeAsync();
+        }
+    }
+}

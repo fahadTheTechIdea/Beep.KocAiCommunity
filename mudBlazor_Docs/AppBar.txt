@@ -1,0 +1,219 @@
+App Bar
+Displays actions, branding, navigation and screen titles. Keep the app bar persistent while browsing different pages to ease navigation and access to actions for users.
+API
+<MudAppBar>
+Basic App Bar
+App bars have two types: regular and contextual action bar. Below is an example of a regular app bar.
+
+A contextual action bar is something that will provide actions for a selected item on the page.
+
+A top bar can transform into a contextual action bar and be dismissed at any time.
+
+
+<MudAppBar Color="Color.Primary" Fixed="false">
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" />
+</MudAppBar>
+Usage
+You can customize the Elevation of an AppBar, as well as set the Dense property to save space.
+
+
+
+Dense
+<MudAppBar Color="Color.Primary" Fixed="false" Dense="@dense" Elevation="@elevation">
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" />
+</MudAppBar>
+
+<MudGrid>
+    <MudItem md="6" sm="12">
+        <MudSlider @bind-Value="@elevation" Min="0" Max="24" ValueLabel="true">Elevation</MudSlider>
+    </MudItem>
+    <MudItem md="6" sm="12">
+        <MudSwitch @bind-Value="@dense" Label="Dense" Class="mt-6" Color="Color.Primary"></MudSwitch>
+    </MudItem>
+</MudGrid>
+@code
+{
+    int elevation = 4;
+    bool dense = false;
+}
+Bottom App Bar
+
+<MudLayout>
+    <MudMainContent Class="pt-0">
+        <MudList T="string">
+            <MudListItem Text="App Bookmark Item 1" Icon="@Icons.Material.Filled.Bookmark" />
+            <MudListItem Text="App Bookmark Item 2" Icon="@Icons.Material.Filled.Bookmark" IconColor="Color.Primary" />
+            <MudListItem Text="App Bookmark Item 3" Icon="@Icons.Material.Filled.Bookmark" IconColor="Color.Secondary" />
+            <MudListItem Text="App Bookmark Item 4" Icon="@Icons.Material.Filled.Bookmark" IconColor="Color.Tertiary" />
+            <MudListItem Text="App Bookmark Item 5" Icon="@Icons.Material.Filled.Bookmark" IconColor="Color.Info" />
+            <MudListItem Text="App Bookmark Item 6" Icon="@Icons.Material.Filled.Bookmark" IconColor="Color.Success" />
+            <MudListItem Text="App Bookmark Item 7" Icon="@Icons.Material.Filled.Bookmark" IconColor="Color.Warning" />
+            <MudListItem Text="App Bookmark Item 8" Icon="@Icons.Material.Filled.Bookmark" IconColor="Color.Error" />
+            <MudListItem Text="App Bookmark Item 9" Icon="@Icons.Material.Filled.Bookmark" IconColor="Color.Dark" />
+        </MudList>
+    </MudMainContent>
+    <MudAppBar Bottom="true" Fixed="true" Color="Color.Primary" Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Color="Color.Inherit" Edge="Edge.End" />
+        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+    </MudAppBar>
+</MudLayout>
+@code{
+    bool open = false;
+
+    void ToggleDrawer()
+    {
+        open = !open;
+    }
+}
+App Bar with Menu
+You can attach MudMenu's to the appbar, allowing for a myriad of appbar options.
+
+
+<MudAppBar Color="Color.Primary" Fixed="false">
+    <MudMenu Dense
+             Variant="Variant.Text"
+             Size="Size.Medium"
+             Color="Color.Inherit"
+             Icon="@Icons.Material.TwoTone.MoreVert">
+
+        <MudMenu StartIcon="@Icons.Material.TwoTone.Settings"
+                 IconColor="Color.Primary"
+                 Label="Settings">
+            <MudMenuItem Icon="@Icons.Material.TwoTone.DarkMode"
+                         IconColor="Color.Secondary"
+                         Label="Dark Theme" />
+        </MudMenu>
+
+        <MudDivider />
+
+        <MudMenuItem Href="/"
+                     ForceLoad
+                     Icon="@Icons.Material.TwoTone.Login"
+                     IconColor="Color.Primary"
+                     Label="Sign In" />
+
+        <MudMenuItem Href="/"
+                     ForceLoad
+                     Icon="@Icons.Material.TwoTone.Logout"
+                     IconColor="Color.Primary"
+                     Label="Sign Out" />
+    </MudMenu>
+
+    <MudSpacer />
+
+    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" />
+</MudAppBar>
+Contextual App Bar
+You can conditionally transform the app bar into a contextual action bar with page specific action buttons.
+
+
+5 Selected
+
+
+
+
+
+
+<MudLayout>
+    <MudAppBar Color="Color.Primary" Fixed="false" Contextual>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+        <MudSpacer />
+        <MudIconButton Icon="@(Deleted > 0 ? @Icons.Material.Filled.FlipToBack : @Icons.Material.Filled.FlipToFront)" Color="Color.Inherit" OnClick="ResetItems" />
+    </MudAppBar>
+    <MudMainContent Class="pt-4">
+        <div class="d-flex flex-wrap gap-4">
+            @for (int i = 0; i < _images.Length; i++)
+            {
+                var index = i;
+
+                if (_images[index].IsDeleted) continue;
+
+                <MudPaper Width="200px" Height="150px" Elevation="0" Class="d-flex align-center justify-center" Style="background-color:inherit">
+                    <MudImage Src="@($"images/{_images[index].Title}.jpg")" Width="@_images[index].Width" Height="@_images[index].Height"
+                              Elevation="25" ObjectFit="ObjectFit.Cover" Class="rounded-lg"
+                              @onclick="@(() => SelectImage(index))"/>
+                </MudPaper>
+            }
+        </div>
+    </MudMainContent>
+</MudLayout>
+
+<MudContextualActionBar Color="Color.Tertiary" Fixed="false" Visible="ShowContext">
+    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" Edge="Edge.Start" OnClick="UnselectItems" />
+    <MudText Class="pl-8" Typo="Typo.h6">@($"{_selected.Count} Selected") </MudText>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Material.Filled.Share" Color="Color.Inherit" />
+    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Inherit" />
+    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Inherit" OnClick="DeleteSelectedItems" />
+</MudContextualActionBar>
+@code {
+    private bool ShowContext => _selected.Count > 0;
+
+    private readonly HashSet<Image> _selected = [];
+    private int Deleted => _images.Count(x => x.IsDeleted);
+    private readonly Image[] _images = [ new Image("sweden"), new Image("iceland"), new Image("castle"), new Image("tractor"), new Image("door"), new Image("pilars") ];
+
+    private void SelectImage(int index)
+    {
+        var image = _images[index];
+        bool isSelected = _selected.Contains(image);
+
+        _images[index] = image with { Width = isSelected ? 200 : 100, Height = isSelected ? 150 : 75 };
+
+        if (isSelected)
+            _selected.Remove(image);
+        else
+            _selected.Add(_images[index]);
+    }
+
+    private void UnselectItems()
+    {
+        for (int index = 0; index < _images.Length; index++)
+        {
+            var image = _images[index];
+
+            if (_selected.Contains(image))
+            {
+                _images[index] = image with { Width = 200, Height = 150 };
+            }
+        }
+
+        _selected.Clear();
+    }
+
+    private void DeleteSelectedItems()
+    {
+        for (int index = 0; index < _images.Length; index++)
+        {
+            var image = _images[index];
+
+            if(_selected.Contains(image))
+            {
+                _images[index] = image with { Width = 200, Height = 150, IsDeleted = true };
+            }
+        }
+
+        _selected.Clear();
+    }
+
+    private void ResetItems()
+    {
+        for (int index = 0; index < _images.Length; index++)
+        {
+            var image = _images[index];
+
+            if (image.IsDeleted)
+            {
+                _images[index] = image with { IsDeleted = false };
+            }
+        }
+    }
+
+    private record Image(string Title, int Width = 200, int Height = 150, bool IsDeleted = false);
+}

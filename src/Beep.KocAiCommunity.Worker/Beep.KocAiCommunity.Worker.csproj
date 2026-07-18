@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>beep-kocaicommunity-worker</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Infrastructure\Beep.KocAiCommunity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.ML\Beep.KocAiCommunity.ML.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Workflow\Beep.KocAiCommunity.Workflow.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Infrastructure.SqlServerMigrations\Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.csproj" />
+  </ItemGroup>
+
+</Project>
