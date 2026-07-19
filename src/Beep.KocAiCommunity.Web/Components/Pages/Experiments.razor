@@ -112,6 +112,12 @@
                                     {
                                         <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">@r.PrimaryMetric @r.PrimaryValue.Value.ToString("0.###")</MudChip>
                                     }
+                                    @if (r.ModelRunId is not null)
+                                    {
+                                        <MudTooltip Text="Register this run's model in the registry">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Inventory2" Color="Color.Primary" Size="Size.Small" OnClick="@(() => RegisterRun(r))" />
+                                        </MudTooltip>
+                                    }
                                     <MudIconButton Icon="@(r.IsFavorite ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
                                                    Color="Color.Warning" Size="Size.Small" OnClick="@(() => ToggleFavorite(r))" />
                                 </div>
@@ -252,5 +258,17 @@
         {
             _runs = await Api.GetExperimentRunsAsync(_selected.Id);
         }
+    }
+
+    private async Task RegisterRun(RunDto r)
+    {
+        if (_selected is null)
+        {
+            return;
+        }
+
+        var (version, error) = await Api.RegisterExperimentRunAsync(r.Id, _selected.Name);
+        Snackbar.Add(error ?? $"Registered {_selected.Name} {version?.SemVer} — approve & promote it under Models.",
+            error is null ? Severity.Success : Severity.Warning);
     }
 }

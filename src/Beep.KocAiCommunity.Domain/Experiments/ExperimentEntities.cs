@@ -45,6 +45,9 @@ public class Run : AuditableEntity
     public string? EnvironmentJson { get; set; }
     public string? DatasetSnapshotHash { get; set; }
 
+    /// <summary>The registerable <see cref="Domain.Studio.ModelRun"/> this run produced, if any.</summary>
+    public Guid? ModelRunId { get; set; }
+
     public DateTime? StartedUtc { get; set; }
     public DateTime? CompletedUtc { get; set; }
 

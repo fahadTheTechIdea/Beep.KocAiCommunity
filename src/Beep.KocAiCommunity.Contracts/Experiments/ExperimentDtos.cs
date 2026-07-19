@@ -23,6 +23,7 @@ public sealed record RunDto(
     bool IsFavorite,
     bool IsBest,
     string? Tags,
+    Guid? ModelRunId,
     DateTime? StartedUtc,
     DateTime? CompletedUtc,
     DateTime CreatedUtc);
@@ -32,6 +33,9 @@ public sealed record RunMetricDto(string Name, double Value, string? Dataset, st
 public sealed record RunParameterDto(string Name, string ValueJson);
 
 public sealed record UpdateRunRequest(bool? IsFavorite, bool? IsBest, string? Tags);
+
+/// <summary>Register a run's produced model into the model registry under the given name.</summary>
+public sealed record RegisterRunRequest(string ModelName);
 
 public sealed record LogMetricsRequest(IReadOnlyList<RunMetricInput> Metrics);
 

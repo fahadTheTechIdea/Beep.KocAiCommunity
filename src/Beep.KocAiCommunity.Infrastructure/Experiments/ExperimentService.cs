@@ -100,6 +100,7 @@ public sealed class ExperimentService(KocDbContext db, IEnumerable<IExperimentSi
         run.HyperparametersJson = request.HyperparametersJson;
         run.EnvironmentJson = request.EnvironmentJson;
         run.DatasetSnapshotHash = request.DatasetSnapshotHash;
+        run.ModelRunId = request.ModelRunId ?? run.ModelRunId;
         run.CompletedUtc = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
@@ -252,5 +253,5 @@ public sealed class ExperimentService(KocDbContext db, IEnumerable<IExperimentSi
     private static RunDto ToRunDto(Run r) => new(
         r.Id, r.ExperimentId, r.ParentRunId, r.RunByUserId, r.Status, r.Task, r.Algorithm,
         r.PrimaryMetric, r.PrimaryValue, r.SecondaryMetric, r.SecondaryValue, r.RowCount, r.TrialCount,
-        r.IsFavorite, r.IsBest, r.Tags, r.StartedUtc, r.CompletedUtc, r.CreatedUtc);
+        r.IsFavorite, r.IsBest, r.Tags, r.ModelRunId, r.StartedUtc, r.CompletedUtc, r.CreatedUtc);
 }

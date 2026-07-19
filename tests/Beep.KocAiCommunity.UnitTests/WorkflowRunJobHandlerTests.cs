@@ -69,9 +69,10 @@ public class WorkflowRunJobHandlerTests
         run.ModelArtifactId.Should().NotBeNull();
         run.Algorithm.Should().NotBeNullOrEmpty();
 
-        // A completed experiment run with at least one tracked trial.
+        // A completed experiment run with at least one tracked trial, linked to the ModelRun.
         var expRun = ctx.Db.Set<ExperimentRun>().Should().ContainSingle().Subject;
         expRun.Status.Should().Be("completed");
         expRun.TrialCount.Should().BeGreaterThan(0);
+        expRun.ModelRunId.Should().Be(run.Id);
     }
 }

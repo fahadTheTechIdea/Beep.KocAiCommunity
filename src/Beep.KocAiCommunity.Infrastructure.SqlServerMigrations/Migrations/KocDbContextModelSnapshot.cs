@@ -1645,6 +1645,9 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.Property<DateTime?>("LastModifiedUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("ModelRunId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("ParentRunId")
                         .HasColumnType("uniqueidentifier");
 

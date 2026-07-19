@@ -1,6 +1,8 @@
 using Beep.KocAiCommunity.Application.Experiments;
 using Beep.KocAiCommunity.Application.Security;
+using Beep.KocAiCommunity.Application.Studio;
 using Beep.KocAiCommunity.Contracts.Experiments;
+using Beep.KocAiCommunity.Contracts.Studio;
 
 namespace Beep.KocAiCommunity.Api.Endpoints;
 
@@ -79,6 +81,38 @@ public static class ExperimentEndpoints
             return Results.NoContent();
         })
         .WithName("LogRunMetrics")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // Register a run's produced model into the model registry (track → register).
+        group.MapPost("/experiments/runs/{runId:guid}/register", async (Guid runId, RegisterRunRequest req, IKocCurrentUser me, IExperimentService svc, IModelRegistry registry, CancellationToken ct) =>
+        {
+            var run = await svc.GetRunAsync(runId, ct);
+            if (run is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (run.ModelRunId is null)
+            {
+                return Results.BadRequest(new { error = "This run has no saved model to register." });
+            }
+
+            if (run.RunByUserId != me.UserId && !me.IsInRole(KocRoles.PlatformAdmin))
+            {
+                return Results.BadRequest(new { error = "Only the run owner or a platform admin can register it." });
+            }
+
+            try
+            {
+                var version = await registry.RegisterAsync(me.UserId!, req.ModelName, run.ModelRunId.Value, ct);
+                return Results.Ok(new ModelVersionDto(version.Id, version.SemVer, version.Status, version.MetricName, version.MetricValue, 0, version.RegisteredByUserId));
+            }
+            catch (ModelRegistryException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("RegisterExperimentRun")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapGet("/experiments/runs/{runId:guid}/parameters", async (Guid runId, IExperimentService svc, CancellationToken ct) =>

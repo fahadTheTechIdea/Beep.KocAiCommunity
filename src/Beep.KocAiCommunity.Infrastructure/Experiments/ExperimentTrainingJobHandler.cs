@@ -68,11 +68,11 @@ public sealed class ExperimentTrainingJobHandler(
         var drain = Task.Run(() => channel.DrainAsync(
             batch => experiments.LogMetricsAsync(runId, batch, CancellationToken.None), batchSize: 16, CancellationToken.None), CancellationToken.None);
 
-        TrainingResult result;
+        CapturedModel captured;
         try
         {
             await using var csv = await artifacts.OpenReadAsync(dataset.FileArtifactId.Value, ct);
-            result = await trainer.TrainWithTrialsAsync(task, csv, payload.LabelColumn, payload.MaxSeconds <= 0 ? 30 : payload.MaxSeconds, reporter, ct);
+            captured = await trainer.TrainAndCaptureAsync(task, csv, payload.LabelColumn, payload.MaxSeconds <= 0 ? 30 : payload.MaxSeconds, reporter, ct);
         }
         catch
         {
@@ -85,6 +85,11 @@ public sealed class ExperimentTrainingJobHandler(
         channel.Complete();
         await drain;
 
+        var result = captured.Result;
+
+        // Record a registerable ModelRun (with saved model) so the run can be promoted to a model.
+        var modelRun = await Studio.ModelRunRecorder.RecordAsync(db, artifacts, captured, dataset.Name, payload.LabelColumn, dataset.Classification, payload.OwnerUserId, ct);
+
         var environment = JsonSerializer.Serialize(new
         {
             framework = "ML.NET AutoML",
@@ -96,7 +101,7 @@ public sealed class ExperimentTrainingJobHandler(
 
         await experiments.FinishRunAsync(runId, new FinishRunRequest(
             "completed", result.Algorithm, result.PrimaryMetric, result.PrimaryValue, result.SecondaryMetric, result.SecondaryValue,
-            result.RowCount, reporter.Count, hyperparameters, environment, dataset.FileArtifactId.Value.ToString("N"), null), ct);
+            result.RowCount, reporter.Count, hyperparameters, environment, dataset.FileArtifactId.Value.ToString("N"), null, modelRun.Id), ct);
 
         await context.LogAsync($"Done: {result.Algorithm} · {result.PrimaryMetric}={result.PrimaryValue:0.###} over {reporter.Count} trial(s).");
     }

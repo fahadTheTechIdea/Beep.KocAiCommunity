@@ -9,7 +9,8 @@ public sealed record StartRunRequest(Guid ExperimentId, string RunByUserId, stri
 public sealed record FinishRunRequest(
     string Status, string? Algorithm, string? PrimaryMetric, double? PrimaryValue,
     string? SecondaryMetric, double? SecondaryValue, long RowCount, int TrialCount,
-    string? HyperparametersJson, string? EnvironmentJson, string? DatasetSnapshotHash, string? FailureStage);
+    string? HyperparametersJson, string? EnvironmentJson, string? DatasetSnapshotHash, string? FailureStage,
+    Guid? ModelRunId = null);
 
 /// <summary>
 /// Experiment tracking: experiments and their runs, live metric ingestion (fanned to every

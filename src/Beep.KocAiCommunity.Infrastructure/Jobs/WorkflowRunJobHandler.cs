@@ -95,35 +95,14 @@ public sealed class WorkflowRunJobHandler(
 
         var result = captured.Result;
 
-        // Persist the model as a governed artifact and record a registerable ModelRun.
-        using var modelStream = new MemoryStream(captured.ModelBytes);
-        var reference = await artifacts.SaveAsync(modelStream, $"models/{Guid.NewGuid():N}.zip", "application/zip", dataset.Classification, ct);
-        var modelRun = new ModelRun
-        {
-            DatasetName = payload.WorkflowName,
-            LabelColumn = payload.LabelColumn,
-            Task = result.Task,
-            Algorithm = result.Algorithm,
-            PrimaryMetric = result.PrimaryMetric,
-            PrimaryValue = result.PrimaryValue,
-            SecondaryMetric = result.SecondaryMetric,
-            SecondaryValue = result.SecondaryValue,
-            RowCount = result.RowCount,
-            RunByUserId = payload.OwnerUserId,
-            CompletedUtc = DateTime.UtcNow,
-            FeatureStatsJson = captured.FeatureStatsJson,
-            ModelArtifactId = reference.Id,
-            CreatedByUserId = payload.OwnerUserId,
-            CreatedUtc = DateTime.UtcNow,
-        };
-        db.Set<ModelRun>().Add(modelRun);
-        await db.SaveChangesAsync(ct);
+        // Persist the model + record a registerable ModelRun, then link it to the experiment run.
+        var modelRun = await Studio.ModelRunRecorder.RecordAsync(db, artifacts, captured, payload.WorkflowName, payload.LabelColumn, dataset.Classification, payload.OwnerUserId, ct);
 
         var hyperparameters = JsonSerializer.Serialize(new { trainer = result.Algorithm, task = task.ToString(), workflowVersion = payload.VersionNumber });
         var environment = JsonSerializer.Serialize(new { framework = "ML.NET AutoML", seed = 1, dotnet = Environment.Version.ToString() });
         await experiments.FinishRunAsync(runId, new FinishRunRequest(
             "completed", result.Algorithm, result.PrimaryMetric, result.PrimaryValue, result.SecondaryMetric, result.SecondaryValue,
-            result.RowCount, reporter.Count, hyperparameters, environment, dataset.FileArtifactId.Value.ToString("N"), null), ct);
+            result.RowCount, reporter.Count, hyperparameters, environment, dataset.FileArtifactId.Value.ToString("N"), null, modelRun.Id), ct);
 
         await context.LogAsync($"Done: {result.Algorithm} · {result.PrimaryMetric}={result.PrimaryValue:0.###} · ModelRun {modelRun.Id} ready to register.");
     }

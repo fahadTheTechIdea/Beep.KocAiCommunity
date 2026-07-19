@@ -180,6 +180,7 @@ public interface IKocApiClient
     Task<IReadOnlyList<RunMetricDto>> GetRunMetricsAsync(Guid runId, CancellationToken ct = default);
     Task<IReadOnlyList<RunParameterDto>> GetRunParametersAsync(Guid runId, CancellationToken ct = default);
     Task<ExperimentRunDto?> UpdateExperimentRunAsync(Guid runId, UpdateRunRequest request, CancellationToken ct = default);
+    Task<(ModelVersionDto? Version, string? Error)> RegisterExperimentRunAsync(Guid runId, string modelName, CancellationToken ct = default);
 }
 
 public sealed class KocApiClient(HttpClient http) : IKocApiClient
@@ -840,4 +841,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ExperimentRunDto>(ct);
     }
+
+    public Task<(ModelVersionDto? Version, string? Error)> RegisterExperimentRunAsync(Guid runId, string modelName, CancellationToken ct = default) =>
+        PostJsonAsync<ModelVersionDto>($"/api/v1/experiments/runs/{runId}/register", new RegisterRunRequest(modelName), ct);
 }
