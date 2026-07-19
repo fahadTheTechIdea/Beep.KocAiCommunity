@@ -1,8 +1,26 @@
 # Phase 15 — Testing, Hardening, Deployment, and Migration
 
-**Status:** 🟡 PLANNING
+**Status:** 🟡 PARTIAL (2026-07-19) — security + migration-chain test suites added; CI + real unit/integration coverage in place. Azure deployment, IaC, DR runbooks, and Python-metadata migration remain deployment-time work.
 **Dependencies:** All previous stages
 **Goal:** Comprehensive test matrix, CI gates, security hardening, Azure deployment in the Kuwait region, and migration from Python sources.
+
+## Implementation notes (2026-07-19)
+
+- **Security test suite** (`SecurityTests`, OWASP-aligned): anonymous requests → 401 on protected
+  endpoints; broken object-level authz (a Team-scoped dataset is invisible across the org tree); privilege
+  escalation (a non-owner cannot edit/publish/delete another user's workflow); path-traversal file names
+  are stripped on upload. Complements the SSRF (`UrlImportGuardTests`), secret-masking (`AdminEndpointsTests`),
+  and admin-403 (`AdminEndpointsTests`) checks already in place.
+- **Migration-chain test** (`MigrationChainTests`): applies the entire SQLite migration chain (every
+  phase's migration, in order) to a fresh database and asserts no pending migrations remain and the
+  newest tables are queryable — catches ordering/consistency breaks that `EnsureCreated` would hide.
+- Whole solution builds `-warnaserror` clean; `dotnet format` clean; **116 unit + 83 integration + 9
+  component + 2 architecture + 1 e2e tests pass** on the SQLite provider.
+
+**Deferred (deployment-time / out of this environment):** separate `SecurityTests`/`PerformanceTests`/
+`MigrationTests` projects (folded into the existing suites for now); performance/load benchmarks; Azure
+Kuwait deployment, Bicep IaC, Managed Identity + Key Vault; backup/restore/DR runbooks; the read-only
+Python-metadata importer; and CI vulnerability/dependency scans.
 
 ## 1. Goal and dependencies
 

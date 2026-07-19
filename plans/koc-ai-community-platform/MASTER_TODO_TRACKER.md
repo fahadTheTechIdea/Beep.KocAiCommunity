@@ -2,7 +2,7 @@
 
 **Plan folder:** `plans/koc-ai-community-platform/`
 **Status:** 🟢 BUILDING — foundation/auth/data/API/shell/competitions/learning + engagement (05b) + Worker queue (10) + experiment tracking (11) + model registry & inference (12) shipped and compiling; enterprise/admin half in progress
-**Status audit:** 2026-07-19 — verdicts below verified against actual code (`src/`). Solution builds `-warnaserror` clean; 115 unit + 76 integration tests pass. Phases 05b, 06, 07 (dataset depth), 08 (node catalog), 09, 10, 11, 12, and 14a (core) implemented this session.
+**Status audit:** 2026-07-19 — verdicts below verified against actual code (`src/`). Solution builds `-warnaserror` clean; 116 unit + 83 integration tests pass. Phases 05b, 06, 07 (dataset depth), 08 (node catalog), 09, 10, 11, 12, 14a (core), and 15 (security/migration hardening) implemented this session.
 **Goal:** Build a dedicated, single-tenant, internal platform for Kuwait Oil Company (KOC) that trains and familiarizes employees with AI/ML through guided learning tracks and internal, Kaggle-style competitions, with management supervision via org-scoped rollups. Built on .NET 10, MudBlazor 9, and ML.NET 5. Internal KOC application — not a commercial product.
 
 **UX north star (added 2026-07-19):** the platform must feel **community-first and fun** — employees earn Barrels (bbl), climb an O&G career ladder, collect badges from the shipped O&G icon library, give kudos, and see Team-vs-Team leaderboards. See Phase 05b.
@@ -167,11 +167,13 @@
   - [~] Deferred: DB-backed platform roles/permission grid + first-admin bootstrap (auth is Entra-claim based), sessions, background health monitor, maintenance tasks, email/broadcast, classification editor
 
 - [~] **Phase 15 — Testing, hardening, deployment, migration** (`15_TESTING_HARDENING_DEPLOYMENT_AND_MIGRATION.md`) — 🟡 PARTIAL
-  - [x] Real unit (10 files) + integration (16 files) suites; CI workflow; docker-compose + Dockerfiles
-  - [ ] Component/architecture/e2e suites (stubs today)
-  - [ ] Security + performance test suites
-  - [ ] Azure Kuwait deployment, Managed Identity, Key Vault
-  - [ ] Backup/restore/DR, SQLite metadata import
+  - [x] Real unit + integration suites; CI workflow; docker-compose + Dockerfiles
+  - [x] OWASP-aligned security suite (`SecurityTests`: anonymous→401, IDOR/cross-team invisibility, privilege escalation, path-traversal) + SSRF/secret-masking/admin-403 checks
+  - [x] Migration-chain test (`MigrationChainTests`: full SQLite chain applies, no pending, tables queryable)
+  - [x] Architecture tests lock layering (Domain/Application free of EF/ASP.NET/MudBlazor/ML)
+  - [ ] Performance/load benchmark suite
+  - [ ] Azure Kuwait deployment, Bicep IaC, Managed Identity, Key Vault (deployment-time)
+  - [ ] Backup/restore/DR runbooks, read-only Python-metadata importer (deployment-time)
 
 ## Recommended build order (from here)
 
@@ -184,8 +186,9 @@
 7. ~~Phase 14a — Platform admin (core)~~ ✅ DONE (2026-07-19)
 8. ~~Phase 07 — Dataset depth~~ ✅ DONE (2026-07-19)
 9. ~~Phase 08 — Node catalog + featurization guard~~ ✅ DONE (2026-07-19)
-10. **Phase 15 hardening** (component/e2e/security/perf suites) OR **Phase 14** (O&G templates, help/FAQ, retention) ← next
-11. Then Phase 07a connectors
+10. ~~Phase 15 — Security + migration-chain hardening~~ ✅ (test suites; deployment/IaC/DR still deferred)
+11. **Phase 14** (O&G templates, help/FAQ, retention) OR **Phase 07a** (enterprise connectors) ← next
+12. Deployment-time: Azure/Bicep/Key Vault, DR runbooks, perf benchmarks, Python importer
 
 ## Global definition of done
 
