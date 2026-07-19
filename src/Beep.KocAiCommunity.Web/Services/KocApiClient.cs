@@ -130,6 +130,7 @@ public interface IKocApiClient
     Task<string?> DeleteWorkflowAsync(Guid id, CancellationToken ct = default);
     Task<string?> PublishWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
     Task<string?> ArchiveWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
+    Task<(Guid? RunId, string? Error)> RunWorkflowVersionAsync(Guid id, int versionNumber, RunWorkflowVersionRequest request, CancellationToken ct = default);
     Task<WorkflowExportDto?> ExportWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
     Task<(WorkflowSummaryDto? Workflow, string? Error)> ImportWorkflowAsync(ImportWorkflowRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<WorkflowTemplateDto>> GetWorkflowTemplatesAsync(CancellationToken ct = default);
@@ -643,6 +644,12 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public Task<string?> ArchiveWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default) =>
         PostVoidAsync($"/api/v1/workflows/{id}/versions/{versionNumber}/archive", ct);
+
+    public async Task<(Guid? RunId, string? Error)> RunWorkflowVersionAsync(Guid id, int versionNumber, RunWorkflowVersionRequest request, CancellationToken ct = default)
+    {
+        var (dto, error) = await PostJsonAsync<RunEnqueuedDto>($"/api/v1/workflows/{id}/versions/{versionNumber}/run", request, ct);
+        return (dto?.RunId, error);
+    }
 
     public Task<WorkflowExportDto?> ExportWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default) =>
         http.GetFromJsonAsync<WorkflowExportDto>($"/api/v1/workflows/{id}/versions/{versionNumber}/export", ct);

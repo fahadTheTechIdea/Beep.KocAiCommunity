@@ -46,4 +46,11 @@ public interface IMlTrainer
     /// stored in the registry and served. The model bytes are a self-contained ML.NET .zip.
     /// </summary>
     Task<CapturedModel> TrainAndCaptureAsync(MlTaskType task, Stream csv, string labelColumn, int maxSeconds, CancellationToken ct = default);
+
+    /// <summary>
+    /// Same as <see cref="TrainAndCaptureAsync(MlTaskType, Stream, string, int, CancellationToken)"/> but
+    /// also reports each trial to <paramref name="trials"/> (non-blocking) — captures the model AND the
+    /// trial stream in a single training pass.
+    /// </summary>
+    Task<CapturedModel> TrainAndCaptureAsync(MlTaskType task, Stream csv, string labelColumn, int maxSeconds, IProgress<TrialReport> trials, CancellationToken ct = default);
 }

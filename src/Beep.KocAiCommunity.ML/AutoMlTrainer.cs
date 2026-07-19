@@ -35,14 +35,17 @@ public sealed class AutoMlTrainer : IMlTrainer
         }
     }
 
-    public async Task<CapturedModel> TrainAndCaptureAsync(MlTaskType task, Stream csv, string labelColumn, int maxSeconds, CancellationToken ct = default)
+    public Task<CapturedModel> TrainAndCaptureAsync(MlTaskType task, Stream csv, string labelColumn, int maxSeconds, CancellationToken ct = default) =>
+        TrainAndCaptureAsync(task, csv, labelColumn, maxSeconds, NullProgress<TrialReport>.Instance, ct);
+
+    public async Task<CapturedModel> TrainAndCaptureAsync(MlTaskType task, Stream csv, string labelColumn, int maxSeconds, IProgress<TrialReport> trials, CancellationToken ct = default)
     {
         var tempPath = await SpillAsync(csv, ct);
         try
         {
             return await Task.Run(() =>
             {
-                var run = TrainCore(task, tempPath, labelColumn, maxSeconds, NullProgress<TrialReport>.Instance);
+                var run = TrainCore(task, tempPath, labelColumn, maxSeconds, trials);
                 var ml = new MLContext(seed: 1);
                 using var ms = new MemoryStream();
                 ml.Model.Save(run.Model, run.Schema, ms);

@@ -1,8 +1,10 @@
 @page "/workflows"
 @using Beep.KocAiCommunity.Contracts.Workflow
 @using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Web.Components.Dialogs
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
 <PageTitle>Workflows · @KocBrand.ProductName</PageTitle>
@@ -65,6 +67,7 @@
                                     }
                                     @if (v.Status == "published")
                                     {
+                                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="() => Run(w, v.VersionNumber)">Run</MudButton>
                                         <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => Archive(w.Id, v.VersionNumber)">Archive</MudButton>
                                     }
                                     <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Download" OnClick="() => Export(w.Id, v.VersionNumber)">Export</MudButton>
@@ -153,6 +156,17 @@
     {
         Report(await Api.PublishWorkflowVersionAsync(id, v), $"v{v} published.");
         await Refresh(id);
+    }
+
+    private async Task Run(WorkflowSummaryDto w, int v)
+    {
+        var parameters = new DialogParameters<RunWorkflowDialog>
+        {
+            { x => x.WorkflowId, w.Id },
+            { x => x.VersionNumber, v },
+            { x => x.WorkflowName, w.Name },
+        };
+        await DialogService.ShowAsync<RunWorkflowDialog>("Run workflow", parameters);
     }
 
     private async Task Archive(Guid id, int v)

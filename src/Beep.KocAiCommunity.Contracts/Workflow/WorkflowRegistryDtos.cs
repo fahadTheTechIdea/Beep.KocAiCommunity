@@ -28,3 +28,9 @@ public sealed record WorkflowTemplateDto(string Code, string DisplayName, string
 
 /// <summary>A workflow export envelope's transport wrapper for the export endpoint.</summary>
 public sealed record WorkflowExportDto(string EnvelopeJson);
+
+/// <summary>Run a published workflow version against a dataset (enqueues a durable job).</summary>
+public sealed record RunWorkflowVersionRequest(Guid DatasetId, string LabelColumn, string Task, int? MaxSeconds);
+
+/// <summary>The id of the durable run (job) that was enqueued.</summary>
+public sealed record RunEnqueuedDto(Guid RunId);

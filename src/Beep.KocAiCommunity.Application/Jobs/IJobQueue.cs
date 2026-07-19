@@ -10,6 +10,9 @@ public static class JobTypes
 
     /// <summary>Train with live trial-by-trial metric tracking into an experiment.</summary>
     public const string ExperimentTrain = "experiment.train";
+
+    /// <summary>Run a published workflow version on a dataset → Experiment (trials) + a registerable ModelRun.</summary>
+    public const string WorkflowRun = "workflow.run";
 }
 
 /// <summary>

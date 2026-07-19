@@ -1,5 +1,9 @@
+using System.Text.Json;
+using Beep.KocAiCommunity.Application.Datasets;
+using Beep.KocAiCommunity.Application.Jobs;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Application.Workflow;
+using Beep.KocAiCommunity.Contracts.Jobs;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Beep.KocAiCommunity.Domain.Common;
 using Beep.KocAiCommunity.Domain.Studio;
@@ -97,6 +101,43 @@ public static class WorkflowRegistryEndpoints
                 return Results.BadRequest(new { error = ex.Message });
             }
         }).WithName("ArchiveWorkflowVersion").RequireAuthorization(KocPolicies.RequireEmployee);
+
+        group.MapPost("/workflows/{id:guid}/versions/{n:int}/run", async (Guid id, int n, RunWorkflowVersionRequest req, IKocCurrentUser me, IWorkflowVersionService svc, IDatasetService datasets, IJobQueue queue, CancellationToken ct) =>
+        {
+            var version = await svc.GetVersionAsync(me.UserId!, id, n, ct);
+            if (version is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (version.Status != "published")
+            {
+                return Results.BadRequest(new { error = "Only a published version can be run." });
+            }
+
+            var dataset = await datasets.GetVisibleAsync(me.UserId!, req.DatasetId, ct);
+            if (dataset is null)
+            {
+                return Results.BadRequest(new { error = "Dataset not found or not visible to you." });
+            }
+
+            if (dataset.FileArtifactId is null)
+            {
+                return Results.BadRequest(new { error = "This dataset has no file to train on." });
+            }
+
+            if (dataset.Classification >= KocDataClassification.Confidential && !me.IsInRole(KocRoles.PlatformAdmin) && dataset.OwnerUserId != me.UserId)
+            {
+                return Results.BadRequest(new { error = $"This dataset is classified {dataset.Classification}; training on it requires explicit permission." });
+            }
+
+            var name = (await svc.GetAsync(me.UserId!, id, ct))?.Workflow.Name ?? "Workflow";
+            var payload = new WorkflowRunPayload(id, n, name, req.DatasetId, req.LabelColumn,
+                string.IsNullOrWhiteSpace(req.Task) ? "BinaryClassification" : req.Task, req.MaxSeconds ?? 30, me.UserId!);
+            var runId = await queue.EnqueueAsync(JobTypes.WorkflowRun, $"Run {name} v{n}", JsonSerializer.Serialize(payload), me.UserId!, ct: ct);
+            return Results.Ok(new RunEnqueuedDto(runId));
+        })
+        .WithName("RunWorkflowVersion").RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapPost("/workflows/{id:guid}/versions/{n:int}/validate", async (Guid id, int n, IKocCurrentUser me, IWorkflowVersionService svc, CancellationToken ct) =>
         {

@@ -1,0 +1,98 @@
+@using Beep.KocAiCommunity.Contracts.Datasets
+@using Beep.KocAiCommunity.Contracts.Workflow
+@using Beep.KocAiCommunity.Web.Services
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Run @WorkflowName v@VersionNumber</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">
+            Trains this published workflow on a dataset in the background. It creates a tracked
+            <b>Experiment</b> (with trials) and a <b>model run</b> you can register in the model registry.
+        </MudText>
+
+        @if (_datasets.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
+                No datasets with a file are visible to you. Add one under <b>Datasets</b> first.
+            </MudAlert>
+        }
+        else
+        {
+            <MudSelect T="Guid?" @bind-Value="_datasetId" Label="Dataset" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
+                @foreach (var d in _datasets)
+                {
+                    <MudSelectItem T="Guid?" Value="@d.Id">@d.Name · @d.Classification</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_labelColumn" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+            <MudSelect @bind-Value="_task" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem Value="@("BinaryClassification")">Binary classification</MudSelectItem>
+                <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
+                <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
+            </MudSelect>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow"
+                   Disabled="@(_busy || _datasetId is null)" OnClick="Run">Run</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+    [Parameter] public Guid WorkflowId { get; set; }
+    [Parameter] public int VersionNumber { get; set; }
+    [Parameter] public string WorkflowName { get; set; } = "";
+
+    private IReadOnlyList<DatasetDto> _datasets = [];
+    private Guid? _datasetId;
+    private string _labelColumn = "label";
+    private string _task = "BinaryClassification";
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _datasets = (await Api.GetDatasetsAsync()).Where(d => d.HasFile).ToList();
+            _datasetId = _datasets.FirstOrDefault()?.Id;
+        }
+        catch { _datasets = []; }
+    }
+
+    private async Task Run()
+    {
+        if (_datasetId is not { } dsId)
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var (runId, error) = await Api.RunWorkflowVersionAsync(WorkflowId, VersionNumber,
+                new RunWorkflowVersionRequest(dsId, _labelColumn, _task, null));
+            if (error is not null)
+            {
+                Snackbar.Add(error, Severity.Warning);
+                _busy = false;
+                return;
+            }
+
+            Snackbar.Add("Run queued — track it under Runs.", Severity.Success);
+            Dialog.Close(DialogResult.Ok(runId));
+            Nav.NavigateTo("/runs");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+            _busy = false;
+        }
+    }
+}
