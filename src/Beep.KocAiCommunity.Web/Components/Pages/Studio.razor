@@ -1,6 +1,7 @@
 @page "/studio"
 @using Microsoft.AspNetCore.Components.Forms
 @using Beep.KocAiCommunity.Contracts.Studio
+@using Beep.KocAiCommunity.Contracts.Datasets
 @using Beep.KocAiCommunity.Web.Services
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
@@ -15,7 +16,12 @@
     <MudItem xs="12" md="5">
         <BlueprintCard Class="pa-5">
             <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">Train a model</MudText>
-            <MudTextField @bind-Value="_datasetName" Label="Dataset name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+
+            <div class="d-flex gap-1 mb-3">
+                <MudButton Size="Size.Small" Variant="@(_mode == "dataset" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick='@(() => _mode = "dataset")'>Use a dataset</MudButton>
+                <MudButton Size="Size.Small" Variant="@(_mode == "upload" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick='@(() => _mode = "upload")'>Upload CSV</MudButton>
+            </div>
+
             <MudTextField @bind-Value="_labelColumn" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense"
                           HelperText="The column ML.NET should learn to predict." Class="mb-2" />
             <MudSelect @bind-Value="_task" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
@@ -23,8 +29,28 @@
                 <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification (categories)</MudSelectItem>
                 <MudSelectItem Value="@("Regression")">Regression (numeric)</MudSelectItem>
             </MudSelect>
-            <MudText Typo="Typo.caption" Class="d-block mb-1">CSV file (id,features…,label)</MudText>
-            <InputFile OnChange="OnFileSelected" accept=".csv" />
+
+            @if (_mode == "dataset")
+            {
+                <MudSelect T="Guid?" @bind-Value="_selectedDatasetId" Label="Dataset" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
+                    @foreach (var d in _fileDatasets)
+                    {
+                        <MudSelectItem T="Guid?" Value="@d.Id">@d.Name · @d.Classification</MudSelectItem>
+                    }
+                </MudSelect>
+                @if (_fileDatasets.Count == 0)
+                {
+                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">No datasets with a file are visible to you yet — add one under <b>Datasets</b>, or switch to Upload CSV.</MudText>
+                }
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ModelTraining"
+                           Disabled="@(_training || _selectedDatasetId is null)" OnClick="TrainFromDataset">Train</MudButton>
+            }
+            else
+            {
+                <MudTextField @bind-Value="_datasetName" Label="Run name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                <MudText Typo="Typo.caption" Class="d-block mb-1">CSV file (id,features…,label)</MudText>
+                <InputFile OnChange="OnFileSelected" accept=".csv" />
+            }
 
             @if (_training)
             {
@@ -86,12 +112,66 @@
     private ModelRunDto? _lastRun;
     private IReadOnlyList<ModelRunDto>? _runs;
 
-    protected override async Task OnInitializedAsync() => await LoadRuns();
+    private string _mode = "dataset";
+    private IReadOnlyList<DatasetDto> _fileDatasets = [];
+    private Guid? _selectedDatasetId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRuns();
+        await LoadDatasets();
+    }
 
     private async Task LoadRuns()
     {
         try { _runs = await Api.GetModelRunsAsync(); }
         catch { _runs = []; }
+    }
+
+    private async Task LoadDatasets()
+    {
+        try
+        {
+            _fileDatasets = (await Api.GetDatasetsAsync()).Where(d => d.HasFile).ToList();
+            _selectedDatasetId = _fileDatasets.FirstOrDefault()?.Id;
+        }
+        catch
+        {
+            _fileDatasets = [];
+        }
+
+        if (_fileDatasets.Count == 0)
+        {
+            _mode = "upload";
+        }
+    }
+
+    private async Task TrainFromDataset()
+    {
+        if (_selectedDatasetId is not { } id)
+        {
+            return;
+        }
+
+        _training = true;
+        _lastRun = null;
+        StateHasChanged();
+        try
+        {
+            var (run, error) = await Api.TrainFromDatasetAsync(id, _labelColumn, _task);
+            if (error is not null)
+            {
+                Snackbar.Add(error, Severity.Warning);
+                return;
+            }
+
+            _lastRun = run;
+            await LoadRuns();
+        }
+        finally
+        {
+            _training = false;
+        }
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e)

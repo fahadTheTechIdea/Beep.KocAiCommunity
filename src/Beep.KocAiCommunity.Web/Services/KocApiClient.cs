@@ -73,6 +73,7 @@ public interface IKocApiClient
     string DatasetFileDownloadUrl(Guid fileId);
 
     Task<ModelRunDto?> TrainAsync(Stream csv, string fileName, string labelColumn, string datasetName, string task, CancellationToken ct = default);
+    Task<(ModelRunDto? Run, string? Error)> TrainFromDatasetAsync(Guid datasetId, string labelColumn, string task, CancellationToken ct = default);
     Task<IReadOnlyList<ModelRunDto>> GetModelRunsAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<DiscussionDto>> GetDiscussionsAsync(CancellationToken ct = default);
@@ -91,6 +92,7 @@ public interface IKocApiClient
     Task<WorkflowValidationResult?> ValidateWorkflowAsync(WorkflowDefinition definition, CancellationToken ct = default);
     Task<ModelRunDto?> RunWorkflowAsync(WorkflowDefinition definition, Stream csv, string fileName, string labelColumn, CancellationToken ct = default);
     Task<PipelineExecutionResult?> ExecuteWorkflowAsync(WorkflowDefinition definition, Stream csv, string fileName, string labelColumn, string task, CancellationToken ct = default);
+    Task<(PipelineExecutionResult? Result, string? Error)> ExecuteWorkflowFromDatasetAsync(WorkflowDefinition definition, Guid datasetId, string labelColumn, string task, CancellationToken ct = default);
 
     // Enterprise connectors (admin).
     Task<IReadOnlyList<ConnectorDescriptorDto>> GetConnectorsAsync(CancellationToken ct = default);
@@ -403,6 +405,9 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         return await response.Content.ReadFromJsonAsync<ModelRunDto>(ct);
     }
 
+    public async Task<(ModelRunDto? Run, string? Error)> TrainFromDatasetAsync(Guid datasetId, string labelColumn, string task, CancellationToken ct = default) =>
+        await PostJsonAsync<ModelRunDto>("/api/v1/studio/train/dataset", new TrainFromDatasetRequest(datasetId, labelColumn, task), ct);
+
     public async Task<IReadOnlyList<ModelRunDto>> GetModelRunsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<ModelRunDto>>("/api/v1/studio/runs", ct) ?? [];
 
@@ -510,6 +515,10 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<PipelineExecutionResult>(ct);
     }
+
+    public Task<(PipelineExecutionResult? Result, string? Error)> ExecuteWorkflowFromDatasetAsync(WorkflowDefinition definition, Guid datasetId, string labelColumn, string task, CancellationToken ct = default) =>
+        PostJsonAsync<PipelineExecutionResult>("/api/v1/studio/workflows/execute/dataset",
+            new ExecuteFromDatasetRequest(datasetId, labelColumn, task, definition), ct);
 
     public async Task<IReadOnlyList<ConnectorDescriptorDto>> GetConnectorsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<ConnectorDescriptorDto>>("/api/v1/connectors", ct) ?? [];

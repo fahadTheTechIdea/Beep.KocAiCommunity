@@ -11,6 +11,7 @@
 @using Beep.KocAiCommunity.Web.Components.Dialogs
 @using Beep.KocAiCommunity.Contracts.Workflow
 @using Beep.KocAiCommunity.Contracts.Studio
+@using Beep.KocAiCommunity.Contracts.Datasets
 @using Beep.KocAiCommunity.Contracts.Competitions
 @using Beep.KocAiCommunity.Web.Services
 @using Beep.KocAiCommunity.Ui.Shared.Components
@@ -199,8 +200,30 @@ else
                     <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
                     <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
                 </MudSelect>
-                <MudText Typo="Typo.caption" Class="d-block mb-1">Upload a dataset CSV and run it node by node.</MudText>
-                <InputFile OnChange="OnRun" accept=".csv" />
+                <div class="d-flex gap-1 mb-2">
+                    <MudButton Size="Size.Small" Variant="@(_runMode == "dataset" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick='@(() => _runMode = "dataset")'>Use a dataset</MudButton>
+                    <MudButton Size="Size.Small" Variant="@(_runMode == "upload" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick='@(() => _runMode = "upload")'>Upload CSV</MudButton>
+                </div>
+                @if (_runMode == "dataset")
+                {
+                    <MudSelect T="Guid?" @bind-Value="_selectedDatasetId" Label="Dataset" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
+                        @foreach (var d in _fileDatasets)
+                        {
+                            <MudSelectItem T="Guid?" Value="@d.Id">@d.Name · @d.Classification</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @if (_fileDatasets.Count == 0)
+                    {
+                        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">No datasets with a file are visible to you — add one under <b>Datasets</b>, or switch to Upload CSV.</MudText>
+                    }
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                               Disabled="@(_running || _selectedDatasetId is null)" OnClick="RunFromDataset">Run pipeline</MudButton>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Class="d-block mb-1">Upload a dataset CSV and run it node by node.</MudText>
+                    <InputFile OnChange="OnRun" accept=".csv" />
+                }
                 @if (_running)
                 {
                     <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mt-2" />
@@ -295,6 +318,10 @@ else
     private bool _running;
     private PipelineExecutionResult? _result;
 
+    private string _runMode = "dataset";
+    private IReadOnlyList<DatasetDto> _fileDatasets = [];
+    private Guid? _selectedDatasetId;
+
     private bool _submitting;
     private SubmissionResultDto? _submissionResult;
     private string? _submitError;
@@ -307,9 +334,28 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadDatasets();
         if (WorkflowId is null)
         {
             await LoadProjects();
+        }
+    }
+
+    private async Task LoadDatasets()
+    {
+        try
+        {
+            _fileDatasets = (await Api.GetDatasetsAsync()).Where(d => d.HasFile).ToList();
+            _selectedDatasetId = _fileDatasets.FirstOrDefault()?.Id;
+        }
+        catch
+        {
+            _fileDatasets = [];
+        }
+
+        if (_fileDatasets.Count == 0)
+        {
+            _runMode = "upload";
         }
     }
 
@@ -705,18 +751,7 @@ else
             }
             ms.Position = 0;
 
-            _result = await Api.ExecuteWorkflowAsync(BuildDefinition(), ms, e.File.Name, _labelColumn, _task);
-            if (_result is not null)
-            {
-                var byId = _diagram.Nodes.OfType<MlNode>().ToDictionary(n => n.NodeId);
-                foreach (var nr in _result.Nodes)
-                {
-                    if (byId.TryGetValue(nr.NodeId, out var node))
-                    {
-                        node.SetStatus(nr.Status, nr.Detail);
-                    }
-                }
-            }
+            ApplyResult(await Api.ExecuteWorkflowAsync(BuildDefinition(), ms, e.File.Name, _labelColumn, _task));
         }
         catch (Exception ex)
         {
@@ -725,6 +760,57 @@ else
         finally
         {
             _running = false;
+        }
+    }
+
+    private async Task RunFromDataset()
+    {
+        if (_selectedDatasetId is not { } id)
+        {
+            return;
+        }
+
+        _running = true;
+        _result = null;
+        foreach (var n in _diagram.Nodes.OfType<MlNode>())
+        {
+            n.SetStatus("idle");
+        }
+        StateHasChanged();
+
+        try
+        {
+            var (result, error) = await Api.ExecuteWorkflowFromDatasetAsync(BuildDefinition(), id, _labelColumn, _task);
+            if (error is not null)
+            {
+                Snackbar.Add(error, Severity.Warning);
+                return;
+            }
+
+            ApplyResult(result);
+        }
+        finally
+        {
+            _running = false;
+        }
+    }
+
+    // Reflects each node's execution status back onto the canvas.
+    private void ApplyResult(PipelineExecutionResult? result)
+    {
+        _result = result;
+        if (_result is null)
+        {
+            return;
+        }
+
+        var byId = _diagram.Nodes.OfType<MlNode>().ToDictionary(n => n.NodeId);
+        foreach (var nr in _result.Nodes)
+        {
+            if (byId.TryGetValue(nr.NodeId, out var node))
+            {
+                node.SetStatus(nr.Status, nr.Detail);
+            }
         }
     }
 

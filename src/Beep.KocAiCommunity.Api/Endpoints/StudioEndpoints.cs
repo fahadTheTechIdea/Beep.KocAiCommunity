@@ -1,10 +1,14 @@
 using System.Text.Json;
+using Beep.KocAiCommunity.Application.Datasets;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Application.Security;
+using Beep.KocAiCommunity.Application.Storage;
 using Beep.KocAiCommunity.Application.Studio;
 using Beep.KocAiCommunity.Application.Workflow;
 using Beep.KocAiCommunity.Contracts.Studio;
 using Beep.KocAiCommunity.Contracts.Workflow;
+using Beep.KocAiCommunity.Domain.Common;
+using Beep.KocAiCommunity.Domain.Datasets;
 using Beep.KocAiCommunity.Domain.Studio;
 using Microsoft.AspNetCore.Mvc;
 
@@ -98,7 +102,86 @@ public static class StudioEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee)
         .DisableAntiforgery();
 
+        // Train AutoML directly from a catalog dataset (no re-upload).
+        group.MapPost("/studio/train/dataset", async (TrainFromDatasetRequest req, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IStudioService studio, CancellationToken ct) =>
+        {
+            if (!Enum.TryParse<MlTaskType>(req.Task, ignoreCase: true, out var taskType))
+            {
+                taskType = MlTaskType.BinaryClassification;
+            }
+
+            var access = await ResolveTrainableDatasetAsync(me, datasets, req.DatasetId, ct);
+            if (access.Error is not null)
+            {
+                return access.Error;
+            }
+
+            try
+            {
+                await using var csv = await artifacts.OpenReadAsync(access.Dataset!.FileArtifactId!.Value, ct);
+                var run = await studio.TrainAsync(me.UserId!, access.Dataset.Name, req.LabelColumn, taskType, csv, maxSeconds: 8, ct);
+                return Results.Ok(ToDto(run));
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new { error = $"Training failed: {ex.Message}" });
+            }
+        })
+        .WithName("TrainFromDataset")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // Run a workflow pipeline node-by-node against a catalog dataset.
+        group.MapPost("/studio/workflows/execute/dataset", async (ExecuteFromDatasetRequest req, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IPipelineExecutor executor, CancellationToken ct) =>
+        {
+            if (!Enum.TryParse<MlTaskType>(req.Task, ignoreCase: true, out var taskType) || taskType == MlTaskType.MulticlassClassification)
+            {
+                taskType = MlTaskType.BinaryClassification;
+            }
+
+            var access = await ResolveTrainableDatasetAsync(me, datasets, req.DatasetId, ct);
+            if (access.Error is not null)
+            {
+                return access.Error;
+            }
+
+            try
+            {
+                await using var csv = await artifacts.OpenReadAsync(access.Dataset!.FileArtifactId!.Value, ct);
+                var result = await executor.ExecuteAsync(req.Definition, req.LabelColumn, taskType, csv, maxSeconds: 8, ct);
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new { error = $"Execution failed: {ex.Message}" });
+            }
+        })
+        .WithName("ExecuteWorkflowFromDataset")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
         return group;
+    }
+
+    // Resolves a visible, file-bearing dataset the caller may train on (classification-gated like download).
+    private static async Task<(Dataset? Dataset, IResult? Error)> ResolveTrainableDatasetAsync(IKocCurrentUser me, IDatasetService datasets, Guid datasetId, CancellationToken ct)
+    {
+        var dataset = await datasets.GetVisibleAsync(me.UserId!, datasetId, ct);
+        if (dataset is null)
+        {
+            return (null, Results.NotFound());
+        }
+
+        if (dataset.FileArtifactId is null)
+        {
+            return (null, Results.BadRequest(new { error = "This dataset has no file to train on." }));
+        }
+
+        // Confidential/Restricted data requires the owner or a platform admin — same gate as download.
+        if (dataset.Classification >= KocDataClassification.Confidential && !me.IsInRole(KocRoles.PlatformAdmin) && dataset.OwnerUserId != me.UserId)
+        {
+            return (null, Results.BadRequest(new { error = $"This dataset is classified {dataset.Classification}; training on it requires explicit permission." }));
+        }
+
+        return (dataset, null);
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
