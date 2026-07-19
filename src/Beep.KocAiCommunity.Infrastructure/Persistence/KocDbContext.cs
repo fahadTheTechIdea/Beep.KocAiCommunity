@@ -78,6 +78,9 @@ public class KocDbContext(DbContextOptions<KocDbContext> options)
     public DbSet<WorkflowTemplate> WorkflowTemplates => Set<WorkflowTemplate>();
     public DbSet<Domain.Admin.SettingValue> SettingValues => Set<Domain.Admin.SettingValue>();
     public DbSet<Domain.Admin.FeatureFlag> FeatureFlags => Set<Domain.Admin.FeatureFlag>();
+    public DbSet<Domain.Connectors.ConnectorInstance> ConnectorInstances => Set<Domain.Connectors.ConnectorInstance>();
+    public DbSet<Domain.Connectors.CredentialVaultEntry> CredentialVaultEntries => Set<Domain.Connectors.CredentialVaultEntry>();
+    public DbSet<Domain.Connectors.ConnectorHealthSnapshot> ConnectorHealthSnapshots => Set<Domain.Connectors.ConnectorHealthSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

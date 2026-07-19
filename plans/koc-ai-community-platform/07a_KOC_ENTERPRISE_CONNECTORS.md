@@ -1,8 +1,38 @@
 # Phase 07a — KOC Enterprise Connectors
 
-**Status:** 🟡 PLANNING
+**Status:** 🟢 MOSTLY DONE (2026-07-19) — abstractions, catalog, instances, encrypted credential vault, mock adapters, and health snapshots shipped; live PPDM/SAP/PI/… adapters are deployment-time.
 **Dependencies:** Phase 03, Phase 04, Phase 07
 **Goal:** First-class connectors for PPDM 39, OpenWells, EcoSys, SAP, AVEVA PI, and ADLS Gen2 with credential vault, classification, and health monitoring.
+
+## Implementation notes (2026-07-19)
+
+Real PPDM/OpenWells/EcoSys/SAP/PI/ADLS endpoints aren't reachable in this environment, so — as the plan
+itself notes (§12) — **mock adapters are the staging default**. The full contract + persistence + vault
+are real; only the six live adapters are stubbed.
+
+- **Abstractions.** `IKocConnector` (Test / GetSchema / Health), `ConnectorContext`, `ConnectorSchema`/
+  `ConnectorResource`/`ConnectorColumn`, `ConnectorTestResult`, `ConnectorHealthResult`,
+  `IKocConnectorFactory`, and a code-first `ConnectorCatalog` (the six connectors with default
+  classification — PI Restricted, PPDM/OpenWells/SAP Confidential, EcoSys/ADLS Internal — auth modes,
+  and capabilities).
+- **Persistence.** `ConnectorInstance` (endpoint, auth mode, default classification, probe interval),
+  `CredentialVaultEntry` (encrypted at rest via `ISecretProtector`), `ConnectorHealthSnapshot`. Dual-
+  provider `AddConnectors` migration (schema `koc`/`platform`).
+- **Service.** `ConnectorService` — instance CRUD, **SSRF-guarded** endpoint validation (reuses
+  `UrlImportGuard` for http(s) endpoints), credential set/rotate (encrypted, never returned) + delete,
+  and test/schema/**health-with-snapshot** via the factory. Every mutation is audited; secrets never
+  appear in responses or audit JSON.
+- **Mock adapter.** `MockConnector`/`MockConnectorFactory` return a code-appropriate fake schema
+  (PPDM → WELL/WELLBORE/PDEN_VOL_SUMMARY, PI → AF tags, …) and report healthy — deterministic, offline.
+  Real adapters implement the same `IKocConnector` and are swapped in at deployment.
+- **API/UI.** `/api/v1/connectors/**` (catalog, instances, credentials, test/schema/health) all behind
+  `RequirePlatformAdmin`; typed client; a `/connectors` admin page.
+- **Tests.** 3 unit (`ConnectorCatalogTests`) + 4 integration (`ConnectorEndpointsTests`: admin-only,
+  catalog, SSRF-blocked endpoint, full lifecycle with the secret never exposed in responses or audit).
+
+**Deferred (deployment-time):** the six live adapters (PPDM SQL, OpenWells/EcoSys REST, SAP RFC, PI Web
+API, ADLS Gen2); the scheduled connector health-monitor hosted service in the Worker (health is
+on-demand today); connector→dataset import jobs with lineage; Key Vault credential references in prod.
 
 ## 1. Goal and dependencies
 

@@ -2,7 +2,7 @@
 
 **Plan folder:** `plans/koc-ai-community-platform/`
 **Status:** 🟢 BUILDING — foundation/auth/data/API/shell/competitions/learning + engagement (05b) + Worker queue (10) + experiment tracking (11) + model registry & inference (12) shipped and compiling; enterprise/admin half in progress
-**Status audit:** 2026-07-19 — verdicts below verified against actual code (`src/`). Solution builds `-warnaserror` clean; 120 unit + 85 integration tests pass. Phases 05b, 06, 07 (dataset depth), 08 (node catalog), 09, 12, 14 (templates/help), 14a (core), and 15 (security/migration hardening) implemented this session.
+**Status audit:** 2026-07-19 — verdicts below verified against actual code (`src/`). Solution builds `-warnaserror` clean; 123 unit + 89 integration tests pass. Every feature phase (00–14a) is now DONE or MOSTLY DONE; only deployment-time ops (Azure/IaC/DR/perf, live connector adapters) remain. This session implemented 05b, 06, 07, 07a, 08, 09, 12, 14, 14a, 15 + a Studio IA consolidation (designer + registry unified under a "Studio" nav group; registry workflows open in the designer).
 **Goal:** Build a dedicated, single-tenant, internal platform for Kuwait Oil Company (KOC) that trains and familiarizes employees with AI/ML through guided learning tracks and internal, Kaggle-style competitions, with management supervision via org-scoped rollups. Built on .NET 10, MudBlazor 9, and ML.NET 5. Internal KOC application — not a commercial product.
 
 **UX north star (added 2026-07-19):** the platform must feel **community-first and fun** — employees earn Barrels (bbl), climb an O&G career ladder, collect badges from the shipped O&G icon library, give kudos, and see Team-vs-Team leaderboards. See Phase 05b.
@@ -91,8 +91,13 @@
   - [x] `/datasets/**` versioning endpoints + typed client + `DatasetVersionsDialog`; dual-provider `AddDatasetVersioning`; 11 unit + 3 integration tests
   - [~] Deferred: SQL import adapter (needs live read-only DB), project collaboration depth (members/roles/activity/templates), dataset→project AutoML import (Phase 11), Parquet, exhaustive profiling
 
-- [ ] **Phase 07a — KOC enterprise connectors** (`07a_KOC_ENTERPRISE_CONNECTORS.md`) — ⬜ NOT STARTED
-  - [ ] `IKocConnector` abstractions; PPDM 39, OpenWells, EcoSys, SAP RFC, AVEVA PI, ADLS Gen2 connectors; `/connectors` UI; health monitoring
+- [~] **Phase 07a — KOC enterprise connectors** (`07a_KOC_ENTERPRISE_CONNECTORS.md`) — 🟢 MOSTLY DONE (2026-07-19)
+  - [x] `IKocConnector`/`IKocConnectorFactory` abstractions + code-first `ConnectorCatalog` (6 connectors, per-connector default classification, auth modes, capabilities)
+  - [x] `ConnectorInstance` + encrypted `CredentialVaultEntry` (via `ISecretProtector`) + `ConnectorHealthSnapshot`; dual-provider `AddConnectors` migration
+  - [x] `ConnectorService`: instance CRUD, SSRF-guarded endpoints, credential vault (encrypted, never returned), test/schema/health-with-snapshot, audited
+  - [x] `MockConnector` staging adapter (deterministic O&G schema); `/api/v1/connectors/**` (PlatformAdmin) + typed client + `/connectors` page
+  - [x] 3 unit + 4 integration tests (admin-only, SSRF-blocked, secret never exposed in responses/audit)
+  - [~] Deferred (deployment-time): six live adapters (PPDM/OpenWells/EcoSys/SAP/PI/ADLS), scheduled health-monitor hosted service, connector→dataset import with lineage, Key Vault refs
 
 - [~] **Phase 08 — ML.NET runtime and node catalog** (`08_MLNET_RUNTIME_AND_NODE_CATALOG.md`) — 🟢 MOSTLY DONE (2026-07-19)
   - [x] ML.NET executor with real transforms + AutoML (`ML/MlPipelineExecutor.cs` ~740 lines, `AutoMlTrainer.cs`, `IMlRuntime.cs`)
@@ -192,8 +197,9 @@
 9. ~~Phase 08 — Node catalog + featurization guard~~ ✅ DONE (2026-07-19)
 10. ~~Phase 15 — Security + migration-chain hardening~~ ✅ (test suites; deployment/IaC/DR still deferred)
 11. ~~Phase 14 — O&G template taxonomy + in-app help/FAQ~~ ✅ DONE (2026-07-19)
-12. **Phase 07a** (enterprise connectors: PPDM/OpenWells/EcoSys/SAP/PI/ADLS) ← the last unstarted feature phase
-13. Deployment-time: Azure/Bicep/Key Vault, DR runbooks, perf benchmarks, Python importer
+12. ~~Phase 07a — Enterprise connectors (abstractions + vault + mock adapters)~~ ✅ DONE (2026-07-19)
+13. ~~Studio IA consolidation~~ ✅ (designer + registry unified under a "Studio" nav group; registry → open in designer)
+14. **All feature phases complete.** Remaining = deployment-time only: Azure/Bicep/Key Vault, DR runbooks, perf benchmarks, Python importer, six live connector adapters.
 
 ## Global definition of done
 

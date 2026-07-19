@@ -684,6 +684,170 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.ToTable("Submissions", "koc");
                 });
 
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Connectors.ConnectorHealthSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConnectorInstanceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LatencyMs")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("MeasuredUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConnectorInstanceId", "MeasuredUtc");
+
+                    b.ToTable("ConnectorHealthSnapshots", "platform");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Connectors.ConnectorInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthMode")
+                        .IsRequired()
+                        .HasMaxLength(48)
+                        .HasColumnType("nvarchar(48)");
+
+                    b.Property<string>("ConnectorCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DefaultClassification")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<int>("HealthProbeIntervalSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConnectorCode");
+
+                    b.ToTable("ConnectorInstances", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Connectors.CredentialVaultEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConnectorInstanceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EncryptedValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LastRotatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProtectionDescriptor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConnectorInstanceId", "Key")
+                        .IsUnique();
+
+                    b.ToTable("CredentialVaultEntries", "platform");
+                });
+
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.Dataset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3187,6 +3351,24 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.HasOne("Beep.KocAiCommunity.Domain.Competitions.Competition", null)
                         .WithMany()
                         .HasForeignKey("CompetitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Connectors.ConnectorHealthSnapshot", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Connectors.ConnectorInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ConnectorInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Connectors.CredentialVaultEntry", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Connectors.ConnectorInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ConnectorInstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

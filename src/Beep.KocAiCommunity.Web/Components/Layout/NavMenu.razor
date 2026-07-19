@@ -14,10 +14,12 @@
         <MudNavLink Href="/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
         <MudNavLink Href="/compete" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">Compete</MudNavLink>
         <MudNavLink Href="/datasets" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dataset">Datasets</MudNavLink>
-        <MudNavLink Href="/workflow" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AccountTree">Studio</MudNavLink>
-        <MudNavLink Href="/workflows" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Schema">Workflows</MudNavLink>
-        <MudNavLink Href="/nodes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Widgets">Node catalog</MudNavLink>
-        <MudNavLink Href="/studio" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Hub">AutoML</MudNavLink>
+        <MudNavGroup Title="Studio" Icon="@Icons.Material.Filled.AccountTree" Expanded="true">
+            <MudNavLink Href="/workflow" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Schema">Designer</MudNavLink>
+            <MudNavLink Href="/workflows" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2">Workflows</MudNavLink>
+            <MudNavLink Href="/studio" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Hub">AutoML</MudNavLink>
+            <MudNavLink Href="/nodes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Widgets">Node catalog</MudNavLink>
+        </MudNavGroup>
         <MudNavLink Href="/runs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PlayCircle">Runs</MudNavLink>
         <MudNavLink Href="/experiments" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Science">Experiments</MudNavLink>
         <MudNavLink Href="/models" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2">Models</MudNavLink>
@@ -30,7 +32,8 @@
 
     @if (Identity.IsPlatformAdmin)
     {
-        <MudNavLink Href="/admin" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings">Admin</MudNavLink>
+        <MudNavLink Href="/admin" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AdminPanelSettings">Admin</MudNavLink>
+        <MudNavLink Href="/connectors" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Hub">Connectors</MudNavLink>
     }
 
     @if (Identity.IsGuest)

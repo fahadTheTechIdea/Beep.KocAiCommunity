@@ -1,0 +1,119 @@
+@page "/connectors"
+@using Beep.KocAiCommunity.Contracts.Connectors
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Connectors · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Platform · admin" Title="Enterprise connectors"
+            Subtitle="Configure read-only links to KOC systems — PPDM, OpenWells, EcoSys, SAP, AVEVA PI, ADLS Gen2. Credentials are encrypted at rest. Requires PlatformAdmin." />
+
+@if (_forbidden)
+{
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">You need the <b>PlatformAdmin</b> role to manage connectors.</MudAlert>
+}
+else if (_catalog is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid Spacing="4">
+        @foreach (var c in _catalog)
+        {
+            <MudItem xs="12" md="6">
+                <BlueprintCard Class="pa-4" Style="height:100%;">
+                    <div class="d-flex justify-space-between align-center">
+                        <MudText Typo="Typo.subtitle1" Class="koc-heading">@c.DisplayName <code style="opacity:.6;">@c.Code</code></MudText>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@ClassColor(c.DefaultClassification)">@c.DefaultClassification</MudChip>
+                    </div>
+                    <MudText Typo="Typo.caption" Style="opacity:.8;">@c.Description</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.6;">auth: @string.Join(", ", c.AuthModes) · @(c.Capabilities.ReadOnly ? "read-only" : "read/write")</MudText>
+
+                    @if (_instances.TryGetValue(c.Code, out var list))
+                    {
+                        @foreach (var i in list)
+                        {
+                            <div class="d-flex align-center justify-space-between mt-2 py-1" style="border-top:1px solid var(--koc-divider);">
+                                <div>
+                                    <b>@i.Name</b>
+                                    <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.7;">@i.Endpoint · @i.AuthMode</MudText>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Test(i.Id)">Test</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Probe(i.Id)">Health</MudButton>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="() => Delete(c.Code, i.Id)" />
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                               Class="mt-2" OnClick="() => AddInstance(c)">Add instance</MudButton>
+                </BlueprintCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private bool _forbidden;
+    private IReadOnlyList<ConnectorDescriptorDto>? _catalog;
+    private readonly Dictionary<string, IReadOnlyList<ConnectorInstanceDto>> _instances = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _catalog = await Api.GetConnectorsAsync();
+            foreach (var c in _catalog)
+            {
+                _instances[c.Code] = await Api.GetConnectorInstancesAsync(c.Code);
+            }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            _forbidden = true;
+        }
+    }
+
+    private async Task Reload(string code) => _instances[code] = await Api.GetConnectorInstancesAsync(code);
+
+    private async Task AddInstance(ConnectorDescriptorDto c)
+    {
+        var name = $"{c.DisplayName} instance";
+        var (instance, error) = await Api.CreateConnectorInstanceAsync(c.Code,
+            new CreateConnectorInstanceRequest(c.Code, name, "https://example.koc/" + c.Code, c.AuthModes.FirstOrDefault() ?? "None", c.DefaultClassification));
+        Snackbar.Add(error ?? $"Added {name}.", error is null ? Severity.Success : Severity.Warning);
+        await Reload(c.Code);
+    }
+
+    private async Task Test(Guid id)
+    {
+        var (result, error) = await Api.TestConnectorAsync(id);
+        Snackbar.Add(error ?? result?.Message ?? "Tested.", error is null && (result?.Ok ?? false) ? Severity.Success : Severity.Warning);
+    }
+
+    private async Task Probe(Guid id)
+    {
+        var (health, error) = await Api.ProbeConnectorHealthAsync(id);
+        Snackbar.Add(error ?? $"Health: {health?.Status} ({health?.LatencyMs} ms)", error is null ? Severity.Success : Severity.Warning);
+    }
+
+    private async Task Delete(string code, Guid id)
+    {
+        var error = await Api.DeleteConnectorInstanceAsync(id);
+        Snackbar.Add(error ?? "Instance removed.", error is null ? Severity.Success : Severity.Warning);
+        await Reload(code);
+    }
+
+    private static Color ClassColor(string classification) => classification switch
+    {
+        "Restricted" => Color.Error,
+        "Confidential" => Color.Warning,
+        "Internal" => Color.Info,
+        _ => Color.Default,
+    };
+}

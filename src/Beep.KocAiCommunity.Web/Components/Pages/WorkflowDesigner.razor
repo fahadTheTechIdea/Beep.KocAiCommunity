@@ -1,4 +1,5 @@
 @page "/workflow"
+@page "/workflow/{WorkflowId:guid}"
 @using System.Globalization
 @using System.Text.Json
 @using Microsoft.AspNetCore.Components.Forms
@@ -20,7 +21,7 @@
 
 <PageTitle>Studio · @KocBrand.ProductName</PageTitle>
 
-@if (_openProject is null)
+@if (_openProject is null && !_registryMode)
 {
     <!-- ===== Project browse ===== -->
     <div class="d-flex justify-space-between align-start mb-6 flex-wrap gap-3">
@@ -77,14 +78,26 @@ else
 {
     <!-- ===== Node editor ===== -->
     <div class="d-flex align-center gap-2 mb-3 flex-wrap">
-        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="CloseProject">Projects</MudButton>
-        <MudText Typo="Typo.h5" Class="koc-heading">@_openProject.Name</MudText>
-        @if (_openProject.CompetitionTitle is not null)
+        @if (_registryMode)
         {
-            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">🏆 @_openProject.CompetitionTitle</MudChip>
+            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/workflows">Workflows</MudButton>
+            <MudText Typo="Typo.h5" Class="koc-heading">@_registryName</MudText>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_registryStatus == "published" ? Color.Success : Color.Info)">v@_registryVersion · @_registryStatus</MudChip>
+            <MudSpacer />
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveRegistryDraft" Disabled="_registryBusy">Save draft</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Publish" OnClick="PublishRegistry" Disabled="_registryBusy">Publish</MudButton>
         }
-        <MudSpacer />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveProject" Disabled="_saving">Save</MudButton>
+        else
+        {
+            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="CloseProject">Projects</MudButton>
+            <MudText Typo="Typo.h5" Class="koc-heading">@_openProject?.Name</MudText>
+            @if (_openProject?.CompetitionTitle is not null)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">🏆 @_openProject.CompetitionTitle</MudChip>
+            }
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveProject" Disabled="_saving">Save</MudButton>
+        }
     </div>
 
     <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;">
@@ -223,7 +236,7 @@ else
         </MudItem>
     </MudGrid>
 
-    @if (_openProject.CompetitionId is { } compId)
+    @if (_openProject?.CompetitionId is { } compId)
     {
         <BlueprintCard Class="pa-5 mt-4">
             <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Submit to @_openProject.CompetitionTitle</MudText>
@@ -268,6 +281,15 @@ else
     private ProjectDetailDto? _openProject;
     private bool _saving;
 
+    // Registry-edit mode: the designer is editing a versioned workflow from /workflows.
+    [Parameter] public Guid? WorkflowId { get; set; }
+    private bool _registryMode;
+    private Guid? _loadedWorkflowId;
+    private string _registryName = "";
+    private int _registryVersion = 1;
+    private string _registryStatus = "draft";
+    private bool _registryBusy;
+
     private string _labelColumn = "label";
     private string _task = "BinaryClassification";
     private bool _running;
@@ -283,9 +305,132 @@ else
         _diagram.SelectionChanged += OnSelectionChanged;
     }
 
-    protected override async Task OnInitializedAsync() => await LoadProjects();
+    protected override async Task OnInitializedAsync()
+    {
+        if (WorkflowId is null)
+        {
+            await LoadProjects();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (WorkflowId is { } id)
+        {
+            if (_loadedWorkflowId != id)
+            {
+                await LoadRegistryWorkflow(id);
+            }
+        }
+        else if (_registryMode)
+        {
+            // Navigated back to the plain designer.
+            _registryMode = false;
+            _loadedWorkflowId = null;
+            _diagram.Nodes.Clear();
+            _diagram.Links.Clear();
+            if (_projects is null)
+            {
+                await LoadProjects();
+            }
+        }
+    }
 
     public void Dispose() => _diagram.SelectionChanged -= OnSelectionChanged;
+
+    // ---- Registry workflow (versioned) ----
+
+    private async Task LoadRegistryWorkflow(Guid id)
+    {
+        var detail = await Api.GetWorkflowDetailAsync(id);
+        if (detail is null)
+        {
+            Snackbar.Add("Workflow not found.", Severity.Error);
+            return;
+        }
+
+        var latest = detail.Versions.OrderByDescending(v => v.VersionNumber).FirstOrDefault();
+        _registryMode = true;
+        _openProject = null;
+        _selected = null;
+        _result = null;
+        _loadedWorkflowId = id;
+        _registryName = detail.Name;
+        _registryVersion = latest?.VersionNumber ?? 1;
+        _registryStatus = latest?.Status ?? "draft";
+
+        var json = "{}";
+        if (latest is not null)
+        {
+            var version = await Api.GetWorkflowVersionAsync(id, latest.VersionNumber);
+            json = version?.DefinitionJson ?? "{}";
+        }
+
+        LoadDefinition(json);
+        StateHasChanged();
+    }
+
+    private async Task SaveRegistryDraft()
+    {
+        if (_loadedWorkflowId is not { } id)
+        {
+            return;
+        }
+
+        _registryBusy = true;
+        try
+        {
+            var json = JsonSerializer.Serialize(BuildDefinition(), _json);
+            var (version, error) = await Api.SaveWorkflowDraftAsync(id, new SaveDraftRequest(json, null));
+            if (error is not null)
+            {
+                Snackbar.Add(error, Severity.Warning);
+                return;
+            }
+
+            _registryVersion = version!.VersionNumber;
+            _registryStatus = version.Status;
+            Snackbar.Add($"Draft saved (v{version.VersionNumber}).", Severity.Success);
+        }
+        finally
+        {
+            _registryBusy = false;
+        }
+    }
+
+    private async Task PublishRegistry()
+    {
+        if (_loadedWorkflowId is not { } id)
+        {
+            return;
+        }
+
+        _registryBusy = true;
+        try
+        {
+            // Capture the current canvas as a draft, then freeze it (the API runs the compiler +
+            // split-before-fit check and rejects a leaky graph).
+            var json = JsonSerializer.Serialize(BuildDefinition(), _json);
+            var (version, saveError) = await Api.SaveWorkflowDraftAsync(id, new SaveDraftRequest(json, null));
+            if (saveError is not null)
+            {
+                Snackbar.Add(saveError, Severity.Warning);
+                return;
+            }
+
+            var publishError = await Api.PublishWorkflowVersionAsync(id, version!.VersionNumber);
+            Snackbar.Add(publishError ?? $"Published v{version.VersionNumber}.", publishError is null ? Severity.Success : Severity.Warning);
+            if (publishError is null)
+            {
+                _registryVersion = version.VersionNumber;
+                _registryStatus = "published";
+            }
+        }
+        finally
+        {
+            _registryBusy = false;
+        }
+    }
 
     // ---- Projects ----
 
@@ -439,7 +584,8 @@ else
             }
         }
 
-        return new WorkflowDefinition { Name = _openProject?.Name ?? "Pipeline", Nodes = nodes, Edges = edges };
+        var name = _registryMode ? _registryName : (_openProject?.Name ?? "Pipeline");
+        return new WorkflowDefinition { Name = name, Nodes = nodes, Edges = edges };
     }
 
     private void SeedStarter()

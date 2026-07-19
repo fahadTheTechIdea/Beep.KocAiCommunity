@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Beep.KocAiCommunity.Contracts.Admin;
 using Beep.KocAiCommunity.Contracts.Community;
 using Beep.KocAiCommunity.Contracts.Competitions;
+using Beep.KocAiCommunity.Contracts.Connectors;
 using Beep.KocAiCommunity.Contracts.Dashboard;
 using Beep.KocAiCommunity.Contracts.Datasets;
 using Beep.KocAiCommunity.Contracts.Engagement;
@@ -91,6 +92,17 @@ public interface IKocApiClient
     Task<ModelRunDto?> RunWorkflowAsync(WorkflowDefinition definition, Stream csv, string fileName, string labelColumn, CancellationToken ct = default);
     Task<PipelineExecutionResult?> ExecuteWorkflowAsync(WorkflowDefinition definition, Stream csv, string fileName, string labelColumn, string task, CancellationToken ct = default);
 
+    // Enterprise connectors (admin).
+    Task<IReadOnlyList<ConnectorDescriptorDto>> GetConnectorsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<ConnectorInstanceDto>> GetConnectorInstancesAsync(string code, CancellationToken ct = default);
+    Task<(ConnectorInstanceDto? Instance, string? Error)> CreateConnectorInstanceAsync(string code, CreateConnectorInstanceRequest request, CancellationToken ct = default);
+    Task<ConnectorInstanceDetailDto?> GetConnectorInstanceAsync(Guid id, CancellationToken ct = default);
+    Task<(CredentialInfoDto? Credential, string? Error)> SetConnectorCredentialAsync(Guid id, SetCredentialRequest request, CancellationToken ct = default);
+    Task<(ConnectorTestDto? Result, string? Error)> TestConnectorAsync(Guid id, CancellationToken ct = default);
+    Task<(ConnectorHealthDto? Health, string? Error)> ProbeConnectorHealthAsync(Guid id, CancellationToken ct = default);
+    Task<ConnectorSchemaDto?> GetConnectorSchemaAsync(Guid id, CancellationToken ct = default);
+    Task<string?> DeleteConnectorInstanceAsync(Guid id, CancellationToken ct = default);
+
     // In-app help.
     Task<IReadOnlyList<HelpArticleSummaryDto>> GetHelpArticlesAsync(string? category = null, string? q = null, CancellationToken ct = default);
     Task<HelpArticleDto?> GetHelpArticleAsync(string slug, CancellationToken ct = default);
@@ -111,6 +123,8 @@ public interface IKocApiClient
     Task<IReadOnlyList<WorkflowSummaryDto>> GetWorkflowsAsync(CancellationToken ct = default);
     Task<(WorkflowSummaryDto? Workflow, string? Error)> CreateWorkflowAsync(CreateWorkflowRequest request, CancellationToken ct = default);
     Task<WorkflowDetailDto?> GetWorkflowDetailAsync(Guid id, CancellationToken ct = default);
+    Task<WorkflowVersionDetailDto?> GetWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
+    Task<(WorkflowVersionDto? Version, string? Error)> SaveWorkflowDraftAsync(Guid id, SaveDraftRequest request, CancellationToken ct = default);
     Task<string?> DeleteWorkflowAsync(Guid id, CancellationToken ct = default);
     Task<string?> PublishWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
     Task<string?> ArchiveWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
@@ -497,6 +511,49 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         return await response.Content.ReadFromJsonAsync<PipelineExecutionResult>(ct);
     }
 
+    public async Task<IReadOnlyList<ConnectorDescriptorDto>> GetConnectorsAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<ConnectorDescriptorDto>>("/api/v1/connectors", ct) ?? [];
+
+    public async Task<IReadOnlyList<ConnectorInstanceDto>> GetConnectorInstancesAsync(string code, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<ConnectorInstanceDto>>($"/api/v1/connectors/{code}/instances", ct) ?? [];
+
+    public Task<(ConnectorInstanceDto? Instance, string? Error)> CreateConnectorInstanceAsync(string code, CreateConnectorInstanceRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<ConnectorInstanceDto>($"/api/v1/connectors/{code}/instances", request, ct);
+
+    public Task<ConnectorInstanceDetailDto?> GetConnectorInstanceAsync(Guid id, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<ConnectorInstanceDetailDto>($"/api/v1/connectors/instances/{id}", ct);
+
+    public Task<(CredentialInfoDto? Credential, string? Error)> SetConnectorCredentialAsync(Guid id, SetCredentialRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<CredentialInfoDto>($"/api/v1/connectors/instances/{id}/credentials", request, ct);
+
+    public async Task<(ConnectorTestDto? Result, string? Error)> TestConnectorAsync(Guid id, CancellationToken ct = default)
+    {
+        var response = await http.PostAsync($"/api/v1/connectors/instances/{id}/test", null, ct);
+        return response.IsSuccessStatusCode
+            ? (await response.Content.ReadFromJsonAsync<ConnectorTestDto>(ct), null)
+            : (null, await ErrorAsync(response, ct));
+    }
+
+    public async Task<(ConnectorHealthDto? Health, string? Error)> ProbeConnectorHealthAsync(Guid id, CancellationToken ct = default)
+    {
+        var response = await http.PostAsync($"/api/v1/connectors/instances/{id}/health", null, ct);
+        return response.IsSuccessStatusCode
+            ? (await response.Content.ReadFromJsonAsync<ConnectorHealthDto>(ct), null)
+            : (null, await ErrorAsync(response, ct));
+    }
+
+    public Task<ConnectorSchemaDto?> GetConnectorSchemaAsync(Guid id, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<ConnectorSchemaDto>($"/api/v1/connectors/instances/{id}/schema", ct);
+
+    public Task<string?> DeleteConnectorInstanceAsync(Guid id, CancellationToken ct = default) =>
+        DeleteVoidAsync($"/api/v1/connectors/instances/{id}", ct);
+
+    private static async Task<string?> ErrorAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
+        return problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).";
+    }
+
     public async Task<IReadOnlyList<HelpArticleSummaryDto>> GetHelpArticlesAsync(string? category = null, string? q = null, CancellationToken ct = default)
     {
         var query = new List<string>();
@@ -562,6 +619,12 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public Task<WorkflowDetailDto?> GetWorkflowDetailAsync(Guid id, CancellationToken ct = default) =>
         http.GetFromJsonAsync<WorkflowDetailDto>($"/api/v1/workflows/{id}", ct);
+
+    public Task<WorkflowVersionDetailDto?> GetWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<WorkflowVersionDetailDto>($"/api/v1/workflows/{id}/versions/{versionNumber}", ct);
+
+    public Task<(WorkflowVersionDto? Version, string? Error)> SaveWorkflowDraftAsync(Guid id, SaveDraftRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<WorkflowVersionDto>($"/api/v1/workflows/{id}/versions", request, ct);
 
     public Task<string?> DeleteWorkflowAsync(Guid id, CancellationToken ct = default) =>
         DeleteVoidAsync($"/api/v1/workflows/{id}", ct);

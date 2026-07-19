@@ -90,6 +90,7 @@ v1.MapExperimentEndpoints();
 v1.MapAdminEndpoints();
 v1.MapMlNodeEndpoints();
 v1.MapHelpEndpoints();
+v1.MapConnectorEndpoints();
 
 app.MapHub<LeaderboardHub>("/hubs/leaderboard");
 

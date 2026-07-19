@@ -93,6 +93,10 @@ public static class DependencyInjection
         // In-app help (code-first article catalog).
         services.AddSingleton<Application.Help.IHelpService, Application.Help.HelpService>();
 
+        // KOC enterprise connectors: factory (mock adapters until live endpoints ship) + instance service.
+        services.AddSingleton<Application.Connectors.IKocConnectorFactory, Connectors.MockConnectorFactory>();
+        services.AddScoped<Application.Connectors.IConnectorService, Connectors.ConnectorService>();
+
         // Workflow versioning (immutable versions, draft→publish, import/export) + templates.
         services.AddScoped<Application.Workflow.IWorkflowVersionService, Workflow.WorkflowVersionService>();
         services.AddScoped<Application.Workflow.IWorkflowTemplateService, Workflow.WorkflowTemplateService>();
