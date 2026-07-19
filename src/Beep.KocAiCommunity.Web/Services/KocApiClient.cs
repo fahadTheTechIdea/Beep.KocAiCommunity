@@ -7,6 +7,7 @@ using Beep.KocAiCommunity.Contracts.Dashboard;
 using Beep.KocAiCommunity.Contracts.Datasets;
 using Beep.KocAiCommunity.Contracts.Engagement;
 using Beep.KocAiCommunity.Contracts.Experiments;
+using Beep.KocAiCommunity.Contracts.Help;
 using Beep.KocAiCommunity.Contracts.Identity;
 using Beep.KocAiCommunity.Contracts.Jobs;
 using Beep.KocAiCommunity.Contracts.Learning;
@@ -89,6 +90,10 @@ public interface IKocApiClient
     Task<WorkflowValidationResult?> ValidateWorkflowAsync(WorkflowDefinition definition, CancellationToken ct = default);
     Task<ModelRunDto?> RunWorkflowAsync(WorkflowDefinition definition, Stream csv, string fileName, string labelColumn, CancellationToken ct = default);
     Task<PipelineExecutionResult?> ExecuteWorkflowAsync(WorkflowDefinition definition, Stream csv, string fileName, string labelColumn, string task, CancellationToken ct = default);
+
+    // In-app help.
+    Task<IReadOnlyList<HelpArticleSummaryDto>> GetHelpArticlesAsync(string? category = null, string? q = null, CancellationToken ct = default);
+    Task<HelpArticleDto?> GetHelpArticleAsync(string slug, CancellationToken ct = default);
 
     // ML node catalog.
     Task<IReadOnlyList<NodeDescriptorDto>> GetMlNodesAsync(CancellationToken ct = default);
@@ -491,6 +496,18 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<PipelineExecutionResult>(ct);
     }
+
+    public async Task<IReadOnlyList<HelpArticleSummaryDto>> GetHelpArticlesAsync(string? category = null, string? q = null, CancellationToken ct = default)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(category)) { query.Add($"category={Uri.EscapeDataString(category)}"); }
+        if (!string.IsNullOrWhiteSpace(q)) { query.Add($"q={Uri.EscapeDataString(q)}"); }
+        var url = "/api/v1/help/articles" + (query.Count > 0 ? "?" + string.Join("&", query) : "");
+        return await http.GetFromJsonAsync<List<HelpArticleSummaryDto>>(url, ct) ?? [];
+    }
+
+    public Task<HelpArticleDto?> GetHelpArticleAsync(string slug, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<HelpArticleDto>($"/api/v1/help/articles/{slug}", ct);
 
     public async Task<IReadOnlyList<NodeDescriptorDto>> GetMlNodesAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<NodeDescriptorDto>>("/api/v1/ml/nodes", ct) ?? [];

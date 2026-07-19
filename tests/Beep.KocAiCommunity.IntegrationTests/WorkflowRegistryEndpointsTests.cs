@@ -101,6 +101,10 @@ public class WorkflowRegistryEndpointsTests(KocApiFactory factory) : IClassFixtu
         var templates = await me.GetFromJsonAsync<List<WorkflowTemplateDto>>("/api/v1/workflow-templates");
         templates.Should().Contain(t => t.Code == "esp-failure-classifier");
 
+        // The O&G subdomain taxonomy filters templates (upstream/midstream/downstream/hse).
+        var hse = await me.GetFromJsonAsync<List<WorkflowTemplateDto>>("/api/v1/workflow-templates?domain=hse");
+        hse.Should().ContainSingle(t => t.Code == "hse-incident-classifier");
+
         var wf = await (await me.PostAsJsonAsync("/api/v1/workflow-templates/esp-failure-classifier/instantiate",
             new InstantiateTemplateRequest("My ESP workflow"))).Content.ReadFromJsonAsync<WorkflowSummaryDto>();
         wf!.Name.Should().Be("My ESP workflow");

@@ -39,15 +39,27 @@ public static class WorkflowTemplateSeeder
     {
         yield return ("esp-failure-classifier", "ESP failure classifier",
             "Predict electric submersible pump failures from sensor readings — dataset → split → train → evaluate.",
-            "Production", Chain("ESP failure classifier", "train"));
+            "upstream", Chain("ESP failure classifier", "train"));
 
         yield return ("production-rate-regressor", "Production rate regressor",
             "Estimate well production rate from reservoir and operating features — dataset → split → train → evaluate.",
-            "Reservoir", Chain("Production rate regressor", "train"));
+            "upstream", Chain("Production rate regressor", "train"));
 
         yield return ("well-log-clustering", "Well-log clustering",
             "Group well-log intervals into facies with unsupervised clustering — dataset → cluster → evaluate.",
-            "Geoscience", Cluster("Well-log clustering"));
+            "upstream", Cluster("Well-log clustering"));
+
+        yield return ("pipeline-leak-detector", "Pipeline leak detector",
+            "Classify pipeline segments as leaking / normal from flow + pressure telemetry.",
+            "midstream", Chain("Pipeline leak detector", "train"));
+
+        yield return ("refinery-yield-regressor", "Refinery yield regressor",
+            "Estimate refinery product yield from crude assay + operating conditions.",
+            "downstream", Chain("Refinery yield regressor", "train"));
+
+        yield return ("hse-incident-classifier", "HSE incident classifier",
+            "Classify HSE reports by severity to prioritise review.",
+            "hse", Chain("HSE incident classifier", "train"));
     }
 
     // dataset → split → train → evaluate

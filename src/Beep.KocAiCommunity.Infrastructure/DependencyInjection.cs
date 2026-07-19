@@ -90,6 +90,9 @@ public static class DependencyInjection
         // Code-first ML node catalog (descriptors + parameter validation).
         services.AddSingleton<Application.ML.INodeRegistry, Application.ML.MlNodeRegistry>();
 
+        // In-app help (code-first article catalog).
+        services.AddSingleton<Application.Help.IHelpService, Application.Help.HelpService>();
+
         // Workflow versioning (immutable versions, draft→publish, import/export) + templates.
         services.AddScoped<Application.Workflow.IWorkflowVersionService, Workflow.WorkflowVersionService>();
         services.AddScoped<Application.Workflow.IWorkflowTemplateService, Workflow.WorkflowTemplateService>();

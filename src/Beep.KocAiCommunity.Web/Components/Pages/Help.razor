@@ -1,0 +1,158 @@
+@page "/help"
+@page "/help/{Slug}"
+@using System.Text
+@using System.Text.RegularExpressions
+@using Beep.KocAiCommunity.Contracts.Help
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>Help · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Support" Title="Help &amp; guides"
+            Subtitle="How the platform works — Barrels, competitions, workflows, datasets — plus an FAQ. Everything stays inside KOC." />
+
+<MudGrid Spacing="6">
+    <MudItem xs="12" md="4">
+        <MudTextField @bind-Value="_query" Label="Search help" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true" DebounceInterval="250" OnDebounceIntervalElapsed="Reload" Class="mb-3" />
+
+        <div class="d-flex gap-1 flex-wrap mb-3">
+            <MudChip T="string" Size="Size.Small" Variant="@(_category is null ? Variant.Filled : Variant.Text)" Color="Color.Primary" OnClick="@(() => SetCategory(null))">All</MudChip>
+            @foreach (var c in _categories)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="@(_category == c ? Variant.Filled : Variant.Text)" Color="Color.Primary" OnClick="@(() => SetCategory(c))">@c</MudChip>
+            }
+        </div>
+
+        @if (_articles is null)
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+        else if (_articles.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="opacity:.7;">No articles match your search.</MudText>
+        }
+        else
+        {
+            @foreach (var a in _articles)
+            {
+                <div @onclick="() => Open(a.Slug)" style="cursor:pointer;">
+                    <BlueprintCard Class="pa-3 mb-2" Style="@(a.Slug == Slug ? "border-color:var(--koc-accent-500);" : "")">
+                        <MudText Typo="Typo.subtitle2" Class="koc-heading">@a.Title</MudText>
+                        <MudText Typo="Typo.caption" Style="opacity:.75;">@a.Category · @a.Summary</MudText>
+                    </BlueprintCard>
+                </div>
+            }
+        }
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        @if (_current is not null)
+        {
+            <BlueprintCard Class="pa-6">
+                <MudText Typo="Typo.caption" Style="opacity:.6;">@_current.Category</MudText>
+                <div class="koc-help-body">@Render(_current.BodyMarkdown)</div>
+            </BlueprintCard>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mt-4" Style="opacity:.7;">Select an article to read it.</MudText>
+        }
+    </MudItem>
+</MudGrid>
+
+<style>
+    .koc-help-body h2 { font-size: 1.4rem; margin: .2rem 0 .6rem; }
+    .koc-help-body h3 { font-size: 1.1rem; margin: 1rem 0 .4rem; }
+    .koc-help-body p { margin: .5rem 0; line-height: 1.6; }
+    .koc-help-body ul { margin: .5rem 0 .5rem 1.2rem; }
+    .koc-help-body li { margin: .25rem 0; line-height: 1.6; }
+    .koc-help-body code { background: rgba(0,0,0,.06); padding: .05rem .3rem; border-radius: 4px; }
+</style>
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+
+    private IReadOnlyList<HelpArticleSummaryDto>? _articles;
+    private IReadOnlyList<string> _categories = [];
+    private HelpArticleDto? _current;
+    private string? _category;
+    private string _query = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = (await Api.GetHelpArticlesAsync()).Select(a => a.Category).Distinct().ToList();
+        await Reload();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(Slug) && _current?.Slug != Slug)
+        {
+            _current = await Api.GetHelpArticleAsync(Slug);
+        }
+    }
+
+    private async Task Reload()
+    {
+        _articles = await Api.GetHelpArticlesAsync(_category, _query);
+        if (_current is null && string.IsNullOrEmpty(Slug) && _articles.Count > 0)
+        {
+            await Open(_articles[0].Slug);
+        }
+    }
+
+    private async Task SetCategory(string? category)
+    {
+        _category = category;
+        await Reload();
+    }
+
+    private async Task Open(string slug)
+    {
+        Slug = slug;
+        _current = await Api.GetHelpArticleAsync(slug);
+        Nav.NavigateTo($"/help/{slug}", replace: true);
+    }
+
+    // A small, safe Markdown renderer for trusted, code-first help content.
+    private static MarkupString Render(string markdown)
+    {
+        var html = new StringBuilder();
+        var inList = false;
+
+        foreach (var rawLine in markdown.Replace("\r\n", "\n").Split('\n'))
+        {
+            var line = rawLine.TrimEnd();
+            var text = Inline(line.TrimStart());
+
+            if (line.StartsWith("- "))
+            {
+                if (!inList) { html.Append("<ul>"); inList = true; }
+                html.Append("<li>").Append(Inline(line[2..].Trim())).Append("</li>");
+                continue;
+            }
+
+            if (inList) { html.Append("</ul>"); inList = false; }
+
+            if (line.StartsWith("## ")) { html.Append("<h3>").Append(Inline(line[3..])).Append("</h3>"); }
+            else if (line.StartsWith("# ")) { html.Append("<h2>").Append(Inline(line[2..])).Append("</h2>"); }
+            else if (line.Length == 0) { /* paragraph break */ }
+            else { html.Append("<p>").Append(text).Append("</p>"); }
+        }
+
+        if (inList) { html.Append("</ul>"); }
+        return new MarkupString(html.ToString());
+    }
+
+    private static string Inline(string s)
+    {
+        s = s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+        s = Regex.Replace(s, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+        s = Regex.Replace(s, "`(.+?)`", "<code>$1</code>");
+        return s;
+    }
+}

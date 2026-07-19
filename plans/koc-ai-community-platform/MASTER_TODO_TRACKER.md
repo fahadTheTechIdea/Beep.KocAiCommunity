@@ -2,7 +2,7 @@
 
 **Plan folder:** `plans/koc-ai-community-platform/`
 **Status:** 🟢 BUILDING — foundation/auth/data/API/shell/competitions/learning + engagement (05b) + Worker queue (10) + experiment tracking (11) + model registry & inference (12) shipped and compiling; enterprise/admin half in progress
-**Status audit:** 2026-07-19 — verdicts below verified against actual code (`src/`). Solution builds `-warnaserror` clean; 116 unit + 83 integration tests pass. Phases 05b, 06, 07 (dataset depth), 08 (node catalog), 09, 10, 11, 12, 14a (core), and 15 (security/migration hardening) implemented this session.
+**Status audit:** 2026-07-19 — verdicts below verified against actual code (`src/`). Solution builds `-warnaserror` clean; 120 unit + 85 integration tests pass. Phases 05b, 06, 07 (dataset depth), 08 (node catalog), 09, 12, 14 (templates/help), 14a (core), and 15 (security/migration hardening) implemented this session.
 **Goal:** Build a dedicated, single-tenant, internal platform for Kuwait Oil Company (KOC) that trains and familiarizes employees with AI/ML through guided learning tracks and internal, Kaggle-style competitions, with management supervision via org-scoped rollups. Built on .NET 10, MudBlazor 9, and ML.NET 5. Internal KOC application — not a commercial product.
 
 **UX north star (added 2026-07-19):** the platform must feel **community-first and fun** — employees earn Barrels (bbl), climb an O&G career ladder, collect badges from the shipped O&G icon library, give kudos, and see Team-vs-Team leaderboards. See Phase 05b.
@@ -154,8 +154,12 @@
   - [x] Supervisor rollups
   - [ ] XP + certificates on completion → Phase 05b (XP) / deferred (certificates)
 
-- [ ] **Phase 14 — O&G templates, domain admin, and help** (`14_INDUSTRY_TEMPLATES_ADMIN_AND_HELP.md`) — ⬜ NOT STARTED
-  - [ ] O&G template folder, admin pages, branding settings, tutorials/FAQ/help, retention policies
+- [~] **Phase 14 — O&G templates, domain admin, and help** (`14_INDUSTRY_TEMPLATES_ADMIN_AND_HELP.md`) — 🟢 MOSTLY DONE (2026-07-19)
+  - [x] O&G template taxonomy (4 subdomains: upstream/midstream/downstream/hse) via existing `WorkflowTemplateSeeder` + `?domain=` filter
+  - [x] In-app help + FAQ: code-first `HelpCatalog`/`IHelpService` (browse/search/read), `/api/v1/help/**` endpoints, `/help` page with Markdown rendering + search
+  - [x] Per-domain admin delivered via existing surfaces (`/admin` console, competition admin, moderation, `/admin/overview`)
+  - [x] 4 unit + 2 integration tests
+  - [~] Deferred: dedicated `IndustryTemplateDefinition` entity, interactive step-through tutorials, admin-authored help content, retention/cleanup policies (Phase 15 ops)
 
 - [~] **Phase 14a — Platform admin, settings, audit** (`14a_PLATFORM_ADMIN_SETTINGS_AND_AUDIT.md`) — 🟢 MOSTLY DONE (2026-07-19)
   - [x] Audit plumbing (`AuditEnvelopeService`, `AdminAuditLog`, outbox, `RequirePlatformAdmin` policy)
@@ -187,8 +191,9 @@
 8. ~~Phase 07 — Dataset depth~~ ✅ DONE (2026-07-19)
 9. ~~Phase 08 — Node catalog + featurization guard~~ ✅ DONE (2026-07-19)
 10. ~~Phase 15 — Security + migration-chain hardening~~ ✅ (test suites; deployment/IaC/DR still deferred)
-11. **Phase 14** (O&G templates, help/FAQ, retention) OR **Phase 07a** (enterprise connectors) ← next
-12. Deployment-time: Azure/Bicep/Key Vault, DR runbooks, perf benchmarks, Python importer
+11. ~~Phase 14 — O&G template taxonomy + in-app help/FAQ~~ ✅ DONE (2026-07-19)
+12. **Phase 07a** (enterprise connectors: PPDM/OpenWells/EcoSys/SAP/PI/ADLS) ← the last unstarted feature phase
+13. Deployment-time: Azure/Bicep/Key Vault, DR runbooks, perf benchmarks, Python importer
 
 ## Global definition of done
 

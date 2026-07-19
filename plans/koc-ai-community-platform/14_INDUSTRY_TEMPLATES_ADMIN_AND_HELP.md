@@ -1,8 +1,33 @@
 # Phase 14 — O&G Templates, Domain Admin, and Help
 
-**Status:** 🟡 PLANNING
+**Status:** 🟢 MOSTLY DONE (2026-07-19) — O&G template taxonomy + in-app help/FAQ shipped; per-domain admin pages folded into existing module pages / the admin console.
 **Dependencies:** Phase 09, Phase 12, Phase 13
 **Goal:** Replace the multi-industry template catalog with a single O&G taxonomy, add per-domain admin pages, and provide the help system.
+
+## Implementation notes (2026-07-19)
+
+- **O&G template taxonomy.** Rather than a parallel `IndustryTemplateDefinition` entity, the existing
+  Phase 09 `WorkflowTemplate` infrastructure was reused: `WorkflowTemplateSeeder` now covers all four
+  subdomains — **upstream** (ESP failure, production rate, well-log clustering), **midstream** (pipeline
+  leak detector), **downstream** (refinery yield regressor), **hse** (HSE incident classifier). The
+  existing `/api/v1/workflow-templates?domain=` filter is the subdomain filter; instantiate is unchanged.
+- **In-app help + FAQ.** Code-first `HelpCatalog` (Markdown articles: getting started, earning Barrels,
+  competitions, building a workflow, datasets & classification, FAQ) behind `IHelpService`
+  (browse by category, full-text search over title/summary/body/tags, read by slug). Endpoints
+  `GET /api/v1/help/articles[?category=&q=]`, `/help/categories`, `/help/articles/{slug}`; typed client;
+  a `/help` Web page with search, category chips, and a small safe Markdown renderer. Serves the
+  acceptance gate's "help articles are searchable" + supports a self-guided end-to-end scenario.
+- **Per-domain admin.** Delivered via existing surfaces rather than new pages: the Phase 14a `/admin`
+  console (settings/flags/audit), competition admin (Phase 13), moderation (Phase 06), and the
+  `/admin/overview` governance map. No new admin CRUD pages were added.
+- **Tests.** 4 unit (`HelpServiceTests`) + 2 integration (`HelpEndpointsTests`) + a subdomain-filter
+  assertion on the template test. Whole solution builds `-warnaserror` clean; 120 unit + 85 integration
+  tests pass.
+
+**Deferred (documented):** a dedicated `IndustryTemplateDefinition` entity + per-subdomain versioning
+distinct from workflow templates; interactive step-through tutorials (`Tutorial.razor`); admin-authored
+help content (code-first only today); data-retention/artifact-cleanup policies (Phase 15 ops); and the
+per-module admin pages listed in §7 (functionality lives in the existing module + admin surfaces).
 
 ## 1. Goal and dependencies
 
