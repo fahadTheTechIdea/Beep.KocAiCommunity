@@ -55,6 +55,7 @@
                                 @if (v.Status == "production")
                                 {
                                     <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" OnClick="() => Deploy(v.Id)">Deploy</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="() => Predict(m.Name, v)">Predict</MudButton>
                                 }
                                 @if (v.Status == "archived")
                                 {
@@ -128,6 +129,17 @@
         {
             await LoadAsync();
         }
+    }
+
+    private async Task Predict(string modelName, ModelVersionDto v)
+    {
+        var parameters = new DialogParameters<InferenceDialog>
+        {
+            { x => x.VersionId, v.Id },
+            { x => x.ModelName, modelName },
+            { x => x.SemVer, v.SemVer },
+        };
+        await DialogService.ShowAsync<InferenceDialog>("Predict", parameters);
     }
 
     private async Task Approve(Guid v) => await Act(() => Api.ApproveVersionAsync(v), "Approved.");

@@ -1,0 +1,27 @@
+@using Beep.KocAiCommunity.Contracts.Admin
+
+@if (Rows.Count == 0)
+{
+    <MudText Typo="Typo.body2" Style="opacity:.7;">No audit events yet.</MudText>
+}
+else
+{
+    <MudSimpleTable Dense="true" Hover="true">
+        <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Resource</th></tr></thead>
+        <tbody>
+            @foreach (var a in Rows)
+            {
+                <tr>
+                    <td>@a.OccurredUtc.ToLocalTime().ToString("g")</td>
+                    <td>@a.ActorUserId</td>
+                    <td><code>@a.Action</code></td>
+                    <td>@a.Resource@(a.ResourceId is null ? "" : $" · {a.ResourceId}")</td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<AuditLogDto> Rows { get; set; } = [];
+}

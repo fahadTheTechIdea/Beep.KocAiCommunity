@@ -1,8 +1,45 @@
 # Phase 12 — Model Registry and Inference
 
-**Status:** 🟡 PLANNING
+**Status:** ✅ DONE (2026-07-19)
 **Dependencies:** Phase 11
 **Goal:** Model artifact registry with semantic versions, lifecycle states, prediction pools, and protected inference endpoints.
+
+## Implementation notes (2026-07-19)
+
+The registry half (register → approve×2 → promote → deploy/rollback) already shipped. This session
+closed the **inference** half end-to-end:
+
+- **Model persistence.** Training now captures the winning model. `IMlTrainer.TrainAndCaptureAsync`
+  returns the serialized ML.NET `.zip` bytes plus a drift baseline (per-numeric-feature
+  count/mean/min/max). `StudioService` stores the model as a governed artifact
+  (`IArtifactService`, classification `Internal`) and records `ModelRun.ModelArtifactId` +
+  `ModelRun.FeatureStatsJson`. Every trained run (sync Studio or out-of-band `model.train` job) is
+  now servable.
+- **Prediction pool.** `IPredictionPool` (Application) + `AutoMlPredictionPool` (ML project,
+  singleton). It caches the loaded `ITransformer` + input schema per model-version id, hot-reloads,
+  and is evicted on retire/rollback. **Design decision:** platform models are trained on arbitrary
+  user CSV schemas, so ML.NET's compile-time-typed `PredictionEnginePool<TSrc,TDst>` cannot be used.
+  The pool instead scores rows *dynamically* against each model's own saved input schema (the label
+  column is filled with a type-appropriate placeholder). Documented here so a future typed-pool
+  path (per-template O&G models) is a deliberate follow-up, not an omission.
+- **Protected inference.** `IInferenceService` + `InferenceService` (Infrastructure): online
+  (`/infer`) and batch (`/infer/batch`) scoring, a `ModelInferenceLog` per call (caller, endpoint,
+  row count, latency, success/error) — logged even on failure — and drift comparison (`/drift`,
+  batch feature means vs the training baseline). Authz: production versions are servable to any
+  employee; non-production versions only to the owner or a `PlatformAdmin`.
+- **API/UI/client.** `/api/v1/models/versions/{id}/infer|infer/batch|inference-logs|drift`
+  endpoints; typed `KocApiClient` methods; a `Predict` action on production versions in
+  `Models.razor` opening an `InferenceDialog` (single-row scoring + drift check).
+- **Migrations.** Dual-provider `AddInference` (SQLite + SqlServer) — new `ModelInferenceLogs` table
+  + two `ModelRuns` columns.
+- **Tests.** 2 unit (`PredictionPoolTests`: dynamic scoring + cache/evict) + 2 integration
+  (`InferenceEndpointsTests`: promoted-version serving/logs/drift and non-production owner-only).
+  AutoML-training unit classes serialized via `MlTrainingCollection` to avoid parallel resource
+  contention. Whole solution builds `-warnaserror` clean; 87 unit + 53 integration tests pass.
+
+**Deferred:** compile-time-typed `PredictionEnginePool<T>` for fixed O&G templates; continuous
+drift monitoring (baseline persisted; comparison is on-demand per batch today); model signing via
+KOC CA/KMS; the multi-page `Pages/Studio/Models/*` structure (single `Models.razor` + dialog today).
 
 ## 1. Goal and dependencies
 

@@ -1,0 +1,74 @@
+@page "/nodes"
+@using Beep.KocAiCommunity.Contracts.ML
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+
+<PageTitle>Node catalog · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Studio · reference" Title="ML node catalog"
+            Subtitle="The building blocks of a workflow — sources, transforms, the train/test split, models, and evaluation — plus the O&G tasks the runtime supports." />
+
+@if (_tasks is not null)
+{
+    <MudText Typo="Typo.h6" Class="koc-heading mb-2">Tasks</MudText>
+    <MudGrid Spacing="4" Class="mb-6">
+        @foreach (var t in _tasks)
+        {
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-4" Style="height:100%;">
+                    <div class="d-flex align-center justify-space-between">
+                        <MudText Typo="Typo.subtitle1" Class="koc-heading">@t.DisplayName</MudText>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(t.Supported ? Color.Success : Color.Default)">@(t.Supported ? "supported" : "roadmap")</MudChip>
+                    </div>
+                    <MudText Typo="Typo.caption" Style="opacity:.75;">@t.OgExample</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mt-1">metric: <b>@t.PrimaryMetric</b> · @t.SecondaryMetric</MudText>
+                </BlueprintCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@if (_nodes is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    @foreach (var cat in _nodes.GroupBy(n => n.Category))
+    {
+        <MudText Typo="Typo.h6" Class="koc-heading mt-4 mb-2">@cat.Key</MudText>
+        <MudGrid Spacing="4">
+            @foreach (var n in cat)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <BlueprintCard Class="pa-4" Style="height:100%;">
+                        <MudText Typo="Typo.subtitle2" Class="koc-heading">@n.DisplayName <code style="opacity:.6;">@n.Kind</code></MudText>
+                        <MudText Typo="Typo.caption" Style="opacity:.8;">@n.Description</MudText>
+                        <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.6;">@n.Input → @n.Output</MudText>
+                        @if (n.Parameters.Count > 0)
+                        {
+                            <div class="mt-1">
+                                @foreach (var p in n.Parameters)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ma-1">@p.DisplayName@(p.Required ? "*" : "")</MudChip>
+                                }
+                            </div>
+                        }
+                    </BlueprintCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+}
+
+@code {
+    private IReadOnlyList<NodeDescriptorDto>? _nodes;
+    private IReadOnlyList<MlTaskDto>? _tasks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tasks = await Api.GetMlTasksAsync();
+        _nodes = await Api.GetMlNodesAsync();
+    }
+}

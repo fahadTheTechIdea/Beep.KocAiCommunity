@@ -1,0 +1,30 @@
+@* A single badge: O&G icon art inside a tier-colored ring, with a tooltip. *@
+
+<MudTooltip Text="@($"{Name} — {Description}")">
+    <div style="@RingStyle">
+        <MudImage Src="@KocBrand.Icon(IconFile)" Alt="@Name" Width="@Inner" Height="@Inner" />
+    </div>
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter, EditorRequired] public string IconFile { get; set; } = "";
+    [Parameter] public string Tier { get; set; } = "bronze";
+    [Parameter] public int Diameter { get; set; } = 56;
+    [Parameter] public bool Earned { get; set; } = true;
+
+    private int Inner => Diameter - 16;
+
+    private string TierColor => Tier switch
+    {
+        "gold" => "#D4A017",
+        "silver" => "#9AA6B2",
+        _ => "#B87333",
+    };
+
+    private string RingStyle =>
+        $"width:{Diameter}px;height:{Diameter}px;border-radius:999px;display:flex;align-items:center;justify-content:center;" +
+        $"background:#fff;border:3px solid {TierColor};box-shadow:0 1px 4px rgba(0,0,0,.12);" +
+        (Earned ? "" : "filter:grayscale(1);opacity:.4;");
+}

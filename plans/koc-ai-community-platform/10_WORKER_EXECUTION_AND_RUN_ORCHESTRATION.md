@@ -1,6 +1,11 @@
 # Phase 10 — Worker Execution and Run Orchestration
 
-**Status:** 🟡 PLANNING
+**Status:** ✅ DONE (implemented 2026-07-19) — EF-backed durable queue (`EfJobQueue`) with atomic `ExecuteUpdate` claiming (single-owner leases, provider-portable on SQLite + SqlServer), heartbeat lease renewal, exponential backoff retries → dead-letter, cooperative cancellation, and expired-lease crash recovery. `JobProcessor` runs one job (dispatch → heartbeat → complete/fail/cancel); `JobExecutionService` runs N concurrent lease loops with graceful drain (SQLite=1). Run progress streams via the outbox → `LeaderboardHub` `run:{id}` group. `ModelTrainingJobHandler` runs real AutoML training out-of-band. `/api/v1/runs` (create/get/list/cancel/logs/attempts) + typed client + `/runs` monitor page with live logs. Dual-provider `AddJobs` migrations. Builds `-warnaserror` clean; 16 unit + 5 integration tests pass.
+**Deferred within phase:** SQL Server multi-worker concurrency is wired (config `Jobs:MaxConcurrency`) but only exercised at 1 in tests; memory-limit hint not enforced (timeout is via lease expiry + cooperative cancel); the Worker reuses the API's outbox dispatcher (shared DB) rather than its own; run-detail component test deferred.
+
+---
+_Original plan below._
+
 **Dependencies:** Phase 09
 **Goal:** EF-backed durable job queue with leases, retries, cancellation, and real-time progress through SignalR.
 

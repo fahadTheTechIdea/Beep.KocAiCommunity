@@ -1,6 +1,7 @@
 # Phase 13 — Competitions and Leaderboards
 
-**Status:** 🟡 PLANNING
+**Status:** ✅ DONE (2026-07-19 audit) — entities, `CompetitionService`, trusted scorers, hidden answer key, quotas, reveal, `LeaderboardHub`, supervisor rollups all shipped.
+**Engagement follow-up (Phase 05b):** the fun layer lands on top of this working core — gold/silver/bronze medal styling on top-3 leaderboard rows, animated rank-change arrows on SignalR updates, a team-standings tab (org-unit average Barrels), Barrels XP for scored submissions, `competition-winner`/`podium` badges at reveal, and confetti for winners. See `05b_COMMUNITY_ENGAGEMENT_AND_GAMIFICATION.md` §1.2–§1.3, §3.5, §3.9.
 **Dependencies:** Phase 02, Phase 07, Phase 08, Phase 12
 **Goal:** Internal, Kaggle-style KOC competitions — **the primary way employees practice the AI/ML skills they build in the learning tracks** — with trusted scoring, hidden evaluation data, org-scoped visibility, and real-time leaderboards.
 

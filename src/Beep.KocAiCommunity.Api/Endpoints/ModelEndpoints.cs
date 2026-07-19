@@ -118,6 +118,78 @@ public static class ModelEndpoints
         .WithName("ListDeployments")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
+        // Online inference: score a single record.
+        group.MapPost("/models/versions/{versionId:guid}/infer", async (Guid versionId, InferRequest req, IKocCurrentUser me, IInferenceService inference, CancellationToken ct) =>
+        {
+            try
+            {
+                var result = await inference.InferAsync(me.UserId!, IsAdmin(me), versionId, "online", [req.Input], ct);
+                return Results.Ok(ToResponse(result));
+            }
+            catch (InferenceException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("InferModelVersion")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // Batch inference: score many records.
+        group.MapPost("/models/versions/{versionId:guid}/infer/batch", async (Guid versionId, BatchInferRequest req, IKocCurrentUser me, IInferenceService inference, CancellationToken ct) =>
+        {
+            try
+            {
+                var result = await inference.InferAsync(me.UserId!, IsAdmin(me), versionId, "batch", req.Rows, ct);
+                return Results.Ok(ToResponse(result));
+            }
+            catch (InferenceException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("InferModelVersionBatch")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // Inference audit log (owner/admin only).
+        group.MapGet("/models/versions/{versionId:guid}/inference-logs", async (Guid versionId, int? take, IKocCurrentUser me, IInferenceService inference, CancellationToken ct) =>
+        {
+            try
+            {
+                var logs = await inference.GetLogsAsync(me.UserId!, IsAdmin(me), versionId, take ?? 50, ct);
+                return Results.Ok(logs.Select(l => new InferenceLogDto(
+                    l.Id, l.CallerUserId, l.Endpoint, l.RowCount, l.LatencyMs, l.CalledUtc, l.Success, l.Error)).ToList());
+            }
+            catch (InferenceException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("ModelInferenceLogs")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // Drift check: compare a batch's feature means to the training baseline.
+        group.MapPost("/models/versions/{versionId:guid}/drift", async (Guid versionId, DriftRequest req, IKocCurrentUser me, IInferenceService inference, CancellationToken ct) =>
+        {
+            try
+            {
+                var report = await inference.ComputeDriftAsync(me.UserId!, IsAdmin(me), versionId, req.Rows, ct);
+                return Results.Ok(new DriftReportDto(report.BaselineRows, report.BatchRows,
+                    report.Features.Select(f => new FeatureDriftDto(f.Feature, f.BaselineMean, f.BatchMean, f.MeanShift, f.Drifted)).ToList(),
+                    report.AnyDrift));
+            }
+            catch (InferenceException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("ModelVersionDrift")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
         return group;
     }
+
+    private static bool IsAdmin(IKocCurrentUser me) => me.IsInRole(KocRoles.PlatformAdmin);
+
+    private static InferResponseDto ToResponse(Application.ML.InferenceResult result) =>
+        new(result.Predictions.Select(p => new PredictionDto(p.PredictedLabel, p.Probability, p.Score, p.Scores)).ToList());
 }

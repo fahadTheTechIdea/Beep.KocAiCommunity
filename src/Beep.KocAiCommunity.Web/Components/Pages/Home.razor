@@ -1,13 +1,40 @@
 @page "/"
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Contracts.Engagement
 @inject DevIdentity Identity
 @inject IKocApiClient Api
 @inject NavigationManager Nav
 @implements IDisposable
 
 <PageTitle>@KocBrand.ProductName</PageTitle>
+
+@if (!Identity.IsGuest && _myProfile is not null)
+{
+    <BlueprintCard Class="pa-5 mb-6" Style="border-color:var(--koc-accent-500);">
+        <div class="d-flex align-center justify-space-between flex-wrap gap-3">
+            <div class="d-flex align-center gap-3">
+                <XpRing AvatarIcon="@_myProfile.AvatarIcon" Level="@_myProfile.Level" LevelTitle="@_myProfile.LevelTitle"
+                        XpTotal="@_myProfile.XpTotal" NextLevelXp="@_myProfile.NextLevelXp" Diameter="72" />
+                <div>
+                    <MudText Typo="Typo.h6" Class="koc-heading">@Greeting, @_myProfile.DisplayName</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:.7;direction:rtl;">@GreetingArabic</MudText>
+                    <div class="d-flex gap-4 mt-1">
+                        <MudText Typo="Typo.body2"><b>🛢️ @_myProfile.XpTotal</b> Barrels</MudText>
+                        <MudText Typo="Typo.body2"><b>🔥 @_myProfile.CurrentStreakDays</b> day streak</MudText>
+                        <MudText Typo="Typo.body2"><b>Lvl @_myProfile.Level</b> @_myProfile.LevelTitle</MudText>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <MudButton Href="/profile" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EmojiEvents">My profile</MudButton>
+                <MudButton Href="/learn" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.School">Keep learning</MudButton>
+            </div>
+        </div>
+    </BlueprintCard>
+}
 
 <!-- Hero -->
 <MudGrid Class="mb-8" Spacing="6">
@@ -128,10 +155,17 @@
     };
 
     private IReadOnlyList<CompetitionDto>? _activeCompetitions;
+    private ProfileDto? _myProfile;
 
     protected override void OnInitialized() => Identity.Changed += OnChanged;
 
-    protected override async Task OnInitializedAsync() => await LoadCompetitionsAsync();
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await LoadCompetitionsAsync();
+        await LoadProfileAsync();
+    }
 
     private async Task LoadCompetitionsAsync()
     {
@@ -152,9 +186,31 @@
         }
     }
 
+    private async Task LoadProfileAsync()
+    {
+        if (Identity.IsGuest)
+        {
+            _myProfile = null;
+            return;
+        }
+
+        try { _myProfile = await Api.GetMyProfileAsync(); }
+        catch { _myProfile = null; }
+    }
+
+    // Local time-of-day greeting, with a warm Arabic variant for the KOC workplace.
+    private string Greeting => DateTime.Now.Hour switch
+    {
+        < 12 => "Good morning",
+        < 17 => "Good afternoon",
+        _ => "Good evening",
+    };
+
+    private string GreetingArabic => DateTime.Now.Hour < 12 ? "صباح الخير" : "مساء الخير";
+
     private void OnChanged() => InvokeAsync(async () =>
     {
-        await LoadCompetitionsAsync();
+        await LoadAsync();
         StateHasChanged();
     });
 

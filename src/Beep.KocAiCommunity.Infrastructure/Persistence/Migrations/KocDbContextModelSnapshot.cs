@@ -17,6 +17,122 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
 
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Admin.FeatureFlag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RolloutPercentage")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("FeatureFlags", "platform");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Admin.SettingValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsSecret")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("SettingValues", "platform");
+                });
+
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Audit.AdminAuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -141,6 +257,12 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("LastModifiedByUserId")
                         .HasColumnType("TEXT");
 
@@ -166,6 +288,56 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.HasIndex("VisibilityScope", "VisibilityOrgUnitId");
 
                     b.ToTable("Discussions", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Community.DiscussionAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ArtifactReferenceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DiscussionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UploadedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscussionId");
+
+                    b.ToTable("DiscussionAttachments", "koc");
                 });
 
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Community.DiscussionReply", b =>
@@ -210,6 +382,107 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.HasIndex("DiscussionId", "CreatedUtc");
 
                     b.ToTable("DiscussionReplies", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Community.Mention", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MentionedUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MentionedUserId", "CreatedUtc");
+
+                    b.ToTable("Mentions", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Community.Reaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TargetType", "TargetId");
+
+                    b.HasIndex("TargetType", "TargetId", "UserId", "Emoji")
+                        .IsUnique();
+
+                    b.ToTable("Reactions", "koc");
                 });
 
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Competitions.Competition", b =>
@@ -443,6 +716,12 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("LastModifiedUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("LatestVersionNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LicenseSpdxId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -473,6 +752,1079 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.HasIndex("VisibilityScope", "VisibilityOrgUnitId");
 
                     b.ToTable("Datasets", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ArtifactReferenceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DatasetVersionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LogicalPath")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("RowCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DatasetVersionId");
+
+                    b.ToTable("DatasetFiles", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DatasetVersionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("GeneratedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<long>("SampledRows")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("TotalRows")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DatasetVersionId");
+
+                    b.ToTable("DatasetProfiles", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetProfileColumn", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ColumnName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DatasetProfileId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("DistinctCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("Max")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("Mean")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("Min")
+                        .HasColumnType("REAL");
+
+                    b.Property<long>("NullCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DatasetProfileId");
+
+                    b.ToTable("DatasetProfileColumns", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetSchemaColumn", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ColumnName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DataType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DatasetVersionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Nullable")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DatasetVersionId");
+
+                    b.ToTable("DatasetSchemaColumns", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DatasetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PublishedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PublishedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("Sha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("TotalSizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DatasetId", "VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("DatasetVersions", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Engagement.ActivityEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActorUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PayloadJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RefId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RefType")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("VisibilityOrgUnitId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("VisibilityScope")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedUtc");
+
+                    b.HasIndex("VisibilityOrgUnitId", "CreatedUtc");
+
+                    b.ToTable("ActivityEvents", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Engagement.Badge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IconFile")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Badges", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Engagement.Kudos", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FromUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RefId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RefType")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("ToUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromUserId", "CreatedUtc");
+
+                    b.HasIndex("ToUserId", "CreatedUtc");
+
+                    b.ToTable("Kudos", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Engagement.UserBadge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BadgeCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RefId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "BadgeCode")
+                        .IsUnique();
+
+                    b.ToTable("UserBadges", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Engagement.UserProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AvatarIcon")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Bio")
+                        .HasMaxLength(280)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CurrentStreakDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("LastActiveDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LongestStreakDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("SkillsCsv")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("XpTotal")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasIndex("XpTotal");
+
+                    b.ToTable("UserProfiles", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Engagement.XpEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("RefId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RefType")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedUtc");
+
+                    b.HasIndex("UserId", "Source", "RefId");
+
+                    b.ToTable("XpEvents", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Experiments.Experiment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("BestRunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "CreatedUtc");
+
+                    b.ToTable("Experiments", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Experiments.Run", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Algorithm")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("DatasetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DatasetSnapshotHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EnvironmentJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ExperimentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FailureStage")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HyperparametersJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsBest")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ParentRunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrimaryMetric")
+                        .HasMaxLength(48)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("PrimaryValue")
+                        .HasColumnType("REAL");
+
+                    b.Property<long>("RowCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("RunByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecondaryMetric")
+                        .HasMaxLength(48)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("SecondaryValue")
+                        .HasColumnType("REAL");
+
+                    b.Property<DateTime?>("StartedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Task")
+                        .IsRequired()
+                        .HasMaxLength(48)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TrialCount")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExperimentId", "CreatedUtc");
+
+                    b.ToTable("ExperimentRuns", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Experiments.RunMetric", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Dataset")
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LoggedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phase")
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Step")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("Value")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId", "Step");
+
+                    b.ToTable("RunMetrics", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Experiments.RunParameter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ValueJson")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("RunParameters", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Jobs.Job", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("CancelRequested")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastHeartbeatUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LeaseExpiresUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LeaseOwnerId")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MaxAttempts")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("NextAttemptUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<DateTime?>("StartedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "CreatedUtc");
+
+                    b.HasIndex("Status", "NextAttemptUtc", "LeaseExpiresUtc");
+
+                    b.ToTable("Jobs", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Jobs.JobAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<DateTime>("StartedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkerId")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId", "AttemptNumber");
+
+                    b.ToTable("JobAttempts", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Jobs.JobLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("JobId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LoggedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId", "LoggedUtc");
+
+                    b.ToTable("JobLogs", "koc");
                 });
 
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Learning.LearningTrack", b =>
@@ -1107,6 +2459,66 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.ToTable("ModelDeployments", "koc");
                 });
 
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.ModelInferenceLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CalledUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CallerUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LatencyMs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ModelVersionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RowCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModelVersionId", "CalledUtc");
+
+                    b.ToTable("ModelInferenceLogs", "koc");
+                });
+
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.ModelRun", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1132,6 +2544,9 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FeatureStatsJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
@@ -1144,6 +2559,9 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ModelArtifactId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PrimaryMetric")
@@ -1349,6 +2767,191 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.ToTable("RegisteredModels", "koc");
                 });
 
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.Workflow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Classification")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LatestVersionNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.ToTable("Workflows", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.WorkflowTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DefinitionJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Domain")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("WorkflowTemplates", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.WorkflowVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DefinitionJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PublishedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PublishedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkflowId", "VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("WorkflowVersions", "koc");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -1541,6 +3144,15 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Community.DiscussionAttachment", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Community.Discussion", null)
+                        .WithMany()
+                        .HasForeignKey("DiscussionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Community.DiscussionReply", b =>
                 {
                     b.HasOne("Beep.KocAiCommunity.Domain.Community.Discussion", null)
@@ -1564,6 +3176,96 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.HasOne("Beep.KocAiCommunity.Domain.Competitions.Competition", null)
                         .WithMany()
                         .HasForeignKey("CompetitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetFile", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Datasets.DatasetVersion", null)
+                        .WithMany()
+                        .HasForeignKey("DatasetVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetProfile", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Datasets.DatasetVersion", null)
+                        .WithMany()
+                        .HasForeignKey("DatasetVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetProfileColumn", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Datasets.DatasetProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DatasetProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetSchemaColumn", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Datasets.DatasetVersion", null)
+                        .WithMany()
+                        .HasForeignKey("DatasetVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Datasets.DatasetVersion", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Datasets.Dataset", null)
+                        .WithMany()
+                        .HasForeignKey("DatasetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Experiments.Run", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Experiments.Experiment", null)
+                        .WithMany()
+                        .HasForeignKey("ExperimentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Experiments.RunMetric", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Experiments.Run", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Experiments.RunParameter", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Experiments.Run", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Jobs.JobAttempt", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Jobs.Job", null)
+                        .WithMany()
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Jobs.JobLog", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Jobs.Job", null)
+                        .WithMany()
+                        .HasForeignKey("JobId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -1612,11 +3314,29 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.ModelInferenceLog", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Studio.ModelVersion", null)
+                        .WithMany()
+                        .HasForeignKey("ModelVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.ModelVersion", b =>
                 {
                     b.HasOne("Beep.KocAiCommunity.Domain.Studio.RegisteredModel", null)
                         .WithMany()
                         .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.WorkflowVersion", b =>
+                {
+                    b.HasOne("Beep.KocAiCommunity.Domain.Studio.Workflow", null)
+                        .WithMany()
+                        .HasForeignKey("WorkflowId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -7,6 +7,7 @@ using Xunit;
 namespace Beep.KocAiCommunity.UnitTests;
 
 /// <summary>Probe: train → save model bytes → (fresh context) load → predict on a new CSV.</summary>
+[Collection(MlTrainingCollection.Name)]
 public class InferenceProbeTests
 {
     [Fact]

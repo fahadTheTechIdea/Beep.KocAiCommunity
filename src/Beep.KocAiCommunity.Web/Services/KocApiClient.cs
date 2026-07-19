@@ -1,15 +1,23 @@
 using System.Net;
 using System.Net.Http.Json;
+using Beep.KocAiCommunity.Contracts.Admin;
 using Beep.KocAiCommunity.Contracts.Community;
 using Beep.KocAiCommunity.Contracts.Competitions;
 using Beep.KocAiCommunity.Contracts.Dashboard;
 using Beep.KocAiCommunity.Contracts.Datasets;
+using Beep.KocAiCommunity.Contracts.Engagement;
+using Beep.KocAiCommunity.Contracts.Experiments;
 using Beep.KocAiCommunity.Contracts.Identity;
+using Beep.KocAiCommunity.Contracts.Jobs;
 using Beep.KocAiCommunity.Contracts.Learning;
+using Beep.KocAiCommunity.Contracts.ML;
 using Beep.KocAiCommunity.Contracts.Notifications;
 using Beep.KocAiCommunity.Contracts.Studio;
 using Beep.KocAiCommunity.Contracts.Supervision;
 using Beep.KocAiCommunity.Contracts.Workflow;
+using ExperimentRunDto = Beep.KocAiCommunity.Contracts.Experiments.RunDto;
+// RunDto exists in both Jobs (background jobs) and Experiments; the unqualified name means the job one.
+using RunDto = Beep.KocAiCommunity.Contracts.Jobs.RunDto;
 
 namespace Beep.KocAiCommunity.Web.Services;
 
@@ -54,6 +62,14 @@ public interface IKocApiClient
     Task<DatasetDto?> CreateDatasetAsync(CreateDatasetRequest request, CancellationToken ct = default);
     Task<VisibilityOptionDto?> GetAudienceAsync(string scope, CancellationToken ct = default);
 
+    // Dataset versioned contents.
+    Task<IReadOnlyList<DatasetVersionDto>> GetDatasetVersionsAsync(Guid datasetId, CancellationToken ct = default);
+    Task<DatasetVersionDetailDto?> GetDatasetVersionAsync(Guid datasetId, int versionNumber, CancellationToken ct = default);
+    Task<(DatasetVersionDto? Version, string? Error)> UploadDatasetFileAsync(Guid datasetId, Stream content, string fileName, CancellationToken ct = default);
+    Task<(DatasetVersionDto? Version, string? Error)> ImportDatasetUrlAsync(Guid datasetId, string url, CancellationToken ct = default);
+    Task<string?> PublishDatasetVersionAsync(Guid datasetId, int versionNumber, CancellationToken ct = default);
+    string DatasetFileDownloadUrl(Guid fileId);
+
     Task<ModelRunDto?> TrainAsync(Stream csv, string fileName, string labelColumn, string datasetName, string task, CancellationToken ct = default);
     Task<IReadOnlyList<ModelRunDto>> GetModelRunsAsync(CancellationToken ct = default);
 
@@ -61,10 +77,42 @@ public interface IKocApiClient
     Task<DiscussionDto?> CreateDiscussionAsync(CreateDiscussionRequest request, CancellationToken ct = default);
     Task<DiscussionDetailDto?> GetDiscussionAsync(Guid id, CancellationToken ct = default);
     Task<ReplyDto?> AddReplyAsync(Guid discussionId, string body, CancellationToken ct = default);
+    Task<IReadOnlyList<ReactionDto>> ReactToDiscussionAsync(Guid id, string emoji, CancellationToken ct = default);
+    Task<IReadOnlyList<ReactionDto>> ReactToReplyAsync(Guid discussionId, Guid replyId, string emoji, CancellationToken ct = default);
+    Task<string?> SetDiscussionLockAsync(Guid id, bool locked, CancellationToken ct = default);
+    Task<string?> SetDiscussionPinAsync(Guid id, bool pinned, CancellationToken ct = default);
+    Task<string?> DeleteDiscussionAsync(Guid id, CancellationToken ct = default);
+    Task<string?> DeleteReplyAsync(Guid discussionId, Guid replyId, CancellationToken ct = default);
+    Task<IReadOnlyList<MentionCandidateDto>> SearchMentionCandidatesAsync(string q, CancellationToken ct = default);
+    Task<(AttachmentDto? Attachment, string? Error)> AddAttachmentAsync(Guid discussionId, Stream content, string fileName, CancellationToken ct = default);
 
     Task<WorkflowValidationResult?> ValidateWorkflowAsync(WorkflowDefinition definition, CancellationToken ct = default);
     Task<ModelRunDto?> RunWorkflowAsync(WorkflowDefinition definition, Stream csv, string fileName, string labelColumn, CancellationToken ct = default);
     Task<PipelineExecutionResult?> ExecuteWorkflowAsync(WorkflowDefinition definition, Stream csv, string fileName, string labelColumn, string task, CancellationToken ct = default);
+
+    // ML node catalog.
+    Task<IReadOnlyList<NodeDescriptorDto>> GetMlNodesAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<MlTaskDto>> GetMlTasksAsync(CancellationToken ct = default);
+
+    // Platform admin.
+    Task<AdminDashboardDto?> GetAdminDashboardAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<SettingDto>> GetSettingsAsync(CancellationToken ct = default);
+    Task<(SettingDto? Setting, string? Error)> UpdateSettingAsync(string key, string value, CancellationToken ct = default);
+    Task<IReadOnlyList<FeatureFlagDto>> GetFeatureFlagsAsync(CancellationToken ct = default);
+    Task<(FeatureFlagDto? Flag, string? Error)> UpsertFeatureFlagAsync(string key, UpsertFeatureFlagRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<AuditLogDto>> GetAuditAsync(string? action = null, CancellationToken ct = default);
+
+    // Versioned workflow registry.
+    Task<IReadOnlyList<WorkflowSummaryDto>> GetWorkflowsAsync(CancellationToken ct = default);
+    Task<(WorkflowSummaryDto? Workflow, string? Error)> CreateWorkflowAsync(CreateWorkflowRequest request, CancellationToken ct = default);
+    Task<WorkflowDetailDto?> GetWorkflowDetailAsync(Guid id, CancellationToken ct = default);
+    Task<string?> DeleteWorkflowAsync(Guid id, CancellationToken ct = default);
+    Task<string?> PublishWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
+    Task<string?> ArchiveWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
+    Task<WorkflowExportDto?> ExportWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default);
+    Task<(WorkflowSummaryDto? Workflow, string? Error)> ImportWorkflowAsync(ImportWorkflowRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<WorkflowTemplateDto>> GetWorkflowTemplatesAsync(CancellationToken ct = default);
+    Task<(WorkflowSummaryDto? Workflow, string? Error)> InstantiateTemplateAsync(string code, InstantiateTemplateRequest request, CancellationToken ct = default);
 
     Task<IReadOnlyList<RegisteredModelDto>> GetModelsAsync(CancellationToken ct = default);
     Task<ModelVersionDto?> RegisterModelAsync(RegisterModelRequest request, CancellationToken ct = default);
@@ -74,6 +122,42 @@ public interface IKocApiClient
     Task<string?> DeployVersionAsync(Guid versionId, CancellationToken ct = default);
     Task<string?> RetireDeploymentAsync(Guid deploymentId, CancellationToken ct = default);
     Task<IReadOnlyList<DeploymentDto>> GetDeploymentsAsync(CancellationToken ct = default);
+
+    // Inference serving: online/batch scoring, audit logs, drift check.
+    Task<(InferResponseDto? Result, string? Error)> InferAsync(Guid versionId, IReadOnlyDictionary<string, string> input, CancellationToken ct = default);
+    Task<(InferResponseDto? Result, string? Error)> InferBatchAsync(Guid versionId, IReadOnlyList<IReadOnlyDictionary<string, string>> rows, CancellationToken ct = default);
+    Task<IReadOnlyList<InferenceLogDto>> GetInferenceLogsAsync(Guid versionId, CancellationToken ct = default);
+    Task<(DriftReportDto? Report, string? Error)> ComputeDriftAsync(Guid versionId, IReadOnlyList<IReadOnlyDictionary<string, string>> rows, CancellationToken ct = default);
+
+    // Engagement: Barrels, career ladder, badges, streaks, kudos, leaderboards, activity.
+    Task<ProfileDto?> GetMyProfileAsync(CancellationToken ct = default);
+    Task<ProfileDto?> GetProfileAsync(string userId, CancellationToken ct = default);
+    Task<ProfileDto?> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<XpLeaderboardRowDto>> GetXpLeaderboardAsync(string period, CancellationToken ct = default);
+    Task<IReadOnlyList<TeamLeaderboardRowDto>> GetTeamLeaderboardAsync(string period, CancellationToken ct = default);
+    Task<IReadOnlyList<BadgeDto>> GetBadgeCatalogAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<string>> GetAvatarIconsAsync(CancellationToken ct = default);
+    /// <summary>Returns null on success, or the error message on a 400.</summary>
+    Task<string?> GiveKudosAsync(GiveKudosRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<KudosDto>> GetKudosAsync(string userId, CancellationToken ct = default);
+    Task<IReadOnlyList<ActivityDto>> GetActivityAsync(CancellationToken ct = default);
+
+    // Runs (durable background jobs).
+    Task<IReadOnlyList<RunDto>> GetRunsAsync(CancellationToken ct = default);
+    Task<RunDto?> GetRunAsync(Guid id, CancellationToken ct = default);
+    Task<RunDto?> CreateRunAsync(CreateRunRequest request, CancellationToken ct = default);
+    Task CancelRunAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<RunLogDto>> GetRunLogsAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<RunAttemptDto>> GetRunAttemptsAsync(Guid id, CancellationToken ct = default);
+
+    // Experiment tracking.
+    Task<IReadOnlyList<ExperimentDto>> GetExperimentsAsync(CancellationToken ct = default);
+    Task<ExperimentDto?> CreateExperimentAsync(CreateExperimentRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<ExperimentRunDto>> GetExperimentRunsAsync(Guid experimentId, CancellationToken ct = default);
+    Task<IReadOnlyList<ComparisonRowDto>> GetExperimentCompareAsync(Guid experimentId, CancellationToken ct = default);
+    Task<IReadOnlyList<RunMetricDto>> GetRunMetricsAsync(Guid runId, CancellationToken ct = default);
+    Task<IReadOnlyList<RunParameterDto>> GetRunParametersAsync(Guid runId, CancellationToken ct = default);
+    Task<ExperimentRunDto?> UpdateExperimentRunAsync(Guid runId, UpdateRunRequest request, CancellationToken ct = default);
 }
 
 public sealed class KocApiClient(HttpClient http) : IKocApiClient
@@ -243,6 +327,44 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
     public async Task<IReadOnlyList<DatasetDto>> GetDatasetsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<DatasetDto>>("/api/v1/datasets", ct) ?? [];
 
+    public async Task<IReadOnlyList<DatasetVersionDto>> GetDatasetVersionsAsync(Guid datasetId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<DatasetVersionDto>>($"/api/v1/datasets/{datasetId}/versions", ct) ?? [];
+
+    public Task<DatasetVersionDetailDto?> GetDatasetVersionAsync(Guid datasetId, int versionNumber, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<DatasetVersionDetailDto>($"/api/v1/datasets/{datasetId}/versions/{versionNumber}", ct);
+
+    public async Task<(DatasetVersionDto? Version, string? Error)> UploadDatasetFileAsync(Guid datasetId, Stream content, string fileName, CancellationToken ct = default)
+    {
+        using var form = new MultipartFormDataContent();
+        var part = new StreamContent(content);
+        part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
+        form.Add(part, "file", fileName);
+        var response = await http.PostAsync($"/api/v1/datasets/{datasetId}/files", form, ct);
+        return await ReadVersionAsync(response, ct);
+    }
+
+    public async Task<(DatasetVersionDto? Version, string? Error)> ImportDatasetUrlAsync(Guid datasetId, string url, CancellationToken ct = default)
+    {
+        var response = await http.PostAsJsonAsync($"/api/v1/datasets/{datasetId}/imports", new ImportUrlRequest(url), ct);
+        return await ReadVersionAsync(response, ct);
+    }
+
+    public Task<string?> PublishDatasetVersionAsync(Guid datasetId, int versionNumber, CancellationToken ct = default) =>
+        PostVoidAsync($"/api/v1/datasets/{datasetId}/versions/{versionNumber}/publish", ct);
+
+    public string DatasetFileDownloadUrl(Guid fileId) => $"/api/v1/datasets/files/{fileId}/download";
+
+    private static async Task<(DatasetVersionDto? Version, string? Error)> ReadVersionAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return (await response.Content.ReadFromJsonAsync<DatasetVersionDto>(ct), null);
+        }
+
+        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
+        return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+    }
+
     public async Task<DatasetDto?> CreateDatasetAsync(CreateDatasetRequest request, CancellationToken ct = default)
     {
         var response = await http.PostAsJsonAsync("/api/v1/datasets", request, ct);
@@ -285,6 +407,54 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         return await response.Content.ReadFromJsonAsync<ReplyDto>(ct);
     }
 
+    public async Task<IReadOnlyList<ReactionDto>> ReactToDiscussionAsync(Guid id, string emoji, CancellationToken ct = default) =>
+        await ReactAsync($"/api/v1/discussions/{id}/react", emoji, ct);
+
+    public async Task<IReadOnlyList<ReactionDto>> ReactToReplyAsync(Guid discussionId, Guid replyId, string emoji, CancellationToken ct = default) =>
+        await ReactAsync($"/api/v1/discussions/{discussionId}/replies/{replyId}/react", emoji, ct);
+
+    private async Task<IReadOnlyList<ReactionDto>> ReactAsync(string url, string emoji, CancellationToken ct)
+    {
+        var response = await http.PostAsJsonAsync(url, new ReactRequest(emoji), ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            return [];
+        }
+
+        return await response.Content.ReadFromJsonAsync<List<ReactionDto>>(ct) ?? [];
+    }
+
+    public Task<string?> SetDiscussionLockAsync(Guid id, bool locked, CancellationToken ct = default) =>
+        PostVoidAsync($"/api/v1/discussions/{id}/{(locked ? "lock" : "unlock")}", ct);
+
+    public Task<string?> SetDiscussionPinAsync(Guid id, bool pinned, CancellationToken ct = default) =>
+        PostVoidAsync($"/api/v1/discussions/{id}/{(pinned ? "pin" : "unpin")}", ct);
+
+    public Task<string?> DeleteDiscussionAsync(Guid id, CancellationToken ct = default) =>
+        DeleteVoidAsync($"/api/v1/discussions/{id}", ct);
+
+    public Task<string?> DeleteReplyAsync(Guid discussionId, Guid replyId, CancellationToken ct = default) =>
+        DeleteVoidAsync($"/api/v1/discussions/{discussionId}/replies/{replyId}", ct);
+
+    public async Task<IReadOnlyList<MentionCandidateDto>> SearchMentionCandidatesAsync(string q, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<MentionCandidateDto>>($"/api/v1/community/mention-candidates?q={Uri.EscapeDataString(q)}", ct) ?? [];
+
+    public async Task<(AttachmentDto? Attachment, string? Error)> AddAttachmentAsync(Guid discussionId, Stream content, string fileName, CancellationToken ct = default)
+    {
+        using var form = new MultipartFormDataContent();
+        var part = new StreamContent(content);
+        part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        form.Add(part, "file", fileName);
+        var response = await http.PostAsync($"/api/v1/discussions/{discussionId}/attachments", form, ct);
+        if (response.IsSuccessStatusCode)
+        {
+            return (await response.Content.ReadFromJsonAsync<AttachmentDto>(ct), null);
+        }
+
+        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
+        return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Upload failed ({(int)response.StatusCode}).");
+    }
+
     public async Task<WorkflowValidationResult?> ValidateWorkflowAsync(WorkflowDefinition definition, CancellationToken ct = default)
     {
         var response = await http.PostAsJsonAsync("/api/v1/studio/workflows/validate", definition, ct);
@@ -322,6 +492,81 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         return await response.Content.ReadFromJsonAsync<PipelineExecutionResult>(ct);
     }
 
+    public async Task<IReadOnlyList<NodeDescriptorDto>> GetMlNodesAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<NodeDescriptorDto>>("/api/v1/ml/nodes", ct) ?? [];
+
+    public async Task<IReadOnlyList<MlTaskDto>> GetMlTasksAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<MlTaskDto>>("/api/v1/ml/tasks", ct) ?? [];
+
+    public Task<AdminDashboardDto?> GetAdminDashboardAsync(CancellationToken ct = default) =>
+        http.GetFromJsonAsync<AdminDashboardDto>("/api/v1/admin/dashboard", ct);
+
+    public async Task<IReadOnlyList<SettingDto>> GetSettingsAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<SettingDto>>("/api/v1/admin/settings", ct) ?? [];
+
+    public async Task<(SettingDto? Setting, string? Error)> UpdateSettingAsync(string key, string value, CancellationToken ct = default)
+    {
+        var response = await http.PutAsJsonAsync($"/api/v1/admin/settings/{key}", new UpdateSettingRequest(value), ct);
+        if (response.IsSuccessStatusCode)
+        {
+            return (await response.Content.ReadFromJsonAsync<SettingDto>(ct), null);
+        }
+
+        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
+        return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+    }
+
+    public async Task<IReadOnlyList<FeatureFlagDto>> GetFeatureFlagsAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<FeatureFlagDto>>("/api/v1/admin/feature-flags", ct) ?? [];
+
+    public async Task<(FeatureFlagDto? Flag, string? Error)> UpsertFeatureFlagAsync(string key, UpsertFeatureFlagRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PutAsJsonAsync($"/api/v1/admin/feature-flags/{key}", request, ct);
+        if (response.IsSuccessStatusCode)
+        {
+            return (await response.Content.ReadFromJsonAsync<FeatureFlagDto>(ct), null);
+        }
+
+        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
+        return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+    }
+
+    public async Task<IReadOnlyList<AuditLogDto>> GetAuditAsync(string? action = null, CancellationToken ct = default)
+    {
+        var url = string.IsNullOrWhiteSpace(action) ? "/api/v1/admin/audit" : $"/api/v1/admin/audit?action={Uri.EscapeDataString(action)}";
+        return await http.GetFromJsonAsync<List<AuditLogDto>>(url, ct) ?? [];
+    }
+
+    public async Task<IReadOnlyList<WorkflowSummaryDto>> GetWorkflowsAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<WorkflowSummaryDto>>("/api/v1/workflows", ct) ?? [];
+
+    public Task<(WorkflowSummaryDto? Workflow, string? Error)> CreateWorkflowAsync(CreateWorkflowRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<WorkflowSummaryDto>("/api/v1/workflows", request, ct);
+
+    public Task<WorkflowDetailDto?> GetWorkflowDetailAsync(Guid id, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<WorkflowDetailDto>($"/api/v1/workflows/{id}", ct);
+
+    public Task<string?> DeleteWorkflowAsync(Guid id, CancellationToken ct = default) =>
+        DeleteVoidAsync($"/api/v1/workflows/{id}", ct);
+
+    public Task<string?> PublishWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default) =>
+        PostVoidAsync($"/api/v1/workflows/{id}/versions/{versionNumber}/publish", ct);
+
+    public Task<string?> ArchiveWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default) =>
+        PostVoidAsync($"/api/v1/workflows/{id}/versions/{versionNumber}/archive", ct);
+
+    public Task<WorkflowExportDto?> ExportWorkflowVersionAsync(Guid id, int versionNumber, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<WorkflowExportDto>($"/api/v1/workflows/{id}/versions/{versionNumber}/export", ct);
+
+    public Task<(WorkflowSummaryDto? Workflow, string? Error)> ImportWorkflowAsync(ImportWorkflowRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<WorkflowSummaryDto>("/api/v1/workflows/import", request, ct);
+
+    public async Task<IReadOnlyList<WorkflowTemplateDto>> GetWorkflowTemplatesAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<WorkflowTemplateDto>>("/api/v1/workflow-templates", ct) ?? [];
+
+    public Task<(WorkflowSummaryDto? Workflow, string? Error)> InstantiateTemplateAsync(string code, InstantiateTemplateRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<WorkflowSummaryDto>($"/api/v1/workflow-templates/{code}/instantiate", request, ct);
+
     public async Task<IReadOnlyList<RegisteredModelDto>> GetModelsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<RegisteredModelDto>>("/api/v1/models", ct) ?? [];
 
@@ -340,10 +585,48 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
     public async Task<IReadOnlyList<DeploymentDto>> GetDeploymentsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<DeploymentDto>>("/api/v1/models/deployments", ct) ?? [];
 
+    public Task<(InferResponseDto? Result, string? Error)> InferAsync(Guid versionId, IReadOnlyDictionary<string, string> input, CancellationToken ct = default) =>
+        PostJsonAsync<InferResponseDto>($"/api/v1/models/versions/{versionId}/infer", new InferRequest(input), ct);
+
+    public Task<(InferResponseDto? Result, string? Error)> InferBatchAsync(Guid versionId, IReadOnlyList<IReadOnlyDictionary<string, string>> rows, CancellationToken ct = default) =>
+        PostJsonAsync<InferResponseDto>($"/api/v1/models/versions/{versionId}/infer/batch", new BatchInferRequest(rows), ct);
+
+    public async Task<IReadOnlyList<InferenceLogDto>> GetInferenceLogsAsync(Guid versionId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<InferenceLogDto>>($"/api/v1/models/versions/{versionId}/inference-logs", ct) ?? [];
+
+    public Task<(DriftReportDto? Report, string? Error)> ComputeDriftAsync(Guid versionId, IReadOnlyList<IReadOnlyDictionary<string, string>> rows, CancellationToken ct = default) =>
+        PostJsonAsync<DriftReportDto>($"/api/v1/models/versions/{versionId}/drift", new DriftRequest(rows), ct);
+
+    /// <summary>POSTs JSON and returns the typed result on success, or an error message on a 400.</summary>
+    private async Task<(T? Result, string? Error)> PostJsonAsync<T>(string url, object body, CancellationToken ct)
+    {
+        var response = await http.PostAsJsonAsync(url, body, ct);
+        if (response.IsSuccessStatusCode)
+        {
+            return (await response.Content.ReadFromJsonAsync<T>(ct), null);
+        }
+
+        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
+        return (default, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+    }
+
     /// <summary>Returns null on success, or the error message on a 400.</summary>
     private async Task<string?> PostVoidAsync(string url, CancellationToken ct)
     {
         var response = await http.PostAsync(url, null, ct);
+        if (response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
+        return problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).";
+    }
+
+    /// <summary>Returns null on success, or the error message on a 400.</summary>
+    private async Task<string?> DeleteVoidAsync(string url, CancellationToken ct)
+    {
+        var response = await http.DeleteAsync(url, ct);
         if (response.IsSuccessStatusCode)
         {
             return null;
@@ -360,5 +643,105 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
         content.Add(part, "file", fileName);
         return content;
+    }
+
+    // ---- Engagement ----
+
+    public Task<ProfileDto?> GetMyProfileAsync(CancellationToken ct = default) =>
+        http.GetFromJsonAsync<ProfileDto>("/api/v1/profiles/me", ct);
+
+    public Task<ProfileDto?> GetProfileAsync(string userId, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<ProfileDto>($"/api/v1/profiles/{Uri.EscapeDataString(userId)}", ct);
+
+    public async Task<ProfileDto?> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PutAsJsonAsync("/api/v1/profiles/me", request, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ProfileDto>(ct);
+    }
+
+    public async Task<IReadOnlyList<XpLeaderboardRowDto>> GetXpLeaderboardAsync(string period, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<XpLeaderboardRowDto>>($"/api/v1/engagement/leaderboard?period={period}", ct) ?? [];
+
+    public async Task<IReadOnlyList<TeamLeaderboardRowDto>> GetTeamLeaderboardAsync(string period, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<TeamLeaderboardRowDto>>($"/api/v1/engagement/teams?period={period}", ct) ?? [];
+
+    public async Task<IReadOnlyList<BadgeDto>> GetBadgeCatalogAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<BadgeDto>>("/api/v1/engagement/badges/catalog", ct) ?? [];
+
+    public async Task<IReadOnlyList<string>> GetAvatarIconsAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<string>>("/api/v1/engagement/avatars", ct) ?? [];
+
+    public async Task<string?> GiveKudosAsync(GiveKudosRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PostAsJsonAsync("/api/v1/engagement/kudos", request, ct);
+        if (response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
+        return problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).";
+    }
+
+    public async Task<IReadOnlyList<KudosDto>> GetKudosAsync(string userId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<KudosDto>>($"/api/v1/engagement/kudos/{Uri.EscapeDataString(userId)}", ct) ?? [];
+
+    public async Task<IReadOnlyList<ActivityDto>> GetActivityAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<ActivityDto>>("/api/v1/engagement/activity", ct) ?? [];
+
+    // ---- Runs ----
+
+    public async Task<IReadOnlyList<RunDto>> GetRunsAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<RunDto>>("/api/v1/runs", ct) ?? [];
+
+    public Task<RunDto?> GetRunAsync(Guid id, CancellationToken ct = default) =>
+        http.GetFromJsonAsync<RunDto>($"/api/v1/runs/{id}", ct);
+
+    public async Task<RunDto?> CreateRunAsync(CreateRunRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PostAsJsonAsync("/api/v1/runs", request, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<RunDto>(ct);
+    }
+
+    public async Task CancelRunAsync(Guid id, CancellationToken ct = default) =>
+        (await http.PostAsync($"/api/v1/runs/{id}/cancel", null, ct)).EnsureSuccessStatusCode();
+
+    public async Task<IReadOnlyList<RunLogDto>> GetRunLogsAsync(Guid id, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<RunLogDto>>($"/api/v1/runs/{id}/logs", ct) ?? [];
+
+    public async Task<IReadOnlyList<RunAttemptDto>> GetRunAttemptsAsync(Guid id, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<RunAttemptDto>>($"/api/v1/runs/{id}/attempts", ct) ?? [];
+
+    // ---- Experiments ----
+
+    public async Task<IReadOnlyList<ExperimentDto>> GetExperimentsAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<ExperimentDto>>("/api/v1/experiments", ct) ?? [];
+
+    public async Task<ExperimentDto?> CreateExperimentAsync(CreateExperimentRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PostAsJsonAsync("/api/v1/experiments", request, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ExperimentDto>(ct);
+    }
+
+    public async Task<IReadOnlyList<ExperimentRunDto>> GetExperimentRunsAsync(Guid experimentId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<ExperimentRunDto>>($"/api/v1/experiments/{experimentId}/runs", ct) ?? [];
+
+    public async Task<IReadOnlyList<ComparisonRowDto>> GetExperimentCompareAsync(Guid experimentId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<ComparisonRowDto>>($"/api/v1/experiments/{experimentId}/compare", ct) ?? [];
+
+    public async Task<IReadOnlyList<RunMetricDto>> GetRunMetricsAsync(Guid runId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<RunMetricDto>>($"/api/v1/experiments/runs/{runId}/metrics", ct) ?? [];
+
+    public async Task<IReadOnlyList<RunParameterDto>> GetRunParametersAsync(Guid runId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<RunParameterDto>>($"/api/v1/experiments/runs/{runId}/parameters", ct) ?? [];
+
+    public async Task<ExperimentRunDto?> UpdateExperimentRunAsync(Guid runId, UpdateRunRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PutAsJsonAsync($"/api/v1/experiments/runs/{runId}", request, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ExperimentRunDto>(ct);
     }
 }

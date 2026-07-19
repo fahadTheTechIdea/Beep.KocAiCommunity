@@ -51,6 +51,10 @@ else
                     <MudText Typo="Typo.caption">
                         <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Class="mr-1" />visible to @d.Scope · owner @d.OwnerUserId
                     </MudText>
+                    <div class="mt-2">
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Storage" OnClick="() => ManageData(d)">Manage data</MudButton>
+                    </div>
                 </BlueprintCard>
             </MudItem>
         }
@@ -84,6 +88,18 @@ else
         {
             await LoadAsync();
         }
+    }
+
+    private async Task ManageData(DatasetDto d)
+    {
+        var parameters = new DialogParameters<DatasetVersionsDialog>
+        {
+            { x => x.DatasetId, d.Id },
+            { x => x.DatasetName, d.Name },
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await DialogService.ShowAsync<DatasetVersionsDialog>("Manage data", parameters, options);
+        await LoadAsync();
     }
 
     private static Color ClassColor(string classification) => classification switch

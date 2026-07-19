@@ -1,6 +1,7 @@
 using System.Text;
 using Beep.KocAiCommunity.Application.Authorization;
 using Beep.KocAiCommunity.Application.Competitions;
+using Beep.KocAiCommunity.Application.Engagement;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Application.Notifications;
 using Beep.KocAiCommunity.Application.RealTime;
@@ -10,6 +11,7 @@ using Beep.KocAiCommunity.Contracts.Workflow;
 using Beep.KocAiCommunity.Domain.Common;
 using Beep.KocAiCommunity.Domain.Competitions;
 using Beep.KocAiCommunity.Domain.Organization;
+using Beep.KocAiCommunity.Infrastructure.Engagement;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +24,8 @@ public sealed class CompetitionService(
     IScorerRegistry scorers,
     IPipelineExecutor pipeline,
     INotificationService notifications,
-    IOutboxWriter outbox) : ICompetitionService
+    IOutboxWriter outbox,
+    IEngagementService engagement) : ICompetitionService
 {
     public async Task<Competition> CreateAsync(
         string userId, string title, string description, VisibilityScope scope, Guid visibilityOrgUnitId,
@@ -119,6 +122,42 @@ public sealed class CompetitionService(
                     ? $"Submissions are closed. Final standings reveal {reveal.ToLocalTime():g}."
                     : "Submissions are closed. Check the leaderboard for final standings.",
                 "/compete", ct);
+
+            await AwardPodiumAsync(competition, ct);
+        }
+    }
+
+    /// <summary>At conclusion, the top three earn podium Barrels; first place earns the winner badge.</summary>
+    private async Task AwardPodiumAsync(Competition competition, CancellationToken ct)
+    {
+        var podium = await db.Set<LeaderboardEntry>().AsNoTracking()
+            .Where(e => e.CompetitionId == competition.Id && e.Rank <= 3)
+            .OrderBy(e => e.Rank)
+            .ToListAsync(ct);
+
+        foreach (var entry in podium)
+        {
+            // 300 bbl + "On the Podium" badge for the top three; refId=competition keeps it idempotent.
+            await AwardSafelyAsync(entry.SubmitterUserId, XpSources.CompetitionTop3, "competition", competition.Id, ct);
+
+            // A 0-bbl marker that unlocks the "Gusher" winner badge for first place.
+            if (entry.Rank == 1)
+            {
+                await AwardSafelyAsync(entry.SubmitterUserId, XpSources.CompetitionWin, "competition", competition.Id, ct);
+            }
+        }
+    }
+
+    // Engagement is a side effect: never let an award failure fail a competition action.
+    private async Task AwardSafelyAsync(string userId, string source, string refType, Guid refId, CancellationToken ct)
+    {
+        try
+        {
+            await engagement.AwardXpAsync(userId, source, refType, refId, ct);
+        }
+        catch (Exception)
+        {
+            // Swallow — the competition action already committed.
         }
     }
 
@@ -257,6 +296,9 @@ public sealed class CompetitionService(
             $"Submission scored: {score:0.###}",
             $"Your submission to \"{competition.Title}\" scored {score:0.###}.",
             "/compete", ct);
+
+        // Barrels for a scored submission (idempotent per submission; a first-ever submission earns a bonus + badge).
+        await AwardSafelyAsync(userId, XpSources.SubmissionScored, "submission", submission.Id, ct);
         return submission;
     }
 

@@ -53,8 +53,121 @@ public static class DatasetEndpoints
         .WithName("GetDataset")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
+        // --- Versioned contents: files, schema, profiling, imports, download ---
+
+        group.MapPost("/datasets/{id:guid}/files", async (Guid id, IFormFile file, IKocCurrentUser me, IDatasetContentService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await using var stream = file.OpenReadStream();
+                var v = await svc.UploadCsvAsync(me.UserId!, IsAdmin(me), id, stream, file.FileName, file.ContentType ?? "text/csv", ct);
+                return Results.Ok(ToVersionDto(v));
+            }
+            catch (DatasetException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("UploadDatasetFile")
+        .RequireAuthorization(KocPolicies.RequireEmployee)
+        .DisableAntiforgery();
+
+        group.MapPost("/datasets/{id:guid}/imports", async (Guid id, ImportUrlRequest req, IKocCurrentUser me, IDatasetContentService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                var v = await svc.ImportFromUrlAsync(me.UserId!, IsAdmin(me), id, req.Url, ct);
+                return Results.Ok(ToVersionDto(v));
+            }
+            catch (DatasetException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("ImportDatasetFromUrl")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        group.MapGet("/datasets/{id:guid}/versions", async (Guid id, IKocCurrentUser me, IDatasetContentService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                var versions = await svc.ListVersionsAsync(me.UserId!, id, ct);
+                return Results.Ok(versions.Select(ToVersionDto).ToList());
+            }
+            catch (DatasetException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("ListDatasetVersions")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        group.MapGet("/datasets/{id:guid}/versions/{n:int}", async (Guid id, int n, IKocCurrentUser me, IDatasetContentService svc, CancellationToken ct) =>
+        {
+            var detail = await svc.GetVersionAsync(me.UserId!, id, n, ct);
+            if (detail is null)
+            {
+                return Results.NotFound();
+            }
+
+            var v = detail.Version;
+            var profile = detail.Profile is null
+                ? null
+                : new DatasetProfileDto(detail.Profile.SampledRows, detail.Profile.TotalRows, detail.Profile.GeneratedUtc,
+                    [.. detail.ProfileColumns.Select(c => new DatasetProfileColumnDto(c.ColumnName, c.NullCount, c.DistinctCount, c.Min, c.Max, c.Mean))]);
+
+            return Results.Ok(new DatasetVersionDetailDto(
+                ToVersionDto(v),
+                [.. detail.Files.Select(f => new DatasetFileDto(f.Id, f.LogicalPath, f.ContentType, f.SizeBytes, f.RowCount))],
+                [.. detail.Schema.Select(s => new DatasetSchemaColumnDto(s.Ordinal, s.ColumnName, s.DataType, s.Nullable))],
+                profile));
+        })
+        .WithName("GetDatasetVersion")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        group.MapPost("/datasets/{id:guid}/versions/{n:int}/publish", (Guid id, int n, IKocCurrentUser me, IDatasetContentService svc, CancellationToken ct) =>
+            VersionAction(() => svc.PublishVersionAsync(me.UserId!, IsAdmin(me), id, n, ct)))
+        .WithName("PublishDatasetVersion").RequireAuthorization(KocPolicies.RequireEmployee);
+
+        group.MapPost("/datasets/{id:guid}/versions/{n:int}/archive", (Guid id, int n, IKocCurrentUser me, IDatasetContentService svc, CancellationToken ct) =>
+            VersionAction(() => svc.ArchiveVersionAsync(me.UserId!, IsAdmin(me), id, n, ct)))
+        .WithName("ArchiveDatasetVersion").RequireAuthorization(KocPolicies.RequireEmployee);
+
+        group.MapGet("/datasets/files/{fileId:guid}/download", async (Guid fileId, IKocCurrentUser me, IDatasetContentService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                var d = await svc.DownloadFileAsync(me.UserId!, IsAdmin(me), fileId, ct);
+                return Results.File(d.Content, d.ContentType, d.FileName);
+            }
+            catch (DatasetException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("DownloadDatasetFile")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
         return group;
     }
+
+    private static bool IsAdmin(IKocCurrentUser me) => me.IsInRole(KocRoles.PlatformAdmin);
+
+    private static async Task<IResult> VersionAction(Func<Task<Domain.Datasets.DatasetVersion>> action)
+    {
+        try
+        {
+            var v = await action();
+            return Results.Ok(ToVersionDto(v));
+        }
+        catch (DatasetException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+    }
+
+    private static DatasetVersionDto ToVersionDto(Domain.Datasets.DatasetVersion v) =>
+        new(v.VersionNumber, v.Status, v.TotalSizeBytes, v.Sha256, v.Notes, v.PublishedUtc, v.CreatedUtc);
 
     private static DatasetDto ToDto(Dataset d) =>
         new(d.Id, d.Name, d.Description, d.VisibilityScope.ToString(), d.Classification.ToString(), d.Domain, d.OwnerUserId, d.FileArtifactId is not null);

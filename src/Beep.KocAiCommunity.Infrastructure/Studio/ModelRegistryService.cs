@@ -1,3 +1,4 @@
+using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Application.Notifications;
 using Beep.KocAiCommunity.Application.Studio;
 using Beep.KocAiCommunity.Domain.Studio;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Beep.KocAiCommunity.Infrastructure.Studio;
 
-public sealed class ModelRegistryService(KocDbContext db, INotificationService notifications) : IModelRegistry
+public sealed class ModelRegistryService(KocDbContext db, INotificationService notifications, IPredictionPool? pool = null) : IModelRegistry
 {
     private const int Required = 2;
 
@@ -169,6 +170,7 @@ public sealed class ModelRegistryService(KocDbContext db, INotificationService n
             deployment.Status = "retired";
             deployment.RetiredUtc = DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
+            pool?.Evict(deployment.ModelVersionId); // drop the served model from the cache
         }
     }
 

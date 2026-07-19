@@ -11,10 +11,15 @@ public sealed class LeaderboardHub : Hub
 {
     public static string UserGroup(string userId) => $"user:{userId}";
     public static string CompetitionGroup(string competitionId) => $"competition:{competitionId}";
+    public static string RunGroup(string runId) => $"run:{runId}";
 
     public Task JoinUser(string userId) => Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
 
     public Task JoinCompetition(string competitionId) => Groups.AddToGroupAsync(Context.ConnectionId, CompetitionGroup(competitionId));
 
     public Task LeaveCompetition(string competitionId) => Groups.RemoveFromGroupAsync(Context.ConnectionId, CompetitionGroup(competitionId));
+
+    public Task JoinRun(string runId) => Groups.AddToGroupAsync(Context.ConnectionId, RunGroup(runId));
+
+    public Task LeaveRun(string runId) => Groups.RemoveFromGroupAsync(Context.ConnectionId, RunGroup(runId));
 }

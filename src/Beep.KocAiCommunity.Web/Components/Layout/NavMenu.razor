@@ -9,11 +9,16 @@
 
     @if (Identity.HasAnyPosition)
     {
+        <MudNavLink Href="/profile" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">My profile</MudNavLink>
         <MudNavLink Href="/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
         <MudNavLink Href="/compete" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">Compete</MudNavLink>
         <MudNavLink Href="/datasets" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dataset">Datasets</MudNavLink>
-        <MudNavLink Href="/workflow" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AccountTree">Studio</MudNavLink>
+        <MudNavLink Href="/workflow" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AccountTree">Studio</MudNavLink>
+        <MudNavLink Href="/workflows" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Schema">Workflows</MudNavLink>
+        <MudNavLink Href="/nodes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Widgets">Node catalog</MudNavLink>
         <MudNavLink Href="/studio" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Hub">AutoML</MudNavLink>
+        <MudNavLink Href="/runs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PlayCircle">Runs</MudNavLink>
+        <MudNavLink Href="/experiments" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Science">Experiments</MudNavLink>
         <MudNavLink Href="/models" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2">Models</MudNavLink>
     }
 

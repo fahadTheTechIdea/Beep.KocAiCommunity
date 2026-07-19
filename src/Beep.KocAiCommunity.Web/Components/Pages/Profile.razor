@@ -1,0 +1,259 @@
+@page "/profile"
+@page "/profile/{UserId}"
+@using Beep.KocAiCommunity.Contracts.Engagement
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Web.Components.Shared
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject DevIdentity Identity
+@inject ISnackbar Snackbar
+
+<PageTitle>Profile · @KocBrand.ProductName</PageTitle>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Couldn't load this profile (@_error).</MudAlert>
+}
+else if (_profile is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid Spacing="6">
+        <!-- Identity + standing -->
+        <MudItem xs="12" md="4">
+            <BlueprintCard Class="pa-6" Style="text-align:center;">
+                <div class="d-flex justify-center mb-3">
+                    <XpRing AvatarIcon="@_profile.AvatarIcon" Level="@_profile.Level" LevelTitle="@_profile.LevelTitle"
+                            XpTotal="@_profile.XpTotal" NextLevelXp="@_profile.NextLevelXp" Diameter="120" />
+                </div>
+                <MudText Typo="Typo.h6" Class="koc-heading">@_profile.DisplayName</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">Lvl @_profile.Level · @_profile.LevelTitle</MudChip>
+
+                <div class="d-flex justify-center gap-6 mt-4">
+                    <div>
+                        <div class="koc-stat-value" style="font-size:26px;">@_profile.XpTotal</div>
+                        <MudText Typo="Typo.caption">Barrels</MudText>
+                    </div>
+                    <div>
+                        <div class="koc-stat-value" style="font-size:26px;">🔥 @_profile.CurrentStreakDays</div>
+                        <MudText Typo="Typo.caption">day streak</MudText>
+                    </div>
+                    <div>
+                        <div class="koc-stat-value" style="font-size:26px;">@_profile.Badges.Count</div>
+                        <MudText Typo="Typo.caption">badges</MudText>
+                    </div>
+                </div>
+
+                @if (_profile.NextLevelXp is { } next)
+                {
+                    <MudText Typo="Typo.caption" Class="d-block mt-3">@(next - _profile.XpTotal) bbl to next level</MudText>
+                }
+
+                @if (IsMe)
+                {
+                    <MudButton Class="mt-4" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Edit" OnClick="ToggleEdit">@(_editing ? "Done" : "Edit profile")</MudButton>
+                }
+                else if (Identity.HasAnyPosition)
+                {
+                    <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Celebration" OnClick="GiveKudos">Give kudos</MudButton>
+                }
+            </BlueprintCard>
+
+            @if (!string.IsNullOrWhiteSpace(_profile.Bio) && !_editing)
+            {
+                <BlueprintCard Class="pa-5 mt-4">
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">About</MudText>
+                    <MudText Typo="Typo.body2">@_profile.Bio</MudText>
+                </BlueprintCard>
+            }
+
+            @if (_profile.Skills.Count > 0 && !_editing)
+            {
+                <BlueprintCard Class="pa-5 mt-4">
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">Skills</MudText>
+                    <div class="d-flex gap-1 flex-wrap">
+                        @foreach (var s in _profile.Skills)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@s</MudChip>
+                        }
+                    </div>
+                </BlueprintCard>
+            }
+
+            @if (_editing && IsMe)
+            {
+                <BlueprintCard Class="pa-5 mt-4">
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">Pick an avatar</MudText>
+                    <div class="d-flex gap-2 flex-wrap mb-4">
+                        @foreach (var icon in _avatars)
+                        {
+                            <div @onclick="() => _draftAvatar = icon" style="@AvatarPickStyle(icon)">
+                                <MudImage Src="@KocBrand.Icon(icon)" Width="34" Height="34" />
+                            </div>
+                        }
+                    </div>
+                    <MudTextField @bind-Value="_draftBio" Label="About you" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Lines="3" MaxLength="280" Counter="280" Class="mb-2" />
+                    <MudTextField @bind-Value="_draftSkills" Label="Skills (comma-separated)" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Class="mb-3" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveProfile" Disabled="@_busy">Save</MudButton>
+                </BlueprintCard>
+            }
+        </MudItem>
+
+        <!-- Badges + kudos -->
+        <MudItem xs="12" md="8">
+            <PageHeader Eyebrow="Achievements" Title="Badge wall"
+                        Subtitle="Earn badges by learning, competing, and helping colleagues. Locked badges show what's next." />
+
+            @if (_catalog is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                <div class="d-flex gap-4 flex-wrap mb-8">
+                    @foreach (var b in _catalog)
+                    {
+                        var earned = _earned.Contains(b.Code);
+                        <div style="text-align:center;width:76px;">
+                            <BadgeChip Name="@b.Name" Description="@b.Description" IconFile="@b.IconFile" Tier="@b.Tier" Earned="earned" />
+                            <MudText Typo="Typo.caption" Class="d-block mt-1" Style="@(earned ? "" : "opacity:.5;")">@b.Name</MudText>
+                        </div>
+                    }
+                </div>
+            }
+
+            <MudText Typo="Typo.h6" Class="koc-heading mb-3">Kudos wall</MudText>
+            @if (_kudos is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else if (_kudos.Count == 0)
+            {
+                <BlueprintCard Class="pa-5" Style="text-align:center;">
+                    <MudText Typo="Typo.body2">No kudos yet. Great work gets noticed — keep going!</MudText>
+                </BlueprintCard>
+            }
+            else
+            {
+                @foreach (var k in _kudos)
+                {
+                    <BlueprintCard Class="pa-4 mb-2">
+                        <div class="d-flex align-center gap-2">
+                            <span style="font-size:22px;">@k.Emoji</span>
+                            <div>
+                                <MudText Typo="Typo.body2">@k.Message</MudText>
+                                <MudText Typo="Typo.caption" Style="opacity:.7;">from @k.FromDisplayName · @k.CreatedUtc.ToLocalTime().ToString("g")</MudText>
+                            </div>
+                        </div>
+                    </BlueprintCard>
+                }
+            }
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public string? UserId { get; set; }
+
+    private ProfileDto? _profile;
+    private IReadOnlyList<BadgeDto>? _catalog;
+    private IReadOnlyList<KudosDto>? _kudos;
+    private HashSet<string> _earned = [];
+    private IReadOnlyList<string> _avatars = [];
+    private string? _error;
+
+    private bool _editing;
+    private bool _busy;
+    private string _draftAvatar = "185-worker.png";
+    private string _draftBio = "";
+    private string _draftSkills = "";
+
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+
+    private bool IsMe => string.IsNullOrEmpty(UserId) || UserId == Identity.UserId;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _error = null;
+            _profile = IsMe ? await Api.GetMyProfileAsync() : await Api.GetProfileAsync(UserId!);
+            if (_profile is null)
+            {
+                return;
+            }
+
+            _earned = _profile.Badges.Select(b => b.Code).ToHashSet();
+            _draftAvatar = _profile.AvatarIcon;
+            _draftBio = _profile.Bio ?? "";
+            _draftSkills = string.Join(", ", _profile.Skills);
+
+            _catalog = await Api.GetBadgeCatalogAsync();
+            _kudos = await Api.GetKudosAsync(_profile.UserId);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task ToggleEdit()
+    {
+        _editing = !_editing;
+        if (_editing && _avatars.Count == 0)
+        {
+            _avatars = await Api.GetAvatarIconsAsync();
+        }
+    }
+
+    private async Task SaveProfile()
+    {
+        _busy = true;
+        try
+        {
+            _profile = await Api.UpdateProfileAsync(new UpdateProfileRequest(_draftBio, _draftAvatar, _draftSkills));
+            _editing = false;
+            Snackbar.Add("Profile updated.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't save: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task GiveKudos()
+    {
+        if (_profile is null)
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            ["RecipientUserId"] = _profile.UserId,
+            ["RecipientName"] = _profile.DisplayName,
+        };
+        var dialog = await DialogService.ShowAsync<Beep.KocAiCommunity.Web.Components.Dialogs.GiveKudosDialog>("Give kudos", parameters);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private string AvatarPickStyle(string icon) =>
+        "padding:6px;border-radius:6px;cursor:pointer;border:2px solid " +
+        (icon == _draftAvatar ? "var(--koc-accent-700,#1466A5);" : "transparent;");
+}

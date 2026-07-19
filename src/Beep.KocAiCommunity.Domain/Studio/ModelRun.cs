@@ -19,4 +19,16 @@ public class ModelRun : AuditableEntity
     public long RowCount { get; set; }
     public string RunByUserId { get; set; } = default!;
     public DateTime CompletedUtc { get; set; }
+
+    /// <summary>
+    /// Artifact reference of the saved ML.NET model (.zip). Null for runs recorded before model
+    /// persistence was added, or when training produced no serializable model. Required for inference.
+    /// </summary>
+    public Guid? ModelArtifactId { get; set; }
+
+    /// <summary>
+    /// Per-feature baseline statistics (count/mean/min/max of numeric columns) captured from the
+    /// training data. Serves as the drift baseline compared against future inference batches.
+    /// </summary>
+    public string? FeatureStatsJson { get; set; }
 }

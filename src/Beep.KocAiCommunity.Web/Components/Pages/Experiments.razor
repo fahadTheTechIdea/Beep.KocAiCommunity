@@ -1,0 +1,256 @@
+@page "/experiments"
+@using Beep.KocAiCommunity.Contracts.Experiments
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Experiments · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Studio" Title="Experiments"
+            Subtitle="Every training run is tracked here — live trial metrics, the leading model, side-by-side comparison, and the lineage to reproduce it.">
+    <Actions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
+    </Actions>
+</PageHeader>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Couldn't reach the API (@_error).</MudAlert>
+}
+
+<MudGrid Spacing="6">
+    <MudItem xs="12" md="4">
+        <BlueprintCard Class="pa-4 mb-4">
+            <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">New experiment</MudText>
+            <MudTextField @bind-Value="_newName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Create" Disabled="@(string.IsNullOrWhiteSpace(_newName) || _busy)">Create</MudButton>
+        </BlueprintCard>
+
+        @if (_experiments is null)
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+        else if (_experiments.Count == 0)
+        {
+            <MudText Typo="Typo.body2">No experiments yet.</MudText>
+        }
+        else
+        {
+            @foreach (var e in _experiments)
+            {
+                <div @onclick="() => Select(e)" style="cursor:pointer;">
+                    <BlueprintCard Class="pa-4 mb-2" Style="@(e.Id == _selected?.Id ? "border-color:var(--koc-accent-500);" : "")">
+                        <MudText Typo="Typo.subtitle1" Class="koc-heading">@e.Name</MudText>
+                        <MudText Typo="Typo.caption">@e.RunCount run(s) · @e.CreatedUtc.ToLocalTime().ToString("d")</MudText>
+                    </BlueprintCard>
+                </div>
+            }
+        }
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        @if (_selected is null)
+        {
+            <MudText Typo="Typo.body2" Class="mt-4">Select an experiment to see its runs.</MudText>
+        }
+        else
+        {
+            <div class="d-flex justify-space-between align-center mb-3">
+                <MudText Typo="Typo.h6" Class="koc-heading">@_selected.Name</MudText>
+                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="ToggleCompare">
+                    @(_showCompare ? "Show runs" : "Compare runs")
+                </MudButton>
+            </div>
+
+            @if (_runs is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else if (_runs.Count == 0)
+            {
+                <BlueprintCard Class="pa-6" Style="text-align:center;">
+                    <MudText Typo="Typo.body2">No runs yet. Training into this experiment records runs here.</MudText>
+                </BlueprintCard>
+            }
+            else if (_showCompare)
+            {
+                <MudSimpleTable Dense="true" Hover="true" Elevation="0">
+                    <thead>
+                        <tr><th>Run</th><th>Algorithm</th><th>Metric</th><th>Score</th><th>Secondary</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in _compare)
+                        {
+                            <tr style="@(c.IsBest ? "background:rgba(212,160,23,.10);" : "")">
+                                <td>@c.RunId.ToString()[..8]</td>
+                                <td>@c.Algorithm</td>
+                                <td>@c.PrimaryMetric</td>
+                                <td><b>@(c.PrimaryValue?.ToString("0.####"))</b></td>
+                                <td>@(c.SecondaryValue?.ToString("0.####"))</td>
+                                <td>@(c.IsBest ? "🥇 best" : "")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+            else
+            {
+                @foreach (var r in _runs)
+                {
+                    <div @onclick="() => OpenRun(r)" style="cursor:pointer;">
+                        <BlueprintCard Class="pa-4 mb-2" Style="@(r.Id == _openRun?.Id ? "border-color:var(--koc-accent-500);" : "")">
+                            <div class="d-flex justify-space-between align-center">
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Class="koc-heading">
+                                        @(r.Algorithm ?? "(training…)") @(r.IsBest ? "🥇" : "")
+                                    </MudText>
+                                    <MudText Typo="Typo.caption">@r.Task · @r.TrialCount trial(s) · @r.Status</MudText>
+                                </div>
+                                <div class="d-flex align-center gap-2">
+                                    @if (r.PrimaryValue is not null)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">@r.PrimaryMetric @r.PrimaryValue.Value.ToString("0.###")</MudChip>
+                                    }
+                                    <MudIconButton Icon="@(r.IsFavorite ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
+                                                   Color="Color.Warning" Size="Size.Small" OnClick="@(() => ToggleFavorite(r))" />
+                                </div>
+                            </div>
+                        </BlueprintCard>
+                    </div>
+                }
+
+                @if (_openRun is not null)
+                {
+                    <BlueprintCard Class="pa-5 mt-3">
+                        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">Trial metrics — @_openRun.PrimaryMetric</MudText>
+                        @if (_metricSeries.Length == 0)
+                        {
+                            <MudText Typo="Typo.body2">No per-trial metrics recorded.</MudText>
+                        }
+                        else
+                        {
+                            @* Server-rendered SVG line — one point per AutoML trial (no client charting lib). *@
+                            <svg viewBox="0 0 320 120" width="100%" height="140" preserveAspectRatio="none" role="img" aria-label="Trial metric trend">
+                                <polyline fill="none" stroke="var(--koc-accent-700,#1466A5)" stroke-width="2" points="@Polyline" />
+                                @foreach (var (x, y) in Points)
+                                {
+                                    <circle cx="@x.ToString(Inv)" cy="@y.ToString(Inv)" r="2.5" fill="var(--koc-accent-500,#2A7CBE)" />
+                                }
+                            </svg>
+                            <div class="d-flex justify-space-between">
+                                <MudText Typo="Typo.caption">trial 1</MudText>
+                                <MudText Typo="Typo.caption">best @_metricSeries.Max().ToString("0.###")</MudText>
+                                <MudText Typo="Typo.caption">trial @_metricSeries.Length</MudText>
+                            </div>
+                        }
+                    </BlueprintCard>
+                }
+            }
+        }
+    </MudItem>
+</MudGrid>
+
+@code {
+    private IReadOnlyList<ExperimentDto>? _experiments;
+    private ExperimentDto? _selected;
+    private IReadOnlyList<RunDto>? _runs;
+    private IReadOnlyList<ComparisonRowDto> _compare = [];
+    private RunDto? _openRun;
+    private double[] _metricSeries = [];
+    private static readonly System.Globalization.CultureInfo Inv = System.Globalization.CultureInfo.InvariantCulture;
+    private string _newName = "";
+    private bool _busy;
+    private bool _showCompare;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _error = null;
+            _experiments = await Api.GetExperimentsAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task Create()
+    {
+        _busy = true;
+        try
+        {
+            await Api.CreateExperimentAsync(new CreateExperimentRequest(_newName, "", null, null));
+            _newName = "";
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't create: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task Select(ExperimentDto e)
+    {
+        _selected = e;
+        _openRun = null;
+        _showCompare = false;
+        _runs = await Api.GetExperimentRunsAsync(e.Id);
+    }
+
+    private async Task ToggleCompare()
+    {
+        _showCompare = !_showCompare;
+        if (_showCompare && _selected is not null)
+        {
+            _compare = await Api.GetExperimentCompareAsync(_selected.Id);
+        }
+    }
+
+    private async Task OpenRun(RunDto r)
+    {
+        _openRun = r;
+        var metrics = await Api.GetRunMetricsAsync(r.Id);
+        _metricSeries = [.. metrics.OrderBy(m => m.Step).Select(m => m.Value)];
+    }
+
+    // Map the metric series to SVG coordinates in a 320×120 viewbox (10px padding).
+    private IEnumerable<(double x, double y)> Points
+    {
+        get
+        {
+            if (_metricSeries.Length == 0)
+            {
+                yield break;
+            }
+
+            double min = _metricSeries.Min(), max = _metricSeries.Max();
+            var range = max - min < 1e-9 ? 1 : max - min;
+            for (var i = 0; i < _metricSeries.Length; i++)
+            {
+                var x = _metricSeries.Length == 1 ? 160 : 10 + (300.0 * i / (_metricSeries.Length - 1));
+                var y = 110 - (100.0 * (_metricSeries[i] - min) / range);
+                yield return (x, y);
+            }
+        }
+    }
+
+    private string Polyline => string.Join(' ', Points.Select(p => $"{p.x.ToString(Inv)},{p.y.ToString(Inv)}"));
+
+    private async Task ToggleFavorite(RunDto r)
+    {
+        await Api.UpdateExperimentRunAsync(r.Id, new UpdateRunRequest(!r.IsFavorite, null, null));
+        if (_selected is not null)
+        {
+            _runs = await Api.GetExperimentRunsAsync(_selected.Id);
+        }
+    }
+}

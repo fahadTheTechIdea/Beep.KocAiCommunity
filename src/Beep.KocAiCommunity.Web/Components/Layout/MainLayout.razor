@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Web.Components.Shared
 @inject DevIdentity Identity
 @inject NavigationManager Nav
 @implements IDisposable
@@ -19,6 +20,7 @@
 
         @if (!Identity.IsGuest)
         {
+            <StandingChip @key="Identity.UserId" />
             <NotificationBell />
         }
 

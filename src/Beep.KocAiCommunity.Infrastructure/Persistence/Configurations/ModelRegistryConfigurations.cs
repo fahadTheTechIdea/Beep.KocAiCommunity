@@ -57,3 +57,17 @@ public sealed class ModelDeploymentConfiguration : IEntityTypeConfiguration<Mode
         b.HasOne<ModelVersion>().WithMany().HasForeignKey(x => x.ModelVersionId).OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+public sealed class ModelInferenceLogConfiguration : IEntityTypeConfiguration<ModelInferenceLog>
+{
+    public void Configure(EntityTypeBuilder<ModelInferenceLog> b)
+    {
+        b.ToTable("ModelInferenceLogs", "koc");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.CallerUserId).HasMaxLength(450).IsRequired();
+        b.Property(x => x.Endpoint).HasMaxLength(16).IsRequired();
+        b.Property(x => x.Error).HasMaxLength(1024);
+        b.HasIndex(x => new { x.ModelVersionId, x.CalledUtc });
+        b.HasOne<ModelVersion>().WithMany().HasForeignKey(x => x.ModelVersionId).OnDelete(DeleteBehavior.Cascade);
+    }
+}

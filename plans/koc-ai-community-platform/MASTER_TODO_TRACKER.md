@@ -1,182 +1,191 @@
 # Beep.KocAiCommunity — Master Todo Tracker
 
 **Plan folder:** `plans/koc-ai-community-platform/`
-**Status:** 🟡 PLANNING — research complete; per-stage documents being implemented
+**Status:** 🟢 BUILDING — foundation/auth/data/API/shell/competitions/learning + engagement (05b) + Worker queue (10) + experiment tracking (11) + model registry & inference (12) shipped and compiling; enterprise/admin half in progress
+**Status audit:** 2026-07-19 — verdicts below verified against actual code (`src/`). Solution builds `-warnaserror` clean; 115 unit + 76 integration tests pass. Phases 05b, 06, 07 (dataset depth), 08 (node catalog), 09, 10, 11, 12, and 14a (core) implemented this session.
 **Goal:** Build a dedicated, single-tenant, internal platform for Kuwait Oil Company (KOC) that trains and familiarizes employees with AI/ML through guided learning tracks and internal, Kaggle-style competitions, with management supervision via org-scoped rollups. Built on .NET 10, MudBlazor 9, and ML.NET 5. Internal KOC application — not a commercial product.
+
+**UX north star (added 2026-07-19):** the platform must feel **community-first and fun** — employees earn Barrels (bbl), climb an O&G career ladder, collect badges from the shipped O&G icon library, give kudos, and see Team-vs-Team leaderboards. See Phase 05b.
 
 ---
 
 ## Phase checklist
 
-- [ ] **Phase 00 — Research and architecture decisions** (`00_RESEARCH_AND_ARCHITECTURE_DECISIONS.md`)
-  - [ ] Document research findings from `Beep.AI.Community`, `Beep.AI.MLStudio`, `Beep.AI.Server`, `Beep.ML.NET`, `Beep.AI.Shared`
-  - [ ] Document BeepWeb and Beep.OilandGas.Web precedents
-  - [ ] Document the Z.Blazor.Diagrams evaluation
-  - [ ] Document ML.NET `IMonitor` evaluation
-  - [ ] Document Microsoft Entra ID evaluation
-  - [ ] Document Aspire evaluation
-  - [ ] Record pinned package versions and refresh cadence
-  - [ ] Record the KOC focus decisions (single tenant, KOC-only, O&G only, KOC integrations)
-  - [ ] Record out-of-scope and deferred items
+- [x] **Phase 00 — Research and architecture decisions** (`00_RESEARCH_AND_ARCHITECTURE_DECISIONS.md`) — ✅ DONE
+  - [x] Research findings, precedents, Z.Blazor.Diagrams / `IMonitor` / Entra / Aspire evaluations, pinned versions, KOC focus decisions, out-of-scope — all documented in the phase file
 
-- [ ] **Phase 01 — Solution foundation** (`01_SOLUTION_FOUNDATION.md`)
-  - [ ] Create solution and all projects
-  - [ ] Configure `Directory.Build.props`, `Directory.Packages.props`, `global.json`
-  - [ ] Configure nullable reference types, analyzers, deterministic builds, warnings-as-errors
-  - [ ] Configure Aspire AppHost for Web, API, Worker, SQL Server
-  - [ ] Add `Beep.KocAiCommunity.ServiceDefaults` with health checks, OpenTelemetry, resilience
-  - [ ] Add unit, integration, component, architecture, and end-to-end test projects
-  - [ ] Establish feature-folder conventions and dependency tests
-  - [ ] Gate: Aspire launches all services; restore, format verification, build, and empty test suites pass
+- [x] **Phase 01 — Solution foundation** (`01_SOLUTION_FOUNDATION.md`) — ✅ DONE
+  - [x] Solution + all 16 src / 5 test projects created
+  - [x] `Directory.Build.props`, `Directory.Packages.props`, `global.json`
+  - [x] Nullable, analyzers, deterministic builds, warnings-as-errors
+  - [x] Aspire AppHost wires Api/Worker/Web + SQLite-dev/SqlServer-publish
+  - [x] `ServiceDefaults` with health checks, OpenTelemetry, resilience
+  - [x] Unit, integration, component, architecture, e2e test projects exist
+  - [x] Gate: restore/build pass (verified 2026-07-19)
 
-- [ ] **Phase 02 — Entra ID, security, and RBAC** (`02_ENTRA_ID_SECURITY_AND_RBAC.md`)
-  - [ ] Register KOC Entra applications for Web and API
-  - [ ] Configure Microsoft.Identity.Web for Web OIDC and API JWT validation
-  - [ ] Define position-level app roles (Employee/TeamLeader/Manager/DCEO/CEO) and function roles (PlatformAdmin/CompetitionAdmin/LearningAdmin/Auditor) with policy mappings
-  - [ ] Implement the KOC org hierarchy (`OrgUnit` tree Team/Group/Directorate/Company) with materialized paths and `OrgMembership`
-  - [ ] Implement `IOrgScopeResolver` (supervisory subtree) and `IVisibilityEvaluator` (org-scoped visibility)
-  - [ ] Define resource permissions for KOC business entities
-  - [ ] Implement first-admin bootstrap for fresh databases
-  - [ ] Implement audit envelope middleware
-  - [ ] Gate: tenant, role, supervisory-scope, visibility, and resource-owner tests pass
+- [x] **Phase 02 — Entra ID, security, and RBAC** (`02_ENTRA_ID_SECURITY_AND_RBAC.md`) — ✅ DONE
+  - [x] Microsoft.Identity.Web for Web OIDC + API JWT with dev fallback (`ServiceDefaults/Security/SecurityExtensions.cs`)
+  - [x] Position + function roles and policies (`KocRoles.cs`, `KocPolicies.cs`)
+  - [x] Org hierarchy `OrgUnit` tree + `OrgMembership`
+  - [x] `IOrgScopeResolver` + `IVisibilityEvaluator`
+  - [x] Resource permissions (`UserEntityPermission.cs`)
+  - [x] Bootstrap (`DevOrgSeeder.cs`) and audit envelope (`AuditEnvelopeService.cs`)
+  - [ ] Register real KOC Entra applications (deployment-time task)
 
-- [ ] **Phase 03 — EF Core data and artifact storage** (`03_EF_CORE_DATA_AND_ARTIFACT_STORAGE.md`)
-  - [ ] Create canonical application `DbContext`
-  - [ ] Configure SQL Server and SQLite provider selection
-  - [ ] Add provider-specific migrations
-  - [ ] Add `IArtifactStore` with local filesystem and Azure Blob providers
-  - [ ] Implement upload size limits, extension allowlists, hash and content inspection
-  - [ ] Add KOC data classification metadata
-  - [ ] Gate: migrations apply cleanly to fresh SQL Server and SQLite databases
+- [x] **Phase 03 — EF Core data and artifact storage** (`03_EF_CORE_DATA_AND_ARTIFACT_STORAGE.md`) — ✅ DONE (1 gap)
+  - [x] `KocDbContext` + 11 entity configurations
+  - [x] SqlServer/SQLite provider selection, dual migration sets
+  - [x] `IArtifactStore` + `LocalFileArtifactStore` + `ArtifactService` (limits, allowlists)
+  - [x] KOC data classification (`KocDataClassification.cs`)
+  - [ ] Azure Blob artifact provider (gap — local FS only today)
 
-- [ ] **Phase 04 — API contracts and real-time events** (`04_API_CONTRACTS_AND_REALTIME_EVENTS.md`)
-  - [ ] Define `/api/v1` Minimal API endpoint surface
-  - [ ] Add Problem Details, OpenAPI, pagination, filtering, sorting, ETags, idempotency keys
-  - [ ] Add SignalR hubs for run progress, leaderboard, discussions, project collaboration
-  - [ ] Implement transactional outbox pattern
-  - [ ] Add API rate limits and upload-specific limits
-  - [ ] Gate: contract tests, OpenAPI generation, authorization tests, SignalR reconnect tests pass
+- [x] **Phase 04 — API contracts and real-time events** (`04_API_CONTRACTS_AND_REALTIME_EVENTS.md`) — ✅ DONE (2 gaps)
+  - [x] `/api/v1` Minimal API surface (11 endpoint groups)
+  - [x] Problem Details, OpenAPI, pagination, rate limiter
+  - [x] SignalR `LeaderboardHub` + transactional outbox (`OutboxWriter` → `OutboxDispatcher`)
+  - [ ] ETags (gap)
+  - [ ] Idempotency keys (gap)
 
-- [ ] **Phase 05 — MudBlazor shell and setup** (`05_MUDBLAZOR_SHELL_AND_SETUP.md`)
-  - [ ] Implement KOC-branded shell with providers
-  - [ ] Implement app bar, drawer, navigation, breadcrumbs, command palette, notifications
-  - [ ] Implement setup diagnostics for Entra, API, database, Worker, artifact storage
-  - [ ] Verify MudBlazor APIs against `mudBlazor_Docs/`
-  - [ ] Gate: responsive layouts, keyboard navigation, route authorization, accessibility smoke tests pass
+- [x] **Phase 05 — MudBlazor shell and setup** (`05_MUDBLAZOR_SHELL_AND_SETUP.md`) — ✅ DONE
+  - [x] KOC-branded shell (`MainLayout`, `NavMenu`, `NotificationBell`), 12 routed pages
+  - [x] `Ui.Shared` theme/branding (`KocTheme.cs`, `KocBrand.cs`, blueprint CSS, 236 O&G icons)
+  - [ ] Command palette (Ctrl+K) — not verified in code
+  - [ ] Setup diagnostics page — not verified in code
+  - Note: `Ui.Studio` / `Ui.Community` / `Ui.Admin` are empty scaffolds; live UI sits in `Web` (acceptable for now, revisit at 14a)
 
-- [ ] **Phase 06 — Collaboration and discussions** (`06_COLLABORATION_AND_DISCUSSIONS.md`)
-  - [ ] Implement profiles, skills, interests, avatars
-  - [ ] Implement discussions, replies, votes, attachments, moderation
-  - [ ] Implement notifications and mentions scoped to KOC employees
-  - [ ] Implement activity feed scoped to projects the user belongs to
-  - [ ] Gate: ownership, moderation, attachment security, concurrency tests pass
+- [x] **Phase 05b — Community engagement and gamification** (`05b_COMMUNITY_ENGAGEMENT_AND_GAMIFICATION.md`) — ✅ DONE (2026-07-19)
+  - [x] `UserProfile` (avatar from O&G icon library, bio, skills) + `/profile` + `/profile/{id}` page with XP ring and badge wall
+  - [x] Barrels (bbl) XP ledger (`XpEvent`), idempotent `AwardXpAsync`, daily caps
+  - [x] O&G career ladder levels (`KocLevels`: Roustabout → Chief Geoscientist)
+  - [x] Badge catalog + `BadgeRules` + `EngagementSeeder` (icons from `Ui.Shared/wwwroot/icons/`)
+  - [x] Kudos (peer recognition, curated emoji, daily cap of 10, real-time notification)
+  - [x] Streaks (flame in app bar) + streak badges
+  - [x] Individual + **team (org-unit) leaderboards** (average bbl per member, week/month/all) — Community "Leaderboards" tab
+  - [x] Org-scoped activity feed — Community "Activity" tab (visibility-filtered)
+  - [x] XP hooks in `LearningService`, `CompetitionService`, `CommunityService` (side-effect-safe)
+  - [x] Real-time confetti celebrations via `LeaderboardHub` user-group + `celebrations.js` (reduced-motion safe)
+  - [x] Personalized Home greeting (incl. Arabic variant) + app-bar Barrels/streak `StandingChip`; medal-tinted top-3 leaderboard rows
+  - [x] Dual-provider `AddEngagement` migrations (SQLite + SqlServer); badge seeding wired into API startup
+  - [x] Gate met: lesson completion → bbl + first-barrel badge + confetti + leaderboard row; kudos pay recipient in real time; activity feed visibility-scoped. 22 unit + 5 integration tests pass.
+  - [~] Deferred within phase: Compete-page medal/rank-change animation polish; Spotlight carousel on Home; `team-player` badge auto-award (needs a team-challenge mechanic); printable certificates
 
-- [ ] **Phase 07 — Datasets, projects, and collaboration** (`07_DATASETS_PROJECTS_AND_COLLABORATION.md`)
-  - [ ] Implement dataset metadata, versions, files, schemas, licenses, lineage
-  - [ ] Implement dataset profiling and preview
-  - [ ] Implement ML projects, collaborators, snapshots, activities
-  - [ ] Implement dataset-to-project import with classification enforcement
-  - [ ] Implement file, URL, and SQL import adapters
-  - [ ] Implement org-scoped visibility (Team/Group/Directorate/Company) on datasets and projects with the shared `VisibilityScopePicker` + audience preview
-  - [ ] Gate: dataset version immutability, permission isolation, classification enforcement, and visibility tests pass
+- [x] **Phase 06 — Collaboration and discussions** (`06_COLLABORATION_AND_DISCUSSIONS.md`) — ✅ DONE (2026-07-19)
+  - [x] Discussions + replies with org-scoped visibility (`Discussion.cs`, `CommunityService`, `DiscussionEndpoints`, `Community.razor`)
+  - [x] Notifications + bell (`NotificationService`, `NotificationBell.razor`)
+  - [x] Emoji reactions on discussions + replies (curated set, toggle, `Reaction` entity, `ReactionBar.razor`)
+  - [x] Moderation: lock (blocks replies), pin (sorts top), soft-delete — moderator (PlatformAdmin or org leader) or author; all audited
+  - [x] Mentions (@user) resolved to KOC profiles + `mention` notification + KOC-only autocomplete (`/community/mention-candidates`)
+  - [x] Attachments via `IArtifactService` (upload/list/download, visibility-scoped, `Internal` classification)
+  - [x] Dual-provider `AddCommunityInteractions` migrations; 5 integration tests pass
+  - [x] Profiles/skills/interests/avatars + activity feed → delivered in Phase 05b (`UserProfile`, `ActivityEvent`)
+  - [~] Deferred: server-side malware scanning of attachments (documented follow-up); in-browser attachment download link assumes same-origin/gateway
 
-- [ ] **Phase 07a — KOC enterprise connectors** (`07a_KOC_ENTERPRISE_CONNECTORS.md`)
-  - [ ] Implement `IKocConnector` abstractions
-  - [ ] Implement PPDM 39 connector with schema introspection
-  - [ ] Implement OpenWells REST connector
-  - [ ] Implement EcoSys connector
-  - [ ] Implement SAP RFC connector
-  - [ ] Implement AVEVA PI connector with AF support
-  - [ ] Implement ADLS Gen2 connector
-  - [ ] Implement connector catalog UI under `/connectors`
-  - [ ] Implement connector health monitoring
-  - [ ] Gate: each connector passes sandbox or mocked integration tests
+- [~] **Phase 07 — Datasets, projects, and collaboration** (`07_DATASETS_PROJECTS_AND_COLLABORATION.md`) — 🟢 MOSTLY DONE (2026-07-19)
+  - [x] Dataset entity with visibility + classification (`Dataset.cs`, `DatasetService`)
+  - [x] Projects (`Project.cs`, `ProjectService`)
+  - [x] Org-scoped visibility on datasets and projects
+  - [x] Immutable dataset versions + files (`DatasetVersion`/`DatasetFile`, `DatasetContentService`); publish freezes, new upload opens a draft
+  - [x] CSV schema inference + reproducible sampled profiling (`CsvProfiler` → `DatasetSchemaColumn`/`DatasetProfile`/`DatasetProfileColumn`) + licenses (`LicenseSpdxId`)
+  - [x] File + URL import adapters; URL import SSRF-guarded (`UrlImportGuard`)
+  - [x] Classification enforced on download (Confidential/Restricted → owner or admin only)
+  - [x] `/datasets/**` versioning endpoints + typed client + `DatasetVersionsDialog`; dual-provider `AddDatasetVersioning`; 11 unit + 3 integration tests
+  - [~] Deferred: SQL import adapter (needs live read-only DB), project collaboration depth (members/roles/activity/templates), dataset→project AutoML import (Phase 11), Parquet, exhaustive profiling
 
-- [ ] **Phase 08 — ML.NET runtime and node catalog** (`08_MLNET_RUNTIME_AND_NODE_CATALOG.md`)
-  - [ ] Define `IMlRuntime`, `IMlTaskHandler`, `INodeDescriptor`, `INodeExecutor`
-  - [ ] Implement ML.NET integration with MLContext lifetime management
-  - [ ] Implement O&G-specific node catalog (production rate, reservoir, HSE, anomaly, predictive maintenance)
-  - [ ] Implement AutoML trials for binary classification, multiclass classification, regression
-  - [ ] Enforce split-before-fit, missing-value handling, fixed seeds, temporal splits
-  - [ ] Gate: deterministic sample workflows train, evaluate, save, reload, predict
+- [ ] **Phase 07a — KOC enterprise connectors** (`07a_KOC_ENTERPRISE_CONNECTORS.md`) — ⬜ NOT STARTED
+  - [ ] `IKocConnector` abstractions; PPDM 39, OpenWells, EcoSys, SAP RFC, AVEVA PI, ADLS Gen2 connectors; `/connectors` UI; health monitoring
 
-- [ ] **Phase 09 — Workflow designer, compiler, versioning** (`09_WORKFLOW_DESIGNER_COMPILER_AND_VERSIONING.md`)
-  - [ ] Implement Z.Blazor.Diagrams proof of concept
-  - [ ] Implement custom MudBlazor workflow nodes with typed ports
-  - [ ] Implement palette, drag/drop, connect validation, pan/zoom, minimap, selection
-  - [ ] Implement property inspector, schema mapping, validation panel, run controls
-  - [ ] Implement application-owned `WorkflowDefinition` JSON with schema version
-  - [ ] Implement immutable workflow versions, drafts, publishing, import/export, templates
-  - [ ] Implement workflow compiler with cycle detection, topological ordering, type checks
-  - [ ] Gate: 200-node workflow remains usable; round-trips without loss; rejects invalid connections
+- [~] **Phase 08 — ML.NET runtime and node catalog** (`08_MLNET_RUNTIME_AND_NODE_CATALOG.md`) — 🟢 MOSTLY DONE (2026-07-19)
+  - [x] ML.NET executor with real transforms + AutoML (`ML/MlPipelineExecutor.cs` ~740 lines, `AutoMlTrainer.cs`, `IMlRuntime.cs`)
+  - [x] AutoML trials for binary/multiclass/regression
+  - [x] Formal code-first `INodeDescriptor`/`NodeParameter`/`INodeRegistry` (`Application/ML/NodeCatalog.cs`, `MlNodeRegistry`) — kept in sync with `WorkflowCompiler.KnownKinds`
+  - [x] O&G task catalog (`MlTaskCatalog`: binary/multiclass/regression supported; anomaly/forecasting roadmap) + O&G-flavored node descriptions
+  - [x] Split-before-fit guard (`FeaturizationGuard`) enforced on workflow publish; fixed-seed determinism test
+  - [x] `/api/v1/ml/nodes|tasks|workflows/featurization-check` endpoints + typed client + `/nodes` catalog page; 9 unit + 3 integration tests
+  - [~] Deferred: executable anomaly/forecasting handlers, full `IMlTaskHandler`/`INodeExecutor` per-node split (executor runs graphs today), recommendation/TorchSharp
 
-- [ ] **Phase 10 — Worker execution and orchestration** (`10_WORKER_EXECUTION_AND_RUN_ORCHESTRATION.md`)
-  - [ ] Implement EF-backed durable job queue
-  - [ ] Implement leases, heartbeat, retries, cancellation, timeout, crash recovery
-  - [ ] Implement run-event outbox publisher to SignalR
-  - [ ] Implement resource limits and graceful shutdown
-  - [ ] Gate: runs survive Worker restarts; cancellation works; duplicate claims prevented
+- [x] **Phase 09 — Workflow designer, compiler, versioning** (`09_WORKFLOW_DESIGNER_COMPILER_AND_VERSIONING.md`) — ✅ DONE (2026-07-19)
+  - [x] Z.Blazor.Diagrams designer (`WorkflowDesigner.razor` ~618 lines, `MlNode.cs`, `NodeCatalog.cs`)
+  - [x] `WorkflowDefinition` JSON contract + compiler with cycle detection/topo sort (`WorkflowCompiler.cs`)
+  - [x] Immutable versions + drafts + publish (compiler-gated) + archive (`Workflow`/`WorkflowVersion`, `WorkflowVersionService`); published graphs frozen, edits open a new draft
+  - [x] Canonical snapshot hashing (`WorkflowSerializer`, SHA-256) — provenance + loss-free round-trip
+  - [x] Import/export (`koc-workflow-export` envelope) + O&G templates (`WorkflowTemplateSeeder`, `WorkflowTemplateService`)
+  - [x] `/api/v1/workflows/**` + `/workflow-templates` endpoints + typed client + `/workflows` management page
+  - [x] Dual-provider `AddWorkflows` migrations; 4 unit + 4 integration tests pass
+  - [~] Deferred: 200-node browser-scale gate (perf benchmark) and dagre/ELK auto-layout
 
-- [ ] **Phase 11 — Experiment tracking and evaluation** (`11_EXPERIMENT_TRACKING_AND_EVALUATION.md`)
-  - [ ] Implement experiments, runs, trials, parameters, tags, metrics, snapshots
-  - [ ] Implement ML.NET `IMonitor` adapter with nonblocking event channel
-  - [ ] Implement experiment comparison, best-run selection, filters, lineage
-  - [ ] Implement task-specific visualizations (confusion matrix, ROC/PR, residuals, forecast)
-  - [ ] Implement optional `IExperimentSink` abstraction for MLflow REST export
-  - [ ] Gate: multiple AutoML trials persist live; comparison reproducible; lineage complete
+- [x] **Phase 10 — Worker execution and orchestration** (`10_WORKER_EXECUTION_AND_RUN_ORCHESTRATION.md`) — ✅ DONE (2026-07-19)
+  - [x] EF-backed durable job queue (`EfJobQueue`) with atomic `ExecuteUpdate` claim (single-owner, provider-portable)
+  - [x] Heartbeat lease renewal; exponential backoff retries → dead-letter; cooperative cancellation; expired-lease crash recovery
+  - [x] `JobProcessor` (dispatch + heartbeat + terminal states) and `JobExecutionService` (N concurrent loops, graceful drain, SQLite=1)
+  - [x] Run progress via outbox → `LeaderboardHub` `run:{id}` group; `ModelTrainingJobHandler` runs real AutoML out-of-band
+  - [x] `/api/v1/runs` create/get/list/cancel/logs/attempts (owner/PlatformAdmin authz) + typed client + `/runs` live monitor page
+  - [x] Dual-provider `AddJobs` migrations
+  - [x] Gate met: runs survive restart (expired-lease reclaim), cancellation works, duplicate claims prevented, progress via SignalR. 16 unit + 5 integration tests pass.
+  - [~] Deferred: SQL Server multi-worker concurrency wired but tested at 1; memory-limit hint not enforced; Worker reuses API's outbox dispatcher; run-detail component test
 
-- [ ] **Phase 12 — Model registry and inference** (`12_MODEL_REGISTRY_AND_INFERENCE.md`)
-  - [ ] Implement model artifact registration with semantic versions and checksums
-  - [ ] Implement lifecycle states (staging, production, archived, rejected)
-  - [ ] Implement Microsoft.Extensions.ML prediction pools
-  - [ ] Implement protected batch and online inference endpoints
-  - [ ] Implement promotion approvals, rollback, latency metrics, drift metadata
-  - [ ] Gate: model moves from experiment to registry to inference and safely rolls back
+- [x] **Phase 11 — Experiment tracking and evaluation** (`11_EXPERIMENT_TRACKING_AND_EVALUATION.md`) — ✅ DONE (2026-07-19)
+  - [x] `Experiment`/`Run`/`RunMetric`/`RunParameter` entities + dual-provider `AddExperiments` migrations
+  - [x] Non-blocking trial capture: AutoML `progressHandler` → `BoundedMetricChannel` (TryPublish never blocks) → batched drain → `IExperimentSink`
+  - [x] `IExperimentSink` fan-out (EfExperimentSink default; swappable — MLflow-adapter contract) + best-run selection + comparison + lineage snapshots (hyperparams/env/dataset hash)
+  - [x] `experiment.train` job handler (runs out-of-band via Phase 10) + `/api/v1/experiments/**` endpoints + typed client + `/experiments` UI (runs, best star, favorites, compare, SVG trial chart)
+  - [x] Gate met: multiple AutoML trials persist live metrics; comparison reproducible; lineage captured; `IMonitor` non-blocking; sink swappable. 9 unit + 4 integration tests pass.
+  - [~] Deferred: MLflow REST adapter (contract only); confusion-matrix/ROC/residual/forecast/feature-importance viz; parent/child run trees
 
-- [ ] **Phase 13 — Competitions and leaderboards** (`13_COMPETITIONS_AND_LEADERBOARDS.md`)
-  - [ ] Implement internal, Kaggle-style KOC competitions (no external sign-ups); any Employee or CompetitionAdmin can create
-  - [ ] Implement org-scoped visibility (Team/Group/Directorate/Company) on competitions
-  - [ ] Implement prediction-file and trusted ML.NET model submissions
-  - [ ] Implement declarative scoring metrics and trusted scorer plugins
-  - [ ] Implement live vs concealed-final leaderboard splits, submission quotas, reveal dates
-  - [ ] Implement supervisor participation/standings rollups (scoped to caller subtree)
-  - [ ] Implement real-time leaderboard SignalR updates
-  - [ ] Gate: hidden evaluation data stays inaccessible; scoring reproducible; quotas work; visibility + supervisory scope enforced
+- [x] **Phase 12 — Model registry and inference** (`12_MODEL_REGISTRY_AND_INFERENCE.md`) — ✅ DONE (2026-07-19)
+  - [x] Registry with lifecycle states, promote/rollback/deploy (`ModelRegistry.cs`, `ModelRegistryService.cs`, `ModelEndpoints.cs`)
+  - [x] Training captures + persists the winning model as a governed artifact (`TrainAndCaptureAsync`, `ModelRun.ModelArtifactId`) + drift baseline (`FeatureStatsJson`)
+  - [x] Thread-safe, hot-reloadable prediction pool (`IPredictionPool`/`AutoMlPredictionPool`) — dynamic-schema scoring (typed `PredictionEnginePool<T>` can't handle arbitrary CSV schemas); evicted on retire/rollback
+  - [x] Protected online + batch inference (`IInferenceService`) with per-call `ModelInferenceLog` (latency/outcome) and owner/admin authz on non-production versions
+  - [x] Drift comparison endpoint (batch feature means vs training baseline); `/infer`, `/infer/batch`, `/inference-logs`, `/drift` endpoints + typed client + `Predict` dialog on `Models.razor`
+  - [x] Dual-provider `AddInference` migrations
+  - [x] Gate met: model moves experiment→registry→inference and rolls back; promotion needs two approvals; inference logs latency/outcome; classification carried on the model artifact. 4 new tests (2 unit + 2 integration).
+  - [~] Deferred: typed `PredictionEnginePool<T>` for fixed O&G templates; continuous drift monitoring; model signing via KOC CA/KMS; multi-page `Studio/Models/*` structure
 
-- [ ] **Phase 13a — Learning tracks and upskilling** (`13a_LEARNING_TRACKS_AND_UPSKILLING.md`)
-  - [ ] Seed the 3 starter tracks (Getting started → Solve a real problem → Make it dependable) with lessons
-  - [ ] Implement enrollment and per-lesson progress; track completion
-  - [ ] Implement learn ↔ compete tie-in (recommended competition/track)
-  - [ ] Implement org-scoped visibility on tracks; author/publish gated to LearningAdmin
-  - [ ] Implement supervisor track-progress rollups (scoped to caller subtree)
-  - [ ] Gate: enroll idempotent; completion computed; visibility + supervisory scope enforced
+- [x] **Phase 13 — Competitions and leaderboards** (`13_COMPETITIONS_AND_LEADERBOARDS.md`) — ✅ DONE
+  - [x] Internal Kaggle-style competitions with org-scoped visibility (`CompetitionEntities.cs`, `CompetitionService.cs`)
+  - [x] Hidden answer key, quotas, concealed-final reveal (`RevealUtc`)
+  - [x] Trusted scorers (`AccuracyScorer`, `RmseScorer`, `ScorerRegistry`), seeding
+  - [x] Real-time leaderboard (`LeaderboardHub`), supervisor rollups (`SupervisionService`)
+  - [ ] Fun layer (medals, rank animations, team standings) → Phase 05b
 
-- [ ] **Phase 14 — O&G templates, domain admin, and help** (`14_INDUSTRY_TEMPLATES_ADMIN_AND_HELP.md`)
-  - [ ] Replace 18 industry folders with single O&G folder (upstream/midstream/downstream/HSE)
-  - [ ] Implement admin pages for users, projects, datasets, workflows, jobs, experiments, models, competitions
-  - [ ] Implement branding/theme settings
-  - [ ] Implement tutorials, FAQ, API documentation, contextual node help, sample workflows
-  - [ ] Implement data-retention and artifact-cleanup policies
-  - [ ] Gate: a KOC employee can complete an end-to-end guided scenario without database intervention
+- [x] **Phase 13a — Learning tracks and upskilling** (`13a_LEARNING_TRACKS_AND_UPSKILLING.md`) — ✅ DONE
+  - [x] Tracks/lessons/enrollment/progress/completion (`LearningEntities.cs`, `LearningService.cs`, `LearningSeeder`)
+  - [x] Starter tracks seeded; learn ↔ compete tie-in (`RecommendedTrackId`)
+  - [x] Supervisor rollups
+  - [ ] XP + certificates on completion → Phase 05b (XP) / deferred (certificates)
 
-- [ ] **Phase 14a — Platform admin, settings, audit** (`14a_PLATFORM_ADMIN_SETTINGS_AND_AUDIT.md`)
-  - [ ] Implement PlatformAdmin policy and first-admin bootstrap
-  - [ ] Implement typed settings service with categories and audit
-  - [ ] Implement admin pages for users, roles, audit, sessions, health, maintenance, rate limits, branding, notifications, diagnostics
-  - [ ] Implement transactional outbox publisher for admin audit
-  - [ ] Implement KOC connector health overview and info-sec classification editor
-  - [ ] Gate: 100% of admin endpoints return 403 to non-admin tokens; encryption hides secrets in audit JSON
+- [ ] **Phase 14 — O&G templates, domain admin, and help** (`14_INDUSTRY_TEMPLATES_ADMIN_AND_HELP.md`) — ⬜ NOT STARTED
+  - [ ] O&G template folder, admin pages, branding settings, tutorials/FAQ/help, retention policies
 
-- [ ] **Phase 15 — Testing, hardening, deployment, migration** (`15_TESTING_HARDENING_DEPLOYMENT_AND_MIGRATION.md`)
-  - [ ] Unit, integration, API, EF-provider, Worker, ML-quality, component, Playwright, accessibility, architecture tests
-  - [ ] Security tests: authorization bypass, uploads, path traversal, SSRF, archive bombs, model trust
-  - [ ] Performance tests: workflow canvas, dataset preview, SignalR, queue throughput, inference
-  - [ ] CI gates: restore, format, build warnings-as-errors, unit, component, integration, end-to-end, dependency, vulnerability scans
-  - [ ] Deploy to Azure Kuwait region with Azure SQL and Azure Blob Storage
-  - [ ] Use Managed Identity and Key Vault references
-  - [ ] Backup, restore, migration, rollback, and disaster recovery procedures
-  - [ ] Optional import of compatible metadata from Python Community and MLStudio SQLite
-  - [ ] Gate: staging deployment passes smoke, security, migration, backup/restore, rollback exercises
+- [~] **Phase 14a — Platform admin, settings, audit** (`14a_PLATFORM_ADMIN_SETTINGS_AND_AUDIT.md`) — 🟢 MOSTLY DONE (2026-07-19)
+  - [x] Audit plumbing (`AuditEnvelopeService`, `AdminAuditLog`, outbox, `RequirePlatformAdmin` policy)
+  - [x] Typed settings (code-first `SettingsCatalog` + `SettingValue`; secrets encrypted via `ISecretProtector`/Data Protection, masked in responses + audit, versioned)
+  - [x] Feature flags (boolean + stable-hash rollout %) with audit
+  - [x] Admin dashboard (live counts + recent audit + health) + audit query
+  - [x] `/api/v1/admin/**` all behind `RequirePlatformAdmin` (403 to non-admins) + typed client + `/admin` console (Dashboard/Settings/Flags/Audit tabs); scaffold moved to `/admin/overview`
+  - [x] Dual-provider `AddAdmin` migrations; 4 unit + 8 integration tests pass
+  - [~] Deferred: DB-backed platform roles/permission grid + first-admin bootstrap (auth is Entra-claim based), sessions, background health monitor, maintenance tasks, email/broadcast, classification editor
+
+- [~] **Phase 15 — Testing, hardening, deployment, migration** (`15_TESTING_HARDENING_DEPLOYMENT_AND_MIGRATION.md`) — 🟡 PARTIAL
+  - [x] Real unit (10 files) + integration (16 files) suites; CI workflow; docker-compose + Dockerfiles
+  - [ ] Component/architecture/e2e suites (stubs today)
+  - [ ] Security + performance test suites
+  - [ ] Azure Kuwait deployment, Managed Identity, Key Vault
+  - [ ] Backup/restore/DR, SQLite metadata import
+
+## Recommended build order (from here)
+
+1. ~~Phase 05b — engagement/gamification~~ ✅ DONE (2026-07-19)
+2. ~~Phase 10 — Worker durable queue~~ ✅ DONE (2026-07-19)
+3. ~~Phase 11 — Experiment tracking~~ ✅ DONE (2026-07-19)
+4. ~~Phase 12 — Model registry inference~~ ✅ DONE (2026-07-19)
+5. ~~Phase 06 — Collaboration completion~~ ✅ DONE (2026-07-19)
+6. ~~Phase 09 — Workflow versioning~~ ✅ DONE (2026-07-19)
+7. ~~Phase 14a — Platform admin (core)~~ ✅ DONE (2026-07-19)
+8. ~~Phase 07 — Dataset depth~~ ✅ DONE (2026-07-19)
+9. ~~Phase 08 — Node catalog + featurization guard~~ ✅ DONE (2026-07-19)
+10. **Phase 15 hardening** (component/e2e/security/perf suites) OR **Phase 14** (O&G templates, help/FAQ, retention) ← next
+11. Then Phase 07a connectors
 
 ## Global definition of done
 

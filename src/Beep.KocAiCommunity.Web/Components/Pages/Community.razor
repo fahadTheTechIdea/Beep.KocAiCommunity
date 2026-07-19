@@ -1,17 +1,21 @@
 @page "/community"
 @using Beep.KocAiCommunity.Contracts.Community
+@using Beep.KocAiCommunity.Contracts.Engagement
 @using Beep.KocAiCommunity.Web.Services
 @using Beep.KocAiCommunity.Web.Components.Dialogs
+@using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Ui.Shared.Components
+@using Microsoft.AspNetCore.Components.Forms
 @inject IKocApiClient Api
 @inject IDialogService DialogService
 @inject DevIdentity Identity
 @inject ISnackbar Snackbar
+@inject NavigationManager Nav
 
 <PageTitle>Community · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Community" Title="Discussions"
-            Subtitle="Ask, share, and learn together — everything stays inside KOC. Each discussion is visible to your team, group, directorate, or the whole company.">
+<PageHeader Eyebrow="Community" Title="Community"
+            Subtitle="Learn together, cheer each other on, and see how your team stacks up — everything stays inside KOC.">
     <Actions>
         @if (Identity.HasAnyPosition)
         {
@@ -25,62 +29,253 @@
     <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Couldn't reach the API (@_error).</MudAlert>
 }
 
-<MudGrid Spacing="6">
-    <MudItem xs="12" md="5">
-        @if (_discussions is null)
+<MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="pt-2">
+    <MudTabPanel Text="Discussions" Icon="@Icons.Material.Filled.Forum">
+        <MudGrid Spacing="6">
+            <MudItem xs="12" md="5">
+                @if (_discussions is null)
+                {
+                    <MudProgressCircular Indeterminate="true" />
+                }
+                else if (_discussions.Count == 0)
+                {
+                    <BlueprintCard Class="pa-6" Style="text-align:center;">
+                        <MudIcon Icon="@Icons.Material.Filled.Forum" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                        <MudText Typo="Typo.body2">No discussions yet. Start the conversation.</MudText>
+                    </BlueprintCard>
+                }
+                else
+                {
+                    @foreach (var d in _discussions)
+                    {
+                        <div @onclick="() => Open(d.Id)" style="cursor:pointer;">
+                            <BlueprintCard Class="pa-4 mb-3" Style="@(d.Id == _open?.Id ? "border-color:var(--koc-accent-500);" : "")">
+                                <div class="d-flex align-center gap-1">
+                                    @if (d.IsPinned)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.PushPin" Size="Size.Small" Color="Color.Primary" />
+                                    }
+                                    <MudText Typo="Typo.subtitle1" Class="koc-heading flex-grow-1">@d.Title</MudText>
+                                    @if (d.IsLocked)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Default" />
+                                    }
+                                </div>
+                                <MudText Typo="Typo.caption">@d.Scope · by @d.AuthorUserId · @d.ReplyCount @(d.ReplyCount == 1 ? "reply" : "replies")</MudText>
+                                @if (d.Reactions.Count > 0)
+                                {
+                                    <div class="mt-1" style="opacity:.85;">@string.Join("  ", d.Reactions.Select(r => $"{r.Emoji} {r.Count}"))</div>
+                                }
+                            </BlueprintCard>
+                        </div>
+                    }
+                }
+            </MudItem>
+
+            <MudItem xs="12" md="7">
+                @if (_open is null)
+                {
+                    <MudText Typo="Typo.body2" Class="mt-4">Select a discussion to read and reply.</MudText>
+                }
+                else
+                {
+                    <BlueprintCard Class="pa-5">
+                        <div class="d-flex justify-space-between align-center mb-1">
+                            <div class="d-flex align-center gap-1">
+                                @if (_open.IsPinned)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.PushPin" Size="Size.Small" Color="Color.Primary" />
+                                }
+                                <MudText Typo="Typo.h6" Class="koc-heading">@_open.Title</MudText>
+                                @if (_open.IsLocked)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text" Icon="@Icons.Material.Filled.Lock">Locked</MudChip>
+                                }
+                            </div>
+                            <div class="d-flex align-center">
+                                @if (Identity.HasAnyPosition && _open.AuthorUserId != Identity.UserId)
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.Celebration" OnClick="() => KudosTo(_open.AuthorUserId)">Kudos</MudButton>
+                                }
+                                @if (_open.CanModerate)
+                                {
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
+                                        <MudMenuItem Icon="@Icons.Material.Filled.PushPin" OnClick="() => Pin(!_open.IsPinned)">@(_open.IsPinned ? "Unpin" : "Pin")</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Lock" OnClick="() => Lock(!_open.IsLocked)">@(_open.IsLocked ? "Unlock" : "Lock")</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="DeleteThread">Delete thread</MudMenuItem>
+                                    </MudMenu>
+                                }
+                            </div>
+                        </div>
+                        <MudText Typo="Typo.caption" Class="mb-3">@_open.Scope · by @_open.AuthorUserId</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">@_open.Body</MudText>
+                        <ReactionBar Reactions="_open.Reactions" OnReact="ReactToThread" />
+
+                        @if (_open.Attachments.Count > 0)
+                        {
+                            <div class="mt-3">
+                                <MudText Typo="Typo.caption" Class="koc-heading">Attachments</MudText>
+                                @foreach (var a in _open.Attachments)
+                                {
+                                    <div class="d-flex align-center gap-1">
+                                        <MudIcon Icon="@Icons.Material.Filled.AttachFile" Size="Size.Small" />
+                                        <MudLink Href="@($"/api/v1/community/attachments/{a.Id}")" Target="_blank" Typo="Typo.body2">@a.FileName</MudLink>
+                                        <MudText Typo="Typo.caption" Style="opacity:.6;">(@FormatSize(a.SizeBytes))</MudText>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <MudDivider Class="my-3" />
+
+                        @foreach (var r in _open.Replies)
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex align-center justify-space-between">
+                                    <MudText Typo="Typo.caption"><b>@r.AuthorUserId</b> · @r.CreatedUtc.ToShortTimeString()</MudText>
+                                    @if (_open.CanModerate || r.AuthorUserId == Identity.UserId)
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Default" OnClick="() => DeleteReply(r.Id)" />
+                                    }
+                                </div>
+                                <MudText Typo="Typo.body2">@r.Body</MudText>
+                                <ReactionBar Reactions="r.Reactions" OnReact="@(emoji => ReactToReply(r.Id, emoji))" />
+                            </div>
+                        }
+
+                        @if (_open.IsLocked)
+                        {
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mt-3">This discussion is locked — no new replies.</MudAlert>
+                        }
+                        else
+                        {
+                            <div class="mt-4">
+                                <div class="d-flex gap-2">
+                                    <MudAutocomplete T="MentionCandidateDto" Label="Mention" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                                                     Style="max-width:200px;" SearchFunc="SearchMentions" ToStringFunc="@(c => c?.DisplayName ?? "")"
+                                                     ValueChanged="AppendMention" ResetValueOnEmptyText="true" CoerceText="false" />
+                                    <MudTextField @bind-Value="_replyBody" Label="Reply" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                    <MudTooltip Text="Attach a file">
+                                        <label class="d-inline-flex align-center" style="cursor:pointer;">
+                                            <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Default" />
+                                            <InputFile OnChange="UploadAttachment" style="display:none;" />
+                                        </label>
+                                    </MudTooltip>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reply" Disabled="@string.IsNullOrWhiteSpace(_replyBody)">Send</MudButton>
+                                </div>
+                            </div>
+                        }
+                    </BlueprintCard>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Leaderboards" Icon="@Icons.Material.Filled.Leaderboard" OnClick="EnsureLeaderboards">
+        <div class="d-flex gap-2 mb-4">
+            @foreach (var p in _periods)
+            {
+                <MudButton Variant="@(p.Key == _period ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small"
+                           OnClick="@(() => ChangePeriod(p.Key))">@p.Label</MudButton>
+            }
+        </div>
+
+        <MudGrid Spacing="6">
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.h6" Class="koc-heading mb-3">🏆 Top learners</MudText>
+                @if (_xpBoard is null)
+                {
+                    <MudProgressCircular Indeterminate="true" />
+                }
+                else if (_xpBoard.Count == 0)
+                {
+                    <BlueprintCard Class="pa-5"><MudText Typo="Typo.body2">No Barrels earned in this period yet — be the first!</MudText></BlueprintCard>
+                }
+                else
+                {
+                    @foreach (var row in _xpBoard)
+                    {
+                        <BlueprintCard Class="pa-3 mb-2" Style="@RowStyle(row.Rank, row.IsMe)">
+                            <div class="d-flex align-center gap-3" style="cursor:pointer;" @onclick="() => ViewProfile(row.UserId)">
+                                <span style="font-size:20px;width:34px;text-align:center;">@Medal(row.Rank)</span>
+                                <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(row.AvatarIcon)" /></MudAvatar>
+                                <div class="flex-grow-1">
+                                    <MudText Typo="Typo.body2"><b>@row.DisplayName</b> @(row.IsMe ? "(you)" : "")</MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:.7;">Lvl @row.Level · @row.LevelTitle</MudText>
+                                </div>
+                                <MudText Typo="Typo.body1"><b>🛢️ @row.XpTotal</b></MudText>
+                            </div>
+                        </BlueprintCard>
+                    }
+                }
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.h6" Class="koc-heading mb-3">🛢️ Team standings</MudText>
+                @if (_teamBoard is null)
+                {
+                    <MudProgressCircular Indeterminate="true" />
+                }
+                else if (_teamBoard.Count == 0)
+                {
+                    <BlueprintCard Class="pa-5"><MudText Typo="Typo.body2">Team standings appear once colleagues start earning Barrels.</MudText></BlueprintCard>
+                }
+                else
+                {
+                    @foreach (var t in _teamBoard)
+                    {
+                        <BlueprintCard Class="pa-3 mb-2" Style="@RowStyle(t.Rank, t.IsMyTeam)">
+                            <div class="d-flex align-center gap-3">
+                                <span style="font-size:20px;width:34px;text-align:center;">@Medal(t.Rank)</span>
+                                <div class="flex-grow-1">
+                                    <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b> @(t.IsMyTeam ? "(your team)" : "")</MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:.7;">@t.MemberCount active · @t.TotalXp bbl total</MudText>
+                                </div>
+                                <MudText Typo="Typo.body1"><b>@t.AverageXp</b> avg</MudText>
+                            </div>
+                        </BlueprintCard>
+                    }
+                }
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
+
+    <MudTabPanel Text="Activity" Icon="@Icons.Material.Filled.Bolt" OnClick="EnsureActivity">
+        @if (_activity is null)
         {
             <MudProgressCircular Indeterminate="true" />
         }
-        else if (_discussions.Count == 0)
+        else if (_activity.Count == 0)
         {
             <BlueprintCard Class="pa-6" Style="text-align:center;">
-                <MudIcon Icon="@Icons.Material.Filled.Forum" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-                <MudText Typo="Typo.body2">No discussions yet. Start the conversation.</MudText>
+                <MudText Typo="Typo.body2">Nothing here yet. Earn a badge or cheer a colleague to get things moving.</MudText>
             </BlueprintCard>
         }
         else
         {
-            @foreach (var d in _discussions)
+            @foreach (var a in _activity)
             {
-                <div @onclick="() => Open(d.Id)" style="cursor:pointer;">
-                    <BlueprintCard Class="pa-4 mb-3" Style="@(d.Id == _open?.Id ? "border-color:var(--koc-accent-500);" : "")">
-                        <MudText Typo="Typo.subtitle1" Class="koc-heading">@d.Title</MudText>
-                        <MudText Typo="Typo.caption">@d.Scope · by @d.AuthorUserId</MudText>
-                    </BlueprintCard>
-                </div>
+                <BlueprintCard Class="pa-3 mb-2">
+                    <div class="d-flex align-center gap-3">
+                        @if (!string.IsNullOrEmpty(a.IconFile))
+                        {
+                            <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(a.IconFile)" /></MudAvatar>
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Bolt" Color="Color.Primary" />
+                        }
+                        <div class="flex-grow-1">
+                            <MudText Typo="Typo.body2"><b>@a.ActorDisplayName</b> @a.Summary</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.7;">@a.CreatedUtc.ToLocalTime().ToString("g")</MudText>
+                        </div>
+                    </div>
+                </BlueprintCard>
             }
         }
-    </MudItem>
-
-    <MudItem xs="12" md="7">
-        @if (_open is null)
-        {
-            <MudText Typo="Typo.body2" Class="mt-4">Select a discussion to read and reply.</MudText>
-        }
-        else
-        {
-            <BlueprintCard Class="pa-5">
-                <MudText Typo="Typo.h6" Class="koc-heading mb-1">@_open.Title</MudText>
-                <MudText Typo="Typo.caption" Class="mb-3">@_open.Scope · by @_open.AuthorUserId</MudText>
-                <MudText Typo="Typo.body2" Class="mb-4">@_open.Body</MudText>
-                <MudDivider Class="mb-3" />
-
-                @foreach (var r in _open.Replies)
-                {
-                    <div class="mb-3">
-                        <MudText Typo="Typo.caption"><b>@r.AuthorUserId</b> · @r.CreatedUtc.ToShortTimeString()</MudText>
-                        <MudText Typo="Typo.body2">@r.Body</MudText>
-                    </div>
-                }
-
-                <div class="d-flex gap-2 mt-4">
-                    <MudTextField @bind-Value="_replyBody" Label="Reply" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reply" Disabled="@string.IsNullOrWhiteSpace(_replyBody)">Send</MudButton>
-                </div>
-            </BlueprintCard>
-        }
-    </MudItem>
-</MudGrid>
+    </MudTabPanel>
+</MudTabs>
 
 @code {
     private IReadOnlyList<DiscussionDto>? _discussions;
@@ -88,9 +283,19 @@
     private string? _error;
     private string _replyBody = "";
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private IReadOnlyList<XpLeaderboardRowDto>? _xpBoard;
+    private IReadOnlyList<TeamLeaderboardRowDto>? _teamBoard;
+    private IReadOnlyList<ActivityDto>? _activity;
+    private string _period = "week";
 
-    private async Task LoadAsync()
+    private readonly (string Key, string Label)[] _periods =
+    [
+        ("week", "This week"), ("month", "This month"), ("all", "All time"),
+    ];
+
+    protected override async Task OnInitializedAsync() => await LoadDiscussionsAsync();
+
+    private async Task LoadDiscussionsAsync()
     {
         try
         {
@@ -103,13 +308,51 @@
         }
     }
 
+    private async Task EnsureLeaderboards()
+    {
+        if (_xpBoard is null)
+        {
+            await LoadLeaderboardsAsync();
+        }
+    }
+
+    private async Task LoadLeaderboardsAsync()
+    {
+        try
+        {
+            _xpBoard = await Api.GetXpLeaderboardAsync(_period);
+            _teamBoard = await Api.GetTeamLeaderboardAsync(_period);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task ChangePeriod(string period)
+    {
+        _period = period;
+        _xpBoard = null;
+        _teamBoard = null;
+        await LoadLeaderboardsAsync();
+    }
+
+    private async Task EnsureActivity()
+    {
+        if (_activity is null)
+        {
+            try { _activity = await Api.GetActivityAsync(); }
+            catch (Exception ex) { _error = ex.Message; }
+        }
+    }
+
     private async Task OpenCreate()
     {
         var dialog = await DialogService.ShowAsync<CreateDiscussionDialog>("New discussion");
         var result = await dialog.Result;
         if (result is not null && !result.Canceled)
         {
-            await LoadAsync();
+            await LoadDiscussionsAsync();
         }
     }
 
@@ -125,5 +368,167 @@
         await Api.AddReplyAsync(_open.Id, _replyBody);
         _replyBody = "";
         _open = await Api.GetDiscussionAsync(_open.Id);
+    }
+
+    private async Task ReactToThread(string emoji)
+    {
+        if (_open is null)
+        {
+            return;
+        }
+
+        await Api.ReactToDiscussionAsync(_open.Id, emoji);
+        await ReloadOpenAsync();
+    }
+
+    private async Task ReactToReply(Guid replyId, string emoji)
+    {
+        if (_open is null)
+        {
+            return;
+        }
+
+        await Api.ReactToReplyAsync(_open.Id, replyId, emoji);
+        await ReloadOpenAsync();
+    }
+
+    private async Task Pin(bool pinned) => await ModerateAsync(() => Api.SetDiscussionPinAsync(_open!.Id, pinned));
+    private async Task Lock(bool locked) => await ModerateAsync(() => Api.SetDiscussionLockAsync(_open!.Id, locked));
+
+    private async Task DeleteThread()
+    {
+        if (_open is null)
+        {
+            return;
+        }
+
+        var error = await Api.DeleteDiscussionAsync(_open.Id);
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Warning);
+            return;
+        }
+
+        _open = null;
+        await LoadDiscussionsAsync();
+    }
+
+    private async Task DeleteReply(Guid replyId)
+    {
+        if (_open is null)
+        {
+            return;
+        }
+
+        var error = await Api.DeleteReplyAsync(_open.Id, replyId);
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Warning);
+            return;
+        }
+
+        await ReloadOpenAsync();
+    }
+
+    private async Task ModerateAsync(Func<Task<string?>> action)
+    {
+        if (_open is null)
+        {
+            return;
+        }
+
+        var error = await action();
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Warning);
+            return;
+        }
+
+        await ReloadOpenAsync();
+        await LoadDiscussionsAsync();
+    }
+
+    private async Task<IEnumerable<MentionCandidateDto>> SearchMentions(string value, CancellationToken token) =>
+        await Api.SearchMentionCandidatesAsync(value ?? "");
+
+    private void AppendMention(MentionCandidateDto? candidate)
+    {
+        if (candidate is null)
+        {
+            return;
+        }
+
+        var handle = new string(candidate.DisplayName.Where(c => !char.IsWhiteSpace(c)).ToArray());
+        _replyBody = string.IsNullOrWhiteSpace(_replyBody) ? $"@{handle} " : $"{_replyBody.TrimEnd()} @{handle} ";
+    }
+
+    private async Task UploadAttachment(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (_open is null || file is null)
+        {
+            return;
+        }
+
+        await using var stream = file.OpenReadStream(maxAllowedSize: 25L * 1024 * 1024);
+        var (attachment, error) = await Api.AddAttachmentAsync(_open.Id, stream, file.Name);
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Warning);
+            return;
+        }
+
+        Snackbar.Add($"Attached {attachment!.FileName}.", Severity.Success);
+        await ReloadOpenAsync();
+    }
+
+    private async Task ReloadOpenAsync()
+    {
+        if (_open is not null)
+        {
+            _open = await Api.GetDiscussionAsync(_open.Id);
+        }
+    }
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        >= 1024 * 1024 => $"{bytes / (1024.0 * 1024):0.#} MB",
+        >= 1024 => $"{bytes / 1024.0:0.#} KB",
+        _ => $"{bytes} B",
+    };
+
+    private async Task KudosTo(string userId)
+    {
+        var parameters = new DialogParameters
+        {
+            ["RecipientUserId"] = userId,
+            ["RecipientName"] = userId,
+            ["RefType"] = "discussion",
+            ["RefId"] = _open?.Id,
+        };
+        var dialog = await DialogService.ShowAsync<GiveKudosDialog>("Give kudos", parameters);
+        await dialog.Result;
+    }
+
+    private void ViewProfile(string userId) => Nav.NavigateTo($"/profile/{userId}");
+
+    private static string Medal(int rank) => rank switch
+    {
+        1 => "🥇",
+        2 => "🥈",
+        3 => "🥉",
+        _ => $"#{rank}",
+    };
+
+    private static string RowStyle(int rank, bool highlight)
+    {
+        var tint = rank switch
+        {
+            1 => "background:rgba(212,160,23,.10);",
+            2 => "background:rgba(154,166,178,.12);",
+            3 => "background:rgba(184,115,51,.10);",
+            _ => "",
+        };
+        return highlight ? tint + "border-color:var(--koc-accent-500);" : tint;
     }
 }

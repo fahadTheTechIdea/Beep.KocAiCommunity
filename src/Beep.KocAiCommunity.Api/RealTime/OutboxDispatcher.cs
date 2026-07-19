@@ -89,6 +89,22 @@ public sealed class OutboxDispatcher(
                         return hub.Clients.Group(LeaderboardHub.UserGroup(nt.UserId));
                     }
                     break;
+
+                case "engagement.celebrate":
+                    var ce = JsonSerializer.Deserialize<EngagementCelebrationEvent>(payloadJson);
+                    if (ce is not null && !string.IsNullOrWhiteSpace(ce.UserId))
+                    {
+                        return hub.Clients.Group(LeaderboardHub.UserGroup(ce.UserId));
+                    }
+                    break;
+
+                case "run.progress":
+                    var rp = JsonSerializer.Deserialize<RunProgressEvent>(payloadJson);
+                    if (rp is not null)
+                    {
+                        return hub.Clients.Group(LeaderboardHub.RunGroup(rp.JobId.ToString()));
+                    }
+                    break;
             }
         }
         catch (JsonException)

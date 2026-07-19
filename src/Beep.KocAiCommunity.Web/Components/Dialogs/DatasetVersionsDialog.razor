@@ -1,0 +1,157 @@
+@using Beep.KocAiCommunity.Contracts.Datasets
+@using Beep.KocAiCommunity.Web.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@DatasetName · versions &amp; profile</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="d-flex gap-2 mb-3 align-center flex-wrap">
+            <label class="mud-button-root mud-button mud-button-filled mud-button-filled-primary px-4 py-2" style="cursor:pointer;border-radius:var(--mud-default-borderradius);">
+                <MudIcon Icon="@Icons.Material.Filled.UploadFile" Size="Size.Small" Class="mr-1" /> Upload CSV
+                <InputFile OnChange="Upload" accept=".csv" style="display:none;" />
+            </label>
+            <MudTextField @bind-Value="_url" Label="…or import from URL" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:320px;" />
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ImportUrl" Disabled="@(_busy || string.IsNullOrWhiteSpace(_url))">Import</MudButton>
+        </div>
+
+        @if (_versions.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="opacity:.7;">No versions yet — upload a CSV to create draft v1.</MudText>
+        }
+        else
+        {
+            <MudSelect T="int" Label="Version" Value="_selected" ValueChanged="SelectVersion" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:260px;">
+                @foreach (var v in _versions)
+                {
+                    <MudSelectItem T="int" Value="@v.VersionNumber">v@v.VersionNumber · @v.Status</MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (_detail is not null)
+            {
+                var v = _detail.Version;
+                <div class="d-flex align-center gap-2 my-2">
+                    <MudChip T="string" Size="Size.Small" Color="@(v.Status == "published" ? Color.Success : Color.Info)" Variant="Variant.Text">@v.Status</MudChip>
+                    @if (v.Status == "draft")
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="Publish">Publish</MudButton>
+                    }
+                    @foreach (var f in _detail.Files)
+                    {
+                        <MudLink Href="@Api.DatasetFileDownloadUrl(f.Id)" Target="_blank" Typo="Typo.body2">@f.LogicalPath (@f.RowCount rows)</MudLink>
+                    }
+                </div>
+
+                @if (_detail.Profile is not null)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mt-2 mb-1">Profile · @_detail.Profile.TotalRows rows (@_detail.Profile.SampledRows sampled)</MudText>
+                    <MudSimpleTable Dense="true" Hover="true">
+                        <thead><tr><th>Column</th><th>Type</th><th>Nulls</th><th>Distinct</th><th>Min</th><th>Max</th><th>Mean</th></tr></thead>
+                        <tbody>
+                            @foreach (var s in _detail.Schema)
+                            {
+                                var p = _detail.Profile.Columns.FirstOrDefault(c => c.ColumnName == s.ColumnName);
+                                <tr>
+                                    <td><b>@s.ColumnName</b></td>
+                                    <td>@s.DataType@(s.Nullable ? "?" : "")</td>
+                                    <td>@(p?.NullCount)</td>
+                                    <td>@(p?.DistinctCount)</td>
+                                    <td>@Fmt(p?.Min)</td>
+                                    <td>@Fmt(p?.Max)</td>
+                                    <td>@Fmt(p?.Mean)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => Dialog.Close()">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+    [Parameter] public Guid DatasetId { get; set; }
+    [Parameter] public string DatasetName { get; set; } = "";
+
+    private IReadOnlyList<DatasetVersionDto> _versions = [];
+    private DatasetVersionDetailDto? _detail;
+    private int _selected;
+    private string _url = "";
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _versions = await Api.GetDatasetVersionsAsync(DatasetId);
+        if (_versions.Count > 0)
+        {
+            _selected = _versions.Max(v => v.VersionNumber);
+            await SelectVersion(_selected);
+        }
+        else
+        {
+            _detail = null;
+        }
+    }
+
+    private async Task SelectVersion(int n)
+    {
+        _selected = n;
+        _detail = await Api.GetDatasetVersionAsync(DatasetId, n);
+    }
+
+    private async Task Upload(InputFileChangeEventArgs e)
+    {
+        if (e.File is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            await using var stream = e.File.OpenReadStream(maxAllowedSize: 200L * 1024 * 1024);
+            var (_, error) = await Api.UploadDatasetFileAsync(DatasetId, stream, e.File.Name);
+            Snackbar.Add(error ?? "Uploaded — schema and profile computed.", error is null ? Severity.Success : Severity.Warning);
+            await ReloadAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ImportUrl()
+    {
+        _busy = true;
+        try
+        {
+            var (_, error) = await Api.ImportDatasetUrlAsync(DatasetId, _url.Trim());
+            Snackbar.Add(error ?? "Imported.", error is null ? Severity.Success : Severity.Warning);
+            _url = "";
+            await ReloadAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task Publish()
+    {
+        var error = await Api.PublishDatasetVersionAsync(DatasetId, _selected);
+        Snackbar.Add(error ?? $"v{_selected} published.", error is null ? Severity.Success : Severity.Warning);
+        await ReloadAsync();
+    }
+
+    private static string Fmt(double? v) => v?.ToString("0.###") ?? "";
+}

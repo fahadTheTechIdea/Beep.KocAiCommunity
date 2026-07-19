@@ -1,7 +1,7 @@
 # Beep.KocAiCommunity — Implementation Plan
 
 **Plan folder:** `plans/koc-ai-community-platform/`
-**Status:** 🟡 PLANNING — research complete; per-stage documents being implemented
+**Status:** 🟢 BUILDING — foundation/auth/data/API/shell/competitions/learning shipped (see `MASTER_TODO_TRACKER.md` for the 2026-07-19 code audit); engagement (05b) and Worker (10) are next
 **Goal:** Build a dedicated, single-tenant, **internal** platform for Kuwait Oil Company (KOC) whose primary purpose is to **train and familiarize KOC employees with AI and machine learning**. Employees learn through guided learning tracks and then test themselves in **internal, Kaggle-style competitions** scored on hidden KOC data, all on real upstream / production / facilities datasets. Management supervises adoption and skill growth through **org-scoped rollup dashboards** that follow the KOC reporting line. It is built on .NET 10, MudBlazor 9, and ML.NET 5, combining the Community collaboration surface and the Studio ML workflow/experiment surface into one application. This is an internal KOC application, **not a commercial product** — nothing is sold, licensed, or exposed outside KOC.
 
 ## Decision summary (confirmed 2026-07-17)
@@ -22,6 +22,7 @@
 14. **Workflow editor:** Z.Blazor.Diagrams 3.0.4.1 with custom MudBlazor nodes.
 15. **Experiment tracking:** native EF Core tracker using ML.NET `IMonitor`. MLflow is an optional sink only.
 16. **Background execution:** EF-backed durable job queue in the Worker. Stream progress through SignalR via a transactional outbox.
+17. **Community-first, fun UX (added 2026-07-19).** The platform must feel like a social community, not an enterprise tool: employees earn **Barrels (bbl)** for learning/competing/collaborating, climb an O&G career ladder (Roustabout → Chief Geoscientist), collect badges drawn from the shipped O&G icon library, give kudos, keep streaks, and rally behind **Team-vs-Team leaderboards** built on the KOC org tree. Celebrations are warm and never shaming (top-10 + your-rank views only). See `05b_COMMUNITY_ENGAGEMENT_AND_GAMIFICATION.md`.
 
 ## Plan structure
 
@@ -33,6 +34,7 @@
 | 03 | `03_EF_CORE_DATA_AND_ARTIFACT_STORAGE.md` | DbContext, entities, migrations, IArtifactStore |
 | 04 | `04_API_CONTRACTS_AND_REALTIME_EVENTS.md` | `/api/v1` and `/admin/api/v1` routes, SignalR, outbox |
 | 05 | `05_MUDBLAZOR_SHELL_AND_SETUP.md` | Blazor shell, MudBlazor providers, navigation, KOC theming |
+| 05b | `05b_COMMUNITY_ENGAGEMENT_AND_GAMIFICATION.md` | Barrels XP, O&G career ladder, badges, kudos, streaks, team leaderboards, celebrations — the community-fun layer |
 | 06 | `06_COLLABORATION_AND_DISCUSSIONS.md` | Profiles, discussions, activity, mentions, moderation |
 | 07 | `07_DATASETS_PROJECTS_AND_COLLABORATION.md` | Datasets, projects, collaborators, data classification |
 | 07a | `07a_KOC_ENTERPRISE_CONNECTORS.md` | PPDM, OpenWells, EcoSys, SAP, AVEVA PI, ADLS Gen2 connectors |

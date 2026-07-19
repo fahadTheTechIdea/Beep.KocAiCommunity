@@ -1,0 +1,58 @@
+@using Beep.KocAiCommunity.Contracts.Engagement
+@using Beep.KocAiCommunity.Web.Services
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">Send a bit of appreciation to <b>@RecipientName</b>. They'll earn 15 bbl.</MudText>
+
+        <div class="d-flex gap-2 mb-3">
+            @foreach (var e in _emojis)
+            {
+                <MudButton Variant="@(e == _emoji ? Variant.Filled : Variant.Outlined)" Color="Color.Primary"
+                           Style="min-width:48px;font-size:20px;" OnClick="@(() => _emoji = e)">@e</MudButton>
+            }
+        </div>
+
+        <MudTextField @bind-Value="_message" Label="Say why (they'll see this)" Variant="Variant.Outlined"
+                      Margin="Margin.Dense" Lines="3" MaxLength="200" Counter="200" Immediate="true" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Celebration"
+                   OnClick="Submit" Disabled="@(string.IsNullOrWhiteSpace(_message) || _busy)">Send kudos</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    [Parameter] public string RecipientUserId { get; set; } = "";
+    [Parameter] public string RecipientName { get; set; } = "";
+    [Parameter] public string? RefType { get; set; }
+    [Parameter] public Guid? RefId { get; set; }
+
+    private readonly string[] _emojis = ["👏", "🚀", "🛢️", "🌟", "🤝"];
+    private string _emoji = "👏";
+    private string _message = "";
+    private bool _busy;
+
+    private void Cancel() => Dialog.Cancel();
+
+    private async Task Submit()
+    {
+        _busy = true;
+        var error = await Api.GiveKudosAsync(new GiveKudosRequest(RecipientUserId, _message, _emoji, RefType, RefId));
+        if (error is null)
+        {
+            Snackbar.Add($"{_emoji} Kudos sent to {RecipientName}!", Severity.Success);
+            Dialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add(error, Severity.Error);
+            _busy = false;
+        }
+    }
+}

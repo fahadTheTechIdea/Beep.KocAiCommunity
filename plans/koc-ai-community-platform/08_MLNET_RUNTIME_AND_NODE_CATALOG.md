@@ -1,8 +1,38 @@
 # Phase 08 — ML.NET Runtime and Node Catalog
 
-**Status:** 🟡 PLANNING
+**Status:** 🟢 MOSTLY DONE (2026-07-19) — node abstractions, O&G catalog, featurization guard, and determinism shipped; deeper per-task handlers (anomaly/forecasting execution) deferred.
 **Dependencies:** Phase 03, Phase 07, Phase 07a
 **Goal:** Define the ML.NET runtime contracts, register the O&G node catalog, and validate deterministic sample workflows.
+
+## Implementation notes (2026-07-19)
+
+The ML.NET executor (`MlPipelineExecutor`) and AutoML (`AutoMlTrainer`, scoped `MLContext`, fixed seed)
+shipped earlier. This session added the **formal node layer + guardrails**:
+
+- **Node abstractions (code-first).** `Application/ML/NodeCatalog.cs`: `NodeDescriptor` (kind, category,
+  ports, typed `NodeParameter`s), `INodeRegistry` with lookup + `ValidateParameters` (required / numeric
+  / select-option checks), and `MlNodeRegistry` — the canonical, O&G-flavored catalog of all 22 pipeline
+  kinds. A unit test asserts every catalog kind is known to `WorkflowCompiler`, keeping backend and
+  compiler in sync.
+- **ML task catalog.** `MlTaskCatalog` advertises the three AutoML-backed tasks (binary/multiclass/
+  regression, `MlTaskType`-mapped, `Supported = true`) plus anomaly + forecasting as declared-but-not-yet-
+  executable (`Supported = false`), each with an O&G example.
+- **Split-before-fit guard.** `FeaturizationGuard.Check(WorkflowDefinition)` BFS's the graph and flags any
+  supervised model (`train`/`cross-validate`) reachable from a dataset without a `split` in between —
+  i.e. fitting on the train+test union (leakage). Unsupervised `cluster` is exempt. **Enforced on workflow
+  publish** (`WorkflowVersionService.PublishAsync`) after the compiler, so a leaky graph can't be frozen.
+- **Determinism.** A unit test confirms two AutoML runs on identical data + fixed seed produce identical
+  winning algorithm and metrics.
+- **API/UI/client.** `GET /api/v1/ml/nodes[/{kind}]`, `POST /ml/nodes/{kind}/validate`, `GET /ml/tasks`,
+  `POST /ml/workflows/featurization-check`; typed client; a `/nodes` catalog page (tasks + nodes by
+  category). No entities → no migration.
+- **Tests.** 9 unit (`NodeCatalogTests`, `FeaturizationGuardTests`, `MlDeterminismTests`) + 3 integration
+  (`MlNodeEndpointsTests`: catalog + validation, task catalog + featurization-check, publish rejects a
+  no-split workflow). Whole solution builds `-warnaserror` clean; 115 unit + 76 integration tests pass.
+
+**Deferred (documented):** executable anomaly-detection and time-series forecasting handlers (declared in
+the task catalog, `Supported=false`); the full `IMlTaskHandler`/`INodeExecutor` per-node execution split
+(the existing `MlPipelineExecutor` runs graphs today); Recommendation/ranking and TorchSharp deep learning.
 
 ## 1. Goal and dependencies
 

@@ -72,8 +72,9 @@ public static class DependencyInjection
         // Supervisor rollups.
         services.AddScoped<Application.Supervision.ISupervisionService, Supervision.SupervisionService>();
 
-        // Datasets (org-scoped visibility).
+        // Datasets (org-scoped visibility) + versioned contents (files, schema, profiling, imports).
         services.AddScoped<Application.Datasets.IDatasetService, Datasets.DatasetService>();
+        services.AddScoped<Application.Datasets.IDatasetContentService, Datasets.DatasetContentService>();
 
         // Studio (ML.NET training). The IMlTrainer implementation is registered by the API host
         // (which references the ML project); StudioService orchestrates train + record.
@@ -86,8 +87,19 @@ public static class DependencyInjection
         services.AddScoped<Application.Workflow.IWorkflowService, Workflow.WorkflowService>();
         services.AddScoped<Application.Workflow.IPipelineExecutor, ML.MlPipelineExecutor>();
 
+        // Code-first ML node catalog (descriptors + parameter validation).
+        services.AddSingleton<Application.ML.INodeRegistry, Application.ML.MlNodeRegistry>();
+
+        // Workflow versioning (immutable versions, draft→publish, import/export) + templates.
+        services.AddScoped<Application.Workflow.IWorkflowVersionService, Workflow.WorkflowVersionService>();
+        services.AddScoped<Application.Workflow.IWorkflowTemplateService, Workflow.WorkflowTemplateService>();
+
         // Model registry (register → approve → promote).
         services.AddScoped<Application.Studio.IModelRegistry, Studio.ModelRegistryService>();
+
+        // Inference serving (dynamic-schema scoring via the prediction pool + per-call audit logs).
+        // The IPredictionPool implementation lives in the ML project and is registered by the hosts.
+        services.AddScoped<Application.Studio.IInferenceService, Studio.InferenceService>();
 
         // In-app notifications.
         services.AddScoped<Application.Notifications.INotificationService, Notifications.NotificationService>();
@@ -97,6 +109,22 @@ public static class DependencyInjection
 
         // ML projects (a workflow lives in a project — personal or competition-targeted).
         services.AddScoped<Application.Studio.IProjectService, Studio.ProjectService>();
+
+        // Engagement: Barrels XP, career ladder, badges, streaks, kudos, team leaderboards.
+        services.AddScoped<Application.Engagement.IEngagementService, Engagement.EngagementService>();
+
+        // Durable job queue (enqueued by the API, executed by the Worker).
+        services.AddScoped<Application.Jobs.IJobQueue, Jobs.EfJobQueue>();
+
+        // Experiment tracking + the default metric sink (MLflow REST adapter can be added alongside).
+        services.AddScoped<Application.Experiments.IExperimentSink, Experiments.EfExperimentSink>();
+        services.AddScoped<Application.Experiments.IExperimentService, Experiments.ExperimentService>();
+
+        // Platform admin: typed settings (secrets encrypted via ISecretProtector), feature flags, dashboard.
+        // The ISecretProtector implementation is registered by the host (AddKocSecretProtection).
+        services.AddScoped<Application.Admin.ISettingsService, Admin.SettingsService>();
+        services.AddScoped<Application.Admin.IFeatureFlagService, Admin.FeatureFlagService>();
+        services.AddScoped<Application.Admin.IAdminDashboardService, Admin.AdminDashboardService>();
 
         return services;
     }

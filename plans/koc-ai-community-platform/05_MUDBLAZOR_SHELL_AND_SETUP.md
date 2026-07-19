@@ -1,6 +1,7 @@
 # Phase 05 — MudBlazor Shell and Setup
 
-**Status:** 🟡 PLANNING
+**Status:** ✅ DONE (2026-07-19 audit) — shell, theme, nav, notification bell, and 12 routed pages shipped in `Web` + `Ui.Shared`. Remaining: command palette, setup diagnostics page.
+**Engagement follow-up:** Phase 05b upgrades this shell with a personalized greeting (incl. Arabic variant), a streak-flame + Barrels chip in the app bar, an XP ring on the avatar, and celebration toasts — see `05b_COMMUNITY_ENGAGEMENT_AND_GAMIFICATION.md` §3.9.
 **Dependencies:** Phase 01, Phase 02
 **Goal:** Build the KOC-branded Blazor shell, providers, navigation, and first-run setup diagnostics.
 

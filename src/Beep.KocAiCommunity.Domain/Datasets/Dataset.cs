@@ -21,5 +21,11 @@ public class Dataset : AuditableEntity
     public string Domain { get; set; } = "upstream";
     public string? Tags { get; set; }
 
+    /// <summary>SPDX license expression (e.g. "CC-BY-4.0"), if declared.</summary>
+    public string? LicenseSpdxId { get; set; }
+
+    /// <summary>The highest version number issued (draft or published).</summary>
+    public int LatestVersionNumber { get; set; }
+
     public Guid? FileArtifactId { get; set; }
 }

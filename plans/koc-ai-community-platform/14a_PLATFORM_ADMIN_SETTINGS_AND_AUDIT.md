@@ -1,8 +1,41 @@
 # Phase 14a — Platform Admin, Settings, and Audit
 
-**Status:** 🟡 PLANNING
+**Status:** 🟢 MOSTLY DONE (2026-07-19) — core admin surface shipped; several sub-areas deferred (see below).
 **Dependencies:** Phase 02, Phase 03, Phase 04
 **Goal:** Build the platform admin surface under a single `PlatformAdmin` role, with a typed settings service and a complete audit trail.
+
+## Implementation notes (2026-07-19)
+
+The audit plumbing (`AuditEnvelopeService`, `AdminAuditLog`, `RequirePlatformAdmin` policy) shipped
+earlier. This session added the admin **console, typed settings, feature flags, and audit query**:
+
+- **Typed settings.** Code-first `SettingsCatalog` (key, category, help, `IsSecret`, default) is the
+  source of truth for *what* settings exist; the DB (`SettingValue`) holds only current value +
+  version. `SettingsService` reads against the catalog, **encrypts secrets** at rest via
+  `ISecretProtector`, **masks** them everywhere they surface (GET and audit JSON — plaintext never
+  leaves the process), audits every change, and bumps the version.
+- **Secret protection is an abstraction.** `ISecretProtector` (Application) keeps Infrastructure free
+  of ASP.NET; `DataProtectionSecretProtector` (ServiceDefaults, ASP.NET Data Protection) is registered
+  by the host via `AddKocSecretProtection()`. Production can swap in a KMS-backed implementation.
+- **Feature flags.** `FeatureFlagService` — boolean + rollout %; membership is a **stable SHA-256
+  hash** of `key:userId` so a user is consistently in or out of a bucket. Audited.
+- **Dashboard + audit.** `AdminDashboardService` returns live counts (users/workflows/competitions/
+  models/discussions), recent audit, and health lines; `ListAuditAsync` filters the trail.
+- **API/UI/client.** `/api/v1/admin/**` (dashboard, settings GET/PUT, feature-flags GET/PUT, audit) —
+  the whole group is behind `RequirePlatformAdmin` (**403 to non-admins**). Typed `KocApiClient`
+  methods; a real `/admin` console (Dashboard / Settings / Feature flags / Audit tabs) in Web; the old
+  scaffold moved to `/admin/overview`.
+- **Migrations.** Dual-provider `AddAdmin` (SettingValues, FeatureFlags — schema `platform`).
+- **Tests.** 4 unit (`FeatureFlagServiceTests`: disabled/0%/100%/stable-rollout/clamp) + 8 integration
+  (`AdminEndpointsTests`: 403 for non-admins on all endpoints, setting persist+version+audit, secret
+  masking in responses **and** audit JSON, feature-flag upsert, dashboard). Whole solution builds
+  `-warnaserror` clean; 95 unit + 70 integration tests pass.
+
+**Deferred (documented):** DB-backed platform roles/permission grid + first-admin bootstrap (this build
+authorizes from Entra role claims, so a DB `UserPlatformRole` would need auth-policy changes), admin
+session tracking, a background health-monitor hosted service (health is computed on-demand today),
+maintenance tasks, email templates/broadcast, and the settings sub-page-per-category structure (one
+tabbed console today). Key Vault for secrets is a deployment concern (dev uses Data Protection).
 
 ## 1. Goal and dependencies
 

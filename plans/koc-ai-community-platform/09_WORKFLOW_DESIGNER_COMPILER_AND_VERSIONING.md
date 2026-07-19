@@ -1,8 +1,43 @@
 # Phase 09 — Workflow Designer, Compiler, and Versioning
 
-**Status:** 🟡 PLANNING
+**Status:** ✅ DONE (2026-07-19)
 **Dependencies:** Phase 08
 **Goal:** Visual workflow designer on Z.Blazor.Diagrams, typed `WorkflowDefinition` JSON, immutable versioning, and a workflow compiler with cycle detection and type checks.
+
+## Implementation notes (2026-07-19)
+
+The Z.Blazor.Diagrams designer (`WorkflowDesigner.razor`), the typed `WorkflowDefinition` contract, and
+the `WorkflowCompiler` (Kahn topo-sort, cycle detection, known-kind + required-node checks) shipped
+earlier. This session added the **versioning + templates + import/export** layer:
+
+- **Immutable versions.** New `Workflow` / `WorkflowVersion` / `WorkflowTemplate` entities. A workflow
+  starts with a draft v1. `SaveDraftAsync` edits the open draft in place; once a version is
+  **published** it's frozen — the next edit opens a *new* draft (v2, v3, …), so published graphs never
+  change. `PublishAsync` runs the compiler first and refuses to publish a graph that doesn't compile.
+- **Canonical snapshots.** `WorkflowSerializer` (Workflow project) parses → canonicalizes (stable
+  byte-for-byte JSON) → SHA-256 `SnapshotHash`. This gives provenance, immutability verification, and
+  loss-free round-trips regardless of input formatting.
+- **Import/export.** `ExportAsync` emits a portable `koc-workflow-export` envelope (schema + embedded
+  canonical definition + hash); `ImportAsync` reconstructs it as a new owned draft. Round-trip
+  preserves the graph (same canonical hash).
+- **Templates.** `WorkflowTemplateSeeder` seeds three O&G starters (ESP failure classifier, production-
+  rate regressor, well-log clustering); `InstantiateAsync` clones a template into a new owned draft.
+- **API/UI/client.** `/api/v1/workflows/**` (CRUD, versions, publish/archive/validate/export, import) +
+  `/api/v1/workflow-templates` (list, instantiate); typed `KocApiClient` methods; a `/workflows`
+  management page (list, versions with publish/archive/export, template gallery). Authz: any employee
+  reads; owner or `PlatformAdmin` edits/publishes.
+- **Migrations.** Dual-provider `AddWorkflows` (Workflows / WorkflowVersions / WorkflowTemplates).
+- **Tests.** 4 unit (`WorkflowSerializerTests`: round-trip, hash stability across formatting, parse
+  errors, cycle rejection) + 4 integration (`WorkflowRegistryEndpointsTests`: publish freezes + edits
+  open a new draft, invalid-graph publish rejected, export→import reproduces the graph, template
+  instantiate compiles). Whole solution builds `-warnaserror` clean; 91 unit + 62 integration tests pass.
+
+**Note on namespace collision:** the `Beep.KocAiCommunity.Workflow` project namespace shadows the
+`Domain.Studio.Workflow` entity type across the solution, so files that use the entity alias it via
+`using WorkflowEntity = Beep.KocAiCommunity.Domain.Studio.Workflow;`.
+
+**Deferred:** the 200-node browser-scale gate (designer perf benchmark) and dagre/ELK auto-layout
+remain open; interactive step-through debugging stays out of scope (see §12).
 
 ## 1. Goal and dependencies
 

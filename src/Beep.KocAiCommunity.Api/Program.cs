@@ -5,6 +5,7 @@ using Beep.KocAiCommunity.Infrastructure;
 using Beep.KocAiCommunity.Infrastructure.Learning;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Beep.KocAiCommunity.ServiceDefaults;
+using Beep.KocAiCommunity.ServiceDefaults.Security;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,12 @@ builder.Services.AddSignalR();
 // Persistence + KOC security.
 builder.Services.AddKocInfrastructure(builder.Configuration);
 builder.Services.AddScoped<Beep.KocAiCommunity.Application.ML.IMlTrainer, Beep.KocAiCommunity.ML.AutoMlTrainer>();
+
+// Prediction pool: a singleton, hot-reloadable cache of loaded models for inference serving.
+builder.Services.AddSingleton<Beep.KocAiCommunity.Application.ML.IPredictionPool, Beep.KocAiCommunity.ML.AutoMlPredictionPool>();
+
+// Data Protection + the ISecretProtector used to encrypt secret platform settings.
+builder.Services.AddKocSecretProtection();
 builder.Services.AddKocCurrentUser();
 builder.Services.AddKocAuthorization();
 builder.Services.AddKocApiAuthentication(builder.Configuration);
@@ -72,10 +79,16 @@ v1.MapCompetitionEndpoints();
 v1.MapDatasetEndpoints();
 v1.MapStudioEndpoints();
 v1.MapModelEndpoints();
+v1.MapWorkflowRegistryEndpoints();
 v1.MapDiscussionEndpoints();
 v1.MapNotificationEndpoints();
 v1.MapDashboardEndpoints();
 v1.MapProjectEndpoints();
+v1.MapEngagementEndpoints();
+v1.MapRunEndpoints();
+v1.MapExperimentEndpoints();
+v1.MapAdminEndpoints();
+v1.MapMlNodeEndpoints();
 
 app.MapHub<LeaderboardHub>("/hubs/leaderboard");
 
@@ -86,7 +99,9 @@ if (app.Configuration.GetValue("Seed:Enabled", false))
     var db = scope.ServiceProvider.GetRequiredService<KocDbContext>();
     await db.Database.MigrateAsync();
     await LearningSeeder.SeedTracksAsync(db);
+    await Beep.KocAiCommunity.Infrastructure.Engagement.EngagementSeeder.SeedBadgesAsync(db);
     await Beep.KocAiCommunity.Infrastructure.Organization.DevOrgSeeder.SeedDevOrgAsync(db);
+    await Beep.KocAiCommunity.Infrastructure.Workflow.WorkflowTemplateSeeder.SeedAsync(db);
     var artifacts = scope.ServiceProvider.GetRequiredService<Beep.KocAiCommunity.Application.Storage.IArtifactService>();
     await Beep.KocAiCommunity.Infrastructure.Competitions.CompetitionSeeder.SeedDemoAsync(db, artifacts);
 }

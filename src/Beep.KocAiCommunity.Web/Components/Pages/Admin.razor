@@ -1,0 +1,188 @@
+@page "/admin"
+@using Beep.KocAiCommunity.Contracts.Admin
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Web.Components.Shared
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Admin · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Platform" Title="Admin console"
+            Subtitle="Live platform health, typed settings (secrets encrypted), feature flags, and the audit trail. Requires the PlatformAdmin role." />
+
+@if (_forbidden)
+{
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">You need the <b>PlatformAdmin</b> role to view this console.</MudAlert>
+}
+else
+{
+    <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="pt-2">
+        <MudTabPanel Text="Dashboard" Icon="@Icons.Material.Filled.Dashboard">
+            @if (_dashboard is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                <MudGrid Spacing="4" Class="mb-4">
+                    @foreach (var kpi in Kpis(_dashboard))
+                    {
+                        <MudItem xs="6" md="2">
+                            <BlueprintCard Class="pa-4" Style="text-align:center;">
+                                <MudText Typo="Typo.h4" Class="koc-heading">@kpi.Value</MudText>
+                                <MudText Typo="Typo.caption">@kpi.Label</MudText>
+                            </BlueprintCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+
+                <MudGrid Spacing="6">
+                    <MudItem xs="12" md="5">
+                        <MudText Typo="Typo.h6" Class="koc-heading mb-2">Health</MudText>
+                        @foreach (var h in _dashboard.Health)
+                        {
+                            <BlueprintCard Class="pa-3 mb-2">
+                                <div class="d-flex align-center gap-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                                    <div><b>@h.Component</b> <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.7;">@h.Detail</MudText></div>
+                                </div>
+                            </BlueprintCard>
+                        }
+                    </MudItem>
+                    <MudItem xs="12" md="7">
+                        <MudText Typo="Typo.h6" Class="koc-heading mb-2">Recent activity</MudText>
+                        <AuditTable Rows="_dashboard.RecentAudit" />
+                    </MudItem>
+                </MudGrid>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="Settings" Icon="@Icons.Material.Filled.Settings" OnClick="EnsureSettings">
+            @if (_settings is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                @foreach (var cat in _settings.GroupBy(s => s.Category))
+                {
+                    <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-2">@cat.Key</MudText>
+                    @foreach (var s in cat)
+                    {
+                        <BlueprintCard Class="pa-3 mb-2">
+                            <div class="d-flex align-center gap-3">
+                                <div class="flex-grow-1">
+                                    <MudText Typo="Typo.body2"><b>@s.DisplayName</b> @(s.IsSecret ? "🔒" : "")</MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:.7;">@s.Description · v@s.Version</MudText>
+                                </div>
+                                <MudTextField T="string" Value="@Draft(s)" ValueChanged="@(v => _drafts[s.Key] = v)"
+                                              InputType="@(s.IsSecret ? InputType.Password : InputType.Text)"
+                                              Placeholder="@(s.IsSecret && s.IsSet ? "•••••• (set)" : "")"
+                                              Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:280px;" />
+                                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => SaveSetting(s)">Save</MudButton>
+                            </div>
+                        </BlueprintCard>
+                    }
+                }
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="Feature flags" Icon="@Icons.Material.Filled.Flag" OnClick="EnsureFlags">
+            <div class="d-flex gap-2 mb-3">
+                <MudTextField @bind-Value="_newFlagKey" Label="New flag key" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:220px;" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                           Disabled="@string.IsNullOrWhiteSpace(_newFlagKey)" OnClick="AddFlag">Add flag</MudButton>
+            </div>
+            @if (_flags is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                @foreach (var f in _flags)
+                {
+                    <BlueprintCard Class="pa-3 mb-2">
+                        <div class="d-flex align-center gap-3">
+                            <div class="flex-grow-1">
+                                <MudText Typo="Typo.body2"><b>@f.Name</b> <code>@f.Key</code></MudText>
+                                <MudText Typo="Typo.caption" Style="opacity:.7;">@f.Description</MudText>
+                            </div>
+                            <MudSwitch T="bool" Value="f.IsEnabled" Color="Color.Primary" ValueChanged="@(v => ToggleFlag(f, v))" Label="@(f.IsEnabled ? "On" : "Off")" />
+                            <MudText Typo="Typo.caption">rollout @f.RolloutPercentage%</MudText>
+                        </div>
+                    </BlueprintCard>
+                }
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="Audit" Icon="@Icons.Material.Filled.Verified" OnClick="EnsureAudit">
+            @if (_audit is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                <AuditTable Rows="_audit" />
+            }
+        </MudTabPanel>
+    </MudTabs>
+}
+
+@code {
+    private bool _forbidden;
+    private AdminDashboardDto? _dashboard;
+    private IReadOnlyList<SettingDto>? _settings;
+    private IReadOnlyList<FeatureFlagDto>? _flags;
+    private IReadOnlyList<AuditLogDto>? _audit;
+    private readonly Dictionary<string, string> _drafts = new();
+    private string _newFlagKey = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _dashboard = await Api.GetAdminDashboardAsync();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            _forbidden = true;
+        }
+    }
+
+    private static IEnumerable<(string Label, int Value)> Kpis(AdminDashboardDto d) =>
+    [
+        ("Users", d.Users), ("Workflows", d.Workflows), ("Competitions", d.Competitions),
+        ("Models", d.Models), ("Discussions", d.Discussions),
+    ];
+
+    private string Draft(SettingDto s) => _drafts.TryGetValue(s.Key, out var v) ? v : (s.IsSecret ? "" : s.Value);
+
+    private async Task EnsureSettings() => _settings ??= await Api.GetSettingsAsync();
+    private async Task EnsureFlags() => _flags ??= await Api.GetFeatureFlagsAsync();
+    private async Task EnsureAudit() => _audit ??= await Api.GetAuditAsync();
+
+    private async Task SaveSetting(SettingDto s)
+    {
+        var value = _drafts.TryGetValue(s.Key, out var v) ? v : s.Value;
+        var (_, error) = await Api.UpdateSettingAsync(s.Key, value);
+        Snackbar.Add(error ?? $"Saved {s.DisplayName}.", error is null ? Severity.Success : Severity.Warning);
+        _drafts.Remove(s.Key);
+        _settings = await Api.GetSettingsAsync();
+    }
+
+    private async Task ToggleFlag(FeatureFlagDto f, bool enabled)
+    {
+        var (_, error) = await Api.UpsertFeatureFlagAsync(f.Key, new UpsertFeatureFlagRequest(f.Name, f.Description, enabled, f.RolloutPercentage));
+        Snackbar.Add(error ?? $"{f.Name} {(enabled ? "enabled" : "disabled")}.", error is null ? Severity.Success : Severity.Warning);
+        _flags = await Api.GetFeatureFlagsAsync();
+    }
+
+    private async Task AddFlag()
+    {
+        var (_, error) = await Api.UpsertFeatureFlagAsync(_newFlagKey.Trim(), new UpsertFeatureFlagRequest(_newFlagKey.Trim(), "", false, 100));
+        Snackbar.Add(error ?? "Flag added.", error is null ? Severity.Success : Severity.Warning);
+        _newFlagKey = "";
+        _flags = await Api.GetFeatureFlagsAsync();
+    }
+}

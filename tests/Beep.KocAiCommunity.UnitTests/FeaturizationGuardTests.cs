@@ -1,0 +1,51 @@
+using Beep.KocAiCommunity.Application.ML;
+using Beep.KocAiCommunity.Contracts.Workflow;
+using FluentAssertions;
+using Xunit;
+
+namespace Beep.KocAiCommunity.UnitTests;
+
+public class FeaturizationGuardTests
+{
+    private static WorkflowNode Node(string id, string kind) => new() { Id = id, Kind = kind };
+
+    private static WorkflowDefinition Graph(IEnumerable<WorkflowNode> nodes, params (string From, string To)[] edges) => new()
+    {
+        Nodes = nodes.ToList(),
+        Edges = edges.Select(e => new WorkflowEdge(e.From, e.To)).ToList(),
+    };
+
+    [Fact]
+    public void Fitting_without_a_split_is_flagged()
+    {
+        var def = Graph([Node("ds", "dataset"), Node("tr", "train")], ("ds", "tr"));
+        FeaturizationGuard.Check(def).Should().ContainSingle().Which.Should().Contain("tr");
+    }
+
+    [Fact]
+    public void A_split_before_the_model_is_clean()
+    {
+        var def = Graph([Node("ds", "dataset"), Node("sp", "split"), Node("tr", "train")], ("ds", "sp"), ("sp", "tr"));
+        FeaturizationGuard.Check(def).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_transform_before_the_split_still_needs_the_split_before_the_model()
+    {
+        // dataset → normalize → train, no split → leak.
+        var leak = Graph([Node("ds", "dataset"), Node("nm", "normalize"), Node("tr", "train")], ("ds", "nm"), ("nm", "tr"));
+        FeaturizationGuard.Check(leak).Should().NotBeEmpty();
+
+        // dataset → normalize → split → train → clean.
+        var clean = Graph([Node("ds", "dataset"), Node("nm", "normalize"), Node("sp", "split"), Node("tr", "train")],
+            ("ds", "nm"), ("nm", "sp"), ("sp", "tr"));
+        FeaturizationGuard.Check(clean).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Unsupervised_clustering_does_not_require_a_split()
+    {
+        var def = Graph([Node("ds", "dataset"), Node("cl", "cluster")], ("ds", "cl"));
+        FeaturizationGuard.Check(def).Should().BeEmpty();
+    }
+}

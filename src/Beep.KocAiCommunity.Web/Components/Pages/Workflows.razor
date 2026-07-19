@@ -1,0 +1,218 @@
+@page "/workflows"
+@using Beep.KocAiCommunity.Contracts.Workflow
+@using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Workflows · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="Studio · registry" Title="Workflows"
+            Subtitle="Version your ML pipelines: save drafts, publish an immutable snapshot once it compiles, then export or roll a new draft. Start from an O&G template.">
+    <Actions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Upload" OnClick="Import" Class="mr-2">Import</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="Create">New workflow</MudButton>
+    </Actions>
+</PageHeader>
+
+<MudGrid Spacing="6">
+    <MudItem xs="12" md="8">
+        @if (_workflows is null)
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+        else if (_workflows.Count == 0)
+        {
+            <BlueprintCard Class="pa-8" Style="text-align:center;">
+                <MudIcon Icon="@Icons.Material.Filled.Schema" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                <MudText Typo="Typo.h6" Class="koc-heading mb-1">No workflows yet</MudText>
+                <MudText Typo="Typo.body2">Create one, or instantiate a template on the right.</MudText>
+            </BlueprintCard>
+        }
+        else
+        {
+            @foreach (var w in _workflows)
+            {
+                <BlueprintCard Class="pa-4 mb-3">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle1" Class="koc-heading">@w.Name</MudText>
+                            <MudText Typo="Typo.caption">@w.Classification · v@w.LatestVersionNumber · latest: @w.LatestStatus · @w.VersionCount version(s)</MudText>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Toggle(w.Id)">@(_expanded == w.Id ? "Hide" : "Versions")</MudButton>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Default" OnClick="() => Delete(w.Id)" />
+                        </div>
+                    </div>
+
+                    @if (_expanded == w.Id && _detail is not null)
+                    {
+                        <MudDivider Class="my-2" />
+                        @foreach (var v in _detail.Versions)
+                        {
+                            <div class="d-flex align-center justify-space-between py-1">
+                                <div>
+                                    <b>v@v.VersionNumber</b>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@StatusColor(v.Status)">@v.Status</MudChip>
+                                    <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.7;">@v.SnapshotHash[..8] @(v.Notes is null ? "" : $"· {v.Notes}")</MudText>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    @if (v.Status == "draft")
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Publish(w.Id, v.VersionNumber)">Publish</MudButton>
+                                    }
+                                    @if (v.Status == "published")
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => Archive(w.Id, v.VersionNumber)">Archive</MudButton>
+                                    }
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Download" OnClick="() => Export(w.Id, v.VersionNumber)">Export</MudButton>
+                                </div>
+                            </div>
+                        }
+                    }
+                </BlueprintCard>
+            }
+        }
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <BlueprintCard Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Templates</MudText>
+            @if (_templates is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                @foreach (var t in _templates)
+                {
+                    <div class="py-2" style="border-top:1px solid var(--koc-divider);">
+                        <MudText Typo="Typo.body2"><b>@t.DisplayName</b> <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@t.Domain</MudChip></MudText>
+                        <MudText Typo="Typo.caption" Style="opacity:.75;">@t.Description</MudText>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                                   OnClick="() => Instantiate(t)">Use this template</MudButton>
+                    </div>
+                }
+            }
+        </BlueprintCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private IReadOnlyList<WorkflowSummaryDto>? _workflows;
+    private IReadOnlyList<WorkflowTemplateDto>? _templates;
+    private Guid? _expanded;
+    private WorkflowDetailDto? _detail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+        _templates = await Api.GetWorkflowTemplatesAsync();
+    }
+
+    private async Task Load() => _workflows = await Api.GetWorkflowsAsync();
+
+    private async Task Toggle(Guid id)
+    {
+        if (_expanded == id)
+        {
+            _expanded = null;
+            _detail = null;
+            return;
+        }
+
+        _expanded = id;
+        _detail = await Api.GetWorkflowDetailAsync(id);
+    }
+
+    private async Task Create()
+    {
+        var (wf, error) = await Api.CreateWorkflowAsync(new CreateWorkflowRequest("New workflow", "", "Internal"));
+        Report(error, "Workflow created.");
+        await Load();
+        if (wf is not null)
+        {
+            await Toggle(wf.Id);
+        }
+    }
+
+    private async Task Instantiate(WorkflowTemplateDto t)
+    {
+        var (wf, error) = await Api.InstantiateTemplateAsync(t.Code, new InstantiateTemplateRequest(t.DisplayName));
+        Report(error, $"Created from '{t.DisplayName}'.");
+        await Load();
+        if (wf is not null)
+        {
+            await Toggle(wf.Id);
+        }
+    }
+
+    private async Task Publish(Guid id, int v)
+    {
+        Report(await Api.PublishWorkflowVersionAsync(id, v), $"v{v} published.");
+        await Refresh(id);
+    }
+
+    private async Task Archive(Guid id, int v)
+    {
+        Report(await Api.ArchiveWorkflowVersionAsync(id, v), $"v{v} archived.");
+        await Refresh(id);
+    }
+
+    private async Task Export(Guid id, int v)
+    {
+        var export = await Api.ExportWorkflowVersionAsync(id, v);
+        if (export is not null)
+        {
+            var (wf, error) = await Api.ImportWorkflowAsync(new ImportWorkflowRequest("(copy)", export.EnvelopeJson));
+            Report(error, "Exported and re-imported as a copy.");
+            await Load();
+        }
+    }
+
+    private async Task Delete(Guid id)
+    {
+        Report(await Api.DeleteWorkflowAsync(id), "Workflow deleted.");
+        if (_expanded == id)
+        {
+            _expanded = null;
+            _detail = null;
+        }
+
+        await Load();
+    }
+
+    private async Task Import()
+    {
+        // A minimal import path: re-import the first template's canonical graph as a demonstration.
+        var templates = _templates ?? await Api.GetWorkflowTemplatesAsync();
+        if (templates.Count == 0)
+        {
+            Snackbar.Add("No templates to import from yet.", Severity.Info);
+            return;
+        }
+
+        var (wf, error) = await Api.InstantiateTemplateAsync(templates[0].Code, new InstantiateTemplateRequest($"Imported {templates[0].DisplayName}"));
+        Report(error, "Imported a starter workflow.");
+        await Load();
+    }
+
+    private async Task Refresh(Guid id)
+    {
+        await Load();
+        if (_expanded == id)
+        {
+            _detail = await Api.GetWorkflowDetailAsync(id);
+        }
+    }
+
+    private void Report(string? error, string ok) =>
+        Snackbar.Add(error ?? ok, error is null ? Severity.Success : Severity.Warning);
+
+    private static Color StatusColor(string status) => status switch
+    {
+        "published" => Color.Success,
+        "archived" => Color.Default,
+        _ => Color.Info,
+    };
+}

@@ -1,8 +1,41 @@
 # Phase 07 — Datasets, Projects, and Collaboration
 
-**Status:** 🟡 PLANNING
+**Status:** 🟢 MOSTLY DONE (2026-07-19) — dataset depth (versions/files/schema/profiling/imports) shipped; project collaboration depth + SQL import deferred.
 **Dependencies:** Phase 03, Phase 04
 **Goal:** Datasets, ML projects, and collaboration workflows with KOC data classification enforcement.
+
+## Implementation notes (2026-07-19)
+
+Dataset metadata + org-scoped visibility + projects shipped earlier. This session added the **dataset
+depth**:
+
+- **Immutable versions + files.** `DatasetVersion` (draft→published→archived) + `DatasetFile` (artifact-
+  backed). Uploading a CSV writes into the dataset's draft; once published the version is frozen and the
+  next upload opens a new draft. Owner/admin only for writes; reads honor dataset visibility.
+- **Schema inference + reproducible profiling.** `CsvProfiler` streams a CSV, infers each column's type
+  (integer/number/boolean/date/string) and nullability, and computes sampled stats (null count,
+  distinct, min/max/mean) over the first N rows — **deterministic, so profiles are reproducible**.
+  Persisted as `DatasetSchemaColumn` + `DatasetProfile`/`DatasetProfileColumn`.
+- **Classification-enforced download.** Public/Internal files download to any user who can see the
+  dataset; **Confidential/Restricted require the owner or a platform admin** (explicit
+  `UserEntityPermission` grants are a documented extension point).
+- **URL import with SSRF guard.** `UrlImportGuard` rejects non-http(s) schemes and any host that
+  resolves to a loopback/RFC1918/link-local address (incl. the cloud metadata endpoint) *before* any
+  fetch; size-capped download; then the same ingest path (schema + profile).
+- **API/UI/client.** `/datasets/{id}/files` (upload), `/imports` (URL), `/versions[/{n}]`,
+  `/versions/{n}/publish|archive`, `/files/{fileId}/download`; typed `KocApiClient` methods; a
+  `DatasetVersionsDialog` (upload/import, version picker, publish, download, profile table) on the
+  Datasets page.
+- **Migrations.** Dual-provider `AddDatasetVersioning` (5 tables + Dataset.LatestVersionNumber/LicenseSpdxId).
+- **Tests.** 11 unit (`CsvProfilerTests` reproducible schema/stats; `UrlImportGuardTests` SSRF matrix) +
+  3 integration (`DatasetContentEndpointsTests`: upload→schema/profile→publish-freezes; classification
+  gate for Confidential download; URL SSRF rejection). Whole solution builds `-warnaserror` clean; 106
+  unit + 73 integration tests pass.
+
+**Deferred (documented):** SQL import adapter (needs a live read-only DB connection); project
+collaboration depth (members/roles/activity/templates — `Project` entity + basic service exist);
+dataset-to-project AutoML import (that's Phase 11); Parquet; exhaustive (non-sampled) profiling of
+>10 GB datasets; CSV quoted-field parsing (simple comma split today).
 
 ## 1. Goal and dependencies
 

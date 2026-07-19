@@ -1,0 +1,149 @@
+@using Beep.KocAiCommunity.Contracts.Studio
+@using Beep.KocAiCommunity.Web.Services
+@inject IKocApiClient Api
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Predict · @ModelName <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@SemVer</MudChip></MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-2">
+            Enter one row of feature values, one <code>column=value</code> per line. The label column is
+            optional — it's ignored during scoring.
+        </MudText>
+        <MudTextField @bind-Value="_input" Label="Features" Variant="Variant.Outlined" Lines="5"
+                      Placeholder="x1=9&#10;x2=8" Class="mb-3" />
+
+        <div class="d-flex gap-2 mb-3">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow"
+                       Disabled="@_busy" OnClick="Predict">Predict</MudButton>
+            <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ShowChart"
+                       Disabled="@_busy" OnClick="CheckDrift">Drift check</MudButton>
+        </div>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-2">@_error</MudAlert>
+        }
+
+        @if (_prediction is not null)
+        {
+            <MudPaper Class="pa-3 mb-2" Elevation="0" Outlined="true">
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Prediction</MudText>
+                @if (_prediction.PredictedLabel is not null)
+                {
+                    <MudText Typo="Typo.body2"><b>Predicted label:</b> @_prediction.PredictedLabel</MudText>
+                }
+                @if (_prediction.Probability is not null)
+                {
+                    <MudText Typo="Typo.body2"><b>Probability:</b> @_prediction.Probability.Value.ToString("0.####")</MudText>
+                }
+                @if (_prediction.Score is not null)
+                {
+                    <MudText Typo="Typo.body2"><b>Score:</b> @_prediction.Score.Value.ToString("0.####")</MudText>
+                }
+                @if (_prediction.Scores is not null)
+                {
+                    <MudText Typo="Typo.body2"><b>Scores:</b> @string.Join(", ", _prediction.Scores.Select(s => s.ToString("0.###")))</MudText>
+                }
+            </MudPaper>
+        }
+
+        @if (_drift is not null)
+        {
+            <MudPaper Class="pa-3" Elevation="0" Outlined="true">
+                <MudText Typo="Typo.subtitle2" Class="mb-1">
+                    Drift vs training baseline (@_drift.BaselineRows rows)
+                    @if (_drift.AnyDrift)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">drift detected</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">within range</MudChip>
+                    }
+                </MudText>
+                <MudSimpleTable Dense="true">
+                    <thead><tr><th>Feature</th><th>Baseline mean</th><th>Batch mean</th><th>Shift</th></tr></thead>
+                    <tbody>
+                        @foreach (var f in _drift.Features)
+                        {
+                            <tr style="@(f.Drifted ? "color:var(--mud-palette-warning);" : "")">
+                                <td>@f.Feature</td>
+                                <td>@f.BaselineMean.ToString("0.###")</td>
+                                <td>@f.BatchMean.ToString("0.###")</td>
+                                <td>@f.MeanShift.ToString("0.###")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => Dialog.Close()">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+    [Parameter] public Guid VersionId { get; set; }
+    [Parameter] public string ModelName { get; set; } = "";
+    [Parameter] public string SemVer { get; set; } = "";
+
+    private string _input = "";
+    private bool _busy;
+    private string? _error;
+    private PredictionDto? _prediction;
+    private DriftReportDto? _drift;
+
+    private IReadOnlyDictionary<string, string> ParseRow()
+    {
+        var row = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var line in _input.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var eq = line.IndexOf('=');
+            if (eq > 0)
+            {
+                row[line[..eq].Trim()] = line[(eq + 1)..].Trim();
+            }
+        }
+
+        return row;
+    }
+
+    private async Task Predict()
+    {
+        _busy = true;
+        _error = null;
+        _prediction = null;
+        _drift = null;
+        try
+        {
+            var (result, error) = await Api.InferAsync(VersionId, ParseRow());
+            _error = error;
+            _prediction = result?.Predictions.FirstOrDefault();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CheckDrift()
+    {
+        _busy = true;
+        _error = null;
+        _drift = null;
+        try
+        {
+            var (report, error) = await Api.ComputeDriftAsync(VersionId, [ParseRow()]);
+            _error = error;
+            _drift = report;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

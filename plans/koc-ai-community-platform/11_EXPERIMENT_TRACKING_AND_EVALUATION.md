@@ -1,6 +1,11 @@
 # Phase 11 — Experiment Tracking and Evaluation
 
-**Status:** 🟡 PLANNING
+**Status:** ✅ DONE (implemented 2026-07-19) — native EF experiment tracking (`Experiment`/`Run`/`RunMetric`/`RunParameter`) with live trial capture from ML.NET AutoML via a **non-blocking bounded channel** (`BoundedMetricChannel`: `TryPublish` never blocks training → background batched drain → `IExperimentSink`). `ExperimentService` fans metrics to every registered sink (`EfExperimentSink` default; a second sink swaps in cleanly — the MLflow-adapter contract), auto-selects best run (highest primary metric), and compares runs. `AutoMlTrainer.TrainWithTrialsAsync` reports each trial through AutoML's `progressHandler`. `experiment.train` job handler runs it out-of-band (Phase 10), capturing hyperparameter/environment/dataset snapshots for reproducibility. `/api/v1/experiments/**` endpoints (namespaced runs to avoid the Phase 10 `/runs` collision) + typed client + `/experiments` UI (runs table, best-run star, favorites, compare table, server-rendered SVG trial chart). Dual-provider `AddExperiments` migrations. Builds `-warnaserror` clean; 9 unit + 4 integration tests pass (incl. a real AutoML trial-capture test).
+**Deferred within phase:** the MLflow REST sink is left as the `IExperimentSink` contract + a documented extension point (not a shipped HTTP adapter); task-specific visualizations beyond the trial line (confusion matrix, ROC/PR, residuals, forecast, feature importance) and parent/child run trees are deferred.
+
+---
+_Original plan below._
+
 **Dependencies:** Phase 08, Phase 10
 **Goal:** Native EF experiment tracking driven by ML.NET `IMonitor`, plus comparison, lineage, and an optional MLflow sink adapter.
 

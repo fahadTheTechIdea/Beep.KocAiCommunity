@@ -1,6 +1,29 @@
 # Phase 06 — Collaboration and Discussions
 
-**Status:** 🟡 PLANNING
+**Status:** ✅ DONE (2026-07-19) — discussions/replies + notifications shipped earlier; this session added **emoji reactions, @mentions (+autocomplete), moderation (lock/pin/delete, audited), and attachments**.
+
+## Implementation notes (2026-07-19)
+
+- **Emoji reactions.** A single polymorphic `Reaction` table (target = "discussion" | "reply", unique per
+  user+emoji) toggles a curated set (👍 ❤️ 🎉 💡 🚀 ✅ — `CommunityEmojis.Allowed`). Tallies carry a
+  `Mine` flag. `POST /discussions/{id}/react` and `…/replies/{replyId}/react` return the new tallies;
+  reusable `ReactionBar.razor` renders them.
+- **@mentions.** On create/reply the body is scanned for `@token`; tokens resolve against KOC
+  `UserProfile`s by normalized display name **or** user id, capped at 10 per post (mass-mention
+  guard), and each mentioned user gets a `mention` notification. `GET /community/mention-candidates?q=`
+  backs a `MudAutocomplete` that only suggests KOC users.
+- **Moderation.** `IsLocked`/`IsPinned` on `Discussion`; lock (blocks replies), pin (sorts to top),
+  and soft-delete of discussions/replies. Moderator = `PlatformAdmin` **or** an org-unit leader
+  (`LedOrgUnitId`); authors can delete their own. Every action writes an `IAuditEnvelope` entry.
+- **Attachments.** `DiscussionAttachment` stores files via `IArtifactService` (classification
+  `Internal`); `POST /discussions/{id}/attachments` (multipart) + `GET /community/attachments/{id}`
+  download, both visibility-scoped. Malware scanning remains a documented follow-up (see §12).
+- **Migrations.** Dual-provider `AddCommunityInteractions` (Reactions/Mentions/DiscussionAttachments
+  tables + IsLocked/IsPinned columns).
+- **Tests.** 5 integration tests (`CommunityInteractionsTests`: reaction toggle, moderation authz +
+  lock, author delete, mention notification + autocomplete, attachment upload/list/download). Whole
+  solution builds `-warnaserror` clean; 87 unit + 58 integration tests pass.
+**Scope change:** `UserProfile` (avatar/bio/skills) and the activity feed moved to Phase 05b, which also adds the fun layer on top of this phase: kudos buttons on discussion cards, Barrels XP for creating/replying (daily-capped), and the Community page tabs (Discussions / Activity / Kudos board / Team leaderboard) — see `05b_COMMUNITY_ENGAGEMENT_AND_GAMIFICATION.md`.
 **Dependencies:** Phase 02, Phase 03, Phase 04
 **Goal:** Build the internal collaboration surface scoped to KOC employees only.
 

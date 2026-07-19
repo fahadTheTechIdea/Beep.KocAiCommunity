@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Beep.KocAiCommunity.UnitTests;
 
+[Collection(MlTrainingCollection.Name)]
 public class AutoMlTrainerTests
 {
     private static MemoryStream Csv(string content) => new(Encoding.UTF8.GetBytes(content));

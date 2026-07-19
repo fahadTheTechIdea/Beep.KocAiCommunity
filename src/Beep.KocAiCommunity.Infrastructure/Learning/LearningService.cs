@@ -1,12 +1,14 @@
 using Beep.KocAiCommunity.Application.Authorization;
+using Beep.KocAiCommunity.Application.Engagement;
 using Beep.KocAiCommunity.Application.Learning;
 using Beep.KocAiCommunity.Domain.Learning;
+using Beep.KocAiCommunity.Infrastructure.Engagement;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Beep.KocAiCommunity.Infrastructure.Learning;
 
-public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibility) : ILearningService
+public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibility, IEngagementService engagement) : ILearningService
 {
     public async Task<IReadOnlyList<LearningTrack>> BrowseVisibleAsync(string userId, CancellationToken ct = default)
     {
@@ -76,9 +78,16 @@ public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibi
             db.LessonProgress.Add(progress);
         }
 
+        var wasCompleted = progress.Status == "completed";
         progress.Status = "completed";
         progress.CompletedUtc = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
+
+        // Barrels for completing a lesson (idempotent per lesson — re-completing awards nothing more).
+        if (!wasCompleted)
+        {
+            await AwardSafelyAsync(userId, XpSources.LessonCompleted, "lesson", lessonId, ct);
+        }
 
         await MaybeCompleteTrackAsync(enrollment, trackId, userId, ct);
         return progress;
@@ -133,5 +142,24 @@ public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibi
         }
 
         await db.SaveChangesAsync(ct);
+
+        // Barrels for finishing the whole track (idempotent per track).
+        if (!alreadyRecorded)
+        {
+            await AwardSafelyAsync(userId, XpSources.TrackCompleted, "track", trackId, ct);
+        }
+    }
+
+    // Engagement is a side effect: a failure here must never fail the learning action.
+    private async Task AwardSafelyAsync(string userId, string source, string refType, Guid refId, CancellationToken ct)
+    {
+        try
+        {
+            await engagement.AwardXpAsync(userId, source, refType, refId, ct);
+        }
+        catch (Exception)
+        {
+            // Swallow — the lesson/track completion already committed.
+        }
     }
 }

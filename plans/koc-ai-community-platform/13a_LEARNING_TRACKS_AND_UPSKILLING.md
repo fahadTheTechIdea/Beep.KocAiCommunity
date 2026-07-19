@@ -1,6 +1,7 @@
 # Phase 13a — Learning Tracks and Upskilling
 
-**Status:** 🟡 PLANNING
+**Status:** ✅ DONE (2026-07-19 audit) — tracks/lessons/enrollment/progress/completion, seeding, learn↔compete tie-in, and supervisor rollups all shipped.
+**Engagement follow-up (Phase 05b):** lesson and track completion award Barrels XP (`lesson.completed` 25 bbl, `track.completed` 150 bbl), earn `first-track`/`all-tracks` badges, and feed streaks — turning every lesson into visible community progress. Printable certificates remain deferred. See `05b_COMMUNITY_ENGAGEMENT_AND_GAMIFICATION.md` §1.2–§1.3, §3.5.
 **Dependencies:** Phase 02 (org hierarchy, roles, visibility), Phase 07 (datasets/projects), Phase 13 (competitions)
 **Goal:** Guided, level-graded **learning tracks** that take a KOC employee from their first look at data to a dependable model — the "learn" half of *learn & compete*. Tracks carry lessons, enrollment, and progress; progress rolls up to supervisors; completing a track suggests a matching competition.
 
