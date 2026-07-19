@@ -7,6 +7,7 @@ using Beep.KocAiCommunity.Workflow;
 using Microsoft.ML;
 using Microsoft.ML.AutoML;
 using Microsoft.ML.Data;
+using Microsoft.ML.Transforms;
 
 namespace Beep.KocAiCommunity.ML;
 
@@ -122,6 +123,25 @@ public sealed class MlPipelineExecutor : IPipelineExecutor
 
                             (model, algorithm, labelMap) = FitModel(ml, task, node, labelColumn, train, trainFeatures);
                             results.Add(new NodeExecutionResult(nodeId, kind, "done", $"{algorithm} · {trainFeatures.Length} features"));
+                            break;
+                        }
+
+                    case "cluster":
+                        {
+                            var clusterFeatures = NumericFeatures(train.Schema, featureCols);
+                            if (clusterFeatures.Length == 0)
+                            {
+                                results.Add(new NodeExecutionResult(nodeId, kind, "skipped", "no numeric features"));
+                                break;
+                            }
+
+                            var k = Math.Clamp((int)ReadDouble(Cfg(node, "clusters"), 3), 2, 20);
+                            var clusterModel = ml.Transforms.Concatenate("Features", clusterFeatures)
+                                .Append(ml.Clustering.Trainers.KMeans("Features", numberOfClusters: k))
+                                .Fit(train);
+                            var clustered = clusterModel.Transform(train);
+                            var cm = ml.Clustering.Evaluate(clustered, scoreColumnName: "Score", featureColumnName: "Features");
+                            results.Add(new NodeExecutionResult(nodeId, kind, "done", $"{k} clusters · avg distance {cm.AverageDistance:0.###} · DBI {cm.DaviesBouldinIndex:0.###}"));
                             break;
                         }
 
@@ -380,13 +400,91 @@ public sealed class MlPipelineExecutor : IPipelineExecutor
                         return new NodeExecutionResult(nodeId, kind, "skipped", "no numeric columns");
                     }
 
-                    var t = ml.Transforms.ReplaceMissingValues([.. numeric.Select(c => new InputOutputColumnPair(c))]).Fit(train);
+                    var mode = (Cfg(node, "mode") ?? "mean").ToLowerInvariant() switch
+                    {
+                        "min" or "minimum" => MissingValueReplacingEstimator.ReplacementMode.Minimum,
+                        "max" or "maximum" => MissingValueReplacingEstimator.ReplacementMode.Maximum,
+                        _ => MissingValueReplacingEstimator.ReplacementMode.Mean,
+                    };
+                    var t = ml.Transforms.ReplaceMissingValues([.. numeric.Select(c => new InputOutputColumnPair(c))], replacementMode: mode).Fit(train);
                     train = t.Transform(train);
                     preprocessors.Add(t);
-                    return new NodeExecutionResult(nodeId, kind, "done", "missing values → mean");
+                    return new NodeExecutionResult(nodeId, kind, "done", $"missing values → {mode}");
                 }
 
             case "normalize":
+                return NumericNormalizer(nodeId, kind, ref train, featureCols, preprocessors,
+                    (cols, data) => ml.Transforms.NormalizeMinMax(cols).Fit(data), "min-max normalized");
+
+            case "log-normalize":
+                return NumericNormalizer(nodeId, kind, ref train, featureCols, preprocessors,
+                    (cols, data) => ml.Transforms.NormalizeLogMeanVariance(cols).Fit(data), "log mean-variance");
+
+            case "robust-scale":
+                return NumericNormalizer(nodeId, kind, ref train, featureCols, preprocessors,
+                    (cols, data) => ml.Transforms.NormalizeRobustScaling(cols).Fit(data), "robust-scaled (median/IQR)");
+
+            case "binning":
+                {
+                    var bins = Math.Clamp((int)ReadDouble(Cfg(node, "bins"), 10), 2, 255);
+                    return NumericNormalizer(nodeId, kind, ref train, featureCols, preprocessors,
+                        (cols, data) => ml.Transforms.NormalizeBinning(cols, maximumBinCount: bins).Fit(data), $"binned into ≤{bins}");
+                }
+
+            case "hash-encode":
+                {
+                    var textCols = TextFeatures(train.Schema, featureCols);
+                    if (textCols.Length == 0)
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "no categorical columns");
+                    }
+
+                    var t = ml.Transforms.Categorical.OneHotHashEncoding([.. textCols.Select(c => new InputOutputColumnPair(c))]).Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    return new NodeExecutionResult(nodeId, kind, "done", $"hash-encoded {textCols.Length}: {string.Join(", ", textCols)}");
+                }
+
+            case "featurize-text":
+                {
+                    var textCols = TextFeatures(train.Schema, featureCols);
+                    if (textCols.Length == 0)
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "no text columns");
+                    }
+
+                    IEstimator<ITransformer>? est = null;
+                    foreach (var c in textCols)
+                    {
+                        var step = ml.Transforms.Text.FeaturizeText(c, c);
+                        est = est is null ? step : est.Append(step);
+                    }
+
+                    var t = est!.Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    return new NodeExecutionResult(nodeId, kind, "done", $"featurized text: {string.Join(", ", textCols)}");
+                }
+
+            case "pca":
+                {
+                    var numeric = NumericFeatures(train.Schema, featureCols);
+                    if (numeric.Length < 2)
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "need ≥2 numeric columns");
+                    }
+
+                    var rank = Math.Clamp((int)ReadDouble(Cfg(node, "rank"), 2), 1, numeric.Length);
+                    var t = ml.Transforms.Concatenate("__PcaIn", numeric)
+                        .Append(ml.Transforms.ProjectToPrincipalComponents("Pca", "__PcaIn", rank: rank))
+                        .Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    featureCols = ["Pca"];
+                    return new NodeExecutionResult(nodeId, kind, "done", $"PCA → {rank} components");
+                }
+
+            case "feature-selection":
                 {
                     var numeric = NumericFeatures(train.Schema, featureCols);
                     if (numeric.Length == 0)
@@ -394,10 +492,14 @@ public sealed class MlPipelineExecutor : IPipelineExecutor
                         return new NodeExecutionResult(nodeId, kind, "skipped", "no numeric columns");
                     }
 
-                    var t = ml.Transforms.NormalizeMinMax([.. numeric.Select(c => new InputOutputColumnPair(c))]).Fit(train);
+                    var count = Math.Max(1, (int)ReadDouble(Cfg(node, "count"), 1));
+                    var t = ml.Transforms.Concatenate("__FsIn", numeric)
+                        .Append(ml.Transforms.FeatureSelection.SelectFeaturesBasedOnCount("Fs", "__FsIn", count: count))
+                        .Fit(train);
                     train = t.Transform(train);
                     preprocessors.Add(t);
-                    return new NodeExecutionResult(nodeId, kind, "done", "min-max normalized");
+                    featureCols = ["Fs"];
+                    return new NodeExecutionResult(nodeId, kind, "done", $"selected features (count ≥ {count})");
                 }
 
             default:
@@ -441,6 +543,21 @@ public sealed class MlPipelineExecutor : IPipelineExecutor
             "naivebayes" => (ml.MulticlassClassification.Trainers.NaiveBayes(label, features), "NaiveBayes"),
             _ => (ml.MulticlassClassification.Trainers.SdcaMaximumEntropy(labelColumnName: label, featureColumnName: features, l2Regularization: l2), "SdcaMaximumEntropy"),
         };
+    }
+
+    // Shared body for the per-column numeric normalizers (min-max / log / robust / binning).
+    private static NodeExecutionResult NumericNormalizer(string nodeId, string kind, ref IDataView train, List<string> featureCols, List<ITransformer> preprocessors, Func<InputOutputColumnPair[], IDataView, ITransformer> fit, string detail)
+    {
+        var numeric = NumericFeatures(train.Schema, featureCols);
+        if (numeric.Length == 0)
+        {
+            return new NodeExecutionResult(nodeId, kind, "skipped", "no numeric columns");
+        }
+
+        var t = fit([.. numeric.Select(c => new InputOutputColumnPair(c))], train);
+        train = t.Transform(train);
+        preprocessors.Add(t);
+        return new NodeExecutionResult(nodeId, kind, "done", detail);
     }
 
     private static IDataView ApplyPreprocessors(IEnumerable<ITransformer> preprocessors, IDataView data)

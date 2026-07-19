@@ -273,6 +273,139 @@ public class MlPipelineExecutorTests
         result.PrimaryValue.Should().BeGreaterThan(0.8);
     }
 
+    [Theory]
+    [InlineData("binning")]
+    [InlineData("log-normalize")]
+    [InlineData("robust-scale")]
+    public async Task Runs_scaling_variant_nodes(string scaler)
+    {
+        var def = new WorkflowDefinition
+        {
+            Name = scaler,
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "sc", Kind = scaler },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "sc"), new("sc", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 80; i++)
+        {
+            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
+            sb.Append($"{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == scaler).Status.Should().Be("done");
+        result.PrimaryValue.Should().BeGreaterThan(0.8);
+    }
+
+    [Fact]
+    public async Task Runs_pca_then_trains()
+    {
+        var def = new WorkflowDefinition
+        {
+            Name = "pca",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "pc", Kind = "pca", Config = new Dictionary<string, string> { ["rank"] = "2" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "pc"), new("pc", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var sb = new StringBuilder("x1,x2,x3,label\n");
+        for (var i = 0; i < 80; i++)
+        {
+            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},{6 + (i % 2)},true\n");
+            sb.Append($"{i % 3},{(i / 3) % 3},{i % 2},false\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == "pca").Detail.Should().Contain("2 components");
+        result.PrimaryValue.Should().BeGreaterThan(0.7);
+    }
+
+    [Fact]
+    public async Task Runs_kmeans_clustering_without_a_train_node()
+    {
+        var def = new WorkflowDefinition
+        {
+            Name = "cluster",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "cl", Kind = "cluster", Config = new Dictionary<string, string> { ["clusters"] = "3" } },
+            ],
+            Edges = [new("d", "cl")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 90; i++)
+        {
+            foreach (var b in new[] { 0, 6, 12 })
+            {
+                sb.Append($"{b + (i % 2)},{b + ((i / 2) % 2)},g\n");
+            }
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.MulticlassClassification, csv, 10);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == "cluster").Detail.Should().Contain("3 clusters");
+    }
+
+    [Fact]
+    public async Task Runs_text_featurization()
+    {
+        var def = new WorkflowDefinition
+        {
+            Name = "text",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "ft", Kind = "featurize-text" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "ft"), new("ft", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var sb = new StringBuilder("note,label\n");
+        for (var i = 0; i < 80; i++)
+        {
+            sb.Append("high pressure vibration alarm,true\n");
+            sb.Append("normal steady reading nominal,false\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == "featurize-text").Status.Should().Be("done");
+        result.PrimaryValue.Should().BeGreaterThan(0.8);
+    }
+
     // Three separable clusters → classes a/b/c.
     private static string MulticlassCsv(bool withId)
     {

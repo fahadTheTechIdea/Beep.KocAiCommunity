@@ -89,22 +89,32 @@ else
 
     <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;">
         <!-- Palette -->
-        <BlueprintCard Class="pa-3" Style="width:200px;flex:0 0 200px;max-height:540px;overflow:auto;">
-            <MudText Typo="Typo.overline" Class="mb-2 d-block">Nodes</MudText>
-            @foreach (var (category, kinds) in _palette)
+        <BlueprintCard Class="pa-3" Style="width:220px;flex:0 0 220px;max-height:560px;overflow:auto;">
+            <MudTextField @bind-Value="_search" Placeholder="Search nodes…" Immediate="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" />
+            @foreach (var category in NodeCatalog.Categories)
             {
-                <MudText Typo="Typo.caption" Class="koc-heading d-block mt-2 mb-1">@category</MudText>
-                @foreach (var kind in kinds)
+                var nodes = NodeCatalog.InCategory(category).Where(MatchesSearch).ToList();
+                if (nodes.Count > 0)
                 {
-                    <MudButton FullWidth="true" Class="justify-start mb-1" Size="Size.Small" Variant="Variant.Outlined"
-                               Color="Color.Default" StartIcon="@Icons.Material.Filled.Add" OnClick="() => AddNode(kind)">@kind</MudButton>
+                    <MudText Typo="Typo.caption" Class="koc-heading d-block mt-2 mb-1" Style="letter-spacing:.06em;text-transform:uppercase;opacity:.7;">@category</MudText>
+                    @foreach (var n in nodes)
+                    {
+                        <MudTooltip Text="@n.Description" Placement="Placement.Right">
+                            <div class="koc-palette-node" draggable="true" @ondragstart="() => OnDragStart(n.Kind)" @onclick="() => AddNode(n.Kind)">
+                                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" Style="opacity:.35;margin-right:-2px;" />
+                                <MudIcon Icon="@n.Icon" Size="Size.Small" Style="@($"color:{n.Color};")" />
+                                <span>@n.Label</span>
+                            </div>
+                        </MudTooltip>
+                    }
                 }
             }
         </BlueprintCard>
 
         <!-- Canvas -->
         <BlueprintCard Style="flex:1 1 420px;min-width:320px;position:relative;min-height:540px;">
-            <div style="position:absolute;inset:8px;">
+            <div style="position:absolute;inset:8px;" @ondragover:preventDefault="true" @ondrop="OnDrop" @ondrop:preventDefault="true">
                 <CascadingValue Value="_diagram" IsFixed="true">
                     <DiagramCanvas></DiagramCanvas>
                 </CascadingValue>
@@ -112,7 +122,7 @@ else
         </BlueprintCard>
 
         <!-- Properties -->
-        <BlueprintCard Class="pa-3" Style="width:310px;flex:0 0 310px;max-height:540px;overflow:auto;">
+        <BlueprintCard Class="pa-3" Style="width:320px;flex:0 0 320px;max-height:560px;overflow:auto;">
             <MudText Typo="Typo.overline" Class="mb-2 d-block">Properties</MudText>
             @if (_selected is null)
             {
@@ -120,73 +130,47 @@ else
             }
             else
             {
-                <div class="d-flex align-center gap-2 mb-2">
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading"><b>@_selected.Kind</b></MudText>
+                var def = NodeCatalog.Get(_selected.Kind);
+                <div class="d-flex align-center gap-2 mb-1">
+                    @if (def is not null)
+                    {
+                        <MudIcon Icon="@def.Icon" Size="Size.Small" Style="@($"color:{def.Color};")" />
+                    }
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading"><b>@(def?.Label ?? _selected.Kind)</b></MudText>
                     <MudSpacer />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="DeleteSelected" aria-label="Delete node" />
                 </div>
-
-                @switch (_selected.Kind)
+                @if (def is not null)
                 {
-                    case "train":
-                    case "cross-validate":
-                        <MudSelect T="string" Label="Algorithm" Value="@(CfgGet("algorithm") is { Length: > 0 } a ? a : "sdca")"
-                                   ValueChanged="@(v => CfgSet("algorithm", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
-                            @foreach (var alg in AlgorithmsForTask())
-                            {
-                                <MudSelectItem Value="@alg">@alg</MudSelectItem>
-                            }
-                        </MudSelect>
-                        @if (_selected.Kind == "cross-validate")
+                    <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">@def.Description</MudText>
+                }
+
+                @if (def is null || def.Props.Length == 0)
+                {
+                    <MudText Typo="Typo.body2">No options — this step acts on the columns flowing into it.</MudText>
+                }
+                else
+                {
+                    @foreach (var p in def.Props)
+                    {
+                        @if (p.Type == NodePropType.Select)
                         {
-                            <MudTextField T="string" Label="Folds (2–10)" Value="@(CfgGet("folds") is { Length: > 0 } f ? f : "5")"
-                                          ValueChanged="@(v => CfgSet("folds", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                            var options = p.Key == "algorithm" ? AlgorithmsForTask() : (p.Options ?? []);
+                            <MudSelect T="string" Label="@p.Label" Value="@CfgOr(p)" ValueChanged="@(v => CfgSet(p.Key, v))"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
+                                @foreach (var o in options)
+                                {
+                                    <MudSelectItem Value="@o">@o</MudSelectItem>
+                                }
+                            </MudSelect>
                         }
-                        <MudText Typo="Typo.caption" Class="d-block mt-1 mb-1">Hyperparameters (blank = default)</MudText>
-                        @if (SelectedAlgo() is "fasttree" or "fastforest")
+                        else
                         {
-                            <MudTextField T="string" Label="Trees" Value="@CfgGet("trees")" ValueChanged="@(v => CfgSet("trees", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1" Placeholder="100" />
-                            <MudTextField T="string" Label="Leaves" Value="@CfgGet("leaves")" ValueChanged="@(v => CfgSet("leaves", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1" Placeholder="20" />
+                            <MudTextField T="string" Label="@p.Label" Value="@CfgGet(p.Key)" ValueChanged="@(v => CfgSet(p.Key, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1"
+                                          Placeholder="@(p.Default ?? (p.Type == NodePropType.Columns ? "col1, col2" : ""))" HelperText="@p.Help" />
                         }
-                        @if (SelectedAlgo() == "fasttree")
-                        {
-                            <MudTextField T="string" Label="Learning rate" Value="@CfgGet("learningRate")" ValueChanged="@(v => CfgSet("learningRate", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="0.2" />
-                        }
-                        @if (SelectedAlgo() is "sdca" or "lbfgs")
-                        {
-                            <MudTextField T="string" Label="L2 regularization" Value="@CfgGet("l2")" ValueChanged="@(v => CfgSet("l2", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="auto" />
-                        }
-                        break;
-
-                    case "split":
-                        <MudTextField T="string" Label="Test fraction (0.05–0.9)" Value="@(CfgGet("testFraction") is { Length: > 0 } tf ? tf : "0.25")"
-                                      ValueChanged="@(v => CfgSet("testFraction", v))" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        break;
-
-                    case "sample":
-                        <MudTextField T="string" Label="Row fraction to keep (0–1)" Value="@(CfgGet("fraction") is { Length: > 0 } sf ? sf : "0.5")"
-                                      ValueChanged="@(v => CfgSet("fraction", v))" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        break;
-
-                    case "select-columns":
-                        <MudTextField T="string" Label="Feature columns to keep" Value="@CfgGet("columns")" ValueChanged="@(v => CfgSet("columns", v))"
-                                      Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="x1, x2, x3" />
-                        break;
-
-                    case "drop-columns":
-                        <MudTextField T="string" Label="Feature columns to drop" Value="@CfgGet("columns")" ValueChanged="@(v => CfgSet("columns", v))"
-                                      Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="noise, id" />
-                        break;
-
-                    case "filter-rows":
-                        <MudTextField T="string" Label="Column" Value="@CfgGet("column")" ValueChanged="@(v => CfgSet("column", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1" Placeholder="x1" />
-                        <MudTextField T="string" Label="Keep rows ≥ min" Value="@CfgGet("min")" ValueChanged="@(v => CfgSet("min", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1" Placeholder="(none)" />
-                        <MudTextField T="string" Label="Keep rows < max" Value="@CfgGet("max")" ValueChanged="@(v => CfgSet("max", v))" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="(none)" />
-                        break;
-
-                    default:
-                        <MudText Typo="Typo.body2">This step has no options — it acts on the columns flowing into it.</MudText>
-                        break;
+                    }
                 }
             }
         </BlueprintCard>
@@ -268,14 +252,6 @@ else
 }
 
 @code {
-    private static readonly (string Category, string[] Kinds)[] _palette =
-    [
-        ("Data", ["dataset", "select-columns", "drop-columns", "sample", "filter-rows"]),
-        ("Transform", ["one-hot", "replace-missing", "normalize", "standardize"]),
-        ("Split", ["split"]),
-        ("Model", ["train", "cross-validate"]),
-        ("Evaluate", ["score", "evaluate"]),
-    ];
     private static readonly string[] _binaryAlgorithms = ["sdca", "fasttree", "fastforest", "lbfgs", "perceptron"];
     private static readonly string[] _regressionAlgorithms = ["sdca", "fasttree", "fastforest", "lbfgs"];
     private static readonly string[] _multiclassAlgorithms = ["sdca", "lbfgs", "naivebayes"];
@@ -283,6 +259,8 @@ else
 
     private BlazorDiagram _diagram = null!;
     private MlNode? _selected;
+    private string _search = "";
+    private string? _dragKind;
     private double _nextX = 40;
     private int _seedRow;
 
@@ -482,6 +460,21 @@ else
         return node;
     }
 
+    private void OnDragStart(string kind) => _dragKind = kind;
+
+    private void OnDrop(Microsoft.AspNetCore.Components.Web.DragEventArgs e)
+    {
+        if (_dragKind is null)
+        {
+            return;
+        }
+
+        // Convert the drop point to diagram coordinates (accounts for pan/zoom).
+        var pt = _diagram.GetRelativeMousePoint(e.ClientX, e.ClientY);
+        PlaceNode("n" + Guid.NewGuid().ToString("N")[..8], _dragKind, pt.X, pt.Y);
+        _dragKind = null;
+    }
+
     private MlNode PlaceNode(string id, string kind, double x, double y)
     {
         var node = new MlNode(id, kind, new Blazor.Diagrams.Core.Geometry.Point(x, y));
@@ -518,7 +511,13 @@ else
         _ => _binaryAlgorithms,
     };
 
-    private string SelectedAlgo() => CfgGet("algorithm") is { Length: > 0 } a ? a : "sdca";
+    private bool MatchesSearch(NodeDef n) =>
+        string.IsNullOrWhiteSpace(_search)
+        || n.Label.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        || n.Kind.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        || n.Category.Contains(_search, StringComparison.OrdinalIgnoreCase);
+
+    private string CfgOr(NodeProp p) => CfgGet(p.Key) is { Length: > 0 } v ? v : (p.Default ?? "");
 
     private string CfgGet(string key) => _selected is not null && _selected.Config.TryGetValue(key, out var v) ? v : string.Empty;
 

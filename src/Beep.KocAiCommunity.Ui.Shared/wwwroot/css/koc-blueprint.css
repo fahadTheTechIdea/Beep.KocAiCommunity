@@ -104,3 +104,12 @@
 .koc-rank-2 { background: linear-gradient(135deg, #e6e9ec, #b8c0c8); color: #33393f; }
 .koc-rank-3 { background: linear-gradient(135deg, #f0b892, #cd7f32); color: #40220a; }
 .koc-podium td { background: color-mix(in srgb, var(--koc-accent-300) 8%, transparent); }
+
+/* Node-editor palette items */
+.koc-palette-node {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 8px; margin: 1px 0; border-radius: 6px;
+    font-size: 13px; cursor: pointer; user-select: none;
+    border: 1px solid transparent;
+}
+.koc-palette-node:hover { background: var(--koc-surface); border-color: var(--koc-divider); }

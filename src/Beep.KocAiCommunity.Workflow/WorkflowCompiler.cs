@@ -13,8 +13,10 @@ public static class WorkflowCompiler
         new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "dataset", "select-columns", "drop-columns", "sample", "filter-rows",
-            "one-hot", "replace-missing", "normalize", "standardize",
-            "split", "train", "cross-validate", "score", "evaluate",
+            "one-hot", "hash-encode", "featurize-text", "replace-missing",
+            "normalize", "standardize", "log-normalize", "robust-scale", "binning",
+            "pca", "feature-selection",
+            "split", "train", "cross-validate", "cluster", "score", "evaluate",
         };
 
     public static WorkflowValidationResult Compile(WorkflowDefinition definition)
@@ -45,9 +47,9 @@ public static class WorkflowCompiler
             errors.Add("A workflow needs a dataset source node.");
         }
 
-        if (!definition.Nodes.Any(n => string.Equals(n.Kind, "train", StringComparison.OrdinalIgnoreCase)))
+        if (!definition.Nodes.Any(n => n.Kind is "train" or "cluster" || string.Equals(n.Kind, "train", StringComparison.OrdinalIgnoreCase)))
         {
-            errors.Add("A workflow needs a train node.");
+            errors.Add("A workflow needs a model node (train or cluster).");
         }
 
         var order = TopologicalOrder(definition, nodeIds, out var hasCycle);
