@@ -1,0 +1,76 @@
+using System.Data;
+using DuckDB.NET.Data;
+
+namespace Beep.KocAiCommunity.ML.Nodes;
+
+/// <summary>
+/// A short-lived in-memory DuckDB connection used as the SQL/ETL engine for DuckDB pipeline nodes.
+/// It only ever sees the pipeline's working table and any explicitly registered dataset tables — no
+/// host filesystem or network access beyond the temp CSVs the engine itself writes/reads for crossing
+/// to and from ML.NET.
+/// </summary>
+public sealed class DuckDbSession : IDisposable
+{
+    private readonly DuckDBConnection _connection;
+
+    public DuckDbSession()
+    {
+        _connection = new DuckDBConnection("DataSource=:memory:");
+        _connection.Open();
+    }
+
+    /// <summary>Runs a non-query statement (CREATE/COPY/INSERT/DROP …).</summary>
+    public void Execute(string sql)
+    {
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = sql;
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>Runs a scalar query.</summary>
+    public object? Scalar(string sql)
+    {
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = sql;
+        return cmd.ExecuteScalar();
+    }
+
+    /// <summary>Loads a CSV file into a table, inferring types (header required).</summary>
+    public void LoadCsv(string csvPath, string tableName)
+        => Execute($"CREATE OR REPLACE TABLE {Quote(tableName)} AS SELECT * FROM read_csv_auto({Literal(csvPath)}, header = true);");
+
+    /// <summary>Materializes a table (or the result of a query) to a header CSV file.</summary>
+    public void ExportCsv(string tableName, string csvPath)
+        => Execute($"COPY (SELECT * FROM {Quote(tableName)}) TO {Literal(csvPath)} (HEADER, DELIMITER ',');");
+
+    /// <summary>Replaces the working table with the result of a SELECT.</summary>
+    public void CreateTableAs(string tableName, string selectSql)
+        => Execute($"CREATE OR REPLACE TABLE {Quote(tableName)} AS {selectSql};");
+
+    public long RowCount(string tableName) => ToLong(Scalar($"SELECT COUNT(*) FROM {Quote(tableName)};"));
+
+    /// <summary>Coerces a DuckDB scalar to long (aggregates can come back as <see cref="System.Numerics.BigInteger"/>).</summary>
+    public static long ToLong(object? value) => value switch
+    {
+        null or DBNull => 0,
+        System.Numerics.BigInteger big => (long)big,
+        _ => Convert.ToInt64(value),
+    };
+
+    /// <summary>The ordered column names of a table.</summary>
+    public IReadOnlyList<string> Columns(string tableName)
+    {
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = $"SELECT * FROM {Quote(tableName)} LIMIT 0;";
+        using var reader = cmd.ExecuteReader(CommandBehavior.SchemaOnly);
+        return [.. Enumerable.Range(0, reader.FieldCount).Select(reader.GetName)];
+    }
+
+    /// <summary>Quotes an identifier (table/column) for safe interpolation.</summary>
+    public static string Quote(string identifier) => "\"" + identifier.Replace("\"", "\"\"") + "\"";
+
+    /// <summary>Quotes a string literal (paths, values) for safe interpolation.</summary>
+    public static string Literal(string value) => "'" + value.Replace("'", "''") + "'";
+
+    public void Dispose() => _connection.Dispose();
+}

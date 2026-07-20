@@ -7,6 +7,7 @@
     <PackageReference Include="Microsoft.ML" />
     <PackageReference Include="Microsoft.ML.AutoML" />
     <PackageReference Include="Microsoft.ML.FastTree" />
+    <PackageReference Include="DuckDB.NET.Data.Full" />
   </ItemGroup>
 
   <ItemGroup>
