@@ -116,6 +116,42 @@ else
             }
         </MudTabPanel>
 
+        <MudTabPanel Text="Demo data" Icon="@Icons.Material.Filled.AutoAwesome" OnClick="EnsureDemo">
+            <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:70ch;">
+                Populate the platform with a self-contained demo — colleagues with Barrels and badges, a
+                competition with a leaderboard, a discussion, and a dataset — so a fresh install can be
+                explored immediately. Everything is namespaced to <code>demo-*</code>, so <b>Unseed</b>
+                removes exactly the demo and never touches real KOC records.
+            </MudText>
+
+            @if (_demo is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                <BlueprintCard Class="pa-4 mb-3">
+                    <div class="d-flex align-center gap-3 flex-wrap">
+                        <MudChip T="string" Color="@(_demo.Seeded ? Color.Success : Color.Default)" Variant="Variant.Text">
+                            @(_demo.Seeded ? "Demo data present" : "No demo data")
+                        </MudChip>
+                        <MudText Typo="Typo.caption">
+                            @_demo.Users people · @_demo.Competitions competition(s) · @_demo.Discussions discussion(s) · @_demo.Datasets dataset(s)
+                        </MudText>
+                        <MudSpacer />
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoAwesome"
+                                   Disabled="@(_demoBusy || _demo.Seeded)" OnClick="SeedDemo">Seed demo data</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteSweep"
+                                   Disabled="@(_demoBusy || !_demo.Seeded)" OnClick="UnseedDemo">Unseed</MudButton>
+                    </div>
+                    @if (_demoBusy)
+                    {
+                        <MudProgressLinear Indeterminate="true" Class="mt-3" />
+                    }
+                </BlueprintCard>
+            }
+        </MudTabPanel>
+
         <MudTabPanel Text="Audit" Icon="@Icons.Material.Filled.Verified" OnClick="EnsureAudit">
             @if (_audit is null)
             {
@@ -137,6 +173,8 @@ else
     private IReadOnlyList<AuditLogDto>? _audit;
     private readonly Dictionary<string, string> _drafts = new();
     private string _newFlagKey = "";
+    private DemoDataStatusDto? _demo;
+    private bool _demoBusy;
 
     protected override async Task OnInitializedAsync()
     {
@@ -157,6 +195,41 @@ else
     ];
 
     private string Draft(SettingDto s) => _drafts.TryGetValue(s.Key, out var v) ? v : (s.IsSecret ? "" : s.Value);
+
+    private async Task EnsureDemo() => _demo ??= await Api.GetDemoStatusAsync();
+
+    private async Task SeedDemo()
+    {
+        _demoBusy = true;
+        try
+        {
+            var (status, error) = await Api.SeedDemoAsync();
+            Snackbar.Add(error ?? $"Demo data seeded — {status?.Users} people, a competition, a discussion and a dataset.",
+                error is null ? Severity.Success : Severity.Warning);
+            _demo = status ?? _demo;
+            _dashboard = await Api.GetAdminDashboardAsync();   // counts changed
+        }
+        finally
+        {
+            _demoBusy = false;
+        }
+    }
+
+    private async Task UnseedDemo()
+    {
+        _demoBusy = true;
+        try
+        {
+            var (status, error) = await Api.UnseedDemoAsync();
+            Snackbar.Add(error ?? "Demo data removed.", error is null ? Severity.Success : Severity.Warning);
+            _demo = status ?? _demo;
+            _dashboard = await Api.GetAdminDashboardAsync();
+        }
+        finally
+        {
+            _demoBusy = false;
+        }
+    }
 
     private async Task EnsureSettings() => _settings ??= await Api.GetSettingsAsync();
     private async Task EnsureFlags() => _flags ??= await Api.GetFeatureFlagsAsync();

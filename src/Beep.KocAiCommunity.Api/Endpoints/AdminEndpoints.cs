@@ -59,6 +59,19 @@ public static class AdminEndpoints
             }
         }).WithName("AdminUpsertFeatureFlag");
 
+        // Demo data: seed a full explorable demo (people, engagement, competition, discussion, dataset)
+        // or remove it again. Everything is namespaced to demo-* so real KOC data is untouched.
+        admin.MapGet("/demo", async (IDemoDataService svc, CancellationToken ct) => Results.Ok(ToDemoDto(await svc.GetStatusAsync(ct))))
+            .WithName("AdminDemoStatus");
+
+        admin.MapPost("/demo/seed", async (IKocCurrentUser me, IDemoDataService svc, CancellationToken ct) =>
+            Results.Ok(ToDemoDto(await svc.SeedAsync(me.UserId!, ct))))
+            .WithName("AdminSeedDemo");
+
+        admin.MapPost("/demo/unseed", async (IKocCurrentUser me, IDemoDataService svc, CancellationToken ct) =>
+            Results.Ok(ToDemoDto(await svc.UnseedAsync(me.UserId!, ct))))
+            .WithName("AdminUnseedDemo");
+
         admin.MapGet("/audit", async (string? action, string? actor, int? take, IAdminDashboardService svc, CancellationToken ct) =>
         {
             var rows = await svc.ListAuditAsync(action, actor, take ?? 100, ct);
@@ -67,6 +80,9 @@ public static class AdminEndpoints
 
         return group;
     }
+
+    private static DemoDataStatusDto ToDemoDto(DemoDataStatus s) =>
+        new(s.Seeded, s.Users, s.Competitions, s.Discussions, s.Datasets);
 
     private static SettingDto ToSettingDto(SettingView s) =>
         new(s.Key, s.Category, s.DisplayName, s.Description, s.IsSecret, s.Value, s.IsSet, s.Version, s.UpdatedUtc, s.UpdatedByUserId);

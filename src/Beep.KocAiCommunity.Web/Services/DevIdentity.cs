@@ -29,14 +29,15 @@ public sealed class DevIdentity
     private static readonly string[] Positions = ["Employee", "TeamLeader", "Manager", "DCEO", "CEO"];
     private static readonly string[] SupervisorRoles = ["TeamLeader", "Manager", "DCEO", "CEO", "PlatformAdmin"];
 
-    // Default to Manager so the app is fully explorable out of the box.
-    private Persona _persona = Personas.Single(p => p.Key == "manager");
+    // Default to Platform Admin so every area — including Admin — is visible out of the box.
+    // (Switch persona from the app bar to view the app as any other role.)
+    private Persona _persona = Personas.Single(p => p.Key == "platformadmin");
 
     /// <summary>Raised when the persona changes so nav + guards can re-render.</summary>
     public event Action? Changed;
 
     public Persona Current => _persona;
-    public string UserId { get; set; } = "dev-user";
+    public string UserId { get; set; } = "dev-admin";
     public IReadOnlyList<string> Roles => _persona.Roles;
 
     public bool IsGuest => _persona.IsGuest;

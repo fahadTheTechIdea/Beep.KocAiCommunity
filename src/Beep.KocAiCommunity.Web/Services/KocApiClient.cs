@@ -120,6 +120,9 @@ public interface IKocApiClient
     Task<IReadOnlyList<FeatureFlagDto>> GetFeatureFlagsAsync(CancellationToken ct = default);
     Task<(FeatureFlagDto? Flag, string? Error)> UpsertFeatureFlagAsync(string key, UpsertFeatureFlagRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<AuditLogDto>> GetAuditAsync(string? action = null, CancellationToken ct = default);
+    Task<DemoDataStatusDto?> GetDemoStatusAsync(CancellationToken ct = default);
+    Task<(DemoDataStatusDto? Status, string? Error)> SeedDemoAsync(CancellationToken ct = default);
+    Task<(DemoDataStatusDto? Status, string? Error)> UnseedDemoAsync(CancellationToken ct = default);
 
     // Versioned workflow registry.
     Task<IReadOnlyList<WorkflowSummaryDto>> GetWorkflowsAsync(CancellationToken ct = default);
@@ -614,6 +617,25 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
         var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
         return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+    }
+
+    public Task<DemoDataStatusDto?> GetDemoStatusAsync(CancellationToken ct = default) =>
+        http.GetFromJsonAsync<DemoDataStatusDto>("/api/v1/admin/demo", ct);
+
+    public async Task<(DemoDataStatusDto? Status, string? Error)> SeedDemoAsync(CancellationToken ct = default)
+    {
+        var response = await http.PostAsync("/api/v1/admin/demo/seed", null, ct);
+        return response.IsSuccessStatusCode
+            ? (await response.Content.ReadFromJsonAsync<DemoDataStatusDto>(ct), null)
+            : (null, await ErrorAsync(response, ct));
+    }
+
+    public async Task<(DemoDataStatusDto? Status, string? Error)> UnseedDemoAsync(CancellationToken ct = default)
+    {
+        var response = await http.PostAsync("/api/v1/admin/demo/unseed", null, ct);
+        return response.IsSuccessStatusCode
+            ? (await response.Content.ReadFromJsonAsync<DemoDataStatusDto>(ct), null)
+            : (null, await ErrorAsync(response, ct));
     }
 
     public async Task<IReadOnlyList<AuditLogDto>> GetAuditAsync(string? action = null, CancellationToken ct = default)
