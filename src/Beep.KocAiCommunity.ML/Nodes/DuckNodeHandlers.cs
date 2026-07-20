@@ -5,66 +5,69 @@ using static Beep.KocAiCommunity.ML.Nodes.PipelineContext;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
 
-// DuckDB (SQL/ETL) node handlers. They operate on the DuckDB working table and run BEFORE the ML.NET
-// modelling nodes — DuckDB is the data-prep front-end, not a replacement for the ML.NET engine.
+// DuckDB (SQL/ETL) node handlers. Each loads the input table into a DuckDB table named "working",
+// runs SQL, and returns the result as a new PipelineTable — the same contract as every other node.
 // The working table is referenced in SQL as "working".
 
-/// <summary>Runs an arbitrary SELECT over the working table (and any joined datasets), replacing it.</summary>
+internal static class Duck
+{
+    // replay: whether this op re-applies to the fixed evaluation set at predict time. Column ops
+    // (add/derive/join columns) do; row ops (filter/group/union/sort) must not touch the eval rows.
+    public static NodeResult Run(PipelineContext ctx, WorkflowNode node, PipelineTable input, IPipelineNodeHandler self, string selectSql, bool replay)
+    {
+        input.LoadIntoDuck(ctx.Duck, WorkingTable);
+        ctx.Duck.ReplaceTable(WorkingTable, selectSql);
+        return Done(ctx, node, self, replay);
+    }
+
+    public static NodeResult Done(PipelineContext ctx, WorkflowNode node, IPipelineNodeHandler self, bool replay)
+    {
+        var output = PipelineTable.FromDuck(ctx.Duck, WorkingTable, ctx.TempFiles);
+        return new NodeResult(
+            new NodeExecutionResult(node.Id, node.Kind, "done", $"{output.RowCount} rows · {output.Columns.Count} cols: {string.Join(", ", output.Columns)}"),
+            output,
+            replay ? new DataReplay(node, self) : null);
+    }
+
+    public static NodeResult Skip(WorkflowNode node, string reason, PipelineTable input)
+        => new(new NodeExecutionResult(node.Id, node.Kind, "skipped", reason), input);
+}
+
 public sealed class SqlHandler : IPipelineNodeHandler
 {
-    public NodeEngine Engine => NodeEngine.Duck;
     public NodeDescriptor Descriptor { get; } = new("sql", "Data", "SQL query",
         "Transform the data with a SQL SELECT over the table `working`. Full DuckDB SQL — joins, "
         + "aggregations, window functions, CASE, etc. Keep the label column for downstream training.",
         PortKind.Table, PortKind.Table,
         [P("sql", "SELECT … FROM working", NodeParameterType.Text, required: true)]);
 
-    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
         var sql = Cfg(node, "sql");
-        if (string.IsNullOrWhiteSpace(sql))
-        {
-            return Task.FromResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "no SQL provided"));
-        }
-
-        ctx.Duck!.ReplaceTable(WorkingTable, sql);
-        return Task.FromResult(Done(ctx, node));
-    }
-
-    internal static NodeExecutionResult Done(PipelineContext ctx, WorkflowNode node)
-    {
-        var rows = ctx.Duck!.RowCount(WorkingTable);
-        var cols = ctx.Duck.Columns(WorkingTable);
-        return new NodeExecutionResult(node.Id, node.Kind, "done", $"{rows} rows · {cols.Count} cols: {string.Join(", ", cols)}");
+        return string.IsNullOrWhiteSpace(sql)
+            ? Duck.Skip(node, "no SQL provided", input)
+            : Duck.Run(ctx, node, input, this, sql, replay: true);
     }
 }
 
-/// <summary>Keeps rows matching a SQL WHERE condition.</summary>
 public sealed class SqlFilterHandler : IPipelineNodeHandler
 {
-    public NodeEngine Engine => NodeEngine.Duck;
     public NodeDescriptor Descriptor { get; } = new("sql-filter", "Data", "Filter (SQL)",
         "Keep only rows matching a SQL condition, e.g. pressure > 3000 AND zone = 'north'.",
         PortKind.Table, PortKind.Table,
         [P("where", "WHERE condition", NodeParameterType.Text, required: true)]);
 
-    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
         var where = Cfg(node, "where");
-        if (string.IsNullOrWhiteSpace(where))
-        {
-            return Task.FromResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "no condition provided"));
-        }
-
-        ctx.Duck!.ReplaceTable(WorkingTable, $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} WHERE {where}");
-        return Task.FromResult(SqlHandler.Done(ctx, node));
+        return string.IsNullOrWhiteSpace(where)
+            ? Duck.Skip(node, "no condition provided", input)
+            : Duck.Run(ctx, node, input, this, $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} WHERE {where}", replay: false);
     }
 }
 
-/// <summary>Aggregates the working table (GROUP BY + aggregate expressions).</summary>
 public sealed class GroupByHandler : IPipelineNodeHandler
 {
-    public NodeEngine Engine => NodeEngine.Duck;
     public NodeDescriptor Descriptor { get; } = new("group-by", "Data", "Group & aggregate",
         "Aggregate rows: pick group-by columns and aggregate expressions "
         + "(e.g. AVG(pressure) AS avg_p, MAX(vibration) AS max_v).",
@@ -72,60 +75,46 @@ public sealed class GroupByHandler : IPipelineNodeHandler
         [P("groupBy", "Group-by columns", NodeParameterType.Columns, required: true),
          P("aggregations", "Aggregates, e.g. AVG(pressure) AS avg_p", NodeParameterType.Text, required: true)]);
 
-    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
         var groupBy = SplitList(Cfg(node, "groupBy"));
         var aggregations = Cfg(node, "aggregations");
         if (groupBy.Count == 0 || string.IsNullOrWhiteSpace(aggregations))
         {
-            return Task.FromResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "group-by columns and aggregations are required"));
+            return Duck.Skip(node, "group-by columns and aggregations are required", input);
         }
 
         var keys = string.Join(", ", groupBy.Select(DuckDbSession.Quote));
-        ctx.Duck!.ReplaceTable(WorkingTable, $"SELECT {keys}, {aggregations} FROM {DuckDbSession.Quote(WorkingTable)} GROUP BY {keys}");
-        return Task.FromResult(SqlHandler.Done(ctx, node));
+        return Duck.Run(ctx, node, input, this, $"SELECT {keys}, {aggregations} FROM {DuckDbSession.Quote(WorkingTable)} GROUP BY {keys}", replay: false);
     }
 }
 
-/// <summary>Orders rows by one or more columns.</summary>
 public sealed class SortHandler : IPipelineNodeHandler
 {
-    public NodeEngine Engine => NodeEngine.Duck;
     public NodeDescriptor Descriptor { get; } = new("sort", "Data", "Sort",
         "Order rows by columns, e.g. pressure DESC, well_id.", PortKind.Table, PortKind.Table,
         [P("orderBy", "ORDER BY, e.g. pressure DESC", NodeParameterType.Text, required: true)]);
 
-    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
         var orderBy = Cfg(node, "orderBy");
-        if (string.IsNullOrWhiteSpace(orderBy))
-        {
-            return Task.FromResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "no ORDER BY provided"));
-        }
-
-        ctx.Duck!.ReplaceTable(WorkingTable, $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} ORDER BY {orderBy}");
-        return Task.FromResult(SqlHandler.Done(ctx, node));
+        return string.IsNullOrWhiteSpace(orderBy)
+            ? Duck.Skip(node, "no ORDER BY provided", input)
+            : Duck.Run(ctx, node, input, this, $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} ORDER BY {orderBy}", replay: false);
     }
 }
 
-/// <summary>Removes duplicate rows.</summary>
 public sealed class DistinctHandler : IPipelineNodeHandler
 {
-    public NodeEngine Engine => NodeEngine.Duck;
     public NodeDescriptor Descriptor { get; } = new("distinct", "Data", "Deduplicate",
         "Remove duplicate rows (SELECT DISTINCT).", PortKind.Table, PortKind.Table, []);
 
-    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
-    {
-        ctx.Duck!.ReplaceTable(WorkingTable, $"SELECT DISTINCT * FROM {DuckDbSession.Quote(WorkingTable)}");
-        return Task.FromResult(SqlHandler.Done(ctx, node));
-    }
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
+        => Duck.Run(ctx, node, input, this, $"SELECT DISTINCT * FROM {DuckDbSession.Quote(WorkingTable)}", replay: false);
 }
 
-/// <summary>Left-joins columns from a second registered dataset on a shared key.</summary>
 public sealed class JoinDatasetHandler : IPipelineNodeHandler
 {
-    public NodeEngine Engine => NodeEngine.Duck;
     public NodeDescriptor Descriptor { get; } = new("join-dataset", "Data", "Join another dataset",
         "Bring in columns from a second dataset by matching a shared key column (a left join).",
         PortKind.Table, PortKind.Table,
@@ -133,75 +122,51 @@ public sealed class JoinDatasetHandler : IPipelineNodeHandler
          P("on", "Key column (in both)", NodeParameterType.Text, required: true),
          P("columns", "Columns to bring (blank = all)", NodeParameterType.Columns)]);
 
-    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
-        if (!TryResolve(ctx, node, out var otherTable, out var skip))
+        if (!Guid.TryParse(Cfg(node, "datasetId"), out var id) || ctx.SecondaryTable(id) is not { } otherTable)
         {
-            return Task.FromResult(skip!);
+            return Duck.Skip(node, "no dataset selected (or it could not be loaded)", input);
         }
 
         var on = Cfg(node, "on");
         if (string.IsNullOrWhiteSpace(on))
         {
-            return Task.FromResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "a key column is required"));
+            return Duck.Skip(node, "a key column is required", input);
         }
 
+        input.LoadIntoDuck(ctx.Duck, WorkingTable);
         var wanted = SplitList(Cfg(node, "columns"));
-        var working = DuckDbSession.Quote(WorkingTable);
-        var otherCols = ctx.Duck!.Columns(otherTable)
-            .Where(c => c != on && (wanted.Count == 0 || wanted.Contains(c)))
-            .ToList();
+        var otherCols = ctx.Duck.Columns(otherTable).Where(c => c != on && (wanted.Count == 0 || wanted.Contains(c))).ToList();
         var select = otherCols.Count == 0
             ? "w.*"
             : "w.*, " + string.Join(", ", otherCols.Select(c => $"o.{DuckDbSession.Quote(c)} AS {DuckDbSession.Quote(c)}"));
 
         ctx.Duck.ReplaceTable(WorkingTable,
-            $"SELECT {select} FROM {working} w LEFT JOIN {DuckDbSession.Quote(otherTable)} o ON w.{DuckDbSession.Quote(on)} = o.{DuckDbSession.Quote(on)}");
-        var result = SqlHandler.Done(ctx, node);
-        return Task.FromResult(result with { Detail = $"joined {otherCols.Count} column(s) on {on} · {result.Detail}" });
-    }
+            $"SELECT {select} FROM {DuckDbSession.Quote(WorkingTable)} w LEFT JOIN {DuckDbSession.Quote(otherTable)} o ON w.{DuckDbSession.Quote(on)} = o.{DuckDbSession.Quote(on)}");
 
-    internal static bool TryResolve(PipelineContext ctx, WorkflowNode node, out string table, out NodeExecutionResult? skip)
-    {
-        table = "";
-        skip = null;
-        var raw = Cfg(node, "datasetId");
-        if (!Guid.TryParse(raw, out var id))
-        {
-            skip = new NodeExecutionResult(node.Id, node.Kind, "skipped", "no dataset selected");
-            return false;
-        }
-
-        if (!ctx.SecondaryTables.TryGetValue(id, out var t))
-        {
-            skip = new NodeExecutionResult(node.Id, node.Kind, "skipped", "the selected dataset could not be loaded");
-            return false;
-        }
-
-        table = t;
-        return true;
+        var result = Duck.Done(ctx, node, this, replay: true);
+        return result with { Status = result.Status with { Detail = $"joined {otherCols.Count} column(s) on {on} · {result.Status.Detail}" } };
     }
 }
 
-/// <summary>Appends the rows of a second dataset (aligning columns by name).</summary>
 public sealed class UnionDatasetHandler : IPipelineNodeHandler
 {
-    public NodeEngine Engine => NodeEngine.Duck;
     public NodeDescriptor Descriptor { get; } = new("union-dataset", "Data", "Append another dataset",
         "Add the rows of a second dataset to the current data (columns aligned by name; missing ones become null).",
         PortKind.Table, PortKind.Table,
         [P("datasetId", "Dataset to append", NodeParameterType.Dataset, required: true)]);
 
-    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
-        if (!JoinDatasetHandler.TryResolve(ctx, node, out var otherTable, out var skip))
+        if (!Guid.TryParse(Cfg(node, "datasetId"), out var id) || ctx.SecondaryTable(id) is not { } otherTable)
         {
-            return Task.FromResult(skip!);
+            return Duck.Skip(node, "no dataset selected (or it could not be loaded)", input);
         }
 
-        var working = DuckDbSession.Quote(WorkingTable);
-        ctx.Duck!.ReplaceTable(WorkingTable,
-            $"SELECT * FROM {working} UNION ALL BY NAME SELECT * FROM {DuckDbSession.Quote(otherTable)}");
-        return Task.FromResult(SqlHandler.Done(ctx, node));
+        input.LoadIntoDuck(ctx.Duck, WorkingTable);
+        ctx.Duck.ReplaceTable(WorkingTable,
+            $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} UNION ALL BY NAME SELECT * FROM {DuckDbSession.Quote(otherTable)}");
+        return Duck.Done(ctx, node, this, replay: false);
     }
 }

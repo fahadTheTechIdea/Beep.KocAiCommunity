@@ -63,6 +63,35 @@ public class DuckDbPipelineTests
     }
 
     [Fact]
+    public async Task Duck_and_ml_nodes_are_freely_ordered()
+    {
+        // A DuckDB node AFTER an ML.NET transform — proves the uniform table contract removes the
+        // ordering constraint: normalize (ML) → sql derive (DuckDB) → split → train.
+        var def = new WorkflowDefinition
+        {
+            Name = "mixed-order",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "nz", Kind = "normalize" },
+                new() { Id = "q", Kind = "sql", Config = new Dictionary<string, string> { ["sql"] = "SELECT *, x1 * x2 AS product FROM working" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "nz"), new("nz", "q"), new("q", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        using var csv = SeparableCsv();
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is not "done" and not "skipped");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' {failed?.Status}: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == "sql").Detail.Should().Contain("product");
+        result.PrimaryValue.Should().BeGreaterThan(0.8);
+    }
+
+    [Fact]
     public async Task DuckDb_group_by_and_sort_chain()
     {
         // A DuckDB-only ETL chain: aggregate per zone, then sort — proves multi-node SQL flow.

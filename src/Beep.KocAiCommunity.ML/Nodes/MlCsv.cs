@@ -14,12 +14,30 @@ internal static class MlCsv
 {
     public static void Write(IDataView view, string path)
     {
+        using var sw = new StreamWriter(path);
+        Write(view, sw, writeHeader: true);
+    }
+
+    /// <summary>
+    /// Writes rows to an open writer, optionally with a header and an appended constant column
+    /// (e.g. the <c>__fold</c> marker) — lets the split node emit train+test rows into one file.
+    /// </summary>
+    public static void Write(IDataView view, TextWriter sw, bool writeHeader, (string Name, string Value)? extra = null)
+    {
         var columns = view.Schema.Where(c => !c.IsHidden).ToList();
         using var cursor = view.GetRowCursor(columns);
         var writers = columns.Select(c => ColumnWriter.Create(cursor, c)).ToList();
 
-        using var sw = new StreamWriter(path);
-        sw.WriteLine(string.Join(",", writers.SelectMany(w => w.Headers).Select(Escape)));
+        if (writeHeader)
+        {
+            var headers = writers.SelectMany(w => w.Headers).Select(Escape).ToList();
+            if (extra is { } e)
+            {
+                headers.Add(Escape(e.Name));
+            }
+
+            sw.WriteLine(string.Join(",", headers));
+        }
 
         var sb = new StringBuilder();
         while (cursor.MoveNext())
@@ -33,6 +51,11 @@ internal static class MlCsv
                 }
 
                 writers[i].AppendRow(sb);
+            }
+
+            if (extra is { } e)
+            {
+                sb.Append(',').Append(e.Value);
             }
 
             sw.WriteLine(sb.ToString());

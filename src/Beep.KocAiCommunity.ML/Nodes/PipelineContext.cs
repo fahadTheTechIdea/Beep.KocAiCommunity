@@ -6,56 +6,43 @@ using Microsoft.ML.Data;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
 
-/// <summary>Which representation a node handler operates on.</summary>
-public enum NodeEngine
-{
-    /// <summary>Reads/writes the ML.NET working view (fit/transform, models).</summary>
-    Ml,
-
-    /// <summary>Reads/writes the DuckDB working table (SQL data operations).</summary>
-    Duck,
-
-    /// <summary>Engine-agnostic (e.g. the source node) — needs no materialization, triggers no crossing.</summary>
-    Source,
-}
-
-/// <summary>Where the pipeline's working data currently lives.</summary>
-public enum DataLocation
-{
-    None,
-    Ml,
-    Duck,
-}
-
 /// <summary>Why the pipeline is running — a preview/train-and-score, or producing predictions.</summary>
 public enum PipelineMode
 {
-    /// <summary>Train on the split train set and evaluate on the held-out test set (Studio preview).</summary>
     Execute,
-
-    /// <summary>Train on the full set, then predict an id,prediction CSV for the evaluation set.</summary>
     Predict,
 }
 
 /// <summary>
-/// A single node kind's executor. One handler per <see cref="NodeDescriptor.Kind"/>. The handler's
-/// <see cref="Descriptor"/> is the single source of truth for the catalog and the compiler; the
-/// dispatcher materializes the right representation (<see cref="Engine"/>) before calling
-/// <see cref="ExecuteAsync"/>.
+/// A node's outcome: its status, the table it produced (null for terminal model/metric nodes), and an
+/// optional replay step to re-apply this node's effect to the evaluation set at predict time.
+/// </summary>
+public sealed record NodeResult(NodeExecutionResult Status, PipelineTable? Output, ReplayStep? Replay = null);
+
+/// <summary>
+/// One node kind's executor. Every node speaks the same uniform contract: a <see cref="PipelineTable"/>
+/// in, a <see cref="PipelineTable"/> out (or null for terminal nodes). Because both DuckDB and ML.NET
+/// nodes materialize from and to the identical table, they are interchangeable and freely ordered.
 /// </summary>
 public interface IPipelineNodeHandler
 {
     NodeDescriptor Descriptor { get; }
-    NodeEngine Engine { get; }
-    Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct);
+    NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input);
 }
 
+/// <summary>A fitted step recorded during training, replayed on the evaluation set at predict time.</summary>
+public abstract record ReplayStep;
+
+/// <summary>Re-runs a deterministic data node (DuckDB SQL) on the evaluation table.</summary>
+public sealed record DataReplay(WorkflowNode Node, IPipelineNodeHandler Handler) : ReplayStep;
+
+/// <summary>Applies a fitted ML.NET transformer to the evaluation table.</summary>
+public sealed record TransformReplay(ITransformer Transformer) : ReplayStep;
+
 /// <summary>
-/// The mutable state threaded through a pipeline run. Holds both engine representations (the ML.NET
-/// working view + the DuckDB working table) and materializes lazily across the two. ML fit/apply
-/// semantics are preserved: feature handlers fit on <see cref="TrainView"/> and push an
-/// <see cref="ITransformer"/> onto <see cref="Preprocessors"/>, which the evaluate/predict steps
-/// re-apply to the held-out or evaluation data.
+/// The mutable state threaded through a run. Nodes read/write <see cref="PipelineTable"/>s; the split
+/// tags rows with a <see cref="FoldColumn"/>, so ML transforms fit on the train fold and evaluate uses
+/// the test fold — the fit/apply lifecycle, preserved uniformly.
 /// </summary>
 public sealed class PipelineContext : IDisposable
 {
@@ -65,45 +52,62 @@ public sealed class PipelineContext : IDisposable
     public required string LabelColumn { get; init; }
     public string? IdColumn { get; init; }
 
-    /// <summary>Total rows loaded from the source (for the dataset node's report).</summary>
-    public long SourceRowCount { get; set; }
+    /// <summary>Raw CSV bytes of the datasets a join/union node may reference (by dataset id).</summary>
+    public IReadOnlyDictionary<Guid, byte[]> SecondaryDatasets { get; init; } = new Dictionary<Guid, byte[]>();
 
-    /// <summary>The held-out test fraction resolved from the split node (for the split node's report).</summary>
-    public double SplitFraction { get; init; }
+    /// <summary>The column the split node tags rows with: 0 = train, 1 = test.</summary>
+    public const string FoldColumn = "__fold";
 
-    // ---- ML working state ----
-    public IDataView TrainView { get; set; } = default!;
-    public IDataView? TestView { get; set; }
-    public List<string> FeatureColumns { get; set; } = [];
-    public List<ITransformer> Preprocessors { get; } = [];
+    /// <summary>The DuckDB table name that Data nodes read from and replace.</summary>
+    public const string WorkingTable = "working";
+
+    private DuckDbSession? _duck;
+    public DuckDbSession Duck => _duck ??= new DuckDbSession();
+
     public ITransformer? Model { get; set; }
     public string? Algorithm { get; set; }
     public ITransformer? LabelMap { get; set; }
     public double PrimaryValue { get; set; }
 
-    /// <summary>Per-node status collected during an Execute run.</summary>
     public List<NodeExecutionResult> Results { get; } = [];
-
-    // ---- DuckDB engine + crossing ----
-    /// <summary>The spilled source CSV — the origin the ML/DuckDB representations materialize from.</summary>
-    public string SourcePath { get; init; } = "";
-
-    /// <summary>The in-memory DuckDB session (set by the executor; used by Duck-engine nodes).</summary>
-    public DuckDbSession? Duck { get; set; }
-
-    /// <summary>The DuckDB table Duck-engine nodes read from and replace.</summary>
-    public const string WorkingTable = "working";
-
-    /// <summary>Where the working data currently lives (drives lazy crossing).</summary>
-    public DataLocation Current { get; set; } = DataLocation.None;
-
-    /// <summary>Temp CSVs written during engine crossing; cleaned up by the executor.</summary>
+    public List<ReplayStep> Steps { get; } = [];
     public List<string> TempFiles { get; } = [];
 
-    /// <summary>Registered dataset id → DuckDB table name for join/union nodes.</summary>
-    public IReadOnlyDictionary<Guid, string> SecondaryTables { get; set; } = new Dictionary<Guid, string>();
+    private readonly Dictionary<Guid, string> _secondaryTables = [];
 
-    // ---- Helpers shared by handlers (moved verbatim from the monolithic executor) ----
+    /// <summary>Loads a referenced dataset into DuckDB once and returns its table name.</summary>
+    public string? SecondaryTable(Guid id)
+    {
+        if (_secondaryTables.TryGetValue(id, out var existing))
+        {
+            return existing;
+        }
+
+        if (!SecondaryDatasets.TryGetValue(id, out var bytes))
+        {
+            return null;
+        }
+
+        var tempCsv = NewTemp();
+        File.WriteAllBytes(tempCsv, bytes);
+        var table = $"ds_{_secondaryTables.Count}";
+        Duck.LoadCsv(tempCsv, table);
+        _secondaryTables[id] = table;
+        return table;
+    }
+
+    public string NewTemp()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"koc-node-{Guid.NewGuid():N}.csv");
+        TempFiles.Add(path);
+        return path;
+    }
+
+    /// <summary>Candidate feature column names in a table (everything but label, id, and the fold marker).</summary>
+    public IEnumerable<string> FeatureNames(PipelineTable table)
+        => table.Columns.Where(c => c != LabelColumn && c != IdColumn && c != FoldColumn);
+
+    // ---- Shared helpers (moved from the monolithic executor) ----
 
     public static string? Cfg(WorkflowNode node, string key)
         => node.Config is not null && node.Config.TryGetValue(key, out var v) ? v : null;
@@ -123,10 +127,6 @@ public sealed class PipelineContext : IDisposable
         => (raw ?? string.Empty).Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToHashSet(StringComparer.Ordinal);
 
-    public static long Count(IDataView view) => view.GetRowCount() ?? view.Preview(int.MaxValue).RowView.Length;
-
-    public string[] NumericFeatures() => NumericFeatures(TrainView.Schema, FeatureColumns);
-
     public static string[] NumericFeatures(DataViewSchema schema, IEnumerable<string> featureCols)
     {
         var set = featureCols.ToHashSet(StringComparer.Ordinal);
@@ -143,35 +143,45 @@ public sealed class PipelineContext : IDisposable
 
     public static DataViewType ItemType(DataViewType type) => (type as VectorDataViewType)?.ItemType ?? type;
 
-    /// <summary>Applies the accumulated preprocessors to a data view (used before scoring/evaluation).</summary>
-    public IDataView ApplyPreprocessors(IDataView data)
+    // ---- Fit/apply lifecycle over the fold marker ----
+
+    /// <summary>The train rows of a view (fold 0) — or all rows when the table isn't split yet.</summary>
+    public IDataView FoldTrainView(IDataView full)
+        => full.Schema.GetColumnOrNull(FoldColumn) is null
+            ? full
+            : Ml.Data.FilterRowsByColumn(full, FoldColumn, lowerBound: double.NegativeInfinity, upperBound: 0.5);
+
+    /// <summary>The held-out test rows of a view (fold 1) — or all rows when the table isn't split.</summary>
+    public IDataView FoldTestView(IDataView full)
+        => full.Schema.GetColumnOrNull(FoldColumn) is null
+            ? full
+            : Ml.Data.FilterRowsByColumn(full, FoldColumn, lowerBound: 0.5, upperBound: double.PositiveInfinity);
+
+    /// <summary>
+    /// The standard ML transform lifecycle: build an estimator from the table's schema, fit it on the
+    /// train fold, apply to every row, and record the fitted transformer for the predict replay.
+    /// </summary>
+    public NodeResult FitTransform(WorkflowNode node, PipelineTable input,
+        Func<IDataView, (IEstimator<ITransformer>? Estimator, string Detail)> build, string skipReason)
     {
-        foreach (var t in Preprocessors)
+        var full = input.LoadIntoMl(Ml, LabelColumn);
+        var (estimator, detail) = build(full);
+        if (estimator is null)
         {
-            data = t.Transform(data);
+            return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", skipReason), input);
         }
 
-        return data;
-    }
-
-    /// <summary>Shared body for the per-column numeric normalizers (min-max / log / robust / binning).</summary>
-    public NodeExecutionResult NumericNormalizer(WorkflowNode node, string kind, Func<InputOutputColumnPair[], IDataView, ITransformer> fit, string detail)
-    {
-        var numeric = NumericFeatures();
-        if (numeric.Length == 0)
-        {
-            return new NodeExecutionResult(node.Id, kind, "skipped", "no numeric columns");
-        }
-
-        var t = fit([.. numeric.Select(c => new InputOutputColumnPair(c))], TrainView);
-        TrainView = t.Transform(TrainView);
-        Preprocessors.Add(t);
-        return new NodeExecutionResult(node.Id, kind, "done", detail);
+        var transformer = estimator.Fit(FoldTrainView(full));
+        var transformed = transformer.Transform(full);
+        return new NodeResult(
+            new NodeExecutionResult(node.Id, node.Kind, "done", detail),
+            PipelineTable.FromMlView(transformed, TempFiles),
+            new TransformReplay(transformer));
     }
 
     public void Dispose()
     {
-        Duck?.Dispose();
+        _duck?.Dispose();
         foreach (var f in TempFiles)
         {
             try { File.Delete(f); } catch (IOException) { /* best effort */ }
