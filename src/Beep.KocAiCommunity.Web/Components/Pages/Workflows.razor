@@ -43,7 +43,7 @@
                         </div>
                         <div class="d-flex gap-1">
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                                       Href="@($"/workflow/{w.Id}")">Open in designer</MudButton>
+                                       Href="@($"/workflow/{w.Id}")">Open</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Toggle(w.Id)">@(_expanded == w.Id ? "Hide" : "Versions")</MudButton>
                             <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Default" OnClick="() => Delete(w.Id)" />
                         </div>
