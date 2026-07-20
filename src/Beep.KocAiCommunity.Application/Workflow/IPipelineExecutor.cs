@@ -9,12 +9,12 @@ namespace Beep.KocAiCommunity.Application.Workflow;
 /// </summary>
 public interface IPipelineExecutor
 {
-    Task<PipelineExecutionResult> ExecuteAsync(WorkflowDefinition definition, string labelColumn, MlTaskType task, Stream csv, int maxSeconds, CancellationToken ct = default);
+    Task<PipelineExecutionResult> ExecuteAsync(WorkflowDefinition definition, string labelColumn, MlTaskType task, Stream csv, int maxSeconds, IReadOnlyDictionary<Guid, Stream>? secondaryDatasets = null, CancellationToken ct = default);
 
     /// <summary>
     /// Trains the pipeline on the full training set, then applies it to an evaluation feature set
     /// (an <c>id</c> column plus the same features, no label) and returns an <c>id,prediction</c> CSV
     /// suitable for competition scoring. Used to turn a Studio pipeline into a leaderboard submission.
     /// </summary>
-    Task<string> PredictAsync(WorkflowDefinition definition, string labelColumn, string idColumn, MlTaskType task, Stream trainingCsv, Stream evaluationCsv, CancellationToken ct = default);
+    Task<string> PredictAsync(WorkflowDefinition definition, string labelColumn, string idColumn, MlTaskType task, Stream trainingCsv, Stream evaluationCsv, IReadOnlyDictionary<Guid, Stream>? secondaryDatasets = null, CancellationToken ct = default);
 }

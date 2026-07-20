@@ -47,6 +47,17 @@ public sealed class DuckDbSession : IDisposable
     public void CreateTableAs(string tableName, string selectSql)
         => Execute($"CREATE OR REPLACE TABLE {Quote(tableName)} AS {selectSql};");
 
+    /// <summary>
+    /// Replaces a table with the result of a SELECT that may reference the table itself (materialize
+    /// into a scratch table, then swap) — the safe pattern for in-place SQL transforms.
+    /// </summary>
+    public void ReplaceTable(string tableName, string selectSql)
+    {
+        Execute($"CREATE OR REPLACE TABLE __koc_next AS {selectSql};");
+        Execute($"DROP TABLE IF EXISTS {Quote(tableName)};");
+        Execute($"ALTER TABLE __koc_next RENAME TO {Quote(tableName)};");
+    }
+
     public long RowCount(string tableName) => ToLong(Scalar($"SELECT COUNT(*) FROM {Quote(tableName)};"));
 
     /// <summary>Coerces a DuckDB scalar to long (aggregates can come back as <see cref="System.Numerics.BigInteger"/>).</summary>

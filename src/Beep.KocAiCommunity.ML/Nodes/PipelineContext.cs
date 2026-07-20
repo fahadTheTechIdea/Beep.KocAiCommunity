@@ -14,6 +14,17 @@ public enum NodeEngine
 
     /// <summary>Reads/writes the DuckDB working table (SQL data operations).</summary>
     Duck,
+
+    /// <summary>Engine-agnostic (e.g. the source node) — needs no materialization, triggers no crossing.</summary>
+    Source,
+}
+
+/// <summary>Where the pipeline's working data currently lives.</summary>
+public enum DataLocation
+{
+    None,
+    Ml,
+    Duck,
 }
 
 /// <summary>Why the pipeline is running — a preview/train-and-score, or producing predictions.</summary>
@@ -46,7 +57,7 @@ public interface IPipelineNodeHandler
 /// <see cref="ITransformer"/> onto <see cref="Preprocessors"/>, which the evaluate/predict steps
 /// re-apply to the held-out or evaluation data.
 /// </summary>
-public sealed class PipelineContext
+public sealed class PipelineContext : IDisposable
 {
     public required MLContext Ml { get; init; }
     public required MlTaskType Task { get; init; }
@@ -55,7 +66,7 @@ public sealed class PipelineContext
     public string? IdColumn { get; init; }
 
     /// <summary>Total rows loaded from the source (for the dataset node's report).</summary>
-    public long SourceRowCount { get; init; }
+    public long SourceRowCount { get; set; }
 
     /// <summary>The held-out test fraction resolved from the split node (for the split node's report).</summary>
     public double SplitFraction { get; init; }
@@ -73,9 +84,24 @@ public sealed class PipelineContext
     /// <summary>Per-node status collected during an Execute run.</summary>
     public List<NodeExecutionResult> Results { get; } = [];
 
-    // ---- Reserved for the DuckDB engine (Phase 2) ----
+    // ---- DuckDB engine + crossing ----
+    /// <summary>The spilled source CSV — the origin the ML/DuckDB representations materialize from.</summary>
+    public string SourcePath { get; init; } = "";
+
+    /// <summary>The in-memory DuckDB session (set by the executor; used by Duck-engine nodes).</summary>
+    public DuckDbSession? Duck { get; set; }
+
+    /// <summary>The DuckDB table Duck-engine nodes read from and replace.</summary>
+    public const string WorkingTable = "working";
+
+    /// <summary>Where the working data currently lives (drives lazy crossing).</summary>
+    public DataLocation Current { get; set; } = DataLocation.None;
+
+    /// <summary>Temp CSVs written during engine crossing; cleaned up by the executor.</summary>
+    public List<string> TempFiles { get; } = [];
+
     /// <summary>Registered dataset id → DuckDB table name for join/union nodes.</summary>
-    public IReadOnlyDictionary<Guid, string> SecondaryTables { get; init; } = new Dictionary<Guid, string>();
+    public IReadOnlyDictionary<Guid, string> SecondaryTables { get; set; } = new Dictionary<Guid, string>();
 
     // ---- Helpers shared by handlers (moved verbatim from the monolithic executor) ----
 
@@ -141,5 +167,14 @@ public sealed class PipelineContext
         TrainView = t.Transform(TrainView);
         Preprocessors.Add(t);
         return new NodeExecutionResult(node.Id, kind, "done", detail);
+    }
+
+    public void Dispose()
+    {
+        Duck?.Dispose();
+        foreach (var f in TempFiles)
+        {
+            try { File.Delete(f); } catch (IOException) { /* best effort */ }
+        }
     }
 }

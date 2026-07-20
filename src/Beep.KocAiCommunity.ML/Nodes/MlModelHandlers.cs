@@ -11,7 +11,7 @@ namespace Beep.KocAiCommunity.ML.Nodes;
 
 public sealed class DatasetHandler : IPipelineNodeHandler
 {
-    public NodeEngine Engine => NodeEngine.Ml;
+    public NodeEngine Engine => NodeEngine.Source;
     public NodeDescriptor Descriptor { get; } = new("dataset", "Source", "Dataset",
         "The input rows flowing into the pipeline (e.g. well headers, sensor readings).",
         PortKind.None, PortKind.Table, []);

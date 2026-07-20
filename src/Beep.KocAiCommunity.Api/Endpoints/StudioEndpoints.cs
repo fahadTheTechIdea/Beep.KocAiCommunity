@@ -29,7 +29,7 @@ public static class StudioEndpoints
             try
             {
                 await using var stream = file.OpenReadStream();
-                var run = await studio.TrainAsync(me.UserId!, string.IsNullOrWhiteSpace(datasetName) ? file.FileName : datasetName, labelColumn, taskType, stream, maxSeconds: 8, ct);
+                var run = await studio.TrainAsync(me.UserId!, string.IsNullOrWhiteSpace(datasetName) ? file.FileName : datasetName, labelColumn, taskType, stream, maxSeconds: 8, ct: ct);
                 return Results.Ok(ToDto(run));
             }
             catch (Exception ex)
@@ -67,7 +67,7 @@ public static class StudioEndpoints
             {
                 var def = JsonSerializer.Deserialize<WorkflowDefinition>(definition, JsonOptions) ?? new WorkflowDefinition();
                 await using var stream = file.OpenReadStream();
-                var result = await executor.ExecuteAsync(def, labelColumn, taskType, stream, maxSeconds: 8, ct);
+                var result = await executor.ExecuteAsync(def, labelColumn, taskType, stream, maxSeconds: 8, ct: ct);
                 return Results.Ok(result);
             }
             catch (Exception ex)
@@ -86,7 +86,7 @@ public static class StudioEndpoints
             {
                 var def = JsonSerializer.Deserialize<WorkflowDefinition>(definition, JsonOptions) ?? new WorkflowDefinition();
                 await using var stream = file.OpenReadStream();
-                var run = await workflow.RunAsync(me.UserId!, def, labelColumn, stream, maxSeconds: 8, ct);
+                var run = await workflow.RunAsync(me.UserId!, def, labelColumn, stream, maxSeconds: 8, ct: ct);
                 return Results.Ok(ToDto(run));
             }
             catch (WorkflowException ex)
@@ -119,7 +119,7 @@ public static class StudioEndpoints
             try
             {
                 await using var csv = await artifacts.OpenReadAsync(access.Dataset!.FileArtifactId!.Value, ct);
-                var run = await studio.TrainAsync(me.UserId!, access.Dataset.Name, req.LabelColumn, taskType, csv, maxSeconds: 8, ct);
+                var run = await studio.TrainAsync(me.UserId!, access.Dataset.Name, req.LabelColumn, taskType, csv, maxSeconds: 8, ct: ct);
                 return Results.Ok(ToDto(run));
             }
             catch (Exception ex)
@@ -147,7 +147,7 @@ public static class StudioEndpoints
             try
             {
                 await using var csv = await artifacts.OpenReadAsync(access.Dataset!.FileArtifactId!.Value, ct);
-                var result = await executor.ExecuteAsync(req.Definition, req.LabelColumn, taskType, csv, maxSeconds: 8, ct);
+                var result = await executor.ExecuteAsync(req.Definition, req.LabelColumn, taskType, csv, maxSeconds: 8, ct: ct);
                 return Results.Ok(result);
             }
             catch (Exception ex)

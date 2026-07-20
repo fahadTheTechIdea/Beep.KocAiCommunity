@@ -204,8 +204,9 @@
 ## DuckDB integration initiative (plug-and-play node engine)
 
 15. ~~Phase 16 — Pluggable node engine~~ ✅ DONE (2026-07-20) — `IPipelineNodeHandler` + `PipelineContext` + `PluginNodeRegistry` + `PluginNodeExecutor`; all ~30 ML nodes migrated behaviour-preserving; monolithic executor deleted. See `16_PLUGGABLE_NODE_ENGINE.md`.
-16. **Phase 17 — DuckDB engine core + secondary-dataset plumbing** (IN PROGRESS) — `DuckDB.NET.Data.Full`, engine crossing (DuckDB table ↔ IDataView via CSV), secondary datasets resolved by callers. See `17_DUCKDB_ENGINE.md`.
-17. **Phase 18 — DuckDB node handlers + Dataset picker** — `sql`, `join-dataset`, `union-dataset`, `group-by`, `pivot`, etc.; API-driven designer catalog + Dataset param type. See `18_DUCKDB_NODES.md`.
+16. ~~Phase 17a — DuckDB engine dependency proven~~ ✅ DONE (2026-07-20) — `DuckDB.NET.Data.Full`, `DuckDbSession`, probe tests (native engine loads + CSV round-trip).
+17. ~~Phase 17b — Engine crossing + first DuckDB nodes~~ ✅ DONE (2026-07-20) — lazy Duck↔ML crossing via CSV; DuckDB is the data-prep front-end (must precede ML nodes); `sql`, `sql-filter`, `group-by`, `sort`, `distinct` handlers; `IPipelineExecutor` gains optional secondary datasets. See `17_DUCKDB_ENGINE.md`.
+18. **Phase 18 — Remaining DuckDB nodes + Dataset picker** (NEXT) — `join-dataset`, `union-dataset`, `pivot`, `limit`, `summarize`; secondary-dataset resolution in the callers; API-driven designer catalog + Dataset param type. See `18_DUCKDB_NODES.md`.
 
 ## Global definition of done
 

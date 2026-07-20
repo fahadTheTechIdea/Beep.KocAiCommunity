@@ -236,7 +236,7 @@ public sealed class CompetitionService(
         await using (var evalStream = await artifacts.OpenReadAsync(competition.EvaluationArtifactId.Value, ct))
         {
             predictionCsv = await pipeline.PredictAsync(
-                definition, competition.LabelColumn, competition.IdColumn, task, trainStream, evalStream, ct);
+                definition, competition.LabelColumn, competition.IdColumn, task, trainStream, evalStream, ct: ct);
         }
 
         using var predictions = new MemoryStream(Encoding.UTF8.GetBytes(predictionCsv));
