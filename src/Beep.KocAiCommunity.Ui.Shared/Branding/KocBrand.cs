@@ -15,8 +15,8 @@ public static class KocBrand
 
     public const string Company = "Kuwait Oil Company";
 
-    /// <summary>Where this app sits in the company — shown under the product name.</summary>
-    public const string Department = "Training and Career Development Group";
+    /// <summary>The subtitle shown under the product name — what this app is, without repeating its name.</summary>
+    public const string SubTitle = "AI Learning Community";
 
     public const string Tagline = "Build AI skills, compete with colleagues, and grow your career at KOC.";
 
