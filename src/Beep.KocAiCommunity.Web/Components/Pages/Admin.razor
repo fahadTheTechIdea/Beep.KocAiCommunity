@@ -204,10 +204,14 @@ else
         try
         {
             var (status, error) = await Api.SeedDemoAsync();
-            Snackbar.Add(error ?? $"Demo data seeded — {status?.Users} people, a competition, a discussion and a dataset.",
+            Snackbar.Add(error ?? $"Demo data seeded — {status?.Users} colleagues, competitions, discussions, datasets and more.",
                 error is null ? Severity.Success : Severity.Warning);
             _demo = status ?? _demo;
             _dashboard = await Api.GetAdminDashboardAsync();   // counts changed
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Seeding failed: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -224,6 +228,10 @@ else
             Snackbar.Add(error ?? "Demo data removed.", error is null ? Severity.Success : Severity.Warning);
             _demo = status ?? _demo;
             _dashboard = await Api.GetAdminDashboardAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Unseed failed: {ex.Message}", Severity.Error);
         }
         finally
         {

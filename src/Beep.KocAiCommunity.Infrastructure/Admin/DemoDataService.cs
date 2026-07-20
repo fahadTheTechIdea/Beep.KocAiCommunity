@@ -121,7 +121,9 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
         await db.Set<XpEvent>().Where(x => x.CreatedByUserId == Marker || x.UserId.StartsWith(Prefix)).ExecuteDeleteAsync(ct);
         await db.Set<UserProfile>().Where(x => x.CreatedByUserId == Marker || x.UserId.StartsWith(Prefix)).ExecuteDeleteAsync(ct);
         await db.Set<OrgMembership>().Where(x => x.UserId.StartsWith(Prefix)).ExecuteDeleteAsync(ct);
-        await db.Set<OrgUnit>().Where(x => x.Path.StartsWith(OrgPath)).ExecuteDeleteAsync(ct);
+        // OrgUnit is self-referencing (ParentId), so remove the demo teams before the demo group root.
+        await db.Set<OrgUnit>().Where(x => x.Path.StartsWith(OrgPath + "/")).ExecuteDeleteAsync(ct);
+        await db.Set<OrgUnit>().Where(x => x.Path == OrgPath).ExecuteDeleteAsync(ct);
 
         await audit.WriteAsync(new AuditEntry("demo.unseed", "demo-data", null, null, null), ct);
         return await GetStatusAsync(ct);
@@ -254,37 +256,48 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
             return;
         }
 
+        // The dev personas may already be enrolled (DevOrgSeeder, or the user clicking around) —
+        // (TrackId, UserId) is unique, so skip pairs that exist instead of violating the index.
+        var enrolled = (await db.Set<TrackEnrollment>().AsNoTracking().Select(e => new { e.TrackId, e.UserId }).ToListAsync(ct))
+            .Select(e => (e.TrackId, e.UserId)).ToHashSet();
+        var completedAlready = (await db.Set<TrackCompletion>().AsNoTracking().Select(c => new { c.TrackId, c.UserId }).ToListAsync(ct))
+            .Select(c => (c.TrackId, c.UserId)).ToHashSet();
+
         var learners = People.Select(p => p.UserId).Concat(DevUsers).ToArray();
         foreach (var (userId, index) in learners.Select((u, i) => (u, i)))
         {
             // Everyone starts track 1; roughly half completed it; stronger profiles progress further.
             var completedFirst = index % 2 == 0;
-            AddEnrollment(tracks[0], userId, completedFirst, now.AddDays(-30));
+            AddEnrollment(enrolled, completedAlready, tracks[0], userId, completedFirst, now.AddDays(-30));
             if (tracks.Count > 1 && index % 3 == 0)
             {
-                AddEnrollment(tracks[1], userId, completed: index % 6 == 0, now.AddDays(-14));
+                AddEnrollment(enrolled, completedAlready, tracks[1], userId, completed: index % 6 == 0, now.AddDays(-14));
             }
 
             if (tracks.Count > 2 && index % 4 == 0)
             {
-                AddEnrollment(tracks[2], userId, completed: false, now.AddDays(-5));
+                AddEnrollment(enrolled, completedAlready, tracks[2], userId, completed: false, now.AddDays(-5));
             }
         }
     }
 
-    private void AddEnrollment(Guid trackId, string userId, bool completed, DateTime started)
+    private void AddEnrollment(HashSet<(Guid, string)> enrolled, HashSet<(Guid, string)> completedAlready, Guid trackId, string userId, bool completed, DateTime started)
     {
-        db.Add(new TrackEnrollment
+        if (enrolled.Add((trackId, userId)))
         {
-            TrackId = trackId,
-            UserId = userId,
-            Status = completed ? "completed" : "active",
-            StartedUtc = started,
-            CompletedUtc = completed ? started.AddDays(7) : null,
-            CreatedByUserId = Marker,
-            CreatedUtc = started,
-        });
-        if (completed)
+            db.Add(new TrackEnrollment
+            {
+                TrackId = trackId,
+                UserId = userId,
+                Status = completed ? "completed" : "active",
+                StartedUtc = started,
+                CompletedUtc = completed ? started.AddDays(7) : null,
+                CreatedByUserId = Marker,
+                CreatedUtc = started,
+            });
+        }
+
+        if (completed && completedAlready.Add((trackId, userId)))
         {
             db.Add(new TrackCompletion { TrackId = trackId, UserId = userId, CompletedUtc = started.AddDays(7), CreatedByUserId = Marker, CreatedUtc = started.AddDays(7) });
         }

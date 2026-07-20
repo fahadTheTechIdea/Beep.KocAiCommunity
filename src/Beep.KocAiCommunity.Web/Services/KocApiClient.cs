@@ -387,8 +387,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
             return (await response.Content.ReadFromJsonAsync<DatasetVersionDto>(ct), null);
         }
 
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+        return (null, await ReadErrorAsync(response, ct));
     }
 
     public async Task<DatasetDto?> CreateDatasetAsync(CreateDatasetRequest request, CancellationToken ct = default)
@@ -480,8 +479,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
             return (await response.Content.ReadFromJsonAsync<AttachmentDto>(ct), null);
         }
 
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Upload failed ({(int)response.StatusCode}).");
+        return (null, await ReadErrorAsync(response, ct));
     }
 
     public async Task<WorkflowValidationResult?> ValidateWorkflowAsync(WorkflowDefinition definition, CancellationToken ct = default)
@@ -564,8 +562,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     private static async Task<string?> ErrorAsync(HttpResponseMessage response, CancellationToken ct)
     {
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).";
+        return await ReadErrorAsync(response, ct);
     }
 
     public async Task<IReadOnlyList<HelpArticleSummaryDto>> GetHelpArticlesAsync(string? category = null, string? q = null, CancellationToken ct = default)
@@ -600,8 +597,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
             return (await response.Content.ReadFromJsonAsync<SettingDto>(ct), null);
         }
 
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+        return (null, await ReadErrorAsync(response, ct));
     }
 
     public async Task<IReadOnlyList<FeatureFlagDto>> GetFeatureFlagsAsync(CancellationToken ct = default) =>
@@ -615,8 +611,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
             return (await response.Content.ReadFromJsonAsync<FeatureFlagDto>(ct), null);
         }
 
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return (null, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+        return (null, await ReadErrorAsync(response, ct));
     }
 
     public Task<DemoDataStatusDto?> GetDemoStatusAsync(CancellationToken ct = default) =>
@@ -725,8 +720,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
             return (await response.Content.ReadFromJsonAsync<T>(ct), null);
         }
 
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return (default, problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).");
+        return (default, await ReadErrorAsync(response, ct));
     }
 
     /// <summary>Returns null on success, or the error message on a 400.</summary>
@@ -738,8 +732,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
             return null;
         }
 
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).";
+        return await ReadErrorAsync(response, ct);
     }
 
     /// <summary>Returns null on success, or the error message on a 400.</summary>
@@ -751,8 +744,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
             return null;
         }
 
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).";
+        return await ReadErrorAsync(response, ct);
     }
 
     private static MultipartFormDataContent CsvForm(Stream csv, string fileName)
@@ -799,8 +791,7 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
             return null;
         }
 
-        var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>(ct);
-        return problem is not null && problem.TryGetValue("error", out var msg) ? msg : $"Request failed ({(int)response.StatusCode}).";
+        return await ReadErrorAsync(response, ct);
     }
 
     public async Task<IReadOnlyList<KudosDto>> GetKudosAsync(string userId, CancellationToken ct = default) =>
@@ -866,4 +857,34 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public Task<(ModelVersionDto? Version, string? Error)> RegisterExperimentRunAsync(Guid runId, string modelName, CancellationToken ct = default) =>
         PostJsonAsync<ModelVersionDto>($"/api/v1/experiments/runs/{runId}/register", new RegisterRunRequest(modelName), ct);
+
+    /// <summary>
+    /// Extracts a human-readable error from any failure response — our {"error": "..."} shape,
+    /// ProblemDetails ("title"), or anything else — without ever throwing on unexpected JSON.
+    /// </summary>
+    private static async Task<string?> ReadErrorAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        try
+        {
+            using var doc = await System.Text.Json.JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+            if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                if (doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    return e.GetString();
+                }
+
+                if (doc.RootElement.TryGetProperty("title", out var t) && t.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    return $"{t.GetString()} ({(int)response.StatusCode})";
+                }
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // Non-JSON body — fall through to the generic message.
+        }
+
+        return $"Request failed ({(int)response.StatusCode}).";
+    }
 }
