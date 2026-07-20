@@ -58,7 +58,7 @@ public sealed record PipelineTable(string CsvPath, IReadOnlyList<string> Columns
 
     private static string NewTemp(ICollection<string> tempFiles)
     {
-        var path = Path.Combine(Path.GetTempPath(), $"koc-tbl-{Guid.NewGuid():N}.csv");
+        var path = PipelineTemp.New();
         tempFiles.Add(path);
         return path;
     }

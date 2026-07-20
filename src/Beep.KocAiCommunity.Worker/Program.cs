@@ -22,4 +22,8 @@ builder.Services.AddScoped<JobProcessor>();
 builder.Services.AddHostedService<JobExecutionService>();
 
 var host = builder.Build();
+
+// Crash safety net for pipeline scratch files (per-run cleanup is prompt during execution).
+Beep.KocAiCommunity.ML.Nodes.PipelineTemp.SweepOrphans(TimeSpan.FromHours(2));
+
 host.Run();

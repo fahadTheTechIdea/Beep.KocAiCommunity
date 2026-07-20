@@ -192,14 +192,11 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
 
     private static async Task<string> SpillAsync(Stream source, CancellationToken ct)
     {
-        var path = Path.Combine(Path.GetTempPath(), $"koc-pipe-{Guid.NewGuid():N}.csv");
+        var path = PipelineTemp.New();
         await using var file = File.Create(path);
         await source.CopyToAsync(file, ct);
         return path;
     }
 
-    private static void Cleanup(string path)
-    {
-        try { File.Delete(path); } catch (IOException) { /* best effort */ }
-    }
+    private static void Cleanup(string path) => PipelineTemp.Delete(path);
 }

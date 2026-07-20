@@ -128,6 +128,10 @@ else if (app.Configuration.GetValue("Database:MigrateOnStartup", false))
     }
 }
 
+// Reclaim any pipeline scratch files a previous run couldn't delete (e.g. a crash). Runs cleaned up
+// promptly during execution — this is only a crash safety net.
+Beep.KocAiCommunity.ML.Nodes.PipelineTemp.SweepOrphans(TimeSpan.FromHours(2));
+
 app.Run();
 
 /// <summary>Exposed so integration/end-to-end tests can use WebApplicationFactory.</summary>

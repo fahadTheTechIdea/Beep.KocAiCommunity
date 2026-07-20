@@ -98,7 +98,7 @@ public sealed class PipelineContext : IDisposable
 
     public string NewTemp()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"koc-node-{Guid.NewGuid():N}.csv");
+        var path = PipelineTemp.New();
         TempFiles.Add(path);
         return path;
     }
@@ -181,10 +181,10 @@ public sealed class PipelineContext : IDisposable
 
     public void Dispose()
     {
-        _duck?.Dispose();
+        try { _duck?.Dispose(); } catch { /* releasing the in-memory DuckDB is best effort */ }
         foreach (var f in TempFiles)
         {
-            try { File.Delete(f); } catch (IOException) { /* best effort */ }
+            PipelineTemp.Delete(f);
         }
     }
 }
