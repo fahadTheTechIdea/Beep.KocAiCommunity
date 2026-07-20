@@ -121,3 +121,87 @@ public sealed class DistinctHandler : IPipelineNodeHandler
         return Task.FromResult(SqlHandler.Done(ctx, node));
     }
 }
+
+/// <summary>Left-joins columns from a second registered dataset on a shared key.</summary>
+public sealed class JoinDatasetHandler : IPipelineNodeHandler
+{
+    public NodeEngine Engine => NodeEngine.Duck;
+    public NodeDescriptor Descriptor { get; } = new("join-dataset", "Data", "Join another dataset",
+        "Bring in columns from a second dataset by matching a shared key column (a left join).",
+        PortKind.Table, PortKind.Table,
+        [P("datasetId", "Dataset to join", NodeParameterType.Dataset, required: true),
+         P("on", "Key column (in both)", NodeParameterType.Text, required: true),
+         P("columns", "Columns to bring (blank = all)", NodeParameterType.Columns)]);
+
+    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
+    {
+        if (!TryResolve(ctx, node, out var otherTable, out var skip))
+        {
+            return Task.FromResult(skip!);
+        }
+
+        var on = Cfg(node, "on");
+        if (string.IsNullOrWhiteSpace(on))
+        {
+            return Task.FromResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "a key column is required"));
+        }
+
+        var wanted = SplitList(Cfg(node, "columns"));
+        var working = DuckDbSession.Quote(WorkingTable);
+        var otherCols = ctx.Duck!.Columns(otherTable)
+            .Where(c => c != on && (wanted.Count == 0 || wanted.Contains(c)))
+            .ToList();
+        var select = otherCols.Count == 0
+            ? "w.*"
+            : "w.*, " + string.Join(", ", otherCols.Select(c => $"o.{DuckDbSession.Quote(c)} AS {DuckDbSession.Quote(c)}"));
+
+        ctx.Duck.ReplaceTable(WorkingTable,
+            $"SELECT {select} FROM {working} w LEFT JOIN {DuckDbSession.Quote(otherTable)} o ON w.{DuckDbSession.Quote(on)} = o.{DuckDbSession.Quote(on)}");
+        var result = SqlHandler.Done(ctx, node);
+        return Task.FromResult(result with { Detail = $"joined {otherCols.Count} column(s) on {on} · {result.Detail}" });
+    }
+
+    internal static bool TryResolve(PipelineContext ctx, WorkflowNode node, out string table, out NodeExecutionResult? skip)
+    {
+        table = "";
+        skip = null;
+        var raw = Cfg(node, "datasetId");
+        if (!Guid.TryParse(raw, out var id))
+        {
+            skip = new NodeExecutionResult(node.Id, node.Kind, "skipped", "no dataset selected");
+            return false;
+        }
+
+        if (!ctx.SecondaryTables.TryGetValue(id, out var t))
+        {
+            skip = new NodeExecutionResult(node.Id, node.Kind, "skipped", "the selected dataset could not be loaded");
+            return false;
+        }
+
+        table = t;
+        return true;
+    }
+}
+
+/// <summary>Appends the rows of a second dataset (aligning columns by name).</summary>
+public sealed class UnionDatasetHandler : IPipelineNodeHandler
+{
+    public NodeEngine Engine => NodeEngine.Duck;
+    public NodeDescriptor Descriptor { get; } = new("union-dataset", "Data", "Append another dataset",
+        "Add the rows of a second dataset to the current data (columns aligned by name; missing ones become null).",
+        PortKind.Table, PortKind.Table,
+        [P("datasetId", "Dataset to append", NodeParameterType.Dataset, required: true)]);
+
+    public Task<NodeExecutionResult> ExecuteAsync(PipelineContext ctx, WorkflowNode node, CancellationToken ct)
+    {
+        if (!JoinDatasetHandler.TryResolve(ctx, node, out var otherTable, out var skip))
+        {
+            return Task.FromResult(skip!);
+        }
+
+        var working = DuckDbSession.Quote(WorkingTable);
+        ctx.Duck!.ReplaceTable(WorkingTable,
+            $"SELECT * FROM {working} UNION ALL BY NAME SELECT * FROM {DuckDbSession.Quote(otherTable)}");
+        return Task.FromResult(SqlHandler.Done(ctx, node));
+    }
+}

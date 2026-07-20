@@ -18,7 +18,7 @@ public static class WorkflowCompiler
             "pca", "feature-selection",
             "rename-column", "convert-numeric", "compute-column", "combine-columns",
             "lp-normalize", "global-contrast", "take-rows", "shuffle",
-            "sql", "sql-filter", "group-by", "sort", "distinct",
+            "sql", "sql-filter", "group-by", "sort", "distinct", "join-dataset", "union-dataset",
             "split", "train", "cross-validate", "cluster", "score", "evaluate",
         };
 

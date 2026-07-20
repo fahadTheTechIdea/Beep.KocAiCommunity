@@ -4,7 +4,7 @@ namespace Beep.KocAiCommunity.Application.ML;
 public enum PortKind { None, Table, Model, Metrics }
 
 /// <summary>The editor type for a node parameter.</summary>
-public enum NodeParameterType { Text, Number, Select, Columns }
+public enum NodeParameterType { Text, Number, Select, Columns, Dataset }
 
 /// <summary>A typed, declared parameter of a node.</summary>
 public sealed record NodeParameter(

@@ -56,7 +56,7 @@ public static class StudioEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         // Execute a workflow node by node (real ML.NET pipeline: load → transforms → split → train → evaluate).
-        group.MapPost("/studio/workflows/execute", async (IFormFile file, [FromForm] string definition, string labelColumn, string? task, IKocCurrentUser me, IPipelineExecutor executor, CancellationToken ct) =>
+        group.MapPost("/studio/workflows/execute", async (IFormFile file, [FromForm] string definition, string labelColumn, string? task, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IPipelineExecutor executor, CancellationToken ct) =>
         {
             if (!Enum.TryParse<MlTaskType>(task, ignoreCase: true, out var taskType) || taskType == MlTaskType.MulticlassClassification)
             {
@@ -66,8 +66,9 @@ public static class StudioEndpoints
             try
             {
                 var def = JsonSerializer.Deserialize<WorkflowDefinition>(definition, JsonOptions) ?? new WorkflowDefinition();
+                var secondary = await ResolveSecondaryDatasetsAsync(me, datasets, artifacts, def, ct);
                 await using var stream = file.OpenReadStream();
-                var result = await executor.ExecuteAsync(def, labelColumn, taskType, stream, maxSeconds: 8, ct: ct);
+                var result = await executor.ExecuteAsync(def, labelColumn, taskType, stream, maxSeconds: 8, secondaryDatasets: secondary, ct: ct);
                 return Results.Ok(result);
             }
             catch (Exception ex)
@@ -146,8 +147,9 @@ public static class StudioEndpoints
 
             try
             {
+                var secondary = await ResolveSecondaryDatasetsAsync(me, datasets, artifacts, req.Definition, ct);
                 await using var csv = await artifacts.OpenReadAsync(access.Dataset!.FileArtifactId!.Value, ct);
-                var result = await executor.ExecuteAsync(req.Definition, req.LabelColumn, taskType, csv, maxSeconds: 8, ct: ct);
+                var result = await executor.ExecuteAsync(req.Definition, req.LabelColumn, taskType, csv, maxSeconds: 8, secondaryDatasets: secondary, ct: ct);
                 return Results.Ok(result);
             }
             catch (Exception ex)
@@ -159,6 +161,33 @@ public static class StudioEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         return group;
+    }
+
+    // Resolves the secondary datasets a workflow's join/union nodes reference, applying the same
+    // visibility + classification gate as the primary dataset. Silently skips any the caller can't use.
+    private static async Task<IReadOnlyDictionary<Guid, Stream>> ResolveSecondaryDatasetsAsync(
+        IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, WorkflowDefinition definition, CancellationToken ct)
+    {
+        var map = new Dictionary<Guid, Stream>();
+        foreach (var id in WorkflowDatasetScanner.ReferencedDatasetIds(definition))
+        {
+            var access = await ResolveTrainableDatasetAsync(me, datasets, id, ct);
+            if (access.Dataset?.FileArtifactId is not { } fileId)
+            {
+                continue;
+            }
+
+            var ms = new MemoryStream();
+            await using (var s = await artifacts.OpenReadAsync(fileId, ct))
+            {
+                await s.CopyToAsync(ms, ct);
+            }
+
+            ms.Position = 0;
+            map[id] = ms;
+        }
+
+        return map;
     }
 
     // Resolves a visible, file-bearing dataset the caller may train on (classification-gated like download).

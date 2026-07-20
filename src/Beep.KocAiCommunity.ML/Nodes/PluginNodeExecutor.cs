@@ -253,7 +253,8 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         var duck = ctx.Duck ??= new DuckDbSession();
         if (ctx.Current == DataLocation.Ml)
         {
-            throw new InvalidOperationException("DuckDB/SQL nodes must run before the ML.NET modelling nodes (they are the data-prep front-end).");
+            // Data operations (join/union/merge/derive) are dataset-level and belong before the split.
+            throw new InvalidOperationException("Data nodes (SQL, join, union, group-by, …) run on the dataset, so place them before the split/train nodes — after that the data is already partitioned for modelling.");
         }
 
         duck.LoadCsv(ctx.SourcePath, PipelineContext.WorkingTable);

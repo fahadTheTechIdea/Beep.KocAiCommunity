@@ -1,0 +1,94 @@
+using System.Text;
+using Beep.KocAiCommunity.Application.ML;
+using Beep.KocAiCommunity.Contracts.Workflow;
+using Beep.KocAiCommunity.ML.Nodes;
+using FluentAssertions;
+using Xunit;
+
+namespace Beep.KocAiCommunity.UnitTests;
+
+/// <summary>Merging a second dataset into a workflow — join columns and append rows via DuckDB.</summary>
+public class DuckDbJoinTests
+{
+    private static PluginNodeExecutor NewExecutor()
+    {
+        var handlers = typeof(PluginNodeExecutor).Assembly.GetTypes()
+            .Where(t => t is { IsAbstract: false, IsInterface: false } && typeof(IPipelineNodeHandler).IsAssignableFrom(t))
+            .Select(t => (IPipelineNodeHandler)Activator.CreateInstance(t)!);
+        return new PluginNodeExecutor(new PluginNodeRegistry(handlers));
+    }
+
+    private static MemoryStream Csv(string text) => new(Encoding.UTF8.GetBytes(text));
+
+    [Fact]
+    public async Task Join_dataset_brings_in_columns_from_a_second_dataset()
+    {
+        var second = Guid.NewGuid();
+        // Primary: a key + one weak feature + label. The joined column 'signal' is what makes it separable.
+        var primary = new StringBuilder("key,x1,label\n");
+        var secondary = new StringBuilder("key,signal\n");
+        for (var i = 0; i < 60; i++)
+        {
+            primary.Append($"k{i},{i % 2},{(i % 2 == 0 ? "true" : "false")}\n");
+            secondary.Append($"k{i},{(i % 2 == 0 ? 9 : 0)}\n");
+        }
+
+        var def = new WorkflowDefinition
+        {
+            Name = "join",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "j", Kind = "join-dataset", Config = new Dictionary<string, string> { ["datasetId"] = second.ToString(), ["on"] = "key" } },
+                new() { Id = "drop", Kind = "drop-columns", Config = new Dictionary<string, string> { ["columns"] = "key" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "j"), new("j", "drop"), new("drop", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var secondaryMap = new Dictionary<Guid, Stream> { [second] = Csv(secondary.ToString()) };
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, Csv(primary.ToString()), 5, secondaryMap);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is not "done" and not "skipped");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' {failed?.Status}: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == "join-dataset").Detail.Should().Contain("signal");
+        // The joined 'signal' column makes the data separable → strong accuracy.
+        result.PrimaryValue.Should().BeGreaterThan(0.9);
+    }
+
+    [Fact]
+    public async Task Union_dataset_appends_rows_from_a_second_dataset()
+    {
+        var second = Guid.NewGuid();
+        var primary = "x1,x2,label\n9,9,true\n0,0,false\n8,8,true\n1,1,false\n";
+        var extra = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 40; i++)
+        {
+            extra.Append($"{7 + (i % 3)},{7 + (i % 3)},true\n{i % 3},{i % 3},false\n");
+        }
+
+        var def = new WorkflowDefinition
+        {
+            Name = "union",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "u", Kind = "union-dataset", Config = new Dictionary<string, string> { ["datasetId"] = second.ToString() } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "u"), new("u", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var secondaryMap = new Dictionary<Guid, Stream> { [second] = Csv(extra.ToString()) };
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, Csv(primary), 5, secondaryMap);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is not "done" and not "skipped");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' {failed?.Status}: {failed?.Detail}");
+        // 4 primary rows + 80 appended (40 × 2) = 84.
+        result.Nodes.Single(n => n.Kind == "union-dataset").Detail.Should().Contain("84 rows");
+    }
+}
