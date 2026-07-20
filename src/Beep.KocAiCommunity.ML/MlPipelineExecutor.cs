@@ -502,6 +502,136 @@ public sealed class MlPipelineExecutor : IPipelineExecutor
                     return new NodeExecutionResult(nodeId, kind, "done", $"selected features (count ≥ {count})");
                 }
 
+            // ---- Prepare (data-management) ----
+            case "rename-column":
+                {
+                    var from = Cfg(node, "from");
+                    var to = Cfg(node, "to");
+                    if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to))
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "'from' and 'to' are required");
+                    }
+
+                    if (!featureCols.Contains(from))
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", $"column '{from}' not found");
+                    }
+
+                    var t = ml.Transforms.CopyColumns(to, from).Append(ml.Transforms.DropColumns(from)).Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    featureCols = featureCols.Select(c => c == from ? to : c).ToList();
+                    return new NodeExecutionResult(nodeId, kind, "done", $"{from} → {to}");
+                }
+
+            case "convert-numeric":
+                {
+                    var wanted = SplitList(Cfg(node, "columns"));
+                    var target = (wanted.Count > 0 ? featureCols.Where(wanted.Contains) : TextFeatures(train.Schema, featureCols)).ToArray();
+                    if (target.Length == 0)
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "no columns to convert");
+                    }
+
+                    var t = ml.Transforms.Conversion.ConvertType([.. target.Select(c => new InputOutputColumnPair(c))], DataKind.Single).Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    return new NodeExecutionResult(nodeId, kind, "done", $"cast to number: {string.Join(", ", target)}");
+                }
+
+            case "compute-column":
+                {
+                    var output = Cfg(node, "output");
+                    var expression = Cfg(node, "expression");
+                    var inputs = SplitList(Cfg(node, "inputs")).Where(featureCols.Contains).ToArray();
+                    if (string.IsNullOrWhiteSpace(output) || string.IsNullOrWhiteSpace(expression))
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "'output' name and 'expression' are required");
+                    }
+
+                    if (inputs.Length == 0)
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "no valid input columns");
+                    }
+
+                    // Inputs must be numeric for the expression math; cast first, then compute.
+                    var cast = ml.Transforms.Conversion.ConvertType([.. inputs.Select(c => new InputOutputColumnPair(c))], DataKind.Single);
+                    var t = cast.Append(ml.Transforms.Expression(output, expression, inputs)).Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    if (!featureCols.Contains(output))
+                    {
+                        featureCols = [.. featureCols, output];
+                    }
+
+                    return new NodeExecutionResult(nodeId, kind, "done", $"{output} = {expression}  [{string.Join(", ", inputs)}]");
+                }
+
+            case "combine-columns":
+                {
+                    var wanted = SplitList(Cfg(node, "columns"));
+                    var target = (wanted.Count > 0 ? featureCols.Where(wanted.Contains) : NumericFeatures(train.Schema, featureCols)).ToArray();
+                    if (target.Length < 2)
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "need ≥2 columns to combine");
+                    }
+
+                    var t = ml.Transforms.Concatenate("Combined", target).Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    featureCols = [.. featureCols.Where(c => !target.Contains(c)), "Combined"];
+                    return new NodeExecutionResult(nodeId, kind, "done", $"combined {target.Length} → Combined");
+                }
+
+            case "lp-normalize":
+                {
+                    var numeric = NumericFeatures(train.Schema, featureCols);
+                    if (numeric.Length == 0)
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "no numeric columns");
+                    }
+
+                    var t = ml.Transforms.Concatenate("__LpIn", numeric)
+                        .Append(ml.Transforms.NormalizeLpNorm("LpNorm", "__LpIn"))
+                        .Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    featureCols = ["LpNorm"];
+                    return new NodeExecutionResult(nodeId, kind, "done", "Lp-normalized feature vector");
+                }
+
+            case "global-contrast":
+                {
+                    var numeric = NumericFeatures(train.Schema, featureCols);
+                    if (numeric.Length == 0)
+                    {
+                        return new NodeExecutionResult(nodeId, kind, "skipped", "no numeric columns");
+                    }
+
+                    var t = ml.Transforms.Concatenate("__GcnIn", numeric)
+                        .Append(ml.Transforms.NormalizeGlobalContrast("Gcn", "__GcnIn"))
+                        .Fit(train);
+                    train = t.Transform(train);
+                    preprocessors.Add(t);
+                    featureCols = ["Gcn"];
+                    return new NodeExecutionResult(nodeId, kind, "done", "global-contrast normalized");
+                }
+
+            // ---- Shape (row operations; training set only, like sample/filter) ----
+            case "take-rows":
+                {
+                    var n = Math.Max(1, (int)ReadDouble(Cfg(node, "count"), 1000));
+                    var before = Count(train);
+                    train = ml.Data.TakeRows(train, n);
+                    return new NodeExecutionResult(nodeId, kind, "done", $"kept first {Count(train)} of {before}");
+                }
+
+            case "shuffle":
+                {
+                    train = ml.Data.ShuffleRows(train, seed: 1);
+                    return new NodeExecutionResult(nodeId, kind, "done", "rows shuffled");
+                }
+
             default:
                 return null;
         }

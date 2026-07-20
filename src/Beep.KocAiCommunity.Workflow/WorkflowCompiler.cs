@@ -16,6 +16,8 @@ public static class WorkflowCompiler
             "one-hot", "hash-encode", "featurize-text", "replace-missing",
             "normalize", "standardize", "log-normalize", "robust-scale", "binning",
             "pca", "feature-selection",
+            "rename-column", "convert-numeric", "compute-column", "combine-columns",
+            "lp-normalize", "global-contrast", "take-rows", "shuffle",
             "split", "train", "cross-validate", "cluster", "score", "evaluate",
         };
 

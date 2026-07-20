@@ -68,6 +68,29 @@ public sealed class MlNodeRegistry : INodeRegistry
         new("hash-encode", "Transform", "Hash encode", "Hash high-cardinality categoricals (e.g. well ids) into a fixed width.", PortKind.Table, PortKind.Table, []),
         new("featurize-text", "Transform", "Featurize text", "Turn free-text (e.g. HSE reports) into numeric vectors.", PortKind.Table, PortKind.Table, []),
 
+        // ---- Prepare (data management) ----
+        new("rename-column", "Prepare", "Rename column", "Give a feature a clearer name (e.g. WHP → wellhead_pressure).",
+            PortKind.Table, PortKind.Table, [P("from", "From column", NodeParameterType.Text, required: true), P("to", "New name", NodeParameterType.Text, required: true)]),
+        new("convert-numeric", "Prepare", "Cast to number", "Convert text/typed columns to numbers so they can be used as features.",
+            PortKind.Table, PortKind.Table, [P("columns", "Columns (blank = all text)", NodeParameterType.Columns)]),
+        new("compute-column", "Prepare", "Compute column", "Create a new column from a formula, e.g. gor = gas / (oil + 1). Params bind to the input columns in order.",
+            PortKind.Table, PortKind.Table,
+            [P("output", "New column name", NodeParameterType.Text, required: true),
+             P("inputs", "Input columns", NodeParameterType.Columns, required: true),
+             P("expression", "Formula, e.g. (gas, oil) => gas / (oil + 1)", NodeParameterType.Text, required: true)]),
+        new("combine-columns", "Prepare", "Merge columns", "Combine several numeric columns into one feature vector.",
+            PortKind.Table, PortKind.Table, [P("columns", "Columns (blank = all numeric)", NodeParameterType.Columns)]),
+        new("lp-normalize", "Prepare", "Lp-normalize", "Scale each row's feature vector to unit norm — good for magnitude-invariant signals.",
+            PortKind.Table, PortKind.Table, []),
+        new("global-contrast", "Prepare", "Global contrast", "Centre and scale each row's features (global contrast normalization).",
+            PortKind.Table, PortKind.Table, []),
+
+        // ---- Shape (row operations) ----
+        new("take-rows", "Shape", "Take first N", "Keep only the first N training rows (quick experiments on big data).",
+            PortKind.Table, PortKind.Table, [P("count", "Rows to keep", NodeParameterType.Number, def: "1000")]),
+        new("shuffle", "Shape", "Shuffle rows", "Randomly reorder the training rows (deterministic seed).",
+            PortKind.Table, PortKind.Table, []),
+
         // ---- Split ----
         new("split", "Split", "Train/test split", "Hold out a fraction of rows for honest evaluation. Place before the model.",
             PortKind.Table, PortKind.Table, [P("testFraction", "Test fraction", NodeParameterType.Number, def: "0.25")]),

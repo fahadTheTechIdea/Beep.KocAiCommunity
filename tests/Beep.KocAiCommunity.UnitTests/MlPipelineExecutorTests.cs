@@ -47,6 +47,47 @@ public class MlPipelineExecutorTests
     }
 
     [Fact]
+    public async Task Runs_data_management_nodes_end_to_end()
+    {
+        // rename → cast → label-encode a category → combine → shuffle → take → split → train → evaluate.
+        var def = new WorkflowDefinition
+        {
+            Name = "prep",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "rn", Kind = "rename-column", Config = new Dictionary<string, string> { ["from"] = "x1", ["to"] = "pressure" } },
+                new() { Id = "cn", Kind = "convert-numeric", Config = new Dictionary<string, string> { ["columns"] = "pressure" } },
+                new() { Id = "cmp", Kind = "compute-column", Config = new Dictionary<string, string> { ["output"] = "ratio", ["inputs"] = "pressure,x2", ["expression"] = "(p, x) => p / (x + 1)" } },
+                new() { Id = "cc", Kind = "combine-columns" },
+                new() { Id = "sh", Kind = "shuffle" },
+                new() { Id = "tk", Kind = "take-rows", Config = new Dictionary<string, string> { ["count"] = "100" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "rn"), new("rn", "cn"), new("cn", "cmp"), new("cmp", "cc"), new("cc", "sh"), new("sh", "tk"), new("tk", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 60; i++)
+        {
+            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
+            sb.Append($"{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is not "done" and not "skipped");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' {failed?.Status}: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == "rename-column").Status.Should().Be("done");
+        result.Nodes.Single(n => n.Kind == "compute-column").Status.Should().Be("done");
+        result.Nodes.Single(n => n.Kind == "combine-columns").Status.Should().Be("done");
+        result.PrimaryValue.Should().BeGreaterThan(0.8);
+    }
+
+    [Fact]
     public async Task Runs_expanded_catalog_with_per_node_config()
     {
         // A richer pipeline: pick columns, sub-sample, normalize, split 30% out, train FastTree,
