@@ -83,12 +83,19 @@ public static class DependencyInjection
         // Community discussions (org-scoped visibility).
         services.AddScoped<Application.Community.ICommunityService, Community.CommunityService>();
 
-        // Workflow compiler + node-by-node ML pipeline executor.
+        // Workflow compiler + the plug-and-play node executor. Every IPipelineNodeHandler in the ML
+        // assembly is auto-registered, so adding a node kind is one handler class — the catalog, the
+        // compiler's known kinds, and the executor's dispatch all pick it up.
         services.AddScoped<Application.Workflow.IWorkflowService, Workflow.WorkflowService>();
-        services.AddScoped<Application.Workflow.IPipelineExecutor, ML.MlPipelineExecutor>();
+        foreach (var handler in typeof(ML.Nodes.PluginNodeExecutor).Assembly.GetTypes()
+                     .Where(t => t is { IsAbstract: false, IsInterface: false } && typeof(ML.Nodes.IPipelineNodeHandler).IsAssignableFrom(t)))
+        {
+            services.AddSingleton(typeof(ML.Nodes.IPipelineNodeHandler), handler);
+        }
 
-        // Code-first ML node catalog (descriptors + parameter validation).
-        services.AddSingleton<Application.ML.INodeRegistry, Application.ML.MlNodeRegistry>();
+        services.AddSingleton<ML.Nodes.PluginNodeRegistry>();
+        services.AddSingleton<Application.ML.INodeRegistry>(sp => sp.GetRequiredService<ML.Nodes.PluginNodeRegistry>());
+        services.AddScoped<Application.Workflow.IPipelineExecutor, ML.Nodes.PluginNodeExecutor>();
 
         // In-app help (code-first article catalog).
         services.AddSingleton<Application.Help.IHelpService, Application.Help.HelpService>();

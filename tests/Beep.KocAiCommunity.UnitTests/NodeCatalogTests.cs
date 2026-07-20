@@ -1,4 +1,5 @@
 using Beep.KocAiCommunity.Application.ML;
+using Beep.KocAiCommunity.ML.Nodes;
 using Beep.KocAiCommunity.Workflow;
 using FluentAssertions;
 using Xunit;
@@ -7,7 +8,10 @@ namespace Beep.KocAiCommunity.UnitTests;
 
 public class NodeCatalogTests
 {
-    private static readonly MlNodeRegistry Registry = new();
+    private static readonly PluginNodeRegistry Registry = new(
+        typeof(PluginNodeExecutor).Assembly.GetTypes()
+            .Where(t => t is { IsAbstract: false, IsInterface: false } && typeof(IPipelineNodeHandler).IsAssignableFrom(t))
+            .Select(t => (IPipelineNodeHandler)System.Activator.CreateInstance(t)!));
 
     [Fact]
     public void Every_catalog_kind_is_known_to_the_compiler()
@@ -17,6 +21,13 @@ public class NodeCatalogTests
         {
             WorkflowCompiler.KnownKinds.Should().Contain(node.Kind);
         }
+    }
+
+    [Fact]
+    public void Registry_and_compiler_known_kinds_match_exactly()
+    {
+        // Every registered handler has a known kind AND every known kind has a handler — no drift.
+        Registry.Kinds.Should().BeEquivalentTo(WorkflowCompiler.KnownKinds);
     }
 
     [Fact]

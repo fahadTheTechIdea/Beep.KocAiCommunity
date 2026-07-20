@@ -199,7 +199,13 @@
 11. ~~Phase 14 — O&G template taxonomy + in-app help/FAQ~~ ✅ DONE (2026-07-19)
 12. ~~Phase 07a — Enterprise connectors (abstractions + vault + mock adapters)~~ ✅ DONE (2026-07-19)
 13. ~~Studio IA consolidation~~ ✅ (designer + registry unified under a "Studio" nav group; registry → open in designer)
-14. **All feature phases complete.** Remaining = deployment-time only: Azure/Bicep/Key Vault, DR runbooks, perf benchmarks, Python importer, six live connector adapters.
+14. **All original feature phases complete.** Remaining = deployment-time only: Azure/Bicep/Key Vault, DR runbooks, perf benchmarks, Python importer, six live connector adapters.
+
+## DuckDB integration initiative (plug-and-play node engine)
+
+15. ~~Phase 16 — Pluggable node engine~~ ✅ DONE (2026-07-20) — `IPipelineNodeHandler` + `PipelineContext` + `PluginNodeRegistry` + `PluginNodeExecutor`; all ~30 ML nodes migrated behaviour-preserving; monolithic executor deleted. See `16_PLUGGABLE_NODE_ENGINE.md`.
+16. **Phase 17 — DuckDB engine core + secondary-dataset plumbing** (IN PROGRESS) — `DuckDB.NET.Data.Full`, engine crossing (DuckDB table ↔ IDataView via CSV), secondary datasets resolved by callers. See `17_DUCKDB_ENGINE.md`.
+17. **Phase 18 — DuckDB node handlers + Dataset picker** — `sql`, `join-dataset`, `union-dataset`, `group-by`, `pivot`, etc.; API-driven designer catalog + Dataset param type. See `18_DUCKDB_NODES.md`.
 
 ## Global definition of done
 

@@ -2,6 +2,7 @@ using System.Text;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Beep.KocAiCommunity.ML;
+using Beep.KocAiCommunity.ML.Nodes;
 using FluentAssertions;
 using Xunit;
 
@@ -9,6 +10,16 @@ namespace Beep.KocAiCommunity.UnitTests;
 
 public class MlPipelineExecutorTests
 {
+    // Builds the plug-and-play executor with every registered handler (mirrors DI) so these tests are
+    // the parity oracle for the migrated node engine.
+    private static PluginNodeExecutor NewExecutor()
+    {
+        var handlers = typeof(PluginNodeExecutor).Assembly.GetTypes()
+            .Where(t => t is { IsAbstract: false, IsInterface: false } && typeof(IPipelineNodeHandler).IsAssignableFrom(t))
+            .Select(t => (IPipelineNodeHandler)Activator.CreateInstance(t)!);
+        return new PluginNodeExecutor(new PluginNodeRegistry(handlers));
+    }
+
     [Fact]
     public async Task Executes_each_node_and_trains_a_model()
     {
@@ -35,7 +46,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is not "done" and not "skipped");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' {failed?.Status}: {failed?.Detail}");
@@ -77,7 +88,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is not "done" and not "skipped");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' {failed?.Status}: {failed?.Detail}");
@@ -122,7 +133,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
@@ -164,7 +175,7 @@ public class MlPipelineExecutorTests
         var eval = "id,x1,x2\ne1,9,9\ne2,0,0\ne3,8,7\n";
         using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval));
 
-        var csv = await new MlPipelineExecutor().PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, trainCsv, evalCsv);
+        var csv = await NewExecutor().PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, trainCsv, evalCsv);
 
         var lines = csv.Trim().Split('\n');
         lines[0].Should().Be("id,prediction");
@@ -193,7 +204,7 @@ public class MlPipelineExecutorTests
 
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(MulticlassCsv(withId: false)));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "grade", MlTaskType.MulticlassClassification, csv, 10);
+        var result = await NewExecutor().ExecuteAsync(def, "grade", MlTaskType.MulticlassClassification, csv, 10);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
@@ -224,7 +235,7 @@ public class MlPipelineExecutorTests
         var eval = "id,x1,x2\ne0,0,0\ne1,5,5\ne2,10,10\n";
         using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval));
 
-        var csv = await new MlPipelineExecutor().PredictAsync(def, "grade", "id", MlTaskType.MulticlassClassification, trainCsv, evalCsv);
+        var csv = await NewExecutor().PredictAsync(def, "grade", "id", MlTaskType.MulticlassClassification, trainCsv, evalCsv);
 
         var lines = csv.Trim().Split('\n');
         lines[0].Should().Be("id,prediction");
@@ -269,7 +280,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
@@ -305,7 +316,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
@@ -342,7 +353,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
@@ -375,7 +386,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
@@ -407,7 +418,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.MulticlassClassification, csv, 10);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.MulticlassClassification, csv, 10);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
@@ -439,7 +450,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await new MlPipelineExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 10);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
