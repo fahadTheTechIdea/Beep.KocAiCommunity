@@ -102,15 +102,8 @@
                     }
                 </div>
 
-                <MudText Typo="Typo.subtitle2" Class="mb-1">1 · Hidden answer key (creator)</MudText>
-                <MudText Typo="Typo.caption" Class="mb-1 d-block">CSV of <code>id,label</code>. Kept Restricted; never returned by the API.</MudText>
-                <InputFile OnChange="OnKeySelected" accept=".csv" />
-
-                <MudDivider Class="my-4" />
-
-                <MudText Typo="Typo.subtitle2" Class="mb-1">2 · Submit a prediction</MudText>
-                <MudTextField @bind-Value="Identity.UserId" Label="Acting as (dev user)" Variant="Variant.Outlined" Margin="Margin.Dense"
-                              HelperText="Change this to submit as different people and populate the leaderboard." Class="mb-2" Style="max-width:320px;" />
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Submit a prediction</MudText>
+                <MudText Typo="Typo.caption" Class="mb-2 d-block">Upload a CSV of <code>id,prediction</code> — scored instantly against the hidden answer key.</MudText>
                 <InputFile OnChange="OnPredictionSelected" accept=".csv" />
                 @if (_lastScore is not null)
                 {
@@ -120,32 +113,111 @@
                 }
             </BlueprintCard>
 
-            <BlueprintCard Class="pa-5 mb-4">
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Lifecycle (creator)</MudText>
-                <MudText Typo="Typo.caption" Class="mb-2 d-block">Move the competition through draft → active → concluded, and schedule the reveal day when the final standings unlock.</MudText>
-                <div class="d-flex gap-2 flex-wrap align-center mb-3">
-                    @if (_selected.Status != "active")
-                    {
-                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success" OnClick='() => SetStatus("active")'>Activate</MudButton>
-                    }
-                    @if (_selected.Status != "concluded")
-                    {
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" OnClick='() => SetStatus("concluded")'>Conclude</MudButton>
-                    }
-                    @if (_selected.Status != "draft")
-                    {
-                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick='() => SetStatus("draft")'>Back to draft</MudButton>
-                    }
-                </div>
-                <div class="d-flex gap-2 align-center flex-wrap">
-                    <MudDatePicker @bind-Date="_revealDate" Label="Reveal date" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:200px;" />
-                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SetReveal" Disabled="_revealDate is null">Set reveal</MudButton>
-                    @if (_selected.RevealUtc is not null)
-                    {
-                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearReveal">Clear reveal</MudButton>
-                    }
-                </div>
-            </BlueprintCard>
+            @if (CanCreate)
+            {
+                <BlueprintCard Class="pa-0 mb-4" Style="border-color:var(--koc-accent-500);">
+                    <div class="pa-4 pb-0 d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1" Class="koc-heading">Host console</MudText>
+                        <MudSpacer />
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_selected.HasDatasets ? Color.Success : Color.Default)"
+                                 Icon="@(_selected.HasDatasets ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Data</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_selected.HasAnswerKey ? Color.Success : Color.Default)"
+                                 Icon="@(_selected.HasAnswerKey ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Answer key</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(_selected.Status)">@_selected.Status</MudChip>
+                    </div>
+                    <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true">
+                        <MudTabPanel Text="Data" Icon="@Icons.Material.Filled.Dataset" Class="pa-4">
+                            <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
+                                Competitors download the training data, build a model, and are scored on the evaluation set
+                                against your hidden answer key. All three files are CSV.
+                            </MudText>
+                            <div class="d-flex gap-3 flex-wrap mb-3">
+                                <MudTextField @bind-Value="_dsLabel" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
+                                <MudTextField @bind-Value="_dsId" Label="Id column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
+                                <MudSelect @bind-Value="_dsTask" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:220px;">
+                                    <MudSelectItem Value="@("BinaryClassification")">Binary classification</MudSelectItem>
+                                    <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
+                                    <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <MudGrid Spacing="3">
+                                <MudItem xs="12" md="4">
+                                    <MudText Typo="Typo.subtitle2" Class="koc-heading">Training data</MudText>
+                                    <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, features…, label</code> — public to competitors.</MudText>
+                                    <InputFile OnChange="OnTrainingSelected" accept=".csv" />
+                                    @if (_dsTraining is not null)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="mt-1">ready</MudChip>
+                                    }
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudText Typo="Typo.subtitle2" Class="koc-heading">Evaluation set</MudText>
+                                    <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, features…</code> — no label; what they predict.</MudText>
+                                    <InputFile OnChange="OnEvalSelected" accept=".csv" />
+                                    @if (_dsEval is not null)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="mt-1">ready</MudChip>
+                                    }
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudText Typo="Typo.subtitle2" Class="koc-heading">Hidden answer key</MudText>
+                                    <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, label</code> — kept Restricted; never exposed.</MudText>
+                                    <InputFile OnChange="OnKeySelected" accept=".csv" />
+                                </MudItem>
+                            </MudGrid>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" StartIcon="@Icons.Material.Filled.CloudUpload"
+                                       OnClick="UploadDatasets" Disabled="_dsTraining is null || _dsEval is null">Publish training + evaluation data</MudButton>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Timeline" Icon="@Icons.Material.Filled.Schedule" Class="pa-4">
+                            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
+                                Until the reveal, the final private standings stay concealed so no one games the last day.
+                            </MudText>
+                            <div class="d-flex gap-2 align-center flex-wrap">
+                                <MudDatePicker @bind-Date="_revealDate" Label="Reveal date" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:200px;" />
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SetReveal" Disabled="_revealDate is null">Set reveal</MudButton>
+                                @if (_selected.RevealUtc is not null)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Event">@_selected.RevealUtc.Value.ToLocalTime().ToString("g")</MudChip>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearReveal">Clear</MudButton>
+                                }
+                            </div>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Lifecycle" Icon="@Icons.Material.Filled.Flag" Class="pa-4">
+                            <div class="d-flex align-center gap-1 mb-3">
+                                @foreach (var (stage, index) in new[] { "draft", "active", "concluded" }.Select((x, i) => (x, i)))
+                                {
+                                    <MudChip T="string" Size="Size.Small"
+                                             Variant="@(_selected.Status == stage ? Variant.Filled : Variant.Text)"
+                                             Color="@(_selected.Status == stage ? StatusColor(stage) : Color.Default)">@stage</MudChip>
+                                    @if (index < 2)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="opacity:.4;" />
+                                    }
+                                }
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap align-center">
+                                @if (_selected.Status != "active")
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.RocketLaunch"
+                                               OnClick='() => SetStatus("active")'>Activate — open submissions</MudButton>
+                                }
+                                @if (_selected.Status != "concluded")
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.SportsScore"
+                                               OnClick='() => SetStatus("concluded")'>Conclude — close submissions</MudButton>
+                                }
+                                @if (_selected.Status != "draft")
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick='() => SetStatus("draft")'>Back to draft</MudButton>
+                                }
+                            </div>
+                        </MudTabPanel>
+                    </MudTabs>
+                </BlueprintCard>
+            }
 
             <BlueprintCard Class="pa-5 mb-4">
                 <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Competition data &amp; pipeline</MudText>
@@ -170,33 +242,6 @@
                 {
                     <MudText Typo="Typo.body2">This competition has no training/evaluation data yet, so it only accepts uploaded prediction files. A creator can add data below to enable Studio pipeline submissions.</MudText>
                 }
-
-                <MudExpansionPanels Class="mt-3" Elevation="0">
-                    <MudExpansionPanel Text="Creator: set up training &amp; evaluation data">
-                        <MudText Typo="Typo.caption" Class="mb-2 d-block">Training CSV (<code>id,features,label</code>) and evaluation CSV (<code>id,features</code>, no label). Creator only.</MudText>
-                        <div class="d-flex gap-3 flex-wrap mb-2">
-                            <MudTextField @bind-Value="_dsLabel" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
-                            <MudTextField @bind-Value="_dsId" Label="Id column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
-                            <MudSelect @bind-Value="_dsTask" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:220px;">
-                                <MudSelectItem Value="@("BinaryClassification")">Binary classification</MudSelectItem>
-                                <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
-                                <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
-                            </MudSelect>
-                        </div>
-                        <MudText Typo="Typo.caption">Training</MudText>
-                        <InputFile OnChange="OnTrainingSelected" accept=".csv" />
-                        <MudText Typo="Typo.caption" Class="mt-1">Evaluation</MudText>
-                        <InputFile OnChange="OnEvalSelected" accept=".csv" />
-                        <div class="mt-2">
-                            <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" OnClick="UploadDatasets"
-                                       Disabled="_dsTraining is null || _dsEval is null">Upload data</MudButton>
-                            @if (_dsTraining is not null && _dsEval is not null)
-                            {
-                                <MudText Typo="Typo.caption" Class="ml-2 d-inline">both files ready</MudText>
-                            }
-                        </div>
-                    </MudExpansionPanel>
-                </MudExpansionPanels>
             </BlueprintCard>
 
             <BlueprintCard Class="pa-0 mb-4">
@@ -370,7 +415,8 @@
 
     private async Task OpenCreate()
     {
-        var dialog = await DialogService.ShowAsync<CreateCompetitionDialog>("New competition");
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+        var dialog = await DialogService.ShowAsync<CreateCompetitionDialog>("New competition", options);
         var result = await dialog.Result;
         if (result is null || result.Canceled)
         {

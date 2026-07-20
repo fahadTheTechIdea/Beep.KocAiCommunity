@@ -1,34 +1,190 @@
 @using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Contracts.Datasets
 @using Beep.KocAiCommunity.Web.Services
+@using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
 
 <MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Class="koc-heading">Host a competition</MudText>
+        </div>
+    </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="_title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
-        <MudTextField @bind-Value="_description" Label="What competitors predict" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Class="mb-2" />
-        <MudNumericField @bind-Value="_quota" Label="Daily submission quota" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" Class="mb-2" />
-        <MudSelect @bind-Value="_scorer" Label="Scoring" Variant="Variant.Outlined" Margin="Margin.Dense"
-                   HelperText="Accuracy for classification, RMSE (lower is better) for regression.">
-            <MudSelectItem Value="@("accuracy")">Accuracy (classification)</MudSelectItem>
-            <MudSelectItem Value="@("rmse")">RMSE (regression)</MudSelectItem>
-        </MudSelect>
-        <MudText Typo="Typo.caption" Class="d-block mt-3">Created company-wide as a draft. Add data + a hidden answer key from the competition page, then activate it.</MudText>
+        <!-- Step rail -->
+        <div class="d-flex align-center gap-1 mb-4 flex-wrap">
+            @foreach (var (label, index) in Steps.Select((s, i) => (s, i)))
+            {
+                <MudChip T="string" Size="Size.Small"
+                         Variant="@(index == _step ? Variant.Filled : Variant.Text)"
+                         Color="@(index < _step ? Color.Success : index == _step ? Color.Primary : Color.Default)"
+                         Icon="@(index < _step ? Icons.Material.Filled.Check : null)"
+                         OnClick="@(() => { if (index < _step) { _step = index; } })">
+                    @($"{index + 1} · {label}")
+                </MudChip>
+                @if (index < Steps.Length - 1)
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="opacity:.4;" />
+                }
+            }
+        </div>
+
+        @switch (_step)
+        {
+            case 0:
+                <!-- 1 · Overview -->
+                <MudTextField @bind-Value="_title" Label="Competition title" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Placeholder="ESP Failure Prediction Challenge" Counter="80" MaxLength="80" Class="mb-3" />
+                <MudTextField @bind-Value="_description" Label="Overview — what competitors predict and why it matters" Variant="Variant.Outlined"
+                              Lines="5" Class="mb-3"
+                              Placeholder="Describe the business problem, what the target column means, and what a great solution looks like. This is the first thing competitors read." />
+                <MudSelect T="string" Value="_scope" ValueChanged="OnScopeChanged" Label="Who can compete" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1">
+                    <MudSelectItem Value="@("Company")">🏢 All of KOC</MudSelectItem>
+                    <MudSelectItem Value="@("Directorate")">My directorate</MudSelectItem>
+                    <MudSelectItem Value="@("Group")">My group</MudSelectItem>
+                    <MudSelectItem Value="@("Team")">My team</MudSelectItem>
+                </MudSelect>
+                @if (_audience is not null)
+                {
+                    <MudText Typo="Typo.caption" Style="opacity:.7;">≈ @_audience.UserCount potential competitors (@_audience.OrgUnitName)</MudText>
+                }
+                break;
+
+            case 1:
+                <!-- 2 · Task & evaluation -->
+                <MudText Typo="Typo.body2" Class="mb-3">Pick the prediction task — it decides how submissions are scored.</MudText>
+                <MudGrid Spacing="3" Class="mb-2">
+                    @foreach (var t in TaskOptions)
+                    {
+                        <MudItem xs="12" md="4">
+                            <div @onclick="() => _task = t.Key" style="cursor:pointer;height:100%;">
+                                <BlueprintCard Class="pa-4" Style="@(_task == t.Key ? "border-color:var(--koc-accent-500);height:100%;" : "height:100%;")">
+                                    <div class="d-flex align-center gap-2 mb-1">
+                                        <MudIcon Icon="@t.Icon" Color="@(_task == t.Key ? Color.Primary : Color.Default)" />
+                                        <MudText Typo="Typo.subtitle2" Class="koc-heading">@t.Label</MudText>
+                                    </div>
+                                    <MudText Typo="Typo.caption" Style="opacity:.75;">@t.Help</MudText>
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" Class="mt-1">@t.Metric</MudChip>
+                                </BlueprintCard>
+                            </div>
+                        </MudItem>
+                    }
+                </MudGrid>
+                <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
+                    Scored with <b>@CurrentTask.Metric</b> against a hidden answer key — the same for every competitor, so only modelling choices move the leaderboard.
+                </MudAlert>
+                break;
+
+            case 2:
+                <!-- 3 · Rules & timeline -->
+                <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Daily submission limit</MudText>
+                <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">Keeps the field fair — nobody can brute-force the leaderboard.</MudText>
+                <div class="d-flex align-center gap-4 mb-4" style="max-width:420px;">
+                    <MudSlider T="int" @bind-Value="_quota" Min="1" Max="25" Step="1" Color="Color.Primary" />
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled">@_quota / day</MudChip>
+                </div>
+
+                <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Final standings reveal (optional)</MudText>
+                <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
+                    Before this date the live leaderboard shows public scores; the final standings stay concealed so no one games the last day — like Kaggle's public/private split.
+                </MudText>
+                <MudDatePicker @bind-Date="_revealDate" Label="Reveal date" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               MinDate="DateTime.Today" Style="max-width:220px;" Clearable="true" />
+                break;
+
+            default:
+                <!-- 4 · Review & launch -->
+                <BlueprintCard Class="pa-4 mb-3">
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">🏆 @(_title.Length == 0 ? "(untitled)" : _title)</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3" Style="white-space:pre-wrap;">@_description</MudText>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@CurrentTask.Label</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">scored by @CurrentTask.Metric</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Visibility">@_scope</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@_quota submissions/day</MudChip>
+                        @if (_revealDate is { } rd)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Schedule">reveal @rd.ToString("d MMM yyyy")</MudChip>
+                        }
+                    </div>
+                </BlueprintCard>
+                <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
+                    Launches as a <b>draft</b>. Next, open the <b>Host console</b> to attach the training data, evaluation set,
+                    and hidden answer key — then activate it to open submissions.
+                </MudAlert>
+                break;
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(string.IsNullOrWhiteSpace(_title) || _busy)">Create competition</MudButton>
+        <MudSpacer />
+        @if (_step > 0)
+        {
+            <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="() => _step--">Back</MudButton>
+        }
+        @if (_step < Steps.Length - 1)
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.ArrowForward"
+                       Disabled="@(!StepValid)" OnClick="() => _step++">Next</MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.RocketLaunch"
+                       Disabled="@(_busy || !StepValid)" OnClick="Submit">Create draft</MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
 
+    private static readonly string[] Steps = ["Overview", "Evaluation", "Rules", "Review"];
+
+    private sealed record TaskOption(string Key, string Label, string Icon, string Metric, string Scorer, string Help);
+
+    private static readonly TaskOption[] TaskOptions =
+    [
+        new("BinaryClassification", "Binary classification", Icons.Material.Filled.ToggleOn, "Accuracy", "accuracy",
+            "Yes/no outcomes — fails / doesn't fail, needs intervention or not."),
+        new("MulticlassClassification", "Multiclass", Icons.Material.Filled.Category, "Accuracy", "accuracy",
+            "One of several classes — rock facies, failure modes, severity bands."),
+        new("Regression", "Regression", Icons.Material.Filled.ShowChart, "RMSE (lower wins)", "rmse",
+            "A number — production rate, yield, time-to-failure."),
+    ];
+
+    private int _step;
     private string _title = "";
-    private string _description = "Predict the label";
+    private string _description = "";
+    private string _scope = "Company";
+    private string _task = "BinaryClassification";
     private int _quota = 5;
-    private string _scorer = "accuracy";
+    private DateTime? _revealDate;
+    private VisibilityOptionDto? _audience;
     private bool _busy;
+
+    private TaskOption CurrentTask => TaskOptions.First(t => t.Key == _task);
+
+    private bool StepValid => _step switch
+    {
+        0 => !string.IsNullOrWhiteSpace(_title) && !string.IsNullOrWhiteSpace(_description),
+        _ => !string.IsNullOrWhiteSpace(_title),
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadAudience();
+
+    private async Task OnScopeChanged(string scope)
+    {
+        _scope = scope;
+        await LoadAudience();
+    }
+
+    private async Task LoadAudience()
+    {
+        try { _audience = await Api.GetAudienceAsync(_scope); }
+        catch { _audience = null; }
+    }
 
     private void Cancel() => Dialog.Cancel();
 
@@ -37,7 +193,10 @@
         _busy = true;
         try
         {
-            var dto = await Api.CreateCompetitionAsync(new CreateCompetitionRequest(_title, _description, "Company", null, null, _quota, _scorer));
+            var reveal = _revealDate is { } d ? DateTime.SpecifyKind(d.Date.AddHours(12), DateTimeKind.Utc) : (DateTime?)null;
+            var dto = await Api.CreateCompetitionAsync(new CreateCompetitionRequest(
+                _title.Trim(), _description.Trim(), _scope, null, reveal, _quota, CurrentTask.Scorer));
+            Snackbar.Add("Draft created — attach data in the Host console, then activate.", Severity.Success);
             Dialog.Close(DialogResult.Ok(dto?.Id));
         }
         catch (Exception ex)
