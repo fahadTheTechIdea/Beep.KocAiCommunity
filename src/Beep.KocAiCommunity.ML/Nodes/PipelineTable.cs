@@ -1,0 +1,65 @@
+using Microsoft.ML;
+using Microsoft.ML.AutoML;
+using Microsoft.ML.Data;
+
+namespace Beep.KocAiCommunity.ML.Nodes;
+
+/// <summary>
+/// The uniform data contract that flows between every pipeline node on a <c>Table</c> port. Physically
+/// a header CSV file — the one representation both engines speak: DuckDB reads/writes CSV natively and
+/// ML.NET loads it. A DuckDB node and an ML.NET node therefore produce and consume the identical thing,
+/// so nodes are interchangeable and freely ordered.
+/// </summary>
+public sealed record PipelineTable(string CsvPath, IReadOnlyList<string> Columns, long RowCount)
+{
+    /// <summary>Wraps an existing CSV file as a table (reads its header + row count).</summary>
+    public static PipelineTable FromCsvFile(string csvPath)
+    {
+        using var reader = new StreamReader(csvPath);
+        var header = reader.ReadLine();
+        var columns = header is null ? [] : header.Split(',').Select(h => h.Trim()).ToList();
+        long rows = 0;
+        while (reader.ReadLine() is not null)
+        {
+            rows++;
+        }
+
+        return new PipelineTable(csvPath, columns, rows);
+    }
+
+    /// <summary>Materializes a DuckDB table to a fresh CSV-backed table.</summary>
+    public static PipelineTable FromDuck(DuckDbSession duck, string tableName, ICollection<string> tempFiles)
+    {
+        var path = NewTemp(tempFiles);
+        duck.ExportCsv(tableName, path);
+        return new PipelineTable(path, [.. duck.Columns(tableName)], duck.RowCount(tableName));
+    }
+
+    /// <summary>Materializes an ML.NET view to a fresh CSV-backed table.</summary>
+    public static PipelineTable FromMlView(IDataView view, ICollection<string> tempFiles)
+    {
+        var path = NewTemp(tempFiles);
+        MlCsv.Write(view, path);
+        return FromCsvFile(path);
+    }
+
+    /// <summary>Loads this table into a DuckDB table of the given name.</summary>
+    public void LoadIntoDuck(DuckDbSession duck, string tableName) => duck.LoadCsv(CsvPath, tableName);
+
+    /// <summary>Loads this table into an ML.NET <see cref="IDataView"/>, designating the label if present.</summary>
+    public IDataView LoadIntoMl(MLContext ml, string labelColumn)
+    {
+        var inferLabel = Columns.Contains(labelColumn) ? labelColumn : Columns.FirstOrDefault() ?? labelColumn;
+        var columns = ml.Auto().InferColumns(CsvPath, labelColumnName: inferLabel, groupColumns: false);
+        return ml.Data.CreateTextLoader(columns.TextLoaderOptions).Load(CsvPath);
+    }
+
+    public bool HasColumn(string name) => Columns.Contains(name);
+
+    private static string NewTemp(ICollection<string> tempFiles)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"koc-tbl-{Guid.NewGuid():N}.csv");
+        tempFiles.Add(path);
+        return path;
+    }
+}
