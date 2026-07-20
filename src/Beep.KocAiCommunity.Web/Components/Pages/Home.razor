@@ -37,77 +37,63 @@
     </BlueprintCard>
 }
 
-@if (Identity.IsSupervisor && _rollup is not null)
+@if (!Identity.IsGuest)
 {
-    <!-- Management pulse: live org KPIs, learning status, standings — before the marketing hero. -->
+    <!-- Fun first: champions and live challenges — for everyone, before anything else. -->
     <div class="d-flex align-center justify-space-between mb-2">
-        <span class="koc-eyebrow">Organization pulse · @_rollup.ScopeLabel · this month</span>
-        <MudButton Href="/dashboard" Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowForward">Full dashboard</MudButton>
+        <span class="koc-eyebrow">🏆 This month's champions</span>
+        <MudButton Href="/community" Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowForward">All leaderboards</MudButton>
     </div>
-    <MudGrid Spacing="4" Class="mb-6">
-        <MudItem xs="6" md="3">
-            <BlueprintCard Class="pa-4">
-                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Primary" /><MudText Typo="Typo.overline">People</MudText></div>
-                <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.MemberCount</MudText>
-            </BlueprintCard>
-        </MudItem>
-        <MudItem xs="6" md="3">
-            <BlueprintCard Class="pa-4">
-                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.School" Color="Color.Primary" /><MudText Typo="Typo.overline">Active learners</MudText></div>
-                <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.ActiveLearners</MudText>
-            </BlueprintCard>
-        </MudItem>
-        <MudItem xs="6" md="3">
-            <BlueprintCard Class="pa-4">
-                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" Color="Color.Primary" /><MudText Typo="Typo.overline">Tracks completed</MudText></div>
-                <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.TracksCompleted</MudText>
-            </BlueprintCard>
-        </MudItem>
-        <MudItem xs="6" md="3">
-            <BlueprintCard Class="pa-4">
-                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Primary" /><MudText Typo="Typo.overline">Competitions entered</MudText></div>
-                <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.CompetitionsEntered</MudText>
-            </BlueprintCard>
-        </MudItem>
-
+    <MudGrid Spacing="4" Class="mb-8">
         <MudItem xs="12" md="4">
             <BlueprintCard Class="pa-5" Style="height:100%;">
-                <MudText Typo="Typo.subtitle2" Class="koc-heading mb-3">Learning status</MudText>
-                @{
-                    var done = _rollup.Members.Count(m => m.TracksCompleted > 0);
-                    var doing = _rollup.Members.Count(m => m.TracksCompleted == 0 && m.Enrollments > 0);
-                    var idle = Math.Max(0, _rollup.MemberCount - done - doing);
+                <MudText Typo="Typo.subtitle2" Class="koc-heading mb-3">🏆 Top learners</MudText>
+                @if (_xpBoard is null)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
                 }
-                @KocCharts.Donut(
-                    [new KocCharts.Seg("Completed a track", done, "var(--koc-accent-700)"),
-                     new KocCharts.Seg("Learning now", doing, "var(--koc-accent-300)"),
-                     new KocCharts.Seg("Not started", idle, "#dbe4ec")],
-                    _rollup.MemberCount.ToString(), "people")
+                else if (_xpBoard.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">Earn the first Barrels of the month and this podium is yours.</MudText>
+                }
+                else
+                {
+                    @foreach (var p in _xpBoard.Take(5))
+                    {
+                        <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);cursor:pointer;@(p.IsMe ? "background:rgba(42,124,190,.08);" : "")"
+                             @onclick="@(() => Nav.NavigateTo($"/profile/{p.UserId}"))">
+                            <span style="width:28px;text-align:center;">@HomeMedal(p.Rank)</span>
+                            <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(p.AvatarIcon)" /></MudAvatar>
+                            <div class="flex-grow-1">
+                                <MudText Typo="Typo.body2"><b>@p.DisplayName</b> @(p.IsMe ? "(you)" : "")</MudText>
+                                <MudText Typo="Typo.caption" Style="opacity:.65;">Lvl @p.Level · @p.LevelTitle</MudText>
+                            </div>
+                            <MudText Typo="Typo.body2"><b>🛢️ @p.XpTotal</b></MudText>
+                        </div>
+                    }
+                }
             </BlueprintCard>
         </MudItem>
 
         <MudItem xs="12" md="4">
             <BlueprintCard Class="pa-5" Style="height:100%;">
-                <div class="d-flex justify-space-between align-center mb-3">
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading">🛢️ Team standings</MudText>
-                    <MudLink Href="/community" Typo="Typo.caption">All →</MudLink>
-                </div>
+                <MudText Typo="Typo.subtitle2" Class="koc-heading mb-3">🛢️ Team standings</MudText>
                 @if (_teamBoard is null)
                 {
                     <MudProgressCircular Indeterminate="true" Size="Size.Small" />
                 }
                 else if (_teamBoard.Count == 0)
                 {
-                    <MudText Typo="Typo.body2" Style="opacity:.7;">No Barrels earned this month yet.</MudText>
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">Team standings appear once colleagues start earning Barrels.</MudText>
                 }
                 else
                 {
                     @foreach (var t in _teamBoard.Take(5))
                     {
-                        <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);">
+                        <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);@(t.IsMyTeam ? "background:rgba(42,124,190,.08);" : "")">
                             <span style="width:28px;text-align:center;">@HomeMedal(t.Rank)</span>
                             <div class="flex-grow-1">
-                                <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b></MudText>
+                                <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b> @(t.IsMyTeam ? "(your team)" : "")</MudText>
                                 <MudText Typo="Typo.caption" Style="opacity:.65;">@t.MemberCount people</MudText>
                             </div>
                             <MudText Typo="Typo.body2"><b>@t.AverageXp</b> avg</MudText>
@@ -118,34 +104,94 @@
         </MudItem>
 
         <MudItem xs="12" md="4">
-            <BlueprintCard Class="pa-5" Style="height:100%;">
+            <BlueprintCard Class="pa-5" Style="height:100%;border-color:var(--koc-accent-500);">
                 <div class="d-flex justify-space-between align-center mb-3">
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading">🏆 Top learners</MudText>
-                    <MudLink Href="/community" Typo="Typo.caption">All →</MudLink>
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading">⚔️ Live challenges</MudText>
+                    <MudLink Href="/compete" Typo="Typo.caption">Compete →</MudLink>
                 </div>
-                @if (_xpBoard is null)
+                @if (_activeCompetitions is null)
                 {
                     <MudProgressCircular Indeterminate="true" Size="Size.Small" />
                 }
-                else if (_xpBoard.Count == 0)
+                else if (_activeCompetitions.Count == 0)
                 {
-                    <MudText Typo="Typo.body2" Style="opacity:.7;">No Barrels earned this month yet.</MudText>
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">No live challenges right now — check back soon.</MudText>
                 }
                 else
                 {
-                    @foreach (var p in _xpBoard.Take(5))
+                    @foreach (var c in _activeCompetitions.Take(2))
                     {
-                        <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);cursor:pointer;" @onclick="@(() => Nav.NavigateTo($"/profile/{p.UserId}"))">
-                            <span style="width:28px;text-align:center;">@HomeMedal(p.Rank)</span>
-                            <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(p.AvatarIcon)" /></MudAvatar>
-                            <div class="flex-grow-1">
-                                <MudText Typo="Typo.body2"><b>@p.DisplayName</b></MudText>
-                                <MudText Typo="Typo.caption" Style="opacity:.65;">Lvl @p.Level · @p.LevelTitle</MudText>
-                            </div>
-                            <MudText Typo="Typo.body2"><b>🛢️ @p.XpTotal</b></MudText>
+                        <div class="mb-3">
+                            <MudText Typo="Typo.body2" Class="koc-heading"><b>@c.Title</b></MudText>
+                            @if (_compBoards.TryGetValue(c.Id, out var board) && board.Count > 0)
+                            {
+                                @foreach (var e in board.Take(3))
+                                {
+                                    <div class="d-flex align-center gap-2" style="font-size:13px;">
+                                        <span style="width:24px;text-align:center;">@HomeMedal(e.Rank)</span>
+                                        <span class="flex-grow-1">@e.UserId</span>
+                                        <b>@e.Score.ToString("0.###")</b>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Style="opacity:.65;">No submissions yet — be first on the board!</MudText>
+                            }
+                            <MudButton Href="/compete" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-1"
+                                       StartIcon="@Icons.Material.Filled.EmojiEvents">Enter</MudButton>
                         </div>
                     }
                 }
+            </BlueprintCard>
+        </MudItem>
+    </MudGrid>
+}
+
+@if (Identity.IsSupervisor && _rollup is not null)
+{
+    <!-- Management pulse: live org KPIs + learning status for the supervisor's scope. -->
+    <div class="d-flex align-center justify-space-between mb-2">
+        <span class="koc-eyebrow">Organization pulse · @_rollup.ScopeLabel</span>
+        <MudButton Href="/dashboard" Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowForward">Full dashboard</MudButton>
+    </div>
+    <MudGrid Spacing="4" Class="mb-6">
+        <MudItem xs="6" md="2">
+            <BlueprintCard Class="pa-4">
+                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Primary" /><MudText Typo="Typo.overline">People</MudText></div>
+                <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.MemberCount</MudText>
+            </BlueprintCard>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <BlueprintCard Class="pa-4">
+                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.School" Color="Color.Primary" /><MudText Typo="Typo.overline">Learning</MudText></div>
+                <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.ActiveLearners</MudText>
+            </BlueprintCard>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <BlueprintCard Class="pa-4">
+                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" Color="Color.Primary" /><MudText Typo="Typo.overline">Tracks done</MudText></div>
+                <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.TracksCompleted</MudText>
+            </BlueprintCard>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <BlueprintCard Class="pa-4">
+                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Primary" /><MudText Typo="Typo.overline">Competing</MudText></div>
+                <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.CompetitionsEntered</MudText>
+            </BlueprintCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <BlueprintCard Class="pa-4" Style="height:100%;">
+                @{
+                    var done = _rollup.Members.Count(m => m.TracksCompleted > 0);
+                    var doing = _rollup.Members.Count(m => m.TracksCompleted == 0 && m.Enrollments > 0);
+                    var idle = Math.Max(0, _rollup.MemberCount - done - doing);
+                }
+                @KocCharts.Donut(
+                    [new KocCharts.Seg("Completed a track", done, "var(--koc-accent-700)"),
+                     new KocCharts.Seg("Learning now", doing, "var(--koc-accent-300)"),
+                     new KocCharts.Seg("Not started", idle, "#dbe4ec")],
+                    _rollup.MemberCount.ToString(), "learning status")
             </BlueprintCard>
         </MudItem>
     </MudGrid>
@@ -279,6 +325,7 @@
     private SupervisionRollupDto? _rollup;
     private IReadOnlyList<TeamLeaderboardRowDto>? _teamBoard;
     private IReadOnlyList<XpLeaderboardRowDto>? _xpBoard;
+    private readonly Dictionary<Guid, IReadOnlyList<LeaderboardEntryDto>> _compBoards = new();
 
     private async Task LoadAsync()
     {
@@ -287,26 +334,32 @@
         await LoadPulseAsync();
     }
 
-    // Management view: live rollup + monthly standings for the supervisor's scope.
+    // Leaderboards are for everyone (fun first); the KPI rollup only for supervisors with scope.
     private async Task LoadPulseAsync()
     {
-        if (!Identity.IsSupervisor)
+        _rollup = null;
+        _teamBoard = null;
+        _xpBoard = null;
+        if (Identity.IsGuest)
         {
-            _rollup = null;
-            _teamBoard = null;
-            _xpBoard = null;
             return;
         }
 
         try
         {
-            _rollup = await Api.GetSupervisionRollupAsync();
-            _teamBoard = await Api.GetTeamLeaderboardAsync("month");
             _xpBoard = await Api.GetXpLeaderboardAsync("month");
+            _teamBoard = await Api.GetTeamLeaderboardAsync("month");
         }
         catch
         {
-            _rollup = null;
+            _xpBoard = [];
+            _teamBoard = [];
+        }
+
+        if (Identity.IsSupervisor)
+        {
+            try { _rollup = await Api.GetSupervisionRollupAsync(); }
+            catch { _rollup = null; }
         }
     }
 
@@ -324,6 +377,14 @@
         {
             var all = await Api.GetCompetitionsAsync();
             _activeCompetitions = all.Where(c => c.Status == "active").ToList();
+
+            // Top-3 podium preview for the challenge cards.
+            _compBoards.Clear();
+            foreach (var c in _activeCompetitions.Take(2))
+            {
+                try { _compBoards[c.Id] = await Api.GetLeaderboardAsync(c.Id); }
+                catch { _compBoards[c.Id] = []; }
+            }
         }
         catch
         {

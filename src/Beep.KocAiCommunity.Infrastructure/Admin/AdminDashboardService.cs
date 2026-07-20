@@ -15,7 +15,8 @@ public sealed class AdminDashboardService(KocDbContext db) : IAdminDashboardServ
 {
     public async Task<AdminDashboard> GetDashboardAsync(CancellationToken ct = default)
     {
-        var users = await db.Users.CountAsync(ct);
+        // People are UserProfile rows keyed by Entra id — the AspNet Identity table stays empty here.
+        var users = await db.Set<Domain.Engagement.UserProfile>().CountAsync(ct);
         var workflows = await db.Set<WorkflowEntity>().CountAsync(w => !w.IsDeleted, ct);
         var competitions = await db.Set<Competition>().CountAsync(ct);
         var models = await db.Set<RegisteredModel>().CountAsync(ct);

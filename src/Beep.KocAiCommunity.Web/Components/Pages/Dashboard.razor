@@ -59,6 +59,56 @@ else
         }
     </BlueprintCard>
 
+    <MudGrid Spacing="4" Class="mb-4">
+        <MudItem xs="12" md="6">
+            <BlueprintCard Class="pa-5" Style="height:100%;">
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">🏆 Top learners (this month)</MudText>
+                @if (_xpBoard is { Count: > 0 })
+                {
+                    @foreach (var p in _xpBoard.Take(8))
+                    {
+                        <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);">
+                            <span style="width:28px;text-align:center;">@Medal(p.Rank)</span>
+                            <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(p.AvatarIcon)" /></MudAvatar>
+                            <div class="flex-grow-1">
+                                <MudText Typo="Typo.body2"><b>@p.DisplayName</b> @(p.IsMe ? "(you)" : "")</MudText>
+                                <MudText Typo="Typo.caption" Style="opacity:.65;">Lvl @p.Level · @p.LevelTitle</MudText>
+                            </div>
+                            <MudText Typo="Typo.body2"><b>🛢️ @p.XpTotal</b></MudText>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">No Barrels earned this month yet.</MudText>
+                }
+            </BlueprintCard>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <BlueprintCard Class="pa-5" Style="height:100%;">
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">🛢️ Team standings (this month)</MudText>
+                @if (_teamBoard is { Count: > 0 })
+                {
+                    @foreach (var t in _teamBoard.Take(8))
+                    {
+                        <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);">
+                            <span style="width:28px;text-align:center;">@Medal(t.Rank)</span>
+                            <div class="flex-grow-1">
+                                <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b> @(t.IsMyTeam ? "(your team)" : "")</MudText>
+                                <MudText Typo="Typo.caption" Style="opacity:.65;">@t.MemberCount people · @t.TotalXp bbl total</MudText>
+                            </div>
+                            <MudText Typo="Typo.body2"><b>@t.AverageXp</b> avg</MudText>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">Team standings appear once colleagues start earning Barrels.</MudText>
+                }
+            </BlueprintCard>
+        </MudItem>
+    </MudGrid>
+
     <MudGrid Spacing="4" Class="mb-2">
         <MudItem xs="12" md="6">
             <BlueprintCard Class="pa-5" Style="height:100%;">
@@ -201,56 +251,6 @@ else
             </div>
         </BlueprintCard>
 
-        <MudGrid Spacing="4" Class="mb-4">
-            <MudItem xs="12" md="6">
-                <BlueprintCard Class="pa-5" Style="height:100%;">
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">🏆 Top learners (this month)</MudText>
-                    @if (_xpBoard is { Count: > 0 })
-                    {
-                        @foreach (var p in _xpBoard.Take(8))
-                        {
-                            <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);">
-                                <span style="width:28px;text-align:center;">@Medal(p.Rank)</span>
-                                <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(p.AvatarIcon)" /></MudAvatar>
-                                <div class="flex-grow-1">
-                                    <MudText Typo="Typo.body2"><b>@p.DisplayName</b> @(p.IsMe ? "(you)" : "")</MudText>
-                                    <MudText Typo="Typo.caption" Style="opacity:.65;">Lvl @p.Level · @p.LevelTitle</MudText>
-                                </div>
-                                <MudText Typo="Typo.body2"><b>🛢️ @p.XpTotal</b></MudText>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.body2" Style="opacity:.7;">No Barrels earned this month yet.</MudText>
-                    }
-                </BlueprintCard>
-            </MudItem>
-            <MudItem xs="12" md="6">
-                <BlueprintCard Class="pa-5" Style="height:100%;">
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">🛢️ Team standings (this month)</MudText>
-                    @if (_teamBoard is { Count: > 0 })
-                    {
-                        @foreach (var t in _teamBoard.Take(8))
-                        {
-                            <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);">
-                                <span style="width:28px;text-align:center;">@Medal(t.Rank)</span>
-                                <div class="flex-grow-1">
-                                    <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b> @(t.IsMyTeam ? "(your team)" : "")</MudText>
-                                    <MudText Typo="Typo.caption" Style="opacity:.65;">@t.MemberCount people · @t.TotalXp bbl total</MudText>
-                                </div>
-                                <MudText Typo="Typo.body2"><b>@t.AverageXp</b> avg</MudText>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.body2" Style="opacity:.7;">Team standings appear once colleagues start earning Barrels.</MudText>
-                    }
-                </BlueprintCard>
-            </MudItem>
-        </MudGrid>
-
         <BlueprintCard Class="pa-0">
             <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">People</MudText></div>
             <MudSimpleTable Dense="true" Hover="true">
@@ -289,15 +289,12 @@ else
         _rollup = await Api.GetSupervisionRollupAsync(); // null when the user leads no one
         try { _learning = await Api.GetMyLearningAsync(); } catch { _learning = []; }
         try { _activity = await Api.GetActivityAsync(); } catch { _activity = []; }
-        if (_rollup is not null)
+        try
         {
-            try
-            {
-                _xpBoard = await Api.GetXpLeaderboardAsync("month");
-                _teamBoard = await Api.GetTeamLeaderboardAsync("month");
-            }
-            catch { /* boards stay empty */ }
+            _xpBoard = await Api.GetXpLeaderboardAsync("month");
+            _teamBoard = await Api.GetTeamLeaderboardAsync("month");
         }
+        catch { /* boards stay empty */ }
     }
 
     private static string Medal(int rank) => rank switch { 1 => "🥇", 2 => "🥈", 3 => "🥉", _ => $"#{rank}" };
