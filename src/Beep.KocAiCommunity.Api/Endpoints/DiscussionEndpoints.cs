@@ -20,8 +20,9 @@ public static class DiscussionEndpoints
             try
             {
                 var discussion = await svc.CreateAsync(me.UserId!, req.Title, req.Body, scope, ct);
+                var names = await svc.ResolveDisplayNamesAsync([discussion.AuthorUserId], ct);
                 return Results.Ok(new DiscussionDto(discussion.Id, discussion.Title, discussion.Body,
-                    discussion.VisibilityScope.ToString(), discussion.AuthorUserId, discussion.CreatedUtc, 0, false, false, []));
+                    discussion.VisibilityScope.ToString(), discussion.AuthorUserId, names[discussion.AuthorUserId], discussion.CreatedUtc, 0, false, false, []));
             }
             catch (CommunityException ex)
             {
@@ -34,7 +35,8 @@ public static class DiscussionEndpoints
         group.MapGet("/discussions", async (IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
         {
             var visible = await svc.BrowseVisibleAsync(me.UserId!, ct);
-            return Results.Ok(visible.Select(ToDto).ToList());
+            var names = await svc.ResolveDisplayNamesAsync([.. visible.Select(v => v.Discussion.AuthorUserId)], ct);
+            return Results.Ok(visible.Select(v => ToDto(v, names)).ToList());
         })
         .WithName("BrowseDiscussions")
         .RequireAuthorization(KocPolicies.RequireEmployee);
@@ -48,11 +50,13 @@ public static class DiscussionEndpoints
             }
 
             var d = thread.Discussion.Discussion;
+            var names = await svc.ResolveDisplayNamesAsync(
+                [d.AuthorUserId, .. thread.Replies.Select(r => r.Reply.AuthorUserId)], ct);
             return Results.Ok(new DiscussionDetailDto(
-                d.Id, d.Title, d.Body, d.VisibilityScope.ToString(), d.AuthorUserId, d.CreatedUtc,
+                d.Id, d.Title, d.Body, d.VisibilityScope.ToString(), d.AuthorUserId, names[d.AuthorUserId], d.CreatedUtc,
                 d.IsPinned, d.IsLocked, thread.CanModerate,
                 ToReactions(thread.Discussion.Reactions),
-                [.. thread.Replies.Select(r => new ReplyDto(r.Reply.Id, r.Reply.AuthorUserId, r.Reply.Body, r.Reply.CreatedUtc, ToReactions(r.Reactions)))],
+                [.. thread.Replies.Select(r => new ReplyDto(r.Reply.Id, r.Reply.AuthorUserId, names[r.Reply.AuthorUserId], r.Reply.Body, r.Reply.CreatedUtc, ToReactions(r.Reactions)))],
                 [.. thread.Attachments.Select(a => new AttachmentDto(a.Id, a.FileName, a.SizeBytes, a.UploadedByUserId, a.CreatedUtc))]));
         })
         .WithName("GetDiscussion")
@@ -63,7 +67,8 @@ public static class DiscussionEndpoints
             try
             {
                 var reply = await svc.AddReplyAsync(me.UserId!, id, req.Body, ct);
-                return Results.Ok(new ReplyDto(reply.Id, reply.AuthorUserId, reply.Body, reply.CreatedUtc, []));
+                var names = await svc.ResolveDisplayNamesAsync([reply.AuthorUserId], ct);
+                return Results.Ok(new ReplyDto(reply.Id, reply.AuthorUserId, names[reply.AuthorUserId], reply.Body, reply.CreatedUtc, []));
             }
             catch (CommunityException ex)
             {
@@ -179,9 +184,10 @@ public static class DiscussionEndpoints
         }
     }
 
-    private static DiscussionDto ToDto(DiscussionView v) =>
+    private static DiscussionDto ToDto(DiscussionView v, IReadOnlyDictionary<string, string> names) =>
         new(v.Discussion.Id, v.Discussion.Title, v.Discussion.Body, v.Discussion.VisibilityScope.ToString(),
-            v.Discussion.AuthorUserId, v.Discussion.CreatedUtc, v.ReplyCount, v.Discussion.IsPinned, v.Discussion.IsLocked, ToReactions(v.Reactions));
+            v.Discussion.AuthorUserId, names.GetValueOrDefault(v.Discussion.AuthorUserId, v.Discussion.AuthorUserId),
+            v.Discussion.CreatedUtc, v.ReplyCount, v.Discussion.IsPinned, v.Discussion.IsLocked, ToReactions(v.Reactions));
 
     private static List<ReactionDto> ToReactions(IReadOnlyList<ReactionSummary> reactions) =>
         [.. reactions.Select(r => new ReactionDto(r.Emoji, r.Count, r.Mine))];

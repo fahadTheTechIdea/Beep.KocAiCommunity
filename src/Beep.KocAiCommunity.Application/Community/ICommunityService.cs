@@ -65,6 +65,9 @@ public interface ICommunityService
     // Mentions.
     Task<IReadOnlyList<MentionCandidate>> SearchMentionCandidatesAsync(string query, int take = 8, CancellationToken ct = default);
 
+    /// <summary>Resolves community display names for a set of user ids (falls back to the id).</summary>
+    Task<IReadOnlyDictionary<string, string>> ResolveDisplayNamesAsync(IReadOnlyCollection<string> userIds, CancellationToken ct = default);
+
     // Attachments (classification inherited as Internal; malware scanning is a documented follow-up).
     Task<AttachmentInfo> AddAttachmentAsync(string userId, Guid discussionId, Stream content, string fileName, string contentType, CancellationToken ct = default);
     Task<AttachmentContent> OpenAttachmentAsync(string userId, Guid attachmentId, CancellationToken ct = default);

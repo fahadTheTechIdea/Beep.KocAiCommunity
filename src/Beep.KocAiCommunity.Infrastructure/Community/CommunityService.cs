@@ -59,6 +59,20 @@ public sealed partial class CommunityService(
         return discussion;
     }
 
+    public async Task<IReadOnlyDictionary<string, string>> ResolveDisplayNamesAsync(IReadOnlyCollection<string> userIds, CancellationToken ct = default)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<string, string>();
+        }
+
+        var ids = userIds.Distinct().ToList();
+        var names = await db.Set<UserProfile>().AsNoTracking()
+            .Where(p => ids.Contains(p.UserId))
+            .ToDictionaryAsync(p => p.UserId, p => p.DisplayName, ct);
+        return ids.ToDictionary(id => id, id => names.GetValueOrDefault(id, id));
+    }
+
     public async Task<IReadOnlyList<DiscussionView>> BrowseVisibleAsync(string userId, CancellationToken ct = default)
     {
         var all = await db.Set<Discussion>().AsNoTracking()
