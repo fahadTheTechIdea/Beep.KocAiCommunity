@@ -499,7 +499,7 @@
 
     private async Task OpenCreate()
     {
-        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true };
         var dialog = await DialogService.ShowAsync<CreateCompetitionDialog>("New competition", options);
         var result = await dialog.Result;
         if (result is null || result.Canceled)
