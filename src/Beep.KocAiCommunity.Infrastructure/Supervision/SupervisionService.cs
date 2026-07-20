@@ -28,10 +28,15 @@ public sealed class SupervisionService(
         var bestScores = await db.LeaderboardEntries.Where(l => members.Contains(l.SubmitterUserId))
             .GroupBy(l => l.SubmitterUserId).Select(g => new { User = g.Key, Best = g.Max(x => x.Score) }).ToDictionaryAsync(x => x.User, x => x.Best, ct);
 
+        var displayNames = await db.Set<Domain.Engagement.UserProfile>().AsNoTracking()
+            .Where(p => members.Contains(p.UserId))
+            .ToDictionaryAsync(p => p.UserId, p => p.DisplayName, ct);
+
         var memberDtos = members
             .OrderBy(m => m, StringComparer.Ordinal)
             .Select(m => new MemberParticipationDto(
                 m,
+                displayNames.GetValueOrDefault(m, m),
                 enrollments.GetValueOrDefault(m),
                 completions.GetValueOrDefault(m),
                 submissions.GetValueOrDefault(m),

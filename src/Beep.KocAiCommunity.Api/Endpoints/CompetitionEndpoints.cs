@@ -190,8 +190,8 @@ public static class CompetitionEndpoints
                 return Results.StatusCode(StatusCodes.Status403Forbidden);
             }
 
-            var entries = await svc.GetLeaderboardAsync(id, ct);
-            return Results.Ok(entries.Select(e => new LeaderboardEntryDto(e.Rank, e.SubmitterUserId, e.Score)).ToList());
+            var entries = await svc.GetLeaderboardNamedAsync(id, ct);
+            return Results.Ok(entries.Select(e => new LeaderboardEntryDto(e.Rank, e.UserId, e.DisplayName, e.Score)).ToList());
         })
         .WithName("Leaderboard")
         .RequireAuthorization(KocPolicies.RequireEmployee);

@@ -30,4 +30,4 @@ public sealed record SetRevealRequest(DateTime? RevealUtc);
 
 public sealed record SubmissionResultDto(Guid SubmissionId, double? Score, string Status, DateTime SubmittedUtc);
 
-public sealed record LeaderboardEntryDto(int Rank, string UserId, double Score);
+public sealed record LeaderboardEntryDto(int Rank, string UserId, string DisplayName, double Score);

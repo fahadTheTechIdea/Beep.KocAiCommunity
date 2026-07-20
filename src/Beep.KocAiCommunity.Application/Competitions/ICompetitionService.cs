@@ -7,6 +7,9 @@ namespace Beep.KocAiCommunity.Application.Competitions;
 /// <summary>Raised when a competition action is not permitted (visibility, quota, state).</summary>
 public sealed class CompetitionException(string message) : Exception(message);
 
+/// <summary>A leaderboard row with the entrant's display name resolved for UI use.</summary>
+public sealed record NamedLeaderboardEntry(int Rank, string UserId, string DisplayName, double Score);
+
 public interface ICompetitionService
 {
     Task<Competition> CreateAsync(
@@ -51,6 +54,9 @@ public interface ICompetitionService
     Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, CancellationToken ct = default);
 
     Task<IReadOnlyList<LeaderboardEntry>> GetLeaderboardAsync(Guid competitionId, CancellationToken ct = default);
+
+    /// <summary>Leaderboard with each entrant's community display name resolved (falls back to the id).</summary>
+    Task<IReadOnlyList<NamedLeaderboardEntry>> GetLeaderboardNamedAsync(Guid competitionId, CancellationToken ct = default);
     Task<IReadOnlyList<Submission>> GetMySubmissionsAsync(string userId, Guid competitionId, CancellationToken ct = default);
 
     /// <summary>

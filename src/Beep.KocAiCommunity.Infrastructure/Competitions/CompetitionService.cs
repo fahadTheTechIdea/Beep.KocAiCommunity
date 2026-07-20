@@ -308,6 +308,18 @@ public sealed class CompetitionService(
             .OrderBy(e => e.Rank)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<NamedLeaderboardEntry>> GetLeaderboardNamedAsync(Guid competitionId, CancellationToken ct = default)
+    {
+        var entries = await GetLeaderboardAsync(competitionId, ct);
+        var ids = entries.Select(e => e.SubmitterUserId).Distinct().ToList();
+        var names = await db.Set<Domain.Engagement.UserProfile>().AsNoTracking()
+            .Where(p => ids.Contains(p.UserId))
+            .ToDictionaryAsync(p => p.UserId, p => p.DisplayName, ct);
+        return entries
+            .Select(e => new NamedLeaderboardEntry(e.Rank, e.SubmitterUserId, names.GetValueOrDefault(e.SubmitterUserId, e.SubmitterUserId), e.Score))
+            .ToList();
+    }
+
     public async Task<IReadOnlyList<Submission>> GetMySubmissionsAsync(string userId, Guid competitionId, CancellationToken ct = default) =>
         await db.Set<Submission>().AsNoTracking()
             .Where(s => s.CompetitionId == competitionId && s.SubmitterUserId == userId)

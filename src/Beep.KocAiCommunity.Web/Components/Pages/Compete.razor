@@ -15,11 +15,11 @@
 <PageTitle>Compete · @KocBrand.ProductName</PageTitle>
 
 <PageHeader Eyebrow="Learn &amp; compete" Title="Competitions"
-            Subtitle="Internal, Kaggle-style challenges scored on data no one sees until reveal day. Pick a competition to see its leaderboard, download the data, and submit your pipeline.">
+            Subtitle="Internal, Kaggle-style challenges on real KOC problems — download the data, build your model, and climb the leaderboard. Final standings stay hidden until reveal day.">
     <Actions>
         @if (CanCreate)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">Create competition</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">Host a competition</MudButton>
         }
     </Actions>
 </PageHeader>
@@ -31,7 +31,7 @@
 
 <MudGrid Spacing="6">
     <!-- Left: competitions list -->
-    <MudItem xs="12" md="5">
+    <MudItem xs="12" md="4">
         @if (_competitions is null)
         {
             <MudProgressCircular Indeterminate="true" />
@@ -73,64 +73,250 @@
         }
     </MudItem>
 
-    <!-- Right: selected competition -->
-    <MudItem xs="12" md="7">
+    <!-- Right: Kaggle-style competition detail -->
+    <MudItem xs="12" md="8">
         @if (_selected is null)
         {
-            <MudText Typo="Typo.body2" Class="mt-4">Select a competition to set its key, submit, and view the leaderboard.</MudText>
+            <BlueprintCard Class="pa-8" Style="text-align:center;">
+                <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                <MudText Typo="Typo.h6" Class="koc-heading mb-1">Pick a challenge</MudText>
+                <MudText Typo="Typo.body2">Select a competition on the left to see its overview, data, leaderboard, and your submissions.</MudText>
+            </BlueprintCard>
         }
         else
         {
-            <BlueprintCard Class="pa-5 mb-4">
-                <MudText Typo="Typo.h6" Class="koc-heading mb-1">@_selected.Title</MudText>
-                <MudText Typo="Typo.body2" Class="mb-2">@_selected.Description</MudText>
-                @if (_selected.RecommendedTrackId is not null)
-                {
-                    <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-2">
-                        New to this? <MudLink Href="/learn">Start with the recommended learning track →</MudLink>
-                    </MudAlert>
-                }
-                <div class="d-flex gap-2 align-center mb-3">
-                    <MudChip T="string" Size="Size.Small" Color="@StatusColor(_selected.Status)" Variant="Variant.Filled">@_selected.Status</MudChip>
-                    @if (_selected.RevealUtc is { } r)
-                    {
-                        <MudText Typo="Typo.caption">Final standings reveal @r.ToLocalTime().ToString("g")</MudText>
-                    }
-                    @if (_selected.Status == "concluded")
-                    {
-                        <MudText Typo="Typo.caption" Color="Color.Warning">Submissions closed</MudText>
-                    }
-                </div>
-
-                <MudText Typo="Typo.subtitle2" Class="mb-1">Submit a prediction</MudText>
-                <MudText Typo="Typo.caption" Class="mb-2 d-block">Upload a CSV of <code>id,prediction</code> — scored instantly against the hidden answer key.</MudText>
-                <InputFile OnChange="OnPredictionSelected" accept=".csv" />
-                @if (_lastScore is not null)
-                {
-                    <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="mt-2">
-                        Scored: <b>@_lastScore.Value.ToString("0.###")</b>
-                    </MudAlert>
-                }
-            </BlueprintCard>
-
-            @if (CanCreate)
-            {
-                <BlueprintCard Class="pa-0 mb-4" Style="border-color:var(--koc-accent-500);">
-                    <div class="pa-4 pb-0 d-flex align-center gap-2">
-                        <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" />
-                        <MudText Typo="Typo.subtitle1" Class="koc-heading">Host console</MudText>
-                        <MudSpacer />
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_selected.HasDatasets ? Color.Success : Color.Default)"
-                                 Icon="@(_selected.HasDatasets ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Data</MudChip>
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_selected.HasAnswerKey ? Color.Success : Color.Default)"
-                                 Icon="@(_selected.HasAnswerKey ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Answer key</MudChip>
+            <BlueprintCard Class="pa-0">
+                <!-- Banner -->
+                <div class="pa-5 pb-3" style="border-bottom:1px solid var(--koc-divider);">
+                    <div class="d-flex justify-space-between align-center flex-wrap gap-2 mb-1">
+                        <MudText Typo="Typo.h5" Class="koc-heading">🏆 @_selected.Title</MudText>
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(_selected.Status)">@_selected.Status</MudChip>
                     </div>
-                    <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true">
-                        <MudTabPanel Text="Data" Icon="@Icons.Material.Filled.Dataset" Class="pa-4">
+                    <div class="d-flex gap-1 flex-wrap align-center">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@TaskLabel(_selected.TaskType)</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@MetricLabel(_selected.TaskType)</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Visibility">@_selected.Scope</MudChip>
+                        @if (_selected.HasDatasets)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success" Icon="@Icons.Material.Filled.Dataset">data ready</MudChip>
+                        }
+                        @if (_selected.RevealUtc is { } r)
+                        {
+                            var days = (r - DateTime.UtcNow).TotalDays;
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Schedule">
+                                @(days > 0 ? $"reveal in {Math.Ceiling(days):0} day(s)" : $"revealed {r.ToLocalTime():d MMM}")
+                            </MudChip>
+                        }
+                    </div>
+                </div>
+
+                <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true">
+                    <!-- 1 · Overview -->
+                    <MudTabPanel Text="Overview" Icon="@Icons.Material.Filled.Description" Class="pa-5">
+                        <MudText Typo="Typo.body1" Class="mb-4" Style="white-space:pre-wrap;max-width:80ch;">@_selected.Description</MudText>
+
+                        @if (_selected.RecommendedTrackId is not null)
+                        {
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-4">
+                                New to this? <MudLink Href="/learn">Start with the recommended learning track →</MudLink>
+                            </MudAlert>
+                        }
+
+                        <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">How it works</MudText>
+                        <MudGrid Spacing="3" Class="mb-4">
+                            <MudItem xs="12" md="4">
+                                <BlueprintCard Class="pa-4" Style="height:100%;">
+                                    <span class="koc-stat-value" style="font-size:26px;">1</span>
+                                    <MudText Typo="Typo.subtitle2" Class="koc-heading">Get the data</MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:.75;">Download the labelled training set and the evaluation set from the Data tab.</MudText>
+                                </BlueprintCard>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <BlueprintCard Class="pa-4" Style="height:100%;">
+                                    <span class="koc-stat-value" style="font-size:26px;">2</span>
+                                    <MudText Typo="Typo.subtitle2" Class="koc-heading">Build your model</MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:.75;">Design a pipeline in the Studio node editor — features, split, algorithm.</MudText>
+                                </BlueprintCard>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <BlueprintCard Class="pa-4" Style="height:100%;">
+                                    <span class="koc-stat-value" style="font-size:26px;">3</span>
+                                    <MudText Typo="Typo.subtitle2" Class="koc-heading">Submit &amp; climb</MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:.75;">Scored on a hidden answer key shared by everyone — only modelling moves your rank.</MudText>
+                                </BlueprintCard>
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Evaluation</MudText>
+                        <MudText Typo="Typo.body2" Style="max-width:75ch;">
+                            Submissions are scored with <b>@MetricLabel(_selected.TaskType)</b> against a hidden answer key.
+                            @(_selected.RevealUtc is null
+                                ? "The live leaderboard reflects your best score."
+                                : "The live leaderboard shows public scores; final private standings unlock on reveal day so no one can game the last hours.")
+                        </MudText>
+                    </MudTabPanel>
+
+                    <!-- 2 · Data -->
+                    <MudTabPanel Text="Data" Icon="@Icons.Material.Filled.Dataset" Class="pa-5">
+                        @if (_selected.HasDatasets)
+                        {
+                            <MudGrid Spacing="3" Class="mb-3">
+                                @if (_trainingCsv is not null)
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <BlueprintCard Class="pa-4">
+                                            <div class="d-flex align-center gap-2 mb-1">
+                                                <MudIcon Icon="@Icons.Material.Filled.TableChart" Color="Color.Primary" />
+                                                <MudText Typo="Typo.subtitle2" Class="koc-heading">training.csv</MudText>
+                                            </div>
+                                            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@RowCount(_trainingCsv) rows · <code>@_selected.IdColumn, features…, @_selected.LabelColumn</code></MudText>
+                                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                                                       Href="@DataUri(_trainingCsv)" download="training.csv">Download</MudButton>
+                                        </BlueprintCard>
+                                    </MudItem>
+                                }
+                                @if (_evalCsv is not null)
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <BlueprintCard Class="pa-4">
+                                            <div class="d-flex align-center gap-2 mb-1">
+                                                <MudIcon Icon="@Icons.Material.Filled.Quiz" Color="Color.Primary" />
+                                                <MudText Typo="Typo.subtitle2" Class="koc-heading">evaluation.csv</MudText>
+                                            </div>
+                                            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@RowCount(_evalCsv) rows · <code>@_selected.IdColumn, features…</code> — you predict <code>@_selected.LabelColumn</code></MudText>
+                                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                                                       Href="@DataUri(_evalCsv)" download="evaluation.csv">Download</MudButton>
+                                        </BlueprintCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree" Href="/workflow">
+                                Build a pipeline in the Studio
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
+                                No data files attached yet — this challenge currently accepts uploaded prediction files only.
+                                @(CanCreate ? "Attach the files in the Host tab." : "")
+                            </MudAlert>
+                        }
+                    </MudTabPanel>
+
+                    <!-- 3 · Leaderboard -->
+                    <MudTabPanel Text="Leaderboard" Icon="@Icons.Material.Filled.Leaderboard" Class="pa-0">
+                        @if (_leaderboard is { Count: > 0 })
+                        {
+                            <MudSimpleTable Dense="true" Hover="true">
+                                <thead><tr><th style="width:64px;">Rank</th><th>Competitor</th><th style="text-align:right;">Score</th></tr></thead>
+                                <tbody>
+                                    @foreach (var e in _leaderboard)
+                                    {
+                                        <tr class="@(e.Rank <= 3 ? "koc-podium" : "")" style="@(e.UserId == Identity.UserId ? "outline:1px solid var(--koc-accent-500);" : "")">
+                                            <td>@RankBadge(e.Rank)</td>
+                                            <td>@e.DisplayName @(e.UserId == Identity.UserId ? "(you)" : "")</td>
+                                            <td style="text-align:right;font-weight:600;">@e.Score.ToString("0.###")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Class="pa-5">No submissions yet — the podium is wide open. 🥇</MudText>
+                        }
+
+                        <div class="pa-4 d-flex align-center gap-2" style="border-top:1px solid var(--koc-divider);">
+                            <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" />
+                            <MudText Typo="Typo.subtitle1" Class="koc-heading">Final standings</MudText>
+                        </div>
+                        @if (_finalLeaderboard is null)
+                        {
+                            <MudText Typo="Typo.body2" Class="pa-4 pt-0">
+                                Concealed until reveal day@(_selected.RevealUtc is { } fr ? $" ({fr.ToLocalTime():g})" : "") — the private leaderboard stays hidden so no one games the last day.
+                            </MudText>
+                        }
+                        else if (_finalLeaderboard.Count == 0)
+                        {
+                            <MudText Typo="Typo.body2" Class="pa-4 pt-0">Revealed — no submissions were made.</MudText>
+                        }
+                        else
+                        {
+                            <MudSimpleTable Dense="true" Hover="true">
+                                <thead><tr><th style="width:64px;">Rank</th><th>Competitor</th><th style="text-align:right;">Score</th></tr></thead>
+                                <tbody>
+                                    @foreach (var e in _finalLeaderboard)
+                                    {
+                                        <tr class="@(e.Rank <= 3 ? "koc-podium" : "")" style="@(e.UserId == Identity.UserId ? "outline:1px solid var(--koc-accent-500);" : "")">
+                                            <td>@RankBadge(e.Rank)</td>
+                                            <td>@e.DisplayName @(e.UserId == Identity.UserId ? "(you)" : "")</td>
+                                            <td style="text-align:right;font-weight:600;">@e.Score.ToString("0.###")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    </MudTabPanel>
+
+                    <!-- 4 · My submissions -->
+                    <MudTabPanel Text="My submissions" Icon="@Icons.Material.Filled.UploadFile" Class="pa-5">
+                        @if (_selected.Status == "concluded")
+                        {
+                            <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-3">Submissions are closed — this challenge has concluded.</MudAlert>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Submit a prediction</MudText>
+                            <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="opacity:.75;">
+                                CSV of <code>@_selected.IdColumn, @_selected.LabelColumn</code> — scored instantly against the hidden answer key.
+                            </MudText>
+                            <InputFile OnChange="OnPredictionSelected" accept=".csv" />
+                            @if (_lastScore is not null)
+                            {
+                                <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="mt-2">
+                                    Scored: <b>@_lastScore.Value.ToString("0.###")</b> — your best result counts on the leaderboard.
+                                </MudAlert>
+                            }
+                        }
+
+                        @if (_mySubmissions is { Count: > 0 })
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading mt-4 mb-1">History</MudText>
+                            <MudSimpleTable Dense="true" Hover="true">
+                                <thead><tr><th>When</th><th>Status</th><th style="text-align:right;">Score</th></tr></thead>
+                                <tbody>
+                                    @foreach (var sub in _mySubmissions)
+                                    {
+                                        <tr>
+                                            <td>@sub.SubmittedUtc.ToLocalTime().ToString("g")</td>
+                                            <td>@sub.Status</td>
+                                            <td style="text-align:right;">@(sub.Score?.ToString("0.###") ?? "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                        else if (_selected.Status != "concluded")
+                        {
+                            <MudText Typo="Typo.body2" Class="mt-4" Style="opacity:.7;">No submissions yet — your first upload puts you on the board.</MudText>
+                        }
+                    </MudTabPanel>
+
+                    @if (CanCreate)
+                    {
+                        <!-- 5 · Host -->
+                        <MudTabPanel Text="Host" Icon="@Icons.Material.Filled.Tune" Class="pa-5">
+                            <div class="d-flex align-center gap-2 mb-4">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_selected.HasDatasets ? Color.Success : Color.Default)"
+                                         Icon="@(_selected.HasDatasets ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Data</MudChip>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_selected.HasAnswerKey ? Color.Success : Color.Default)"
+                                         Icon="@(_selected.HasAnswerKey ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Answer key</MudChip>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@StatusColor(_selected.Status)">@_selected.Status</MudChip>
+                            </div>
+
+                            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Competition data</MudText>
                             <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
-                                Competitors download the training data, build a model, and are scored on the evaluation set
-                                against your hidden answer key. All three files are CSV.
+                                Competitors download the training data, build a model, and are scored on the evaluation set against your hidden answer key.
                             </MudText>
                             <div class="d-flex gap-3 flex-wrap mb-3">
                                 <MudTextField @bind-Value="_dsLabel" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
@@ -168,12 +354,11 @@
                             </MudGrid>
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" StartIcon="@Icons.Material.Filled.CloudUpload"
                                        OnClick="UploadDatasets" Disabled="_dsTraining is null || _dsEval is null">Publish training + evaluation data</MudButton>
-                        </MudTabPanel>
 
-                        <MudTabPanel Text="Timeline" Icon="@Icons.Material.Filled.Schedule" Class="pa-4">
-                            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
-                                Until the reveal, the final private standings stay concealed so no one games the last day.
-                            </MudText>
+                            <MudDivider Class="my-4" />
+
+                            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Timeline</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">Until the reveal, the final private standings stay concealed so no one games the last day.</MudText>
                             <div class="d-flex gap-2 align-center flex-wrap">
                                 <MudDatePicker @bind-Date="_revealDate" Label="Reveal date" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:200px;" />
                                 <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SetReveal" Disabled="_revealDate is null">Set reveal</MudButton>
@@ -183,9 +368,10 @@
                                     <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearReveal">Clear</MudButton>
                                 }
                             </div>
-                        </MudTabPanel>
 
-                        <MudTabPanel Text="Lifecycle" Icon="@Icons.Material.Filled.Flag" Class="pa-4">
+                            <MudDivider Class="my-4" />
+
+                            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Lifecycle</MudText>
                             <div class="d-flex align-center gap-1 mb-3">
                                 @foreach (var (stage, index) in new[] { "draft", "active", "concluded" }.Select((x, i) => (x, i)))
                                 {
@@ -215,110 +401,8 @@
                                 }
                             </div>
                         </MudTabPanel>
-                    </MudTabs>
-                </BlueprintCard>
-            }
-
-            <BlueprintCard Class="pa-5 mb-4">
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Competition data &amp; pipeline</MudText>
-                @if (_selected.HasDatasets)
-                {
-                    <MudText Typo="Typo.body2" Class="mb-2">Download the data, build your model in the node editor, then submit your pipeline — you're scored on a hidden test set shared by all competitors.</MudText>
-                    <div class="d-flex gap-4 flex-wrap mb-3 align-center">
-                        @if (_trainingCsv is not null)
-                        {
-                            <a href="@DataUri(_trainingCsv)" download="training.csv" class="koc-data-link">⬇ Training data (@RowCount(_trainingCsv) rows)</a>
-                        }
-                        @if (_evalCsv is not null)
-                        {
-                            <a href="@DataUri(_evalCsv)" download="evaluation.csv" class="koc-data-link">⬇ Evaluation set (@RowCount(_evalCsv) rows)</a>
-                        }
-                    </div>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree" Href="/workflow">
-                        Build a pipeline in the Studio
-                    </MudButton>
-                }
-                else
-                {
-                    <MudText Typo="Typo.body2">This competition has no training/evaluation data yet, so it only accepts uploaded prediction files. A creator can add data below to enable Studio pipeline submissions.</MudText>
-                }
-            </BlueprintCard>
-
-            <BlueprintCard Class="pa-0 mb-4">
-                <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">Leaderboard</MudText></div>
-                @if (_leaderboard is { Count: > 0 })
-                {
-                    <MudSimpleTable Dense="true" Hover="true">
-                        <thead><tr><th style="width:64px;">Rank</th><th>Participant</th><th style="text-align:right;">Score</th></tr></thead>
-                        <tbody>
-                            @foreach (var e in _leaderboard)
-                            {
-                                <tr class="@(e.Rank <= 3 ? "koc-podium" : "")" style="@(e.UserId == Identity.UserId ? "outline:1px solid var(--koc-accent-500);" : "")">
-                                    <td>@RankBadge(e.Rank)</td>
-                                    <td>@e.UserId @(e.UserId == Identity.UserId ? "(you)" : "")</td>
-                                    <td style="text-align:right;font-weight:600;">@e.Score.ToString("0.###")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </MudSimpleTable>
-                }
-                else
-                {
-                    <MudText Typo="Typo.body2" Class="pa-4">No submissions yet.</MudText>
-                }
-            </BlueprintCard>
-
-            @if (_mySubmissions is { Count: > 0 })
-            {
-                <BlueprintCard Class="pa-0 mt-4">
-                    <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">My submissions</MudText></div>
-                    <MudSimpleTable Dense="true" Hover="true">
-                        <thead><tr><th>When</th><th>Status</th><th style="text-align:right;">Score</th></tr></thead>
-                        <tbody>
-                            @foreach (var s in _mySubmissions)
-                            {
-                                <tr>
-                                    <td>@s.SubmittedUtc.ToLocalTime().ToString("g")</td>
-                                    <td>@s.Status</td>
-                                    <td style="text-align:right;">@(s.Score?.ToString("0.###") ?? "—")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </MudSimpleTable>
-                </BlueprintCard>
-            }
-
-            <BlueprintCard Class="pa-0 mt-4">
-                <div class="pa-4 d-flex align-center gap-2">
-                    <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" />
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading">Final standings</MudText>
-                </div>
-                @if (_finalLeaderboard is null)
-                {
-                    <MudText Typo="Typo.body2" Class="pa-4">
-                        Concealed until reveal day@(_selected.RevealUtc is { } fr ? $" ({fr.ToLocalTime():g})" : "") — the private leaderboard stays hidden so no one games the last day.
-                    </MudText>
-                }
-                else if (_finalLeaderboard.Count == 0)
-                {
-                    <MudText Typo="Typo.body2" Class="pa-4">Revealed — no submissions were made.</MudText>
-                }
-                else
-                {
-                    <MudSimpleTable Dense="true" Hover="true">
-                        <thead><tr><th style="width:64px;">Rank</th><th>Participant</th><th style="text-align:right;">Score</th></tr></thead>
-                        <tbody>
-                            @foreach (var e in _finalLeaderboard)
-                            {
-                                <tr class="@(e.Rank <= 3 ? "koc-podium" : "")" style="@(e.UserId == Identity.UserId ? "outline:1px solid var(--koc-accent-500);" : "")">
-                                    <td>@RankBadge(e.Rank)</td>
-                                    <td>@e.UserId @(e.UserId == Identity.UserId ? "(you)" : "")</td>
-                                    <td style="text-align:right;font-weight:600;">@e.Score.ToString("0.###")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </MudSimpleTable>
-                }
+                    }
+                </MudTabs>
             </BlueprintCard>
         }
     </MudItem>
@@ -580,6 +664,9 @@
         "concluded" => Color.Warning,
         _ => Color.Default,
     };
+
+    private static string MetricLabel(string taskType) =>
+        taskType == "Regression" ? "RMSE — lower wins" : "Accuracy";
 
     private static string TaskLabel(string taskType) => taskType switch
     {

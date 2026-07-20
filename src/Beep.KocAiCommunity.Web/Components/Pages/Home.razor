@@ -129,7 +129,7 @@
                                 {
                                     <div class="d-flex align-center gap-2" style="font-size:13px;">
                                         <span style="width:24px;text-align:center;">@HomeMedal(e.Rank)</span>
-                                        <span class="flex-grow-1">@e.UserId</span>
+                                        <span class="flex-grow-1">@e.DisplayName @(e.UserId == Identity.UserId ? "(you)" : "")</span>
                                         <b>@e.Score.ToString("0.###")</b>
                                     </div>
                                 }
@@ -220,7 +220,7 @@
     </MudItem>
     <MudItem xs="12" md="6">
         <BlueprintCard Class="koc-gridpaper pa-6" Style="min-height:260px;">
-            <MudText Typo="Typo.overline" Class="mb-4">Predicting pump failures — a worked example</MudText>
+            <MudText Typo="Typo.overline" Class="mb-4">From well data to a working prediction</MudText>
             <div class="d-flex align-center gap-2 flex-wrap">
                 @foreach (var (kind, label, i) in _flow.Select((f, i) => (f.kind, f.label, i)))
                 {
@@ -234,10 +234,17 @@
                     }
                 }
             </div>
-            <div class="d-flex gap-8 mt-6">
-                <div><div class="koc-stat-value" style="font-size:30px;">94%</div><MudText Typo="Typo.caption">caught in test</MudText></div>
-                <div><div class="koc-stat-value" style="font-size:30px;">6 wks</div><MudText Typo="Typo.caption">earlier warning</MudText></div>
-            </div>
+            @if (!Identity.IsGuest)
+            {
+                <div class="d-flex gap-8 mt-6 flex-wrap">
+                    <div><div class="koc-stat-value" style="font-size:30px;">@(_activeCompetitions?.Count ?? 0)</div><MudText Typo="Typo.caption">live challenge(s)</MudText></div>
+                    <div><div class="koc-stat-value" style="font-size:30px;">@(_xpBoard?.Count ?? 0)</div><MudText Typo="Typo.caption">on the board this month</MudText></div>
+                    @if (_xpBoard is { Count: > 0 })
+                    {
+                        <div><div class="koc-stat-value" style="font-size:30px;">🥇</div><MudText Typo="Typo.caption">@_xpBoard[0].DisplayName leads</MudText></div>
+                    }
+                </div>
+            }
         </BlueprintCard>
     </MudItem>
 </MudGrid>
@@ -283,24 +290,31 @@
     </MudGrid>
 }
 
-<!-- Learn & compete teaser -->
-<span class="koc-eyebrow">@(Identity.IsGuest ? "02" : "03") · Learn &amp; compete</span>
-<MudDivider Class="mt-2 mb-6" />
-<MudGrid Spacing="6">
-    @foreach (var t in _tracks)
-    {
-        <MudItem xs="12" md="4">
-            <BlueprintCard Class="pa-6" Style="height:100%;">
-                <div class="d-flex justify-space-between align-center">
-                    <span class="koc-stat-value" style="font-size:32px;">@t.No</span>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@t.Level</MudChip>
-                </div>
-                <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-2">@t.Title</MudText>
-                <MudText Typo="Typo.body2">@t.Body</MudText>
-            </BlueprintCard>
-        </MudItem>
-    }
-</MudGrid>
+@if (_liveTracks is { Count: > 0 })
+{
+    <!-- Live learning tracks straight from the catalog. -->
+    <div class="d-flex align-center justify-space-between">
+        <span class="koc-eyebrow">Learn &amp; grow</span>
+        <MudLink Href="/learn" Typo="Typo.caption">All tracks →</MudLink>
+    </div>
+    <MudDivider Class="mt-2 mb-6" />
+    <MudGrid Spacing="6">
+        @foreach (var (t, i) in _liveTracks.Take(3).Select((x, i) => (x, i)))
+        {
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-6" Style="height:100%;">
+                    <div class="d-flex justify-space-between align-center">
+                        <span class="koc-stat-value" style="font-size:32px;">@($"{i + 1:00}")</span>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@t.Level</MudChip>
+                    </div>
+                    <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-2">@t.Title</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-2">@t.Summary</MudText>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@t.LessonCount lessons</MudChip>
+                </BlueprintCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
 
 @code {
     private enum RoleView { Employee, TeamLeader, Manager, DCEO, CEO }
@@ -332,6 +346,8 @@
         await LoadCompetitionsAsync();
         await LoadProfileAsync();
         await LoadPulseAsync();
+        try { _liveTracks = Identity.IsGuest ? [] : await Api.GetTracksAsync(); }
+        catch { _liveTracks = []; }
     }
 
     // Leaderboards are for everyone (fun first); the KPI rollup only for supervisors with scope.
@@ -440,12 +456,7 @@
         ("Predict", "Failure risk"),
     ];
 
-    private readonly (string No, string Level, string Title, string Body)[] _tracks =
-    [
-        ("01", "Start here", "Getting started with data", "Read, clean, and make sense of a dataset. No coding needed."),
-        ("02", "Hands-on", "Solve a real problem", "Build a model for a production, facilities, or subsurface question."),
-        ("03", "Go further", "Make it dependable", "Tune, check, and package a model your team can trust and reuse."),
-    ];
+    private IReadOnlyList<Beep.KocAiCommunity.Contracts.Learning.TrackDto>? _liveTracks;
 
     private sealed record Pillar(string Icon, string Title, string Body);
     private sealed record RoleContent(string Headline, string Sub, string SecondaryCta, string PillarKicker, Pillar[] Pillars);

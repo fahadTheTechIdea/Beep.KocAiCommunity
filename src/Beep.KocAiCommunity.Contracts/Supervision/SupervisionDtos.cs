@@ -3,6 +3,7 @@ namespace Beep.KocAiCommunity.Contracts.Supervision;
 /// <summary>One person's participation, for a supervisor's read-only rollup.</summary>
 public sealed record MemberParticipationDto(
     string UserId,
+    string DisplayName,
     int Enrollments,
     int TracksCompleted,
     int Submissions,

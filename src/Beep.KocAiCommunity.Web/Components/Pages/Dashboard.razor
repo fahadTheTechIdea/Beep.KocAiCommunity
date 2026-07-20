@@ -240,12 +240,12 @@ else
                     <MudText Typo="Typo.caption" Class="d-block mb-2">Tracks completed per person</MudText>
                     @foreach (var m in _rollup.Members)
                     {
-                        @KocCharts.Bar(m.UserId, m.TracksCompleted, maxDone, "var(--koc-accent-700)")
+                        @KocCharts.Bar(m.DisplayName, m.TracksCompleted, maxDone, "var(--koc-accent-700)")
                     }
                     <MudText Typo="Typo.caption" Class="d-block mt-3 mb-2">Competition submissions per person</MudText>
                     @foreach (var m in _rollup.Members)
                     {
-                        @KocCharts.Bar(m.UserId, m.Submissions, maxSubs, "var(--koc-accent-500)")
+                        @KocCharts.Bar(m.DisplayName, m.Submissions, maxSubs, "var(--koc-accent-500)")
                     }
                 </div>
             </div>
@@ -259,7 +259,7 @@ else
                     @foreach (var m in _rollup.Members)
                     {
                         <tr>
-                            <td>@m.UserId</td>
+                            <td>@m.DisplayName</td>
                             <td>@m.Enrollments</td>
                             <td>@m.TracksCompleted</td>
                             <td>@m.Submissions</td>
