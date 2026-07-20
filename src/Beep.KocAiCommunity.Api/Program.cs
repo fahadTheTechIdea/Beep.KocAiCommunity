@@ -100,6 +100,15 @@ if (app.Configuration.GetValue("Seed:Enabled", false))
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<KocDbContext>();
     await db.Database.MigrateAsync();
+
+    // Dev SQLite is shared by the Api, Worker, and Web processes. WAL journaling stops writers
+    // (e.g. the Worker's job-queue polling) from blocking other writers/readers — without it, bulk
+    // operations like the admin demo seed can stall on file locks. WAL persists in the db file.
+    if (db.Database.IsSqlite())
+    {
+        await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+    }
+
     await LearningSeeder.SeedTracksAsync(db);
     await Beep.KocAiCommunity.Infrastructure.Engagement.EngagementSeeder.SeedBadgesAsync(db);
     await Beep.KocAiCommunity.Infrastructure.Organization.DevOrgSeeder.SeedDevOrgAsync(db);
@@ -111,7 +120,12 @@ if (app.Configuration.GetValue("Seed:Enabled", false))
 else if (app.Configuration.GetValue("Database:MigrateOnStartup", false))
 {
     using var scope = app.Services.CreateScope();
-    await scope.ServiceProvider.GetRequiredService<KocDbContext>().Database.MigrateAsync();
+    var db = scope.ServiceProvider.GetRequiredService<KocDbContext>();
+    await db.Database.MigrateAsync();
+    if (db.Database.IsSqlite())
+    {
+        await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+    }
 }
 
 app.Run();

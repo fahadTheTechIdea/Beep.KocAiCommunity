@@ -65,6 +65,8 @@ public class DemoDataEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
         cleared!.Seeded.Should().BeFalse();
         cleared.Users.Should().Be(0);
         cleared.Competitions.Should().Be(0);
+        cleared.Discussions.Should().Be(0);
+        cleared.Datasets.Should().Be(0);
 
         (await admin.GetFromJsonAsync<List<DiscussionDto>>("/api/v1/discussions"))!
             .Should().NotContain(d => d.Title.StartsWith("[Demo]"));

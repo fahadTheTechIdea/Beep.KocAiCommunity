@@ -71,6 +71,11 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
             return status;   // idempotent — unseed first to refresh
         }
 
+        // Hard timeout so a SQLite lock conflict fails loudly instead of stalling the request.
+        // (Dev SQLite is shared with the Worker; WAL journaling — set at API startup — prevents the
+        // writer-vs-writer stalls that made bulk seeding hang.)
+        db.Database.SetCommandTimeout(TimeSpan.FromSeconds(15));
+
         var now = DateTime.UtcNow;
 
         var teams = SeedOrg(now);
@@ -89,6 +94,8 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
 
     public async Task<DemoDataStatus> UnseedAsync(string actorUserId, CancellationToken ct = default)
     {
+        db.Database.SetCommandTimeout(TimeSpan.FromSeconds(15));
+
         // Every table the seeder writes to, keyed by the marker (children first, parents last).
         await db.Set<RunMetric>().Where(x => x.CreatedByUserId == Marker).ExecuteDeleteAsync(ct);
         await db.Set<ExperimentRun>().Where(x => x.CreatedByUserId == Marker).ExecuteDeleteAsync(ct);
