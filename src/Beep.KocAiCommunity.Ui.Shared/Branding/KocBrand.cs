@@ -7,9 +7,18 @@ namespace Beep.KocAiCommunity.Ui.Shared.Branding;
 /// </summary>
 public static class KocBrand
 {
-    public const string ProductName = "KocAiCommunity";
+    /// <summary>The product name as it appears in the app bar, page titles, and emails.</summary>
+    public const string ProductName = "KOC Training and Career Development";
+
+    /// <summary>Short form for tight spaces (app bar on small screens, chips, breadcrumbs).</summary>
+    public const string ShortName = "KOC T&CD";
+
     public const string Company = "Kuwait Oil Company";
-    public const string Tagline = "KOC's internal workspace for AI collaboration and ML.";
+
+    /// <summary>Where this app sits in the company — shown under the product name.</summary>
+    public const string Department = "Training and Career Development Group";
+
+    public const string Tagline = "Build AI skills, compete with colleagues, and grow your career at KOC.";
 
     /// <summary>KOC petroleum blue (accent 700 / primary).</summary>
     public const string Accent = "#1466A5";
