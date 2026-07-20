@@ -12,6 +12,7 @@
 @using Beep.KocAiCommunity.Contracts.Workflow
 @using Beep.KocAiCommunity.Contracts.Studio
 @using Beep.KocAiCommunity.Contracts.Datasets
+@using Beep.KocAiCommunity.Contracts.ML
 @using Beep.KocAiCommunity.Contracts.Competitions
 @using Beep.KocAiCommunity.Web.Services
 @using Beep.KocAiCommunity.Ui.Shared.Components
@@ -47,9 +48,13 @@ else
         <BlueprintCard Class="pa-3" Style="width:220px;flex:0 0 220px;max-height:560px;overflow:auto;">
             <MudTextField @bind-Value="_search" Placeholder="Search nodes…" Immediate="true" Margin="Margin.Dense" Variant="Variant.Outlined"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" />
-            @foreach (var category in NodeCatalog.Categories)
+            @if (_catalog.Count == 0)
             {
-                var nodes = NodeCatalog.InCategory(category).Where(MatchesSearch).ToList();
+                <MudText Typo="Typo.caption" Style="opacity:.7;">Loading nodes…</MudText>
+            }
+            @foreach (var category in _categories)
+            {
+                var nodes = NodesInCategory(category);
                 if (nodes.Count > 0)
                 {
                     <MudText Typo="Typo.caption" Class="koc-heading d-block mt-2 mb-1" Style="letter-spacing:.06em;text-transform:uppercase;opacity:.7;">@category</MudText>
@@ -58,8 +63,8 @@ else
                         <MudTooltip Text="@n.Description" Placement="Placement.Right">
                             <div class="koc-palette-node" draggable="true" @ondragstart="() => OnDragStart(n.Kind)" @onclick="() => AddNode(n.Kind)">
                                 <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" Style="opacity:.35;margin-right:-2px;" />
-                                <MudIcon Icon="@n.Icon" Size="Size.Small" Style="@($"color:{n.Color};")" />
-                                <span>@n.Label</span>
+                                <MudIcon Icon="@NodeVisuals.Icon(n.Kind, n.Category)" Size="Size.Small" Style="@($"color:{NodeVisuals.Color(n.Category)};")" />
+                                <span>@n.DisplayName</span>
                             </div>
                         </MudTooltip>
                     }
@@ -85,13 +90,10 @@ else
             }
             else
             {
-                var def = NodeCatalog.Get(_selected.Kind);
+                var def = Get(_selected.Kind);
                 <div class="d-flex align-center gap-2 mb-1">
-                    @if (def is not null)
-                    {
-                        <MudIcon Icon="@def.Icon" Size="Size.Small" Style="@($"color:{def.Color};")" />
-                    }
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading"><b>@(def?.Label ?? _selected.Kind)</b></MudText>
+                    <MudIcon Icon="@NodeVisuals.Icon(_selected.Kind, def?.Category ?? "")" Size="Size.Small" Style="@($"color:{NodeVisuals.Color(def?.Category ?? "")};")" />
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading"><b>@(def?.DisplayName ?? _selected.Kind)</b></MudText>
                     <MudSpacer />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="DeleteSelected" aria-label="Delete node" />
                 </div>
@@ -100,18 +102,32 @@ else
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">@def.Description</MudText>
                 }
 
-                @if (def is null || def.Props.Length == 0)
+                @if (def is null || def.Parameters.Count == 0)
                 {
                     <MudText Typo="Typo.body2">No options — this step acts on the columns flowing into it.</MudText>
                 }
                 else
                 {
-                    @foreach (var p in def.Props)
+                    @foreach (var p in def.Parameters)
                     {
-                        @if (p.Type == NodePropType.Select)
+                        @if (p.Type == "Dataset")
                         {
-                            var options = p.Key == "algorithm" ? AlgorithmsForTask() : (p.Options ?? []);
-                            <MudSelect T="string" Label="@p.Label" Value="@CfgOr(p)" ValueChanged="@(v => CfgSet(p.Key, v))"
+                            <MudSelect T="string" Label="@p.DisplayName" Value="@CfgGet(p.Name)" ValueChanged="@(v => CfgSet(p.Name, v))"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
+                                @foreach (var d in _fileDatasets)
+                                {
+                                    <MudSelectItem Value="@d.Id.ToString()">@d.Name · @d.Classification</MudSelectItem>
+                                }
+                            </MudSelect>
+                            @if (_fileDatasets.Count == 0)
+                            {
+                                <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">No datasets with a file are visible to you — add one under <b>Datasets</b> to join or append it.</MudText>
+                            }
+                        }
+                        else if (p.Type == "Select")
+                        {
+                            IReadOnlyList<string> options = p.Name == "algorithm" ? AlgorithmsForTask() : (p.Options ?? []);
+                            <MudSelect T="string" Label="@p.DisplayName" Value="@CfgOr(p)" ValueChanged="@(v => CfgSet(p.Name, v))"
                                        Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
                                 @foreach (var o in options)
                                 {
@@ -121,9 +137,9 @@ else
                         }
                         else
                         {
-                            <MudTextField T="string" Label="@p.Label" Value="@CfgGet(p.Key)" ValueChanged="@(v => CfgSet(p.Key, v))"
+                            <MudTextField T="string" Label="@p.DisplayName" Value="@CfgGet(p.Name)" ValueChanged="@(v => CfgSet(p.Name, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1"
-                                          Placeholder="@(p.Default ?? (p.Type == NodePropType.Columns ? "col1, col2" : ""))" HelperText="@p.Help" />
+                                          Placeholder="@(p.Default ?? (p.Type == "Columns" ? "col1, col2" : ""))" />
                         }
                     }
                 }
@@ -262,6 +278,12 @@ else
     private IReadOnlyList<DatasetDto> _fileDatasets = [];
     private Guid? _selectedDatasetId;
 
+    // The node palette + property schema are served by the backend registry (GET /api/v1/ml/nodes),
+    // so a new server-side handler shows up here with no client change.
+    private IReadOnlyList<NodeDescriptorDto> _catalog = [];
+    private Dictionary<string, NodeDescriptorDto> _catalogByKind = new(StringComparer.Ordinal);
+    private IReadOnlyList<string> _categories = [];
+
     private bool _submitting;
     private SubmissionResultDto? _submissionResult;
     private string? _submitError;
@@ -274,8 +296,30 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadCatalog();
         await LoadDatasets();
     }
+
+    private async Task LoadCatalog()
+    {
+        try
+        {
+            _catalog = await Api.GetMlNodesAsync();
+        }
+        catch
+        {
+            _catalog = [];
+        }
+
+        _catalogByKind = _catalog.ToDictionary(n => n.Kind, StringComparer.Ordinal);
+        _categories = _catalog.Select(n => n.Category).Distinct()
+            .OrderBy(NodeVisuals.Order).ThenBy(c => c, StringComparer.Ordinal).ToList();
+    }
+
+    private NodeDescriptorDto? Get(string kind) => _catalogByKind.GetValueOrDefault(kind);
+
+    private List<NodeDescriptorDto> NodesInCategory(string category) =>
+        _catalog.Where(n => n.Category == category && MatchesSearch(n)).ToList();
 
     private async Task LoadDatasets()
     {
@@ -548,13 +592,13 @@ else
         _ => _binaryAlgorithms,
     };
 
-    private bool MatchesSearch(NodeDef n) =>
+    private bool MatchesSearch(NodeDescriptorDto n) =>
         string.IsNullOrWhiteSpace(_search)
-        || n.Label.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        || n.DisplayName.Contains(_search, StringComparison.OrdinalIgnoreCase)
         || n.Kind.Contains(_search, StringComparison.OrdinalIgnoreCase)
         || n.Category.Contains(_search, StringComparison.OrdinalIgnoreCase);
 
-    private string CfgOr(NodeProp p) => CfgGet(p.Key) is { Length: > 0 } v ? v : (p.Default ?? "");
+    private string CfgOr(NodeParameterDto p) => CfgGet(p.Name) is { Length: > 0 } v ? v : (p.Default ?? "");
 
     private string CfgGet(string key) => _selected is not null && _selected.Config.TryGetValue(key, out var v) ? v : string.Empty;
 
