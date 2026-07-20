@@ -16,6 +16,7 @@ public static class DevOrgSeeder
     {
         if (await db.OrgUnits.AnyAsync(ct))
         {
+            await EnsureAdminMembershipAsync(db, ct);   // self-heal databases seeded before dev-admin existed
             return;
         }
 
@@ -30,6 +31,7 @@ public static class DevOrgSeeder
         db.OrgUnits.AddRange(company, directorate, group, reservoir, production);
         db.OrgMemberships.AddRange(
             Member("dev-user", group.Id, PositionLevel.Manager, stamp),
+            Member("dev-admin", group.Id, PositionLevel.Manager, stamp),   // the Platform Admin persona
             Member("dev-lead", reservoir.Id, PositionLevel.TeamLeader, stamp),
             Member("dev-emp-1", reservoir.Id, PositionLevel.Employee, stamp),
             Member("dev-emp-2", reservoir.Id, PositionLevel.Employee, stamp),
@@ -43,6 +45,22 @@ public static class DevOrgSeeder
             db.TrackEnrollments.Add(new TrackEnrollment { TrackId = trackId, UserId = "dev-emp-1", Status = "completed", StartedUtc = stamp, CompletedUtc = stamp, CreatedUtc = stamp });
             db.TrackCompletions.Add(new TrackCompletion { TrackId = trackId, UserId = "dev-emp-1", CompletedUtc = stamp, CreatedUtc = stamp });
             db.TrackEnrollments.Add(new TrackEnrollment { TrackId = trackId, UserId = "dev-emp-2", Status = "active", StartedUtc = stamp, CreatedUtc = stamp });
+            await db.SaveChangesAsync(ct);
+        }
+    }
+
+    // Databases seeded before the dev-admin persona existed lack its membership; add it once.
+    private static async Task EnsureAdminMembershipAsync(KocDbContext db, CancellationToken ct)
+    {
+        if (await db.OrgMemberships.AnyAsync(m => m.UserId == "dev-admin", ct))
+        {
+            return;
+        }
+
+        var groupId = await db.OrgUnits.Where(u => u.Path == "/koc/exploration/subsurface").Select(u => (Guid?)u.Id).FirstOrDefaultAsync(ct);
+        if (groupId is { } id)
+        {
+            db.OrgMemberships.Add(Member("dev-admin", id, PositionLevel.Manager, DateTime.UtcNow));
             await db.SaveChangesAsync(ct);
         }
     }

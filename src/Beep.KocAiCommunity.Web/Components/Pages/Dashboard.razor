@@ -1,6 +1,8 @@
 @page "/dashboard"
 @using MudBlazor
 @using Beep.KocAiCommunity.Contracts.Dashboard
+@using Beep.KocAiCommunity.Contracts.Engagement
+@using Beep.KocAiCommunity.Contracts.Learning
 @using Beep.KocAiCommunity.Contracts.Supervision
 @using Beep.KocAiCommunity.Web.Services
 @using Beep.KocAiCommunity.Ui.Shared.Components
@@ -12,9 +14,10 @@
 <PageHeader Eyebrow="Your KOC AI journey" Title="Dashboard"
             Subtitle="Where you stand across learning and competitions — and, if you lead a team, how your people are doing." />
 
-<MudTextField @bind-Value="Identity.UserId" Label="Acting as (dev user)" Variant="Variant.Outlined" Margin="Margin.Dense"
-              HelperText="Switch users to see different dashboards (try dev-user for a manager view)." Class="mb-4" Style="max-width:340px;" />
-<MudButton Variant="Variant.Text" Size="Size.Small" OnClick="LoadAsync" Class="mb-4 ml-2">Refresh</MudButton>
+<div class="d-flex align-center gap-2 mb-4">
+    <MudText Typo="Typo.caption" Style="opacity:.7;">Viewing as <b>@Identity.Current.Label</b> — switch persona from the top-right menu.</MudText>
+    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
+</div>
 
 @if (_me is null)
 {
@@ -55,6 +58,78 @@ else
             <MudText Typo="Typo.body2">Start a track or enter a competition to see your progress charted here.</MudText>
         }
     </BlueprintCard>
+
+    <MudGrid Spacing="4" Class="mb-2">
+        <MudItem xs="12" md="6">
+            <BlueprintCard Class="pa-5" Style="height:100%;">
+                <div class="d-flex align-center justify-space-between mb-3">
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading">My learning</MudText>
+                    <MudLink Href="/learn" Typo="Typo.caption">All tracks →</MudLink>
+                </div>
+                @if (_learning is null)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                }
+                else if (_learning.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">You're not enrolled in a track yet. <MudLink Href="/learn">Start one →</MudLink></MudText>
+                }
+                else
+                {
+                    @foreach (var t in _learning)
+                    {
+                        var pct = t.TotalLessons == 0 ? 0 : (int)Math.Round(100.0 * t.CompletedLessons / t.TotalLessons);
+                        <div class="mb-3">
+                            <div class="d-flex justify-space-between align-center">
+                                <MudText Typo="Typo.body2"><b>@t.Title</b></MudText>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(t.Status == "completed" ? Color.Success : Color.Info)">@t.Status</MudChip>
+                            </div>
+                            <MudProgressLinear Value="@(t.Status == "completed" ? 100 : pct)" Color="Color.Primary" Rounded="true" Size="Size.Medium" Class="mt-1">
+                                <MudText Typo="Typo.caption" Style="color:#fff;">@t.CompletedLessons/@t.TotalLessons lessons</MudText>
+                            </MudProgressLinear>
+                        </div>
+                    }
+                }
+            </BlueprintCard>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <BlueprintCard Class="pa-5" Style="height:100%;">
+                <div class="d-flex align-center justify-space-between mb-3">
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading">What's happening</MudText>
+                    <MudLink Href="/community" Typo="Typo.caption">Community →</MudLink>
+                </div>
+                @if (_activity is null)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                }
+                else if (_activity.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">Quiet so far — earn a badge or give kudos to get things moving.</MudText>
+                }
+                else
+                {
+                    @foreach (var a in _activity.Take(6))
+                    {
+                        <div class="d-flex align-center gap-2 mb-2">
+                            @if (!string.IsNullOrEmpty(a.IconFile))
+                            {
+                                <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(a.IconFile)" /></MudAvatar>
+                            }
+                            else
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Bolt" Color="Color.Primary" Size="Size.Small" />
+                            }
+                            <div class="flex-grow-1">
+                                <MudText Typo="Typo.body2"><b>@a.ActorDisplayName</b> @a.Summary</MudText>
+                                <MudText Typo="Typo.caption" Style="opacity:.6;">@a.CreatedUtc.ToLocalTime().ToString("g")</MudText>
+                            </div>
+                        </div>
+                    }
+                }
+            </BlueprintCard>
+        </MudItem>
+    </MudGrid>
 
     <BlueprintCard Class="pa-0 mb-6">
         <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">My competition standings</MudText></div>
@@ -150,6 +225,8 @@ else
 @code {
     private PersonalDashboardDto? _me;
     private SupervisionRollupDto? _rollup;
+    private IReadOnlyList<MyLearningDto>? _learning;
+    private IReadOnlyList<ActivityDto>? _activity;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -157,5 +234,7 @@ else
     {
         _me = await Api.GetPersonalDashboardAsync();
         _rollup = await Api.GetSupervisionRollupAsync(); // null when the user leads no one
+        try { _learning = await Api.GetMyLearningAsync(); } catch { _learning = []; }
+        try { _activity = await Api.GetActivityAsync(); } catch { _activity = []; }
     }
 }

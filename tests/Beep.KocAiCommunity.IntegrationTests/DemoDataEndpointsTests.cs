@@ -38,9 +38,23 @@ public class DemoDataEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
 
         // The demo content is actually visible through the normal, company-scoped surfaces.
         var competitions = await admin.GetFromJsonAsync<List<CompetitionDto>>("/api/v1/competitions");
-        competitions.Should().Contain(c => c.Title.StartsWith("[Demo]"));
+        competitions.Should().Contain(c => c.Title.StartsWith("[Demo]") && c.Status == "active" && c.HasDatasets)
+            .And.Contain(c => c.Status == "concluded");
         var discussions = await admin.GetFromJsonAsync<List<DiscussionDto>>("/api/v1/discussions");
-        discussions.Should().Contain(d => d.Title.StartsWith("[Demo]"));
+        discussions!.Count(d => d.Title.StartsWith("[Demo]")).Should().BeGreaterThanOrEqualTo(3);
+
+        // The active challenge has a populated leaderboard including the dev personas.
+        var active = competitions!.Single(c => c.Title.StartsWith("[Demo]") && c.Status == "active");
+        var leaderboard = await admin.GetFromJsonAsync<List<LeaderboardEntryDto>>($"/api/v1/competitions/{active.Id}/leaderboard");
+        leaderboard!.Count.Should().BeGreaterThanOrEqualTo(10);
+        leaderboard.Should().Contain(e => e.UserId == "dev-admin");
+
+        // Datasets are trainable (they carry a real file), and the demo experiment exists for dev-admin.
+        var datasets = await admin.GetFromJsonAsync<List<Beep.KocAiCommunity.Contracts.Datasets.DatasetDto>>("/api/v1/datasets");
+        datasets.Should().Contain(d => d.Name.StartsWith("[Demo]") && d.HasFile);
+        var devAdmin = _factory.CreateClientAs("dev-admin", "Employee", "PlatformAdmin");
+        var experiments = await devAdmin.GetFromJsonAsync<List<Beep.KocAiCommunity.Contracts.Experiments.ExperimentDto>>("/api/v1/experiments");
+        experiments.Should().Contain(e => e.Name.StartsWith("[Demo]"));
 
         // Seeding again is a no-op rather than a duplicate.
         var again = await (await admin.PostAsync("/api/v1/admin/demo/seed", null)).Content.ReadFromJsonAsync<DemoDataStatusDto>();
