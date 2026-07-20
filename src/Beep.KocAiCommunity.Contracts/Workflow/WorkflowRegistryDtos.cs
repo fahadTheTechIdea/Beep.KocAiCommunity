@@ -1,6 +1,6 @@
 namespace Beep.KocAiCommunity.Contracts.Workflow;
 
-public sealed record CreateWorkflowRequest(string Name, string Description, string Classification);
+public sealed record CreateWorkflowRequest(string Name, string Description, string Classification, Guid? CompetitionId = null);
 
 public sealed record SaveDraftRequest(string DefinitionJson, string? Notes);
 
@@ -18,11 +18,13 @@ public sealed record WorkflowVersionDetailDto(
 
 public sealed record WorkflowSummaryDto(
     Guid Id, string Name, string Description, string OwnerUserId, string Classification,
-    int LatestVersionNumber, int VersionCount, string LatestStatus, DateTime CreatedUtc);
+    int LatestVersionNumber, int VersionCount, string LatestStatus, DateTime CreatedUtc,
+    Guid? CompetitionId = null, string? CompetitionTitle = null);
 
 public sealed record WorkflowDetailDto(
     Guid Id, string Name, string Description, string OwnerUserId, string Classification,
-    int LatestVersionNumber, IReadOnlyList<WorkflowVersionDto> Versions);
+    int LatestVersionNumber, IReadOnlyList<WorkflowVersionDto> Versions,
+    Guid? CompetitionId = null, string? CompetitionTitle = null);
 
 public sealed record WorkflowTemplateDto(string Code, string DisplayName, string Description, string Domain, int SchemaVersion);
 

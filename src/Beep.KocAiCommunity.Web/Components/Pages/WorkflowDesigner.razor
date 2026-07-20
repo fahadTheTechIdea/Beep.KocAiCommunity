@@ -19,61 +19,13 @@
 @inject IKocApiClient Api
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NavigationManager Nav
 
 <PageTitle>Studio · @KocBrand.ProductName</PageTitle>
 
-@if (_openProject is null && !_registryMode)
+@if (!_registryMode)
 {
-    <!-- ===== Project browse ===== -->
-    <div class="d-flex justify-space-between align-start mb-6 flex-wrap gap-3">
-        <div>
-            <span class="koc-eyebrow">Studio</span>
-            <MudText Typo="Typo.h4" Class="koc-heading mt-2 mb-1">Projects</MudText>
-            <MudText Typo="Typo.body1" Style="max-width:64ch;">
-                Every model you build lives in a project — a <b>personal</b> one to explore your own data, or one that
-                targets a <b>competition</b>. Open a project to design its pipeline in the node editor.
-            </MudText>
-        </div>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="NewProject">New project</MudButton>
-    </div>
-
-    @if (_projects is null)
-    {
-        <MudProgressCircular Indeterminate="true" />
-    }
-    else if (_projects.Count == 0)
-    {
-        <BlueprintCard Class="pa-8" Style="text-align:center;">
-            <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-            <MudText Typo="Typo.h6" Class="koc-heading mb-1">No projects yet</MudText>
-            <MudText Typo="Typo.body2">Create your first project to start building an ML pipeline.</MudText>
-        </BlueprintCard>
-    }
-    else
-    {
-        <MudGrid Spacing="4">
-            @foreach (var p in _projects)
-            {
-                <MudItem xs="12" md="4">
-                    <BlueprintCard Class="pa-4" Style="height:100%;">
-                        <div class="d-flex justify-space-between align-center mb-1">
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(p.CompetitionId is null ? Color.Default : Color.Primary)">
-                                @(p.CompetitionId is null ? "Personal" : "Competition")
-                            </MudChip>
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteProject(p.Id)" aria-label="Delete project" />
-                        </div>
-                        <MudText Typo="Typo.h6" Class="koc-heading mb-1" Style="cursor:pointer;" @onclick="() => OpenProject(p.Id)">@p.Name</MudText>
-                        @if (p.CompetitionTitle is not null)
-                        {
-                            <MudText Typo="Typo.caption" Class="d-block">🏆 @p.CompetitionTitle</MudText>
-                        }
-                        <MudText Typo="Typo.caption" Class="d-block mb-3">@p.TaskType · updated @p.UpdatedUtc.ToLocalTime().ToString("g")</MudText>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.OpenInNew" OnClick="() => OpenProject(p.Id)">Open</MudButton>
-                    </BlueprintCard>
-                </MudItem>
-            }
-        </MudGrid>
-    }
+    <div class="d-flex justify-center pa-8"><MudProgressCircular Indeterminate="true" /></div>
 }
 else
 {
@@ -87,17 +39,6 @@ else
             <MudSpacer />
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveRegistryDraft" Disabled="_registryBusy">Save draft</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Publish" OnClick="PublishRegistry" Disabled="_registryBusy">Publish</MudButton>
-        }
-        else
-        {
-            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="CloseProject">Projects</MudButton>
-            <MudText Typo="Typo.h5" Class="koc-heading">@_openProject?.Name</MudText>
-            @if (_openProject?.CompetitionTitle is not null)
-            {
-                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">🏆 @_openProject.CompetitionTitle</MudChip>
-            }
-            <MudSpacer />
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveProject" Disabled="_saving">Save</MudButton>
         }
     </div>
 
@@ -259,10 +200,10 @@ else
         </MudItem>
     </MudGrid>
 
-    @if (_openProject?.CompetitionId is { } compId)
+    @if (_registryCompetitionId is { } compId)
     {
         <BlueprintCard Class="pa-5 mt-4">
-            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Submit to @_openProject.CompetitionTitle</MudText>
+            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Submit to @(_registryCompetitionTitle ?? "the competition")</MudText>
             <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:70ch;">
                 The server trains and scores your exact node graph on the competition's <b>hidden test set</b> — the same
                 data for everyone — so only your modelling choices move your rank.
@@ -300,9 +241,8 @@ else
     private double _nextX = 40;
     private int _seedRow;
 
-    private IReadOnlyList<ProjectDto>? _projects;
-    private ProjectDetailDto? _openProject;
-    private bool _saving;
+    private Guid? _registryCompetitionId;
+    private string? _registryCompetitionTitle;
 
     // Registry-edit mode: the designer is editing a versioned workflow from /workflows.
     [Parameter] public Guid? WorkflowId { get; set; }
@@ -335,10 +275,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadDatasets();
-        if (WorkflowId is null)
-        {
-            await LoadProjects();
-        }
     }
 
     private async Task LoadDatasets()
@@ -368,17 +304,10 @@ else
                 await LoadRegistryWorkflow(id);
             }
         }
-        else if (_registryMode)
+        else
         {
-            // Navigated back to the plain designer.
-            _registryMode = false;
-            _loadedWorkflowId = null;
-            _diagram.Nodes.Clear();
-            _diagram.Links.Clear();
-            if (_projects is null)
-            {
-                await LoadProjects();
-            }
+            // The designer is always a workflow — no id means go back to the library.
+            Nav.NavigateTo("/workflows");
         }
     }
 
@@ -397,13 +326,16 @@ else
 
         var latest = detail.Versions.OrderByDescending(v => v.VersionNumber).FirstOrDefault();
         _registryMode = true;
-        _openProject = null;
         _selected = null;
         _result = null;
         _loadedWorkflowId = id;
         _registryName = detail.Name;
         _registryVersion = latest?.VersionNumber ?? 1;
         _registryStatus = latest?.Status ?? "draft";
+        _registryCompetitionId = detail.CompetitionId;
+        _registryCompetitionTitle = detail.CompetitionId is { } cid
+            ? (await Api.GetCompetitionsAsync()).FirstOrDefault(c => c.Id == cid)?.Title
+            : null;
 
         var json = "{}";
         if (latest is not null)
@@ -478,93 +410,6 @@ else
         }
     }
 
-    // ---- Projects ----
-
-    private async Task LoadProjects()
-    {
-        try { _projects = await Api.GetProjectsAsync(); }
-        catch (Exception ex) { Snackbar.Add($"Couldn't load projects: {ex.Message}", Severity.Warning); }
-    }
-
-    private async Task NewProject()
-    {
-        var dialog = await DialogService.ShowAsync<CreateProjectDialog>("New project");
-        var result = await dialog.Result;
-        if (result is null || result.Canceled)
-        {
-            return;
-        }
-
-        await LoadProjects();
-        if (result.Data is Guid id)
-        {
-            await OpenProject(id);
-        }
-    }
-
-    private async Task OpenProject(Guid id)
-    {
-        var project = await Api.GetProjectAsync(id);
-        if (project is null)
-        {
-            Snackbar.Add("Project not found.", Severity.Error);
-            return;
-        }
-
-        _openProject = project;
-        _labelColumn = project.LabelColumn;
-        _task = project.TaskType;
-        _result = null;
-        _submissionResult = null;
-        _submitError = null;
-        _selected = null;
-        LoadDefinition(project.DefinitionJson);
-    }
-
-    private void CloseProject()
-    {
-        _openProject = null;
-        _selected = null;
-        _ = LoadProjects();
-    }
-
-    private async Task SaveProject()
-    {
-        if (_openProject is null)
-        {
-            return;
-        }
-
-        _saving = true;
-        try
-        {
-            var json = JsonSerializer.Serialize(BuildDefinition(), _json);
-            await Api.SaveProjectAsync(_openProject.Id, new SaveProjectRequest(json, _labelColumn, _task));
-            Snackbar.Add("Project saved.", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _saving = false;
-        }
-    }
-
-    private async Task DeleteProject(Guid id)
-    {
-        try
-        {
-            await Api.DeleteProjectAsync(id);
-            await LoadProjects();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
-        }
-    }
-
     // ---- Canvas load/save ----
 
     private void LoadDefinition(string json)
@@ -630,7 +475,7 @@ else
             }
         }
 
-        var name = _registryMode ? _registryName : (_openProject?.Name ?? "Pipeline");
+        var name = _registryMode ? _registryName : "Pipeline";
         return new WorkflowDefinition { Name = name, Nodes = nodes, Edges = edges };
     }
 

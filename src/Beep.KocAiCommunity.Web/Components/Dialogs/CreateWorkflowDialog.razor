@@ -1,0 +1,92 @@
+@using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Contracts.Workflow
+@using Beep.KocAiCommunity.Web.Services
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Schema" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Class="koc-heading">New workflow</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_name" Label="Workflow name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+        <MudSelect @bind-Value="_classification" Label="Classification" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
+            @foreach (var c in Classifications)
+            {
+                <MudSelectItem Value="@c">@c</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Purpose</MudText>
+        <MudRadioGroup @bind-Value="_target">
+            <MudRadio Value="@("personal")" Color="Color.Primary" Dense="true">Personal — explore your own data</MudRadio>
+            <MudRadio Value="@("competition")" Color="Color.Primary" Dense="true" Disabled="@(_competitions.Count == 0)">Target a competition — submit your pipeline</MudRadio>
+        </MudRadioGroup>
+
+        @if (_target == "competition")
+        {
+            <MudSelect T="Guid?" @bind-Value="_competitionId" Label="Competition" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2">
+                @foreach (var c in _competitions)
+                {
+                    <MudSelectItem T="Guid?" Value="@c.Id">🏆 @c.Title</MudSelectItem>
+                }
+            </MudSelect>
+            <MudText Typo="Typo.caption" Style="opacity:.7;">You'll build a pipeline and submit it — scored on the competition's hidden test set.</MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_name) || (_target == "competition" && _competitionId is null))" OnClick="Create">Create &amp; open</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    private static readonly string[] Classifications = ["Public", "Internal", "Confidential", "Restricted"];
+
+    private string _name = "New workflow";
+    private string _classification = "Internal";
+    private string _target = "personal";
+    private Guid? _competitionId;
+    private IReadOnlyList<CompetitionDto> _competitions = [];
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Only competitions with data + an answer key accept pipeline submissions.
+            _competitions = (await Api.GetCompetitionsAsync())
+                .Where(c => c is { HasDatasets: true, HasAnswerKey: true } && c.Status == "active").ToList();
+        }
+        catch { _competitions = []; }
+    }
+
+    private async Task Create()
+    {
+        _busy = true;
+        try
+        {
+            var competitionId = _target == "competition" ? _competitionId : null;
+            var (wf, error) = await Api.CreateWorkflowAsync(new CreateWorkflowRequest(_name.Trim(), "", _classification, competitionId));
+            if (error is not null)
+            {
+                Snackbar.Add(error, Severity.Warning);
+                _busy = false;
+                return;
+            }
+
+            Dialog.Close(DialogResult.Ok(wf?.Id));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+            _busy = false;
+        }
+    }
+}

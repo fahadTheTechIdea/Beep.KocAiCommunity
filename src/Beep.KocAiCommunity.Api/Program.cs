@@ -83,7 +83,6 @@ v1.MapWorkflowRegistryEndpoints();
 v1.MapDiscussionEndpoints();
 v1.MapNotificationEndpoints();
 v1.MapDashboardEndpoints();
-v1.MapProjectEndpoints();
 v1.MapEngagementEndpoints();
 v1.MapRunEndpoints();
 v1.MapExperimentEndpoints();

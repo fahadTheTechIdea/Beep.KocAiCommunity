@@ -11,7 +11,10 @@ public class Workflow : AuditableEntity
     public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;
     public string OwnerUserId { get; set; } = default!;
-    public Guid? ProjectId { get; set; }
+
+    /// <summary>When set, this workflow targets a competition — its pipeline can be submitted to it.</summary>
+    public Guid? CompetitionId { get; set; }
+
     public KocDataClassification Classification { get; set; } = KocDataClassification.Internal;
 
     /// <summary>The highest version number issued so far (draft or published).</summary>

@@ -19,11 +19,16 @@ public sealed class WorkflowVersionService(KocDbContext db) : IWorkflowVersionSe
 {
     private const string ExportKind = "koc-workflow-export";
 
-    public async Task<WorkflowEntity> CreateAsync(string userId, string name, string description, KocDataClassification classification, CancellationToken ct = default)
+    public async Task<WorkflowEntity> CreateAsync(string userId, string name, string description, KocDataClassification classification, Guid? competitionId = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new WorkflowRegistryException("A workflow name is required.");
+        }
+
+        if (competitionId is { } cid && !await db.Set<Domain.Competitions.Competition>().AnyAsync(c => c.Id == cid, ct))
+        {
+            throw new WorkflowRegistryException("Competition not found.");
         }
 
         var workflow = new WorkflowEntity
@@ -31,6 +36,7 @@ public sealed class WorkflowVersionService(KocDbContext db) : IWorkflowVersionSe
             Name = name.Trim(),
             Description = description ?? string.Empty,
             OwnerUserId = userId,
+            CompetitionId = competitionId,
             Classification = classification,
             LatestVersionNumber = 1,
             CreatedByUserId = userId,

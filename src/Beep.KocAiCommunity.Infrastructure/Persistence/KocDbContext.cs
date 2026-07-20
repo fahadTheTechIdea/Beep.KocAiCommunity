@@ -48,7 +48,6 @@ public class KocDbContext(DbContextOptions<KocDbContext> options)
     public DbSet<DatasetProfile> DatasetProfiles => Set<DatasetProfile>();
     public DbSet<DatasetProfileColumn> DatasetProfileColumns => Set<DatasetProfileColumn>();
     public DbSet<ModelRun> ModelRuns => Set<ModelRun>();
-    public DbSet<Project> Projects => Set<Project>();
     public DbSet<RegisteredModel> RegisteredModels => Set<RegisteredModel>();
     public DbSet<ModelVersion> ModelVersions => Set<ModelVersion>();
     public DbSet<ModelApproval> ModelApprovals => Set<ModelApproval>();

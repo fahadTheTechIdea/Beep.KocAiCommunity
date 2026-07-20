@@ -20,7 +20,7 @@ public sealed record WorkflowDetail(WorkflowEntity Workflow, IReadOnlyList<Workf
 /// </summary>
 public interface IWorkflowVersionService
 {
-    Task<WorkflowEntity> CreateAsync(string userId, string name, string description, KocDataClassification classification, CancellationToken ct = default);
+    Task<WorkflowEntity> CreateAsync(string userId, string name, string description, KocDataClassification classification, Guid? competitionId = null, CancellationToken ct = default);
     Task<IReadOnlyList<WorkflowSummary>> ListAsync(string userId, CancellationToken ct = default);
     Task<WorkflowDetail?> GetAsync(string userId, Guid workflowId, CancellationToken ct = default);
     Task<WorkflowVersion?> GetVersionAsync(string userId, Guid workflowId, int versionNumber, CancellationToken ct = default);

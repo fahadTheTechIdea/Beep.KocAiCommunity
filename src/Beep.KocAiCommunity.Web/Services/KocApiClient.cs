@@ -54,11 +54,6 @@ public interface IKocApiClient
     Task<SupervisionRollupDto?> GetSupervisionRollupAsync(CancellationToken ct = default);
     Task<PersonalDashboardDto?> GetPersonalDashboardAsync(CancellationToken ct = default);
 
-    Task<IReadOnlyList<ProjectDto>> GetProjectsAsync(CancellationToken ct = default);
-    Task<ProjectDto?> CreateProjectAsync(CreateProjectRequest request, CancellationToken ct = default);
-    Task<ProjectDetailDto?> GetProjectAsync(Guid id, CancellationToken ct = default);
-    Task SaveProjectAsync(Guid id, SaveProjectRequest request, CancellationToken ct = default);
-    Task DeleteProjectAsync(Guid id, CancellationToken ct = default);
 
     Task<IReadOnlyList<DatasetDto>> GetDatasetsAsync(CancellationToken ct = default);
     Task<DatasetDto?> CreateDatasetAsync(CreateDatasetRequest request, CancellationToken ct = default);
@@ -327,28 +322,6 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
     public Task<PersonalDashboardDto?> GetPersonalDashboardAsync(CancellationToken ct = default) =>
         http.GetFromJsonAsync<PersonalDashboardDto>("/api/v1/dashboard/me", ct);
 
-    public async Task<IReadOnlyList<ProjectDto>> GetProjectsAsync(CancellationToken ct = default) =>
-        await http.GetFromJsonAsync<List<ProjectDto>>("/api/v1/projects", ct) ?? [];
-
-    public async Task<ProjectDto?> CreateProjectAsync(CreateProjectRequest request, CancellationToken ct = default)
-    {
-        var response = await http.PostAsJsonAsync("/api/v1/projects", request, ct);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException(await response.Content.ReadAsStringAsync(ct));
-        }
-
-        return await response.Content.ReadFromJsonAsync<ProjectDto>(ct);
-    }
-
-    public Task<ProjectDetailDto?> GetProjectAsync(Guid id, CancellationToken ct = default) =>
-        http.GetFromJsonAsync<ProjectDetailDto>($"/api/v1/projects/{id}", ct);
-
-    public async Task SaveProjectAsync(Guid id, SaveProjectRequest request, CancellationToken ct = default) =>
-        (await http.PutAsJsonAsync($"/api/v1/projects/{id}", request, ct)).EnsureSuccessStatusCode();
-
-    public async Task DeleteProjectAsync(Guid id, CancellationToken ct = default) =>
-        (await http.DeleteAsync($"/api/v1/projects/{id}", ct)).EnsureSuccessStatusCode();
 
     public async Task<IReadOnlyList<DatasetDto>> GetDatasetsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<DatasetDto>>("/api/v1/datasets", ct) ?? [];

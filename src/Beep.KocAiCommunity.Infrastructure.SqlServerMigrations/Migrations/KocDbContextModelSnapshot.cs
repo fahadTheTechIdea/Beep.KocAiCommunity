@@ -2836,64 +2836,6 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.ToTable("ModelVersions", "koc");
                 });
 
-            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.Project", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CompetitionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CreatedByUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DefinitionJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LabelColumn")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<string>("LastModifiedByUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("LastModifiedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("OwnerUserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<string>("TaskType")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerUserId", "CreatedUtc");
-
-                    b.ToTable("Projects", "koc");
-                });
-
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Studio.RegisteredModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2948,6 +2890,9 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.Property<int>("Classification")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("CompetitionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CreatedByUserId")
                         .HasColumnType("nvarchar(max)");
 
@@ -2980,9 +2925,6 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<Guid?>("ProjectId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<byte[]>("RowVersion")
                         .HasColumnType("varbinary(max)");

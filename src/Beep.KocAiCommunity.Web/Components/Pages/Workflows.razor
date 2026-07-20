@@ -6,6 +6,7 @@
 @inject IKocApiClient Api
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject NavigationManager Nav
 
 <PageTitle>Workflows · @KocBrand.ProductName</PageTitle>
 
@@ -38,7 +39,13 @@
                 <BlueprintCard Class="pa-4 mb-3">
                     <div class="d-flex align-center justify-space-between">
                         <div>
-                            <MudText Typo="Typo.subtitle1" Class="koc-heading">@w.Name</MudText>
+                            <div class="d-flex align-center gap-1">
+                                <MudText Typo="Typo.subtitle1" Class="koc-heading">@w.Name</MudText>
+                                @if (w.CompetitionId is not null)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">🏆 Competition</MudChip>
+                                }
+                            </div>
                             <MudText Typo="Typo.caption">@w.Classification · v@w.LatestVersionNumber · latest: @w.LatestStatus · @w.VersionCount version(s)</MudText>
                         </div>
                         <div class="d-flex gap-1">
@@ -132,12 +139,17 @@
 
     private async Task Create()
     {
-        var (wf, error) = await Api.CreateWorkflowAsync(new CreateWorkflowRequest("New workflow", "", "Internal"));
-        Report(error, "Workflow created.");
-        await Load();
-        if (wf is not null)
+        var dialog = await DialogService.ShowAsync<CreateWorkflowDialog>("New workflow");
+        var result = await dialog.Result;
+        if (result is null || result.Canceled)
         {
-            await Toggle(wf.Id);
+            return;
+        }
+
+        await Load();
+        if (result.Data is Guid id)
+        {
+            Nav.NavigateTo($"/workflow/{id}");   // open the new workflow on the canvas
         }
     }
 

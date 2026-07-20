@@ -121,9 +121,6 @@ public static class DependencyInjection
         // Personal + management dashboards.
         services.AddScoped<Application.Dashboard.IDashboardService, Dashboard.DashboardService>();
 
-        // ML projects (a workflow lives in a project — personal or competition-targeted).
-        services.AddScoped<Application.Studio.IProjectService, Studio.ProjectService>();
-
         // Engagement: Barrels XP, career ladder, badges, streaks, kudos, team leaderboards.
         services.AddScoped<Application.Engagement.IEngagementService, Engagement.EngagementService>();
 

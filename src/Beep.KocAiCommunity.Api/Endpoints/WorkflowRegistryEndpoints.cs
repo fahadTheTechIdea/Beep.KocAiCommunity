@@ -25,7 +25,7 @@ public static class WorkflowRegistryEndpoints
 
             try
             {
-                var wf = await svc.CreateAsync(me.UserId!, req.Name, req.Description ?? "", classification, ct);
+                var wf = await svc.CreateAsync(me.UserId!, req.Name, req.Description ?? "", classification, req.CompetitionId, ct);
                 return Results.Ok(ToSummary(wf, 1, "draft"));
             }
             catch (WorkflowRegistryException ex)
@@ -48,7 +48,7 @@ public static class WorkflowRegistryEndpoints
                 : Results.Ok(new WorkflowDetailDto(
                     detail.Workflow.Id, detail.Workflow.Name, detail.Workflow.Description, detail.Workflow.OwnerUserId,
                     detail.Workflow.Classification.ToString(), detail.Workflow.LatestVersionNumber,
-                    [.. detail.Versions.Select(ToVersionDto)]));
+                    [.. detail.Versions.Select(ToVersionDto)], detail.Workflow.CompetitionId));
         }).WithName("GetWorkflow").RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapDelete("/workflows/{id:guid}", (Guid id, IKocCurrentUser me, IWorkflowVersionService svc, CancellationToken ct) =>
@@ -215,7 +215,7 @@ public static class WorkflowRegistryEndpoints
     }
 
     private static WorkflowSummaryDto ToSummary(WorkflowEntity w, int versionCount, string latestStatus) =>
-        new(w.Id, w.Name, w.Description, w.OwnerUserId, w.Classification.ToString(), w.LatestVersionNumber, versionCount, latestStatus, w.CreatedUtc);
+        new(w.Id, w.Name, w.Description, w.OwnerUserId, w.Classification.ToString(), w.LatestVersionNumber, versionCount, latestStatus, w.CreatedUtc, w.CompetitionId);
 
     private static WorkflowVersionDto ToVersionDto(WorkflowVersion v) =>
         new(v.VersionNumber, v.Status, v.SchemaVersion, v.SnapshotHash, v.Notes, v.PublishedUtc, v.CreatedUtc);

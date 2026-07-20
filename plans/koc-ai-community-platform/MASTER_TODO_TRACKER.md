@@ -82,7 +82,7 @@
 
 - [~] **Phase 07 — Datasets, projects, and collaboration** (`07_DATASETS_PROJECTS_AND_COLLABORATION.md`) — 🟢 MOSTLY DONE (2026-07-19)
   - [x] Dataset entity with visibility + classification (`Dataset.cs`, `DatasetService`)
-  - [x] Projects (`Project.cs`, `ProjectService`)
+  - [x] ~~Projects (`Project.cs`, `ProjectService`)~~ — **retired 2026-07-20**; merged into the versioned Workflows registry (a workflow optionally targets a competition via `CompetitionId`). See tracker item 19.
   - [x] Org-scoped visibility on datasets and projects
   - [x] Immutable dataset versions + files (`DatasetVersion`/`DatasetFile`, `DatasetContentService`); publish freezes, new upload opens a draft
   - [x] CSV schema inference + reproducible sampled profiling (`CsvProfiler` → `DatasetSchemaColumn`/`DatasetProfile`/`DatasetProfileColumn`) + licenses (`LicenseSpdxId`)
@@ -206,7 +206,8 @@
 15. ~~Phase 16 — Pluggable node engine~~ ✅ DONE (2026-07-20) — `IPipelineNodeHandler` + `PipelineContext` + `PluginNodeRegistry` + `PluginNodeExecutor`; all ~30 ML nodes migrated behaviour-preserving; monolithic executor deleted. See `16_PLUGGABLE_NODE_ENGINE.md`.
 16. ~~Phase 17a — DuckDB engine dependency proven~~ ✅ DONE (2026-07-20) — `DuckDB.NET.Data.Full`, `DuckDbSession`, probe tests (native engine loads + CSV round-trip).
 17. ~~Phase 17b — Engine crossing + first DuckDB nodes~~ ✅ DONE (2026-07-20) — lazy Duck↔ML crossing via CSV; DuckDB is the data-prep front-end (must precede ML nodes); `sql`, `sql-filter`, `group-by`, `sort`, `distinct` handlers; `IPipelineExecutor` gains optional secondary datasets. See `17_DUCKDB_ENGINE.md`.
-18. **Phase 18 — Remaining DuckDB nodes + Dataset picker** (NEXT) — `join-dataset`, `union-dataset`, `pivot`, `limit`, `summarize`; secondary-dataset resolution in the callers; API-driven designer catalog + Dataset param type. See `18_DUCKDB_NODES.md`.
+18. ~~Phase 18 — Remaining DuckDB nodes + secondary datasets~~ ✅ DONE (2026-07-20) — `join-dataset`, `union-dataset`, `pivot`, `limit`, `summarize`; secondary-dataset resolution in the callers; uniform `PipelineTable` (CSV-backed) contract so DuckDB and ML nodes share one data interface in either order. See `18_DUCKDB_NODES.md`.
+19. ~~Projects → Workflows merge~~ ✅ DONE (2026-07-20) — the `Projects` concept is retired; the versioned **Workflows** registry is the single home for pipelines. A workflow optionally carries a `CompetitionId` (replacing the old `Project.CompetitionId`); the "New workflow" dialog picks an optional competition, and a competition-targeting workflow submits its pipeline from the canvas. `Project` domain/service/endpoints/DTOs/dialog deleted; dual-provider `MergeProjectsIntoWorkflows` migration (drops `Projects`, renames `Workflows.ProjectId` → `CompetitionId`). The `/workflow` designer is always registry-backed (no more project-browse mode); `/workflow` with no id redirects to `/workflows`.
 
 ## Global definition of done
 
