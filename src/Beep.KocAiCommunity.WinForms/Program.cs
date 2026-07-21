@@ -24,16 +24,31 @@ internal static class Program
         var settings = AppSettings.Load();
         var apiBaseUrl = Environment.GetEnvironmentVariable("KOC_API_BASEURL") ?? settings.ApiBaseUrl;
         services.AddSingleton(settings);
+        // The signed-in user comes from the intranet session (no extra login). Swap this provider
+        // for a directory-API implementation later to fill in department/profile info.
+        services.AddSingleton<IEnvironmentUserProvider, WindowsEnvironmentUserProvider>();
+        services.AddSingleton<SignedInUser>();
         services.AddKocLocalStudio(apiBaseUrl);
 
         using var provider = services.BuildServiceProvider();
 
-        // Identity: default to the real signed-in Windows/Entra user; a saved dev persona overrides it.
+        // Resolve the signed-in user once and cache it for the session.
+        var signedIn = provider.GetRequiredService<SignedInUser>();
+        try
+        {
+            signedIn.Current = provider.GetRequiredService<IEnvironmentUserProvider>().GetCurrentAsync().GetAwaiter().GetResult();
+        }
+        catch
+        {
+            signedIn.Current = new EnvironmentUser(Environment.UserName, Environment.UserName);
+        }
+
+        // Identity: default to the real signed-in user; a saved dev persona overrides it.
         var identity = provider.GetRequiredService<DevIdentity>();
+        var me = signedIn.Current!;
         if (settings.PersonaKey == DevIdentity.RealUserKey)
         {
-            var (userId, displayName) = WindowsUser.Current();
-            identity.SetRealUser(userId, displayName, []);
+            identity.SetRealUser(me.UserId, me.DisplayName, me.Roles ?? []);
         }
         else
         {

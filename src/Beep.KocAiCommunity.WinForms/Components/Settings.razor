@@ -2,6 +2,7 @@
 @using Beep.KocAiCommunity.Client
 @inject DevIdentity Identity
 @inject AppSettings Config
+@inject SignedInUser Me
 @inject ISnackbar Snackbar
 
 <MudText Typo="Typo.h5" Class="mb-4">Settings</MudText>
@@ -12,12 +13,28 @@
                   HelperText="Used for competitions (browse, submit, leaderboard). Applied on next launch." Class="mb-4" />
 
     <MudText Typo="Typo.subtitle1" Class="mb-1">Identity</MudText>
-    <MudField Label="Signed in as (Windows account)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3"
-              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountCircle">@_windowsUser</MudField>
+    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">
+        Signed in from your intranet session — no extra login.
+    </MudText>
+    <MudField Label="Signed in as" Variant="Variant.Outlined" Margin="Margin.Dense"
+              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountCircle">
+        @_display <span style="opacity:.6;">(@_userId)</span>
+    </MudField>
+    <div class="d-flex gap-2 my-2 flex-wrap">
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Email">@Or(_email, "email —")</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Business">@Or(_company, "company —")</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Groups">@Or(_department, "department —")</MudChip>
+    </div>
+    @if (_email is null && _department is null)
+    {
+        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.6;">
+            Department &amp; profile details load from the KOC directory once its API is configured.
+        </MudText>
+    }
 
     <MudSelect T="string" @bind-Value="_personaKey" Label="Act as (dev override)" Variant="Variant.Outlined" Margin="Margin.Dense"
                HelperText="Leave as the signed-in user in production. The dev personas are for testing roles against a dev API.">
-        <MudSelectItem Value="@DevIdentity.RealUserKey">Signed-in user (@_windowsDisplay)</MudSelectItem>
+        <MudSelectItem Value="@DevIdentity.RealUserKey">Signed-in user (@_display)</MudSelectItem>
         @foreach (var p in DevIdentity.Personas)
         {
             <MudSelectItem Value="@p.Key">@p.Label</MudSelectItem>
@@ -32,24 +49,35 @@
 @code {
     private string _apiBaseUrl = "";
     private string _personaKey = "";
-    private string _windowsUser = "";
-    private string _windowsDisplay = "";
+    private string _userId = "";
+    private string _display = "";
+    private string? _email;
+    private string? _company;
+    private string? _department;
 
     protected override void OnInitialized()
     {
         _apiBaseUrl = Config.ApiBaseUrl;
         _personaKey = Identity.Current.Key;
-        (_windowsUser, _windowsDisplay) = WindowsUser.Current();
+
+        var me = Me.Current;
+        _userId = me?.UserId ?? "";
+        _display = me?.DisplayName ?? _userId;
+        _email = me?.Email;
+        _company = me?.CompanyId;
+        _department = me?.DepartmentId;
     }
+
+    private static string Or(string? value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value!;
 
     private Task SaveAsync()
     {
         // Apply the chosen identity live.
-        if (_personaKey == DevIdentity.RealUserKey)
+        if (_personaKey == DevIdentity.RealUserKey && Me.Current is { } me)
         {
-            Identity.SetRealUser(_windowsUser, _windowsDisplay, []);
+            Identity.SetRealUser(me.UserId, me.DisplayName, me.Roles ?? []);
         }
-        else
+        else if (_personaKey != DevIdentity.RealUserKey)
         {
             Identity.SetPersona(_personaKey);
         }
