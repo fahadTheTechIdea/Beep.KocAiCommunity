@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Infrastructure\Beep.KocAiCommunity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.ML\Beep.KocAiCommunity.ML.csproj" />
+    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Desktop.Local\Beep.KocAiCommunity.Desktop.Local.csproj" />
   </ItemGroup>
 
 </Project>

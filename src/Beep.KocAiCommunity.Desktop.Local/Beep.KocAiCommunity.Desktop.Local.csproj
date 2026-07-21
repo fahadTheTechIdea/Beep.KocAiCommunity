@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Offline, in-process implementation of the Studio surface of IKocApiClient for the
+       WinForms desktop app: node catalog + pipeline execution + local dataset/workflow stores.
+       Competition calls fall through to the HTTP client (online only). -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Client\Beep.KocAiCommunity.Client.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.ML\Beep.KocAiCommunity.ML.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+</Project>

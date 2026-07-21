@@ -256,9 +256,14 @@ call the API. Decisions & architecture: `19_WINFORMS_DESKTOP_STUDIO.md`.
     Z.Blazor.Diagrams + koc-blueprint assets. Solution builds `-warnaserror` (MSB3277 WebView2/WPF
     WindowsBase conflict demoted to a message), 255 tests green. **Pending manual smoke test:**
     launch the app with the API running and confirm the designer renders in WebView2. → `19b_…`
-26. **Stage 4 — local execution engine** — `Beep.KocAiCommunity.Desktop.Local` +
-    `LocalKocApiClient` (catalog/datasets/run/workflows all local); designer builds +
-    runs a pipeline **offline, no server**. → `19c_…`
+26. **Stage 4 — local execution engine** ✅ DONE (2026-07-21) — new `Beep.KocAiCommunity.Desktop.Local`:
+    `RemoteFallbackKocApiClient` (129 delegating methods → HTTP) + `LocalKocApiClient` overriding
+    the Studio surface — node catalog from `PluginNodeRegistry`, datasets from local CSVs
+    (`LocalDatasetStore` with a stable id index), pipeline **runs** via in-process
+    `PluginNodeExecutor` (+ secondary datasets for join/union), workflow registry as local JSON
+    (`LocalWorkflowStore`). `AddKocLocalStudio(apiBaseUrl)` wires the engine; the WinForms host now
+    uses it. New `LocalStudioTests`: catalog (ML + DuckDB), registry round-trip, and an **offline
+    end-to-end run** (no server). 258 tests green. → `19c_…`
 27. **Stage 5 — competitions bridge** — competition browse/submit/leaderboard via an
     inner HTTP client; offline-graceful; API-URL + identity settings. → `19d_…`
 28. **Stage 6 — packaging + docs** — `win-x64` self-contained publish (ML.NET/DuckDB

@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Studio\Beep.KocAiCommunity.Ui.Studio.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Shared\Beep.KocAiCommunity.Ui.Shared.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Client\Beep.KocAiCommunity.Client.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Desktop.Local\Beep.KocAiCommunity.Desktop.Local.csproj" />
   </ItemGroup>
 
 </Project>
