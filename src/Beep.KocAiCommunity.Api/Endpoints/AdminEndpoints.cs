@@ -96,7 +96,7 @@ public static class AdminEndpoints
         {
             try
             {
-                return Results.Ok(ToUserDto(await svc.UpsertProfileAsync(userId, req.Email, req.DisplayName, req.OrgUnitId, ct)));
+                return Results.Ok(ToUserDto(await svc.UpsertProfileAsync(userId, req.Email, req.DisplayName, req.DepartmentCode, ct)));
             }
             catch (AccessAdminException ex)
             {
@@ -138,8 +138,8 @@ public static class AdminEndpoints
     }
 
     private static AdminUserDto ToUserDto(AccessUserView u) =>
-        new(u.UserId, u.Email, u.DisplayName, u.CompanyId, u.DepartmentId, u.OrgUnitId,
-            u.OrgUnitCode, u.OrgUnitName, u.PositionLevel.ToString(), u.MaxCompetitionScope?.ToString());
+        new(u.UserId, u.Email, u.DisplayName, u.CompanyId, u.DepartmentId, u.DepartmentName,
+            u.PositionLevel.ToString(), u.MaxCompetitionScope?.ToString());
 
     private static DemoDataStatusDto ToDemoDto(DemoDataStatus s) =>
         new(s.Seeded, s.Users, s.Competitions, s.Discussions, s.Datasets);

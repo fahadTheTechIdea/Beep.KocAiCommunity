@@ -214,9 +214,10 @@
 ## Admin RBAC — competition-creator grants, org codes, user profiles
 
 21. **Phase 1 — model + enforcement** ✅ DONE (2026-07-21) — `OrgUnit.Code` (e.g. `AX01`);
-    `UserProfile` extended with `Email`/`CompanyId`/`DepartmentId`/`OrgUnitId` (authoritative
-    org pointer); new `CompetitionCreatorGrant` (per-user, `MaxScope`) with dual-provider
-    `AddRbacUserProfiles` migration. Competition creation is now **granted-only**:
+    `UserProfile` extended with `Email`/`CompanyId`/`DepartmentId` (all org **codes** — a user's
+    single `DepartmentId` code IS their org placement, no separate `OrgUnitId` FK); new
+    `CompetitionCreatorGrant` (per-user, `MaxScope`) with dual-provider migrations
+    (`AddRbacUserProfiles` + `SimplifyUserProfileDepartment`). Competition creation is now **granted-only**:
     `CompetitionService.CreateAsync` requires a platform-admin caller or an active grant whose
     max scope covers the requested audience (else `CompetitionAccessException` → HTTP 403);
     `GetMaxCreateScopeAsync` feeds `MeResponse.MaxCompetitionScope`, which gates the Host button

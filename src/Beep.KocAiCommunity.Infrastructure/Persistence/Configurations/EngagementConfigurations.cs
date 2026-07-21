@@ -20,7 +20,7 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
         b.Property(x => x.SkillsCsv).HasMaxLength(512);
         b.HasIndex(x => x.UserId).IsUnique();
         b.HasIndex(x => x.Email);           // uniqueness enforced in the admin service
-        b.HasIndex(x => x.OrgUnitId);
+        b.HasIndex(x => x.DepartmentId);
         b.HasIndex(x => x.XpTotal);
     }
 }

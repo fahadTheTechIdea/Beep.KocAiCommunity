@@ -76,11 +76,11 @@ public class AdminEndpointsTests(KocApiFactory factory) : IClassFixture<KocApiFa
         await admin.PutAsJsonAsync($"/api/v1/admin/org-units/{_factory.T1}/code", new SetOrgUnitCodeRequest("RES1"));
 
         var response = await admin.PutAsJsonAsync("/api/v1/admin/users/dept-user/profile",
-            new UpsertUserProfileRequest("dept@koc.com.kw", "Dept User", _factory.T1));
+            new UpsertUserProfileRequest("dept@koc.com.kw", "Dept User", "RES1"));
         var dto = await response.Content.ReadFromJsonAsync<AdminUserDto>();
 
-        dto!.OrgUnitId.Should().Be(_factory.T1);
-        dto.DepartmentId.Should().Be("RES1");
+        dto!.DepartmentId.Should().Be("RES1");
+        dto.DepartmentName.Should().Be("Reservoir Analytics");
         dto.CompanyId.Should().Be("KOC");
         dto.Email.Should().Be("dept@koc.com.kw");
     }

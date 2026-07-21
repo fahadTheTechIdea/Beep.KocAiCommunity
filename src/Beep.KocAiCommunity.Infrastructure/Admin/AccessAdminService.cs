@@ -15,12 +15,14 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
     public async Task<IReadOnlyList<AccessUserView>> ListUsersAsync(CancellationToken ct = default)
     {
         var profiles = await db.UserProfiles.AsNoTracking().ToDictionaryAsync(p => p.UserId, ct);
-        var memberships = await db.OrgMemberships.AsNoTracking()
-            .Where(m => m.IsPrimary && m.ToUtc == null).ToListAsync(ct);
-        var memberByUser = memberships
+        var memberByUser = (await db.OrgMemberships.AsNoTracking()
+                .Where(m => m.IsPrimary && m.ToUtc == null).ToListAsync(ct))
             .GroupBy(m => m.UserId).ToDictionary(g => g.Key, g => g.First());
         var grants = await db.CompetitionCreatorGrants.AsNoTracking().ToDictionaryAsync(g => g.UserId, ct);
-        var units = await db.OrgUnits.AsNoTracking().ToDictionaryAsync(u => u.Id, ct);
+
+        // Resolve a department code → unit name for display. Codes are unique.
+        var nameByCode = await db.OrgUnits.AsNoTracking().Where(u => u.Code != null)
+            .ToDictionaryAsync(u => u.Code!, u => u.Name, ct);
 
         var userIds = profiles.Keys
             .Union(memberByUser.Keys)
@@ -33,16 +35,15 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
         {
             profiles.TryGetValue(userId, out var profile);
             memberByUser.TryGetValue(userId, out var membership);
-            var orgUnitId = profile?.OrgUnitId ?? membership?.OrgUnitId;
-            OrgUnit? unit = orgUnitId is { } uid && units.TryGetValue(uid, out var u) ? u : null;
             var position = membership?.PositionLevel ?? PositionLevel.Employee;
+            var departmentName = profile?.DepartmentId is { } code ? nameByCode.GetValueOrDefault(code) : null;
             VisibilityScope? maxScope = grants.TryGetValue(userId, out var grant) && grant.IsActive(DateTime.UtcNow)
                 ? grant.MaxScope
                 : null;
 
             views.Add(new AccessUserView(
                 userId, profile?.Email, profile?.DisplayName, profile?.CompanyId, profile?.DepartmentId,
-                orgUnitId, unit?.Code, unit?.Name, position, maxScope));
+                departmentName, position, maxScope));
         }
 
         return views;
@@ -53,7 +54,7 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
             .Select(u => new OrgUnitCodeView(u.Id, u.Name, u.Type, u.Path, u.Code))
             .ToListAsync(ct);
 
-    public async Task<AccessUserView> UpsertProfileAsync(string userId, string? email, string? displayName, Guid? orgUnitId, CancellationToken ct = default)
+    public async Task<AccessUserView> UpsertProfileAsync(string userId, string? email, string? displayName, string? departmentCode, CancellationToken ct = default)
     {
         email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
         if (email is not null && await db.UserProfiles.AnyAsync(p => p.Email == email && p.UserId != userId, ct))
@@ -61,17 +62,17 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
             throw new AccessAdminException($"Email '{email}' is already used by another user.");
         }
 
+        departmentCode = string.IsNullOrWhiteSpace(departmentCode) ? null : departmentCode.Trim();
         OrgUnit? unit = null;
-        if (orgUnitId is { } uid)
-        {
-            unit = await db.OrgUnits.FirstOrDefaultAsync(u => u.Id == uid, ct)
-                ?? throw new AccessAdminException("Org unit not found.");
-        }
-
-        // Company-root code = the Company-type ancestor on the unit's materialized path.
         string? companyCode = null;
-        if (unit is not null)
+        string? departmentName = null;
+        if (departmentCode is not null)
         {
+            unit = await db.OrgUnits.FirstOrDefaultAsync(u => u.Code == departmentCode, ct)
+                ?? throw new AccessAdminException($"No org unit has the code '{departmentCode}'.");
+            departmentName = unit.Name;
+
+            // Company-root code = the Company-type ancestor on the unit's materialized path.
             companyCode = await db.OrgUnits
                 .Where(u => u.Type == OrgUnitType.Company && (unit.Path == u.Path || unit.Path.StartsWith(u.Path + "/")))
                 .Select(u => u.Code)
@@ -95,16 +96,12 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
         }
 
         profile.Email = email;
-        if (unit is not null)
-        {
-            profile.OrgUnitId = unit.Id;
-            profile.DepartmentId = unit.Code;
-            profile.CompanyId = companyCode;
-        }
+        profile.DepartmentId = departmentCode;
+        profile.CompanyId = companyCode;
 
         await db.SaveChangesAsync(ct);
         await audit.WriteAsync(new AuditEntry("user-profile.upsert", "user", userId,
-            AfterJson: $"{{\"email\":\"{email}\",\"orgUnitId\":\"{unit?.Id}\",\"dept\":\"{profile.DepartmentId}\"}}"), ct);
+            AfterJson: $"{{\"email\":\"{email}\",\"company\":\"{companyCode}\",\"dept\":\"{departmentCode}\"}}"), ct);
 
         var position = await db.OrgMemberships.AsNoTracking()
             .Where(m => m.UserId == userId && m.IsPrimary && m.ToUtc == null)
@@ -113,7 +110,7 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
             .Where(g => g.UserId == userId).Select(g => (VisibilityScope?)g.MaxScope).FirstOrDefaultAsync(ct);
 
         return new AccessUserView(userId, profile.Email, profile.DisplayName, profile.CompanyId, profile.DepartmentId,
-            profile.OrgUnitId, unit?.Code, unit?.Name, position, maxScope);
+            departmentName, position, maxScope);
     }
 
     public async Task SetCompetitionGrantAsync(string userId, VisibilityScope maxScope, CancellationToken ct = default)

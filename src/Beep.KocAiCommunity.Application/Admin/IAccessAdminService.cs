@@ -8,7 +8,7 @@ public sealed class AccessAdminException(string message) : Exception(message);
 /// <summary>A user row for the admin RBAC console.</summary>
 public sealed record AccessUserView(
     string UserId, string? Email, string? DisplayName, string? CompanyId, string? DepartmentId,
-    Guid? OrgUnitId, string? OrgUnitCode, string? OrgUnitName, PositionLevel PositionLevel, VisibilityScope? MaxCompetitionScope);
+    string? DepartmentName, PositionLevel PositionLevel, VisibilityScope? MaxCompetitionScope);
 
 /// <summary>An org unit + its business code.</summary>
 public sealed record OrgUnitCodeView(Guid Id, string Name, OrgUnitType Type, string Path, string? Code);
@@ -26,11 +26,11 @@ public interface IAccessAdminService
     Task<IReadOnlyList<OrgUnitCodeView>> ListOrgUnitsAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// Sets a user's email/display name and, when an org unit is given, their department — writing
-    /// <c>OrgUnitId</c>, <c>DepartmentId</c> (the unit's code) and <c>CompanyId</c> (the company-root
-    /// code) together. Creates the profile if the user has none.
+    /// Sets a user's email/display name and, when a department code is given, their org placement —
+    /// writing <c>DepartmentId</c> (the unit's code) and <c>CompanyId</c> (the company-root code)
+    /// together. A null/blank department code clears the placement. Creates the profile if none.
     /// </summary>
-    Task<AccessUserView> UpsertProfileAsync(string userId, string? email, string? displayName, Guid? orgUnitId, CancellationToken ct = default);
+    Task<AccessUserView> UpsertProfileAsync(string userId, string? email, string? displayName, string? departmentCode, CancellationToken ct = default);
 
     /// <summary>Grants (or updates) a user's competition-creation capability at the given max scope.</summary>
     Task SetCompetitionGrantAsync(string userId, VisibilityScope maxScope, CancellationToken ct = default);

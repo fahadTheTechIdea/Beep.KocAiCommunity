@@ -1512,9 +1512,6 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.Property<int>("LongestStreakDays")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("OrgUnitId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<byte[]>("RowVersion")
                         .HasColumnType("varbinary(max)");
 
@@ -1532,9 +1529,9 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email");
+                    b.HasIndex("DepartmentId");
 
-                    b.HasIndex("OrgUnitId");
+                    b.HasIndex("Email");
 
                     b.HasIndex("UserId")
                         .IsUnique();

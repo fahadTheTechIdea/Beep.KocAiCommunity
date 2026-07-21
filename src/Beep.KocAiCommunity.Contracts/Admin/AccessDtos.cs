@@ -7,14 +7,15 @@ public sealed record AdminUserDto(
     string? DisplayName,
     string? CompanyId,
     string? DepartmentId,
-    Guid? OrgUnitId,
-    string? OrgUnitCode,
-    string? OrgUnitName,
+    string? DepartmentName,
     string PositionLevel,
     string? MaxCompetitionScope);
 
-/// <summary>Sets a user's identity/org fields. Picking an org unit sets the codes together so they never drift.</summary>
-public sealed record UpsertUserProfileRequest(string? Email, string? DisplayName, Guid? OrgUnitId);
+/// <summary>
+/// Sets a user's identity/org fields. <paramref name="DepartmentCode"/> is an OrgUnit code; the
+/// service derives the CompanyId (company-root code) from it so the two codes never drift.
+/// </summary>
+public sealed record UpsertUserProfileRequest(string? Email, string? DisplayName, string? DepartmentCode);
 
 /// <summary>Grants (or updates) a user's competition-creation capability at a maximum audience level.</summary>
 public sealed record SetCompetitionGrantRequest(string MaxScope);

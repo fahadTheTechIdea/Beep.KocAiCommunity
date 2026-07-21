@@ -117,7 +117,6 @@ public static class DevOrgSeeder
         Email = $"{userId}@koc.com.kw",
         CompanyId = "KOC",
         DepartmentId = unit.Code,
-        OrgUnitId = unit.Id,
         CreatedUtc = stamp,
     };
 

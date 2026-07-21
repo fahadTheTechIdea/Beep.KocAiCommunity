@@ -193,12 +193,12 @@ else
                                     </td>
                                     <td>@(u.CompanyId ?? "—")</td>
                                     <td>
-                                        <MudSelect T="Guid?" Value="@u.OrgUnitId" ValueChanged="@(v => OnDeptChanged(u, v))"
+                                        <MudSelect T="string" Value="@(u.DepartmentId ?? "")" ValueChanged="@(v => OnDeptChanged(u, v))"
                                                    Variant="Variant.Text" Margin="Margin.Dense" Dense="true">
-                                            <MudSelectItem T="Guid?" Value="@((Guid?)null)">—</MudSelectItem>
-                                            @foreach (var unit in _orgUnits ?? [])
+                                            <MudSelectItem T="string" Value="@("")">—</MudSelectItem>
+                                            @foreach (var unit in _orgUnits?.Where(o => o.Code is not null) ?? [])
                                             {
-                                                <MudSelectItem T="Guid?" Value="@unit.Id">@(unit.Code is null ? unit.Name : $"{unit.Code} · {unit.Name}")</MudSelectItem>
+                                                <MudSelectItem T="string" Value="@unit.Code">@unit.Code · @unit.Name</MudSelectItem>
                                             }
                                         </MudSelect>
                                     </td>
@@ -366,14 +366,14 @@ else
         _users = await Api.GetAdminUsersAsync();
     }
 
-    private async Task OnDeptChanged(AdminUserDto u, Guid? orgUnitId) => await SaveProfile(u, orgUnitId);
+    private async Task OnDeptChanged(AdminUserDto u, string departmentCode) => await SaveProfile(u, departmentCode);
 
-    private Task SaveProfile(AdminUserDto u) => SaveProfile(u, u.OrgUnitId);
+    private Task SaveProfile(AdminUserDto u) => SaveProfile(u, u.DepartmentId);
 
-    private async Task SaveProfile(AdminUserDto u, Guid? orgUnitId)
+    private async Task SaveProfile(AdminUserDto u, string? departmentCode)
     {
         var email = _emailDrafts.TryGetValue(u.UserId, out var e) ? e : u.Email;
-        var (_, error) = await Api.UpsertUserProfileAsync(u.UserId, new UpsertUserProfileRequest(email, u.DisplayName, orgUnitId));
+        var (_, error) = await Api.UpsertUserProfileAsync(u.UserId, new UpsertUserProfileRequest(email, u.DisplayName, departmentCode));
         Snackbar.Add(error ?? $"Saved {u.DisplayName ?? u.UserId}.", error is null ? Severity.Success : Severity.Warning);
         if (error is null)
         {
