@@ -15,6 +15,7 @@
     <Project Path="src/Beep.KocAiCommunity.Ui.Shared/Beep.KocAiCommunity.Ui.Shared.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Ui.Studio/Beep.KocAiCommunity.Ui.Studio.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Web/Beep.KocAiCommunity.Web.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.WinForms/Beep.KocAiCommunity.WinForms.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Worker/Beep.KocAiCommunity.Worker.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Workflow/Beep.KocAiCommunity.Workflow.csproj" />
   </Folder>

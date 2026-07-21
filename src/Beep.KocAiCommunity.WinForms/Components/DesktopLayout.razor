@@ -1,0 +1,16 @@
+@inherits LayoutComponentBase
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="true">
+        <MudIcon Icon="@Icons.Material.Filled.Hub" Class="mr-2" />
+        <MudText Typo="Typo.h6">KOC Studio</MudText>
+        <MudSpacer />
+        <MudButton Href="/workflows" StartIcon="@Icons.Material.Filled.Schema" Color="Color.Inherit">Workflows</MudButton>
+        <MudButton Href="/workflow" StartIcon="@Icons.Material.Filled.AccountTree" Color="Color.Inherit">Designer</MudButton>
+    </MudAppBar>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>

@@ -1,0 +1,20 @@
+@page "/"
+@inject NavigationManager Nav
+
+<MudPaper Class="pa-8" Elevation="0">
+    <MudText Typo="Typo.h4" Class="mb-2">KOC Studio — Desktop</MudText>
+    <MudText Typo="Typo.body1" Class="mb-6" Style="max-width:70ch;">
+        Build ML pipelines on the canvas and run them locally. Connect to the KOC network to
+        submit a pipeline to a competition.
+    </MudText>
+    <div class="d-flex gap-3">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Schema" OnClick="@(() => Nav.NavigateTo("/workflows"))">
+            Open Workflows
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.AccountTree" OnClick="@(() => Nav.NavigateTo("/workflow"))">
+            New pipeline
+        </MudButton>
+    </div>
+</MudPaper>

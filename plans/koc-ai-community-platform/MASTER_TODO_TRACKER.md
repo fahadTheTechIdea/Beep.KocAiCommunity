@@ -248,9 +248,14 @@ call the API. Decisions & architecture: `19_WINFORMS_DESKTOP_STUDIO.md`.
     `Workflows`/`CreateWorkflowDialog`/`RunWorkflowDialog`/`NodeVisuals`/`MlNode` moved from
     Web into the `Ui.Studio` RCL (references Client + Z.Blazor.Diagrams); the Web router
     already lists the RCL assembly, so `/workflow` + `/workflows` render unchanged. 255 green.
-25. **Stage 3 — WinForms BlazorWebView shell (thin client)** (NEXT) — new `net10.0-windows`
-    `Beep.KocAiCommunity.WinForms` hosting the Studio UI against a running API; prove the
-    hybrid renders MudBlazor + Z.Blazor.Diagrams in WebView2. → `19b_…`
+25. **Stage 3 — WinForms BlazorWebView shell (thin client)** 🟢 BUILT (2026-07-21) — new
+    `net10.0-windows` `Beep.KocAiCommunity.WinForms` (WebView.WindowsForms 10.0.80): `Program`
+    (ServiceCollection + `AddWindowsFormsBlazorWebView` + `AddMudServices` + `AddKocHttpClient`),
+    `MainForm` (full-bleed `BlazorWebView`), `Shell` (Mud providers + `Router` over the Ui.Studio
+    assembly), `DesktopLayout`, `Index` launcher, and `wwwroot/index.html` loading MudBlazor +
+    Z.Blazor.Diagrams + koc-blueprint assets. Solution builds `-warnaserror` (MSB3277 WebView2/WPF
+    WindowsBase conflict demoted to a message), 255 tests green. **Pending manual smoke test:**
+    launch the app with the API running and confirm the designer renders in WebView2. → `19b_…`
 26. **Stage 4 — local execution engine** — `Beep.KocAiCommunity.Desktop.Local` +
     `LocalKocApiClient` (catalog/datasets/run/workflows all local); designer builds +
     runs a pipeline **offline, no server**. → `19c_…`
