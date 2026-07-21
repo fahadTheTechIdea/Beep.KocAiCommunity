@@ -9,6 +9,14 @@ Built on **.NET 10**, **ASP.NET Core**, **Blazor (MudBlazor)**, **EF Core**, **M
 
 > Design and staged plans live in [`plans/koc-ai-community-platform/`](plans/koc-ai-community-platform/README.md).
 
+### 📚 Manuals
+
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** — architecture, running locally, the node engine, the
+  desktop app, testing, and how to extend the platform.
+- **[Administrator Guide](docs/ADMIN_GUIDE.md)** — the admin console, RBAC / users, competition-creation
+  grants, org codes, demo data, settings, and audit.
+- **[Deployment Guide](docs/DEPLOYMENT.md)** — hosting, auth modes, SQL Server, publishing.
+
 ## The loop
 
 **Dashboard → Learn → Build in the Studio → Compete → Model registry → Deploy** — with live notifications and
