@@ -233,6 +233,29 @@
     allowed / above-cap 403 / revoke→403, org-code set + uniqueness, department→derived codes,
     and non-admin 403 on the new endpoints.
 
+## WinForms Desktop Studio (offline-first designer + online competitions)
+
+Reuse the Blazor Studio designer inside a WinForms shell via **BlazorWebView**. The
+designer + node catalog + pipeline **run** work **fully offline** on a local in-process
+engine (`PluginNodeExecutor` + ML.NET + DuckDB against local CSVs); only competitions
+call the API. Decisions & architecture: `19_WINFORMS_DESKTOP_STUDIO.md`.
+
+23. **Stage 1 — shared `Beep.KocAiCommunity.Client`** (NEXT) — extract `IKocApiClient`/
+    `KocApiClient`/`DevIdentity`/`RealtimeOptions` from Web into a `net10.0` library +
+    `AddKocHttpClient(baseUrl)`; Web references it. Behaviour-preserving. → `19a_…`
+24. **Stage 2 — Studio UI → `Ui.Studio` RCL** — move `WorkflowDesigner`/`Workflows`/
+    dialogs/`NodeVisuals`/`MlNode` into the shared RCL; Web renders them unchanged. → `19a_…`
+25. **Stage 3 — WinForms BlazorWebView shell (thin client)** — new `net10.0-windows`
+    `Beep.KocAiCommunity.WinForms` hosting the Studio UI against a running API; prove the
+    hybrid renders MudBlazor + Z.Blazor.Diagrams in WebView2. → `19b_…`
+26. **Stage 4 — local execution engine** — `Beep.KocAiCommunity.Desktop.Local` +
+    `LocalKocApiClient` (catalog/datasets/run/workflows all local); designer builds +
+    runs a pipeline **offline, no server**. → `19c_…`
+27. **Stage 5 — competitions bridge** — competition browse/submit/leaderboard via an
+    inner HTTP client; offline-graceful; API-URL + identity settings. → `19d_…`
+28. **Stage 6 — packaging + docs** — `win-x64` self-contained publish (ML.NET/DuckDB
+    natives), first-run config, README + tracker + memory. → `19d_…`
+
 ## Global definition of done
 
 ```bash
