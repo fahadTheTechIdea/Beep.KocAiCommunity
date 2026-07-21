@@ -7,6 +7,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Beep.KocAiCommunity.WinForms</RootNamespace>
+    <AssemblyName>KocStudio</AssemblyName>
+    <Product>KOC Studio</Product>
+    <AssemblyTitle>KOC Training &amp; Career Development — Studio</AssemblyTitle>
+    <Version>1.0.0</Version>
+    <!-- The RID is passed at publish time (dotnet publish -r win-x64) so the normal solution
+         build/restore stays RID-agnostic and cross-platform. -->
+    <Platforms>AnyCPU;x64</Platforms>
     <!-- WebView2 pulls in a WPF assembly we don't use (we host in WinForms); it references a
          different WindowsBase version, producing a benign MSB3277. Keep it a message so the
          solution-wide -warnaserror gate stays green. -->

@@ -70,11 +70,14 @@ src/
   Beep.KocAiCommunity.Infrastructure     EF Core (DbContext, configs, migrations), services, storage, seeders
   Beep.KocAiCommunity.Infrastructure.SqlServerMigrations   Provider-specific SQL Server migrations
   Beep.KocAiCommunity.Ui.Shared          MudBlazor theme + shared components (KOC blueprint)
-  Beep.KocAiCommunity.Ui.Community/Studio/Admin   Feature RCLs
+  Beep.KocAiCommunity.Ui.Community/Studio/Admin   Feature RCLs (Ui.Studio holds the workflow designer)
+  Beep.KocAiCommunity.Client             Framework-agnostic HTTP API client + dev identity (Web + desktop)
   Beep.KocAiCommunity.ServiceDefaults    Aspire defaults + shared security wiring
   Beep.KocAiCommunity.Web                Blazor Web App (Interactive Server) — calls the API, live via SignalR
   Beep.KocAiCommunity.Api                Minimal API (/api/v1) + SignalR hub + outbox dispatcher
   Beep.KocAiCommunity.Worker             Background worker
+  Beep.KocAiCommunity.Desktop.Local      Offline in-process Studio engine for the desktop (LocalKocApiClient)
+  Beep.KocAiCommunity.WinForms           WinForms desktop app hosting the Studio designer via BlazorWebView
   Beep.KocAiCommunity.AppHost            .NET Aspire orchestration
 tests/                                    Unit, Integration, Component (bUnit), Architecture, EndToEnd
 ```
@@ -109,6 +112,25 @@ Open <http://localhost:5150>. The **Dashboard**, **Datasets**, **Compete**, and 
 acting-as dev user to see visibility, leaderboards, and dashboards behave per person. The dev user is seeded as a
 **Manager**, so **Supervision** and the team overview show populated rollups. Two demo competitions (a
 classification and a regression one) come pre-loaded with data so you can submit a pipeline immediately.
+
+### Desktop app (offline Studio)
+
+A **Windows desktop** version of the Studio designer that hosts the *same* Blazor components inside a
+WinForms window via **BlazorWebView**. It is **offline-first**: the node palette, local CSV datasets, and
+**pipeline runs** all execute **in-process** (the same ML.NET + DuckDB engine) with no web server. Only
+competitions (browse, submit, leaderboard) call the API — offline they degrade gracefully.
+
+```bash
+# Runs fully offline — no API needed for the designer + local runs.
+dotnet run --project src/Beep.KocAiCommunity.WinForms
+```
+
+- Drop CSV files into `%LOCALAPPDATA%\KocStudio\datasets\`; they appear in the designer's Run panel.
+  Workflows are saved as JSON under `%LOCALAPPDATA%\KocStudio\workflows\`.
+- **Settings** sets the API base URL (for competitions) and the dev persona; `KOC_API_BASEURL` overrides.
+- Requires the **WebView2 runtime** (standard on Windows 10/11). Distribute with:
+  `dotnet publish src/Beep.KocAiCommunity.WinForms -c Release -r win-x64` (bundles the ML.NET/DuckDB
+  `win-x64` natives under `runtimes/`).
 
 ### Aspire (orchestrated dashboard)
 

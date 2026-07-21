@@ -271,8 +271,12 @@ call the API. Decisions & architecture: `19_WINFORMS_DESKTOP_STUDIO.md`.
     switch via `DevIdentity`); `AppSettings` load/save; nav in `DesktopLayout`. The designer's
     existing Submit-to-competition card posts the local `WorkflowDefinition` via the same fallback.
     Solution builds `-warnaserror`, 258 tests green. → `19d_…`
-28. **Stage 6 — packaging + docs** — `win-x64` self-contained publish (ML.NET/DuckDB
-    natives), first-run config, README + tracker + memory. → `19d_…`
+28. **Stage 6 — packaging + docs** ✅ DONE (2026-07-21) — app metadata (`KocStudio.exe`, product,
+    v1.0.0); `settings.json` first-run config; `dotnet publish -r win-x64` verified — output bundles
+    `KocStudio.exe`, the host page, all `Microsoft.ML.*` + `DuckDB.NET` assemblies and `runtimes/win-x64`
+    natives (incl. `WebView2Loader.dll`). README gains a **Desktop app (offline Studio)** section + the
+    two new projects in the solution-layout; memory note `winforms-desktop-studio.md`. The RID is passed
+    at publish time so the solution build stays cross-platform. **WinForms initiative complete.**
 
 ## Global definition of done
 
