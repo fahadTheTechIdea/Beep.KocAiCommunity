@@ -16,6 +16,7 @@ Built on **.NET 10**, **ASP.NET Core**, **Blazor (MudBlazor)**, **EF Core**, **M
 - **[Administrator Guide](docs/ADMIN_GUIDE.md)** — the admin console, RBAC / users, competition-creation
   grants, org codes, demo data, settings, and audit.
 - **[Deployment Guide](docs/DEPLOYMENT.md)** — hosting, auth modes, SQL Server, publishing.
+- **[Visual Help](docs/help/index.html)** — a screenshot tour of every screen (open in a browser).
 
 ## The loop
 

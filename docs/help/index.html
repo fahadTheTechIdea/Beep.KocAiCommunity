@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KOC Studio — Visual Help</title>
+<style>
+  :root {
+    --bg: #f6f8fb; --panel: #ffffff; --ink: #172033; --muted: #5b6b86;
+    --accent: #0369a1; --accent-700: #075985; --border: #e2e8f0; --shadow: 0 1px 3px rgba(16,24,40,.08), 0 8px 24px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0e141f; --panel:#151d2b; --ink:#e6edf7; --muted:#9fb0c8; --accent:#38bdf8; --accent-700:#7dd3fc; --border:#243044; --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); }
+  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  .wrap { display:grid; grid-template-columns:260px 1fr; gap:0; min-height:100vh; }
+  nav { position:sticky; top:0; align-self:start; height:100vh; overflow:auto; padding:22px 16px; border-right:1px solid var(--border); background:var(--panel); }
+  nav h1 { font-size:16px; margin:0 0 4px; letter-spacing:.02em; }
+  nav .sub { color:var(--muted); font-size:12px; margin-bottom:16px; }
+  nav a { display:block; padding:6px 10px; border-radius:8px; color:var(--ink); font-size:13.5px; }
+  nav a:hover { background:color-mix(in srgb, var(--accent) 12%, transparent); text-decoration:none; }
+  main { padding:32px clamp(16px,4vw,56px); max-width:1100px; }
+  header.page { margin-bottom:8px; }
+  header.page .eyebrow { color:var(--accent); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+  header.page h2 { font-size:30px; margin:6px 0 6px; }
+  header.page p { color:var(--muted); max-width:70ch; margin:0 0 24px; }
+  section { scroll-margin-top:16px; margin:0 0 44px; padding:0 0 40px; border-bottom:1px solid var(--border); }
+  section:last-child { border-bottom:0; }
+  section h3 { font-size:21px; margin:0 0 2px; }
+  section .route { font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--accent-700); background:color-mix(in srgb, var(--accent) 10%, transparent); padding:2px 8px; border-radius:6px; }
+  section p.desc { color:var(--ink); max-width:74ch; }
+  section ul { color:var(--muted); max-width:74ch; margin:.4em 0 1em; padding-left:1.2em; }
+  section li { margin:.2em 0; }
+  figure { margin:14px 0 0; }
+  figure img { width:100%; height:auto; display:block; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); background:var(--panel); }
+  figure figcaption { color:var(--muted); font-size:12.5px; margin-top:8px; }
+  .note { background:color-mix(in srgb, var(--accent) 8%, transparent); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:10px; padding:12px 16px; margin:8px 0 28px; color:var(--ink); max-width:74ch; }
+  @media (max-width:820px){ .wrap{ grid-template-columns:1fr; } nav{ position:static; height:auto; border-right:0; border-bottom:1px solid var(--border); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <h1>KOC Studio</h1>
+    <div class="sub">Visual help — captured from the live app</div>
+    <a href="#home">Home &amp; role switch</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#learn">Learn</a>
+    <a href="#community">Community</a>
+    <a href="#compete">Competitions</a>
+    <a href="#datasets">Datasets</a>
+    <a href="#workflows">Workflows</a>
+    <a href="#designer">Studio designer</a>
+    <a href="#studio">AutoML studio</a>
+    <a href="#nodes">Node catalog</a>
+    <a href="#runs">Runs</a>
+    <a href="#experiments">Experiments</a>
+    <a href="#models">Models</a>
+    <a href="#profile">My profile</a>
+    <a href="#help">In-app help</a>
+    <a href="#admin">Admin console</a>
+  </nav>
+  <main>
+    <header class="page">
+      <div class="eyebrow">KOC Training &amp; Career Development</div>
+      <h2>Visual help</h2>
+      <p>A guided tour of the platform, illustrated with live screenshots. Each section shows a screen and
+        what you can do there. Prefer text? See the <a href="../DEVELOPER_GUIDE.md">Developer</a> and
+        <a href="../ADMIN_GUIDE.md">Administrator</a> guides.</p>
+      <div class="note">Screenshots are captured as the <strong>Platform Admin</strong> role, so every area is visible.
+        What you see depends on your own role — an Employee sees Learn, Community, Compete, and the Studio; leaders
+        additionally see Supervision; only admins see the Admin console.</div>
+    </header>
+
+    <section id="home">
+      <h3>Home &amp; role switch <span class="route">/</span></h3>
+      <p class="desc">The landing page. The app bar carries a live notification bell and a <strong>"view as"</strong>
+        role switcher (Employee → CEO), so you can see how the app behaves for each person.</p>
+      <ul><li>Switch role to preview visibility, dashboards, and leaderboards per person.</li><li>Jump into Learn, Compete, or the Studio.</li></ul>
+      <figure><img src="img/home.png" alt="Home page" onerror="this.closest('figure').style.display='none'"><figcaption>Home — role switcher and entry points.</figcaption></figure>
+    </section>
+
+    <section id="dashboard">
+      <h3>Dashboard <span class="route">/dashboard</span></h3>
+      <p class="desc">Your personal standings — learning progress and competition results — plus a team overview if you lead people.</p>
+      <figure><img src="img/dashboard.png" alt="Dashboard" onerror="this.closest('figure').style.display='none'"><figcaption>Dashboard — your learning + competition standings.</figcaption></figure>
+    </section>
+
+    <section id="learn">
+      <h3>Learn — guided tracks <span class="route">/learn</span></h3>
+      <p class="desc">Structured learning tracks with real lessons. Enroll, work through lessons, and complete a track to earn standing.</p>
+      <figure><img src="img/learn.png" alt="Learn" onerror="this.closest('figure').style.display='none'"><figcaption>Learn — enroll and progress through tracks.</figcaption></figure>
+    </section>
+
+    <section id="community">
+      <h3>Community <span class="route">/community</span></h3>
+      <p class="desc">Discussions and replies — ask questions, share solutions, and react. Org-scoped so you see your community.</p>
+      <figure><img src="img/community.png" alt="Community" onerror="this.closest('figure').style.display='none'"><figcaption>Community — discussions and replies.</figcaption></figure>
+    </section>
+
+    <section id="compete">
+      <h3>Competitions <span class="route">/compete</span></h3>
+      <p class="desc">Internal, Kaggle-style challenges on real KOC problems. Download the data, build a model in the Studio, and
+        submit your pipeline to climb the <strong>live</strong> leaderboard; final standings stay hidden until reveal day.</p>
+      <ul><li>Only granted users (and admins) can <em>host</em> a competition — at their permitted level.</li><li>Everyone in scope can enter and submit.</li></ul>
+      <figure><img src="img/compete.png" alt="Competitions" onerror="this.closest('figure').style.display='none'"><figcaption>Competitions — browse, enter, and submit a pipeline.</figcaption></figure>
+    </section>
+
+    <section id="datasets">
+      <h3>Datasets <span class="route">/datasets</span></h3>
+      <p class="desc">Create and version datasets with a "who can see this" picker (Team/Group/Directorate/Company) and audience counts.</p>
+      <figure><img src="img/datasets.png" alt="Datasets" onerror="this.closest('figure').style.display='none'"><figcaption>Datasets — governed, versioned data with visibility scoping.</figcaption></figure>
+    </section>
+
+    <section id="workflows">
+      <h3>Workflows registry <span class="route">/workflows</span></h3>
+      <p class="desc">Version your ML pipelines: save drafts, publish an immutable snapshot once it compiles, then export or run.
+        Start from an O&amp;G template, or open a workflow in the designer.</p>
+      <figure><img src="img/workflows.png" alt="Workflows" onerror="this.closest('figure').style.display='none'"><figcaption>Workflows — the versioned pipeline registry.</figcaption></figure>
+    </section>
+
+    <section id="designer">
+      <h3>Studio — the workflow designer <span class="route">/workflow</span></h3>
+      <p class="desc">The visual node editor. Drag nodes from the palette onto the canvas, wire them, and configure each in the
+        property inspector, then run the pipeline node-by-node. ML.NET and DuckDB (SQL/ETL) nodes mix freely — including
+        <strong>join</strong> / <strong>append</strong> of a second dataset.</p>
+      <ul><li>Palette + inspector are driven by the live node catalog.</li><li>Run on a dataset to see each node execute and a trained metric.</li><li>Submit the pipeline to a competition from its Submit card.</li></ul>
+      <figure><img src="img/designer.png" alt="Workflow designer" onerror="this.closest('figure').style.display='none'"><figcaption>Studio designer — palette, canvas, and property inspector.</figcaption></figure>
+    </section>
+
+    <section id="studio">
+      <h3>AutoML studio <span class="route">/studio</span></h3>
+      <p class="desc">Point-and-shoot AutoML: pick a CSV and a task (binary / multiclass / regression) and let ML.NET find a model. Runs feed the registry.</p>
+      <figure><img src="img/studio.png" alt="AutoML studio" onerror="this.closest('figure').style.display='none'"><figcaption>AutoML — train a model over a CSV.</figcaption></figure>
+    </section>
+
+    <section id="nodes">
+      <h3>Node catalog <span class="route">/nodes</span></h3>
+      <p class="desc">The full library of pipeline nodes — data sources, DuckDB SQL/ETL, feature engineering, splitting, models, and evaluation — with their parameters.</p>
+      <figure><img src="img/nodes.png" alt="Node catalog" onerror="this.closest('figure').style.display='none'"><figcaption>Node catalog — every building block and its options.</figcaption></figure>
+    </section>
+
+    <section id="runs">
+      <h3>Runs <span class="route">/runs</span></h3>
+      <p class="desc">Durable background jobs (training runs and workflow executions) with their status, logs, and attempts.</p>
+      <figure><img src="img/runs.png" alt="Runs" onerror="this.closest('figure').style.display='none'"><figcaption>Runs — background job status and logs.</figcaption></figure>
+    </section>
+
+    <section id="experiments">
+      <h3>Experiment tracking <span class="route">/experiments</span></h3>
+      <p class="desc">Group runs into experiments and compare their metrics and parameters side by side.</p>
+      <figure><img src="img/experiments.png" alt="Experiments" onerror="this.closest('figure').style.display='none'"><figcaption>Experiments — compare runs, metrics, and parameters.</figcaption></figure>
+    </section>
+
+    <section id="models">
+      <h3>Model registry <span class="route">/models</span></h3>
+      <p class="desc">Register a trained model, take it through a two-approval promotion, deploy or retire it, and serve inference.</p>
+      <figure><img src="img/models.png" alt="Models" onerror="this.closest('figure').style.display='none'"><figcaption>Models — register → approve → deploy.</figcaption></figure>
+    </section>
+
+    <section id="profile">
+      <h3>My profile <span class="route">/profile</span></h3>
+      <p class="desc">Your public face on the platform — avatar, bio, skills — plus earned standing (Barrels, level, streak, badges).</p>
+      <figure><img src="img/profile.png" alt="My profile" onerror="this.closest('figure').style.display='none'"><figcaption>Profile — your standing and gamification.</figcaption></figure>
+    </section>
+
+    <section id="help">
+      <h3>In-app help <span class="route">/help</span></h3>
+      <p class="desc">Searchable help articles and FAQs, in the app.</p>
+      <figure><img src="img/help.png" alt="Help" onerror="this.closest('figure').style.display='none'"><figcaption>Help — in-app articles and FAQ.</figcaption></figure>
+    </section>
+
+    <section id="admin">
+      <h3>Admin console <span class="route">/admin</span> <em style="font-weight:400;color:var(--muted)">— Platform Admin only</em></h3>
+      <p class="desc">Live health KPIs, the <strong>RBAC / Users</strong> tab (who can create competitions + at what level, org codes,
+        departments), typed settings (secrets encrypted), feature flags, demo data, and the audit trail. See the
+        <a href="../ADMIN_GUIDE.md">Administrator Guide</a> for details.</p>
+      <figure><img src="img/admin.png" alt="Admin console" onerror="this.closest('figure').style.display='none'"><figcaption>Admin console — platform health, RBAC, settings, and audit.</figcaption></figure>
+    </section>
+  </main>
+</div>
+</body>
+</html>
