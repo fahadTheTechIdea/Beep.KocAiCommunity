@@ -1,6 +1,6 @@
 using MudBlazor;
 
-namespace Beep.KocAiCommunity.Web.Diagrams;
+namespace Beep.KocAiCommunity.Ui.Studio.Diagrams;
 
 /// <summary>
 /// Presentation only. The node catalog itself — kinds, categories, parameters — is fetched live

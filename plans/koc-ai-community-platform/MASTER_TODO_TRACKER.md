@@ -244,9 +244,11 @@ call the API. Decisions & architecture: `19_WINFORMS_DESKTOP_STUDIO.md`.
     library holds `IKocApiClient`/`KocApiClient`/`DevIdentity`/`DevIdentityHandler`/
     `RealtimeOptions` + `AddKocHttpClient(baseUrl)`; Web references it and calls the helper.
     Behaviour-preserving (255 tests green). → `19a_…`
-24. **Stage 2 — Studio UI → `Ui.Studio` RCL** (NEXT) — move `WorkflowDesigner`/`Workflows`/
-    dialogs/`NodeVisuals`/`MlNode` into the shared RCL; Web renders them unchanged. → `19a_…`
-25. **Stage 3 — WinForms BlazorWebView shell (thin client)** — new `net10.0-windows`
+24. **Stage 2 — Studio UI → `Ui.Studio` RCL** ✅ DONE (2026-07-21) — `WorkflowDesigner`/
+    `Workflows`/`CreateWorkflowDialog`/`RunWorkflowDialog`/`NodeVisuals`/`MlNode` moved from
+    Web into the `Ui.Studio` RCL (references Client + Z.Blazor.Diagrams); the Web router
+    already lists the RCL assembly, so `/workflow` + `/workflows` render unchanged. 255 green.
+25. **Stage 3 — WinForms BlazorWebView shell (thin client)** (NEXT) — new `net10.0-windows`
     `Beep.KocAiCommunity.WinForms` hosting the Studio UI against a running API; prove the
     hybrid renders MudBlazor + Z.Blazor.Diagrams in WebView2. → `19b_…`
 26. **Stage 4 — local execution engine** — `Beep.KocAiCommunity.Desktop.Local` +

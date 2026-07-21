@@ -1,7 +1,7 @@
 using Blazor.Diagrams.Core.Geometry;
 using Blazor.Diagrams.Core.Models;
 
-namespace Beep.KocAiCommunity.Web.Diagrams;
+namespace Beep.KocAiCommunity.Ui.Studio.Diagrams;
 
 /// <summary>A workflow node on the canvas: an ML pipeline step with a kind and live status.</summary>
 public sealed class MlNode : NodeModel

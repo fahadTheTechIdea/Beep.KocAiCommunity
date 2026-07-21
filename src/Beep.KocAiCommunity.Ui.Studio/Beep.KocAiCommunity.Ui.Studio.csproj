@@ -5,7 +5,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Z.Blazor.Diagrams" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Shared\Beep.KocAiCommunity.Ui.Shared.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Client\Beep.KocAiCommunity.Client.csproj" />
   </ItemGroup>
 
 </Project>
