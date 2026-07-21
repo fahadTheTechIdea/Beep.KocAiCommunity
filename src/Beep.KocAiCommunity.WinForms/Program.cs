@@ -1,3 +1,4 @@
+using Beep.KocAiCommunity.Client;
 using Beep.KocAiCommunity.Desktop.Local;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -20,10 +21,13 @@ internal static class Program
 
         // Local-first: the Studio designer + runs execute in-process (offline). Competition
         // calls fall through to this API base URL when the KOC network is reachable.
-        var apiBaseUrl = Environment.GetEnvironmentVariable("KOC_API_BASEURL") ?? "http://localhost:5250";
+        var settings = AppSettings.Load();
+        var apiBaseUrl = Environment.GetEnvironmentVariable("KOC_API_BASEURL") ?? settings.ApiBaseUrl;
+        services.AddSingleton(settings);
         services.AddKocLocalStudio(apiBaseUrl);
 
         using var provider = services.BuildServiceProvider();
+        provider.GetRequiredService<DevIdentity>().SetPersona(settings.PersonaKey);
         // Fully qualified: the Beep.KocAiCommunity.Application namespace shadows WinForms' Application here.
         System.Windows.Forms.Application.Run(new MainForm(provider));
     }

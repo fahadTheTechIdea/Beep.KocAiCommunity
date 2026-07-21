@@ -1,0 +1,116 @@
+@page "/competitions"
+@using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Contracts.Competitions
+@inject IKocApiClient Api
+
+<MudText Typo="Typo.h5" Class="mb-1">Competitions</MudText>
+<MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;">
+    Browse KOC competitions and leaderboards. Build a pipeline in the designer and submit it from its
+    <b>Submit to competition</b> card. Requires the KOC network.
+</MudText>
+
+@if (_offline)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.CloudOff">
+        Connect to the KOC network to compete. The designer keeps working offline — only competitions need the API.
+        <MudButton Class="ml-3" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="Load">Retry</MudButton>
+    </MudAlert>
+}
+else if (_competitions is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid Spacing="4">
+        <MudItem xs="12" md="5">
+            @if (_competitions.Count == 0)
+            {
+                <MudText Typo="Typo.body2">No competitions are visible to you.</MudText>
+            }
+            @foreach (var c in _competitions)
+            {
+                <MudPaper Class="pa-3 mb-2" Outlined="true" Style="@(c.Id == _selected?.Id ? "border-color:var(--mud-palette-primary);cursor:pointer;" : "cursor:pointer;")" @onclick="() => Select(c)">
+                    <div class="d-flex justify-space-between align-center">
+                        <MudText Typo="Typo.subtitle1">🏆 @c.Title</MudText>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@c.Status</MudChip>
+                    </div>
+                    <MudText Typo="Typo.caption" Style="opacity:.7;">@c.TaskType · @c.Scope</MudText>
+                </MudPaper>
+            }
+        </MudItem>
+        <MudItem xs="12" md="7">
+            @if (_selected is null)
+            {
+                <MudText Typo="Typo.body2" Style="opacity:.7;">Select a competition to see its leaderboard.</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">@_selected.Title — leaderboard</MudText>
+                @if (_board is null)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                }
+                else if (_board.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">No submissions yet.</MudText>
+                }
+                else
+                {
+                    <MudSimpleTable Dense="true" Hover="true">
+                        <thead><tr><th>#</th><th>Who</th><th>Score</th></tr></thead>
+                        <tbody>
+                            @foreach (var e in _board)
+                            {
+                                <tr>
+                                    <td>@e.Rank</td>
+                                    <td>@e.DisplayName</td>
+                                    <td>@e.Score.ToString("0.###")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            }
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private bool _offline;
+    private IReadOnlyList<CompetitionDto>? _competitions;
+    private CompetitionDto? _selected;
+    private IReadOnlyList<LeaderboardEntryDto>? _board;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        _offline = false;
+        _competitions = null;
+        _selected = null;
+        _board = null;
+        try
+        {
+            _competitions = await Api.GetCompetitionsAsync();
+        }
+        catch
+        {
+            _offline = true;
+        }
+    }
+
+    private async Task Select(CompetitionDto c)
+    {
+        _selected = c;
+        _board = null;
+        try
+        {
+            _board = await Api.GetLeaderboardAsync(c.Id);
+        }
+        catch
+        {
+            _board = [];
+        }
+    }
+}

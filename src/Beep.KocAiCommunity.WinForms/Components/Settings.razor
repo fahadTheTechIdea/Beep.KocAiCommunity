@@ -1,0 +1,47 @@
+@page "/settings"
+@using Beep.KocAiCommunity.Client
+@inject DevIdentity Identity
+@inject AppSettings Config
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h5" Class="mb-4">Settings</MudText>
+
+<MudPaper Class="pa-4" MaxWidth="560px" Outlined="true">
+    <MudText Typo="Typo.subtitle1" Class="mb-2">KOC network</MudText>
+    <MudTextField @bind-Value="_apiBaseUrl" Label="API base URL" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  HelperText="Used for competitions (browse, submit, leaderboard). Applied on next launch." Class="mb-4" />
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Identity</MudText>
+    <MudSelect T="string" @bind-Value="_personaKey" Label="Sign in as" Variant="Variant.Outlined" Margin="Margin.Dense"
+               HelperText="Dev persona forwarded to the API. Applied immediately.">
+        @foreach (var p in DevIdentity.Personas)
+        {
+            <MudSelectItem Value="@p.Key">@p.Label</MudSelectItem>
+        }
+    </MudSelect>
+
+    <div class="d-flex justify-end mt-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveAsync">Save</MudButton>
+    </div>
+</MudPaper>
+
+@code {
+    private string _apiBaseUrl = "";
+    private string _personaKey = "";
+
+    protected override void OnInitialized()
+    {
+        _apiBaseUrl = Config.ApiBaseUrl;
+        _personaKey = Identity.Current.Key;
+    }
+
+    private Task SaveAsync()
+    {
+        Identity.SetPersona(_personaKey);       // live
+        Config.ApiBaseUrl = _apiBaseUrl.Trim();
+        Config.PersonaKey = _personaKey;
+        Config.Save();
+        Snackbar.Add("Saved. Restart to apply a changed API URL.", Severity.Success);
+        return Task.CompletedTask;
+    }
+}

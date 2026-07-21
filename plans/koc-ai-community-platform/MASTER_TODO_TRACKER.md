@@ -264,8 +264,13 @@ call the API. Decisions & architecture: `19_WINFORMS_DESKTOP_STUDIO.md`.
     (`LocalWorkflowStore`). `AddKocLocalStudio(apiBaseUrl)` wires the engine; the WinForms host now
     uses it. New `LocalStudioTests`: catalog (ML + DuckDB), registry round-trip, and an **offline
     end-to-end run** (no server). 258 tests green. → `19c_…`
-27. **Stage 5 — competitions bridge** — competition browse/submit/leaderboard via an
-    inner HTTP client; offline-graceful; API-URL + identity settings. → `19d_…`
+27. **Stage 5 — competitions bridge** ✅ DONE (2026-07-21) — competition browse/submit/leaderboard
+    flow through the delegating HTTP fallback (`RemoteFallbackKocApiClient`). New desktop
+    **Competitions** screen (list + leaderboard, offline-graceful "connect to the KOC network"
+    with retry) and **Settings** page (API base URL persisted to `settings.json`, live persona
+    switch via `DevIdentity`); `AppSettings` load/save; nav in `DesktopLayout`. The designer's
+    existing Submit-to-competition card posts the local `WorkflowDefinition` via the same fallback.
+    Solution builds `-warnaserror`, 258 tests green. → `19d_…`
 28. **Stage 6 — packaging + docs** — `win-x64` self-contained publish (ML.NET/DuckDB
     natives), first-run config, README + tracker + memory. → `19d_…`
 
