@@ -1,188 +1,533 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>KOC Studio — Visual Help</title>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KOC Studio — Help</title>
 <style>
-  :root {
-    --bg: #f6f8fb; --panel: #ffffff; --ink: #172033; --muted: #5b6b86;
-    --accent: #0369a1; --accent-700: #075985; --border: #e2e8f0; --shadow: 0 1px 3px rgba(16,24,40,.08), 0 8px 24px rgba(16,24,40,.06);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#0e141f; --panel:#151d2b; --ink:#e6edf7; --muted:#9fb0c8; --accent:#38bdf8; --accent-700:#7dd3fc; --border:#243044; --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); }
-  }
-  /* Viewer theme toggle wins in both directions. */
-  :root[data-theme="dark"] { --bg:#0e141f; --panel:#151d2b; --ink:#e6edf7; --muted:#9fb0c8; --accent:#38bdf8; --accent-700:#7dd3fc; --border:#243044; --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); }
-  :root[data-theme="light"] { --bg:#f6f8fb; --panel:#ffffff; --ink:#172033; --muted:#5b6b86; --accent:#0369a1; --accent-700:#075985; --border:#e2e8f0; --shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06); }
-  * { box-sizing: border-box; }
-  body { margin:0; font:15px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); }
-  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
-  .wrap { display:grid; grid-template-columns:260px 1fr; gap:0; min-height:100vh; }
-  nav { position:sticky; top:0; align-self:start; height:100vh; overflow:auto; padding:22px 16px; border-right:1px solid var(--border); background:var(--panel); }
-  nav h1 { font-size:16px; margin:0 0 4px; letter-spacing:.02em; }
-  nav .sub { color:var(--muted); font-size:12px; margin-bottom:16px; }
-  nav a { display:block; padding:6px 10px; border-radius:8px; color:var(--ink); font-size:13.5px; }
-  nav a:hover { background:color-mix(in srgb, var(--accent) 12%, transparent); text-decoration:none; }
-  main { padding:32px clamp(16px,4vw,56px); max-width:1100px; }
-  header.page { margin-bottom:8px; }
-  header.page .eyebrow { color:var(--accent); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
-  header.page h2 { font-size:30px; margin:6px 0 6px; }
-  header.page p { color:var(--muted); max-width:70ch; margin:0 0 24px; }
-  section { scroll-margin-top:16px; margin:0 0 44px; padding:0 0 40px; border-bottom:1px solid var(--border); }
-  section:last-child { border-bottom:0; }
-  section h3 { font-size:21px; margin:0 0 2px; }
-  section .route { font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--accent-700); background:color-mix(in srgb, var(--accent) 10%, transparent); padding:2px 8px; border-radius:6px; }
-  section p.desc { color:var(--ink); max-width:74ch; }
-  section ul { color:var(--muted); max-width:74ch; margin:.4em 0 1em; padding-left:1.2em; }
-  section li { margin:.2em 0; }
-  figure { margin:14px 0 0; }
-  figure img { width:100%; height:auto; display:block; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); background:var(--panel); }
-  figure figcaption { color:var(--muted); font-size:12.5px; margin-top:8px; }
-  .note { background:color-mix(in srgb, var(--accent) 8%, transparent); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:10px; padding:12px 16px; margin:8px 0 28px; color:var(--ink); max-width:74ch; }
-  @media (max-width:820px){ .wrap{ grid-template-columns:1fr; } nav{ position:static; height:auto; border-right:0; border-bottom:1px solid var(--border); } }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <nav>
-    <h1>KOC Studio</h1>
-    <div class="sub">Visual help — captured from the live app</div>
-    <a href="#home">Home &amp; role switch</a>
-    <a href="#dashboard">Dashboard</a>
-    <a href="#learn">Learn</a>
-    <a href="#community">Community</a>
-    <a href="#compete">Competitions</a>
-    <a href="#datasets">Datasets</a>
-    <a href="#workflows">Workflows</a>
-    <a href="#designer">Studio designer</a>
-    <a href="#studio">AutoML studio</a>
-    <a href="#nodes">Node catalog</a>
-    <a href="#runs">Runs</a>
-    <a href="#experiments">Experiments</a>
-    <a href="#models">Models</a>
-    <a href="#profile">My profile</a>
-    <a href="#help">In-app help</a>
-    <a href="#admin">Admin console</a>
-  </nav>
-  <main>
-    <header class="page">
-      <div class="eyebrow">KOC Training &amp; Career Development</div>
-      <h2>Visual help</h2>
-      <p>A guided tour of the platform, illustrated with live screenshots. Each section shows a screen and
-        what you can do there. Prefer text? See the <a href="../DEVELOPER_GUIDE.md">Developer</a> and
-        <a href="../ADMIN_GUIDE.md">Administrator</a> guides.</p>
-      <div class="note">Screenshots are captured as the <strong>Platform Admin</strong> role, so every area is visible.
-        What you see depends on your own role — an Employee sees Learn, Community, Compete, and the Studio; leaders
-        additionally see Supervision; only admins see the Admin console.</div>
-    </header>
+  :root{--bg:#f6f8fb;--panel:#fff;--ink:#172033;--muted:#5b6b86;--accent:#0369a1;--accent-700:#075985;--border:#e2e8f0;--code:#0b3a52;--codebg:#eef4f9;--shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06)}
+  @media (prefers-color-scheme:dark){:root{--bg:#0e141f;--panel:#151d2b;--ink:#e6edf7;--muted:#9fb0c8;--accent:#38bdf8;--accent-700:#7dd3fc;--border:#243044;--code:#bfe3f5;--codebg:#0c1622;--shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+  :root[data-theme="dark"]{--bg:#0e141f;--panel:#151d2b;--ink:#e6edf7;--muted:#9fb0c8;--accent:#38bdf8;--accent-700:#7dd3fc;--border:#243044;--code:#bfe3f5;--codebg:#0c1622;--shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}
+  :root[data-theme="light"]{--bg:#f6f8fb;--panel:#fff;--ink:#172033;--muted:#5b6b86;--accent:#0369a1;--accent-700:#075985;--border:#e2e8f0;--code:#0b3a52;--codebg:#eef4f9;--shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06)}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.65 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{display:grid;grid-template-columns:264px 1fr;min-height:100vh}
+  nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:22px 14px;border-right:1px solid var(--border);background:var(--panel)}
+  nav h1{font-size:16px;margin:0 0 2px}nav .sub{color:var(--muted);font-size:12px;margin:0 0 16px}
+  nav .grp{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:16px 8px 4px}
+  nav a{display:block;padding:6px 10px;border-radius:8px;color:var(--ink);font-size:13.5px}
+  nav a:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);text-decoration:none}
+  main{padding:30px clamp(16px,4vw,56px);max-width:1180px}
+  .eyebrow{color:var(--accent);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+  h2.page{font-size:30px;margin:6px 0 6px;text-wrap:balance}
+  .lede{color:var(--muted);max-width:72ch;margin:0 0 22px}
+  .note{background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:12px 16px;margin:10px 0 28px;max-width:74ch}
+  section.major{scroll-margin-top:14px;border-top:1px solid var(--border);padding-top:30px;margin-top:40px}
+  section.major>h2{font-size:25px;margin:0 0 4px}
+  h3.grp{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-700);margin:26px 0 10px;scroll-margin-top:14px}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:20px}
+  .shot{margin:0}
+  .shot img{width:100%;height:auto;display:block;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);background:var(--panel)}
+  .shot figcaption{color:var(--muted);font-size:12.5px;margin-top:8px}
+  .shot b{color:var(--ink)}
+  .guide{max-width:80ch}
+  .guide h1{font-size:24px;margin:0 0 6px}.guide h2{font-size:19px;margin:26px 0 6px;border-top:1px solid var(--border);padding-top:20px}
+  .guide h3{font-size:16px;margin:18px 0 4px}
+  .guide p,.guide li{max-width:80ch}.guide ul,.guide ol{color:var(--muted)}.guide li{margin:.25em 0}
+  .guide blockquote{margin:12px 0;padding:6px 16px;border-left:3px solid var(--accent);color:var(--muted);background:color-mix(in srgb,var(--accent) 6%,transparent);border-radius:0 8px 8px 0}
+  .guide code{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--codebg);color:var(--code);padding:1px 6px;border-radius:5px}
+  .guide pre{background:var(--codebg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto}.guide pre code{background:none;padding:0}
+  .guide table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px;display:block;overflow-x:auto}
+  .guide th,.guide td{border:1px solid var(--border);padding:7px 11px;text-align:left;vertical-align:top}
+  .guide th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
+  .guide a{color:var(--accent)}
+  @media (max-width:840px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--border)}.gallery{grid-template-columns:1fr}}
+</style></head>
+<body><div class="wrap" id="top">
+<nav>
+  <h1>KOC Studio</h1><div class="sub">Help &amp; visual tour</div>
+  <div class="grp">Explore</div>
+  <a href="#tour">Visual tour</a>
+  <div class="grp">Guides</div>
+  <a href="#user">User guide</a>
+  <a href="#admin-guide">Administrator guide</a>
+  <a href="#developer">Developer guide</a>
+  <div class="grp">Tour sections</div>
+  <a href="#g-getting-started">Getting started</a><a href="#g-learn-community">Learn & community</a><a href="#g-compete">Compete</a><a href="#g-studio-build-run">Studio — build & run</a><a href="#g-runs-experiments-models">Runs, experiments & models</a><a href="#g-administration">Administration</a><a href="#g-help">Help</a>
+</nav>
+<main>
+  <div class="eyebrow">KOC Training &amp; Career Development</div>
+  <h2 class="page">Help &amp; visual tour</h2>
+  <p class="lede">A guided tour of every screen with live screenshots, plus the full <b>user</b>,
+    <b>administrator</b>, and <b>developer</b> manuals — all in one place.</p>
+  <div class="note">Screens are shown as the <b>Platform Admin</b> role, so everything is visible. What you
+    see depends on your role: an Employee gets Learn, Community, Compete and the Studio; leaders also get
+    Supervision; only admins get the Admin console.</div>
 
-    <section id="home">
-      <h3>Home &amp; role switch <span class="route">/</span></h3>
-      <p class="desc">The landing page. The app bar carries a live notification bell and a <strong>"view as"</strong>
-        role switcher (Employee → CEO), so you can see how the app behaves for each person.</p>
-      <ul><li>Switch role to preview visibility, dashboards, and leaderboards per person.</li><li>Jump into Learn, Compete, or the Studio.</li></ul>
-      <figure><img src="img/home.png" alt="Home page" onerror="this.closest('figure').style.display='none'"><figcaption>Home — role switcher and entry points.</figcaption></figure>
-    </section>
+  <section class="major" id="tour"><h2>Visual tour</h2>
+    <p class="lede">Click any screenshot to open it full size.</p>
+    <h3 class="grp" id="g-getting-started">Getting started</h3><div class="gallery"><figure class="shot"><a href="img/home.png" target="_blank" rel="noopener"><img src="img/home.png" alt="Home" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Home.</b> The landing page — role switcher, notification bell, and entry points.</figcaption></figure><figure class="shot"><a href="img/dashboard.png" target="_blank" rel="noopener"><img src="img/dashboard.png" alt="Dashboard" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Dashboard.</b> Your learning + competition standings; a team overview if you lead people.</figcaption></figure><figure class="shot"><a href="img/profile.png" target="_blank" rel="noopener"><img src="img/profile.png" alt="My profile" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>My profile.</b> Avatar, bio, skills, and earned standing (Barrels, level, streak, badges).</figcaption></figure></div>
+<h3 class="grp" id="g-learn-community">Learn & community</h3><div class="gallery"><figure class="shot"><a href="img/learn.png" target="_blank" rel="noopener"><img src="img/learn.png" alt="Learn" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Learn.</b> Guided tracks — enroll and progress through lessons.</figcaption></figure><figure class="shot"><a href="img/learn-track.png" target="_blank" rel="noopener"><img src="img/learn-track.png" alt="Inside a track" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Inside a track.</b> A track’s lessons and your progress.</figcaption></figure><figure class="shot"><a href="img/community.png" target="_blank" rel="noopener"><img src="img/community.png" alt="Community" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Community.</b> Discussions and replies, scoped to your org.</figcaption></figure></div>
+<h3 class="grp" id="g-compete">Compete</h3><div class="gallery"><figure class="shot"><a href="img/compete.png" target="_blank" rel="noopener"><img src="img/compete.png" alt="Competitions" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Competitions.</b> Browse challenges and watch live leaderboards.</figcaption></figure><figure class="shot"><a href="img/compete-detail.png" target="_blank" rel="noopener"><img src="img/compete-detail.png" alt="Competition detail" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Competition detail.</b> Overview, data, leaderboard, and your submissions.</figcaption></figure><figure class="shot"><a href="img/create-competition.png" target="_blank" rel="noopener"><img src="img/create-competition.png" alt="Host a competition" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Host a competition.</b> The guided create wizard (granted users only).</figcaption></figure></div>
+<h3 class="grp" id="g-studio-build-run">Studio — build & run</h3><div class="gallery"><figure class="shot"><a href="img/workflows.png" target="_blank" rel="noopener"><img src="img/workflows.png" alt="Workflows" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Workflows.</b> The versioned pipeline registry.</figcaption></figure><figure class="shot"><a href="img/new-workflow.png" target="_blank" rel="noopener"><img src="img/new-workflow.png" alt="New workflow" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>New workflow.</b> Start a personal pipeline or one targeting a competition.</figcaption></figure><figure class="shot"><a href="img/designer.png" target="_blank" rel="noopener"><img src="img/designer.png" alt="The designer" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>The designer.</b> Palette, canvas, property inspector, and the run panel.</figcaption></figure><figure class="shot"><a href="img/studio.png" target="_blank" rel="noopener"><img src="img/studio.png" alt="AutoML" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>AutoML.</b> Train a model over a CSV in a few clicks.</figcaption></figure><figure class="shot"><a href="img/nodes.png" target="_blank" rel="noopener"><img src="img/nodes.png" alt="Node catalog" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Node catalog.</b> Every building block and its parameters.</figcaption></figure><figure class="shot"><a href="img/datasets.png" target="_blank" rel="noopener"><img src="img/datasets.png" alt="Datasets" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Datasets.</b> Governed, versioned data with visibility scoping.</figcaption></figure></div>
+<h3 class="grp" id="g-runs-experiments-models">Runs, experiments & models</h3><div class="gallery"><figure class="shot"><a href="img/runs.png" target="_blank" rel="noopener"><img src="img/runs.png" alt="Runs" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Runs.</b> Background jobs with status and logs.</figcaption></figure><figure class="shot"><a href="img/experiments.png" target="_blank" rel="noopener"><img src="img/experiments.png" alt="Experiments" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Experiments.</b> Compare runs, metrics, and parameters.</figcaption></figure><figure class="shot"><a href="img/models.png" target="_blank" rel="noopener"><img src="img/models.png" alt="Models" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Models.</b> Register → approve → deploy.</figcaption></figure></div>
+<h3 class="grp" id="g-administration">Administration</h3><div class="gallery"><figure class="shot"><a href="img/admin.png" target="_blank" rel="noopener"><img src="img/admin.png" alt="Admin console" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Admin console.</b> Health KPIs, settings, feature flags, demo data, and audit.</figcaption></figure><figure class="shot"><a href="img/admin-rbac.png" target="_blank" rel="noopener"><img src="img/admin-rbac.png" alt="RBAC / Users" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>RBAC / Users.</b> Who can create competitions + at what level; org codes; departments.</figcaption></figure><figure class="shot"><a href="img/admin-settings.png" target="_blank" rel="noopener"><img src="img/admin-settings.png" alt="Settings" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Settings.</b> Typed platform settings (secrets stored encrypted).</figcaption></figure></div>
+<h3 class="grp" id="g-help">Help</h3><div class="gallery"><figure class="shot"><a href="img/help.png" target="_blank" rel="noopener"><img src="img/help.png" alt="In-app help" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>In-app help.</b> Searchable articles and FAQ.</figcaption></figure></div>
+  </section>
 
-    <section id="dashboard">
-      <h3>Dashboard <span class="route">/dashboard</span></h3>
-      <p class="desc">Your personal standings — learning progress and competition results — plus a team overview if you lead people.</p>
-      <figure><img src="img/dashboard.png" alt="Dashboard" onerror="this.closest('figure').style.display='none'"><figcaption>Dashboard — your learning + competition standings.</figcaption></figure>
-    </section>
+  <section class="major" id="user"><h2>User guide</h2><div class="guide"><p>Welcome! This platform helps you <strong>learn AI/ML, practice on real KOC problems, and compete</strong> with
+colleagues. This guide walks through everything you can do as an employee.</p>
+<blockquote>
+<p>Administering the platform? See the <a href="#admin-guide">Administrator Guide</a>. Building it? See the
+<a href="#developer">Developer Guide</a>.</p>
+</blockquote>
+<hr>
+<h2>1. Signing in</h2>
+<p>On the KOC intranet you&#39;re signed in <strong>automatically</strong> with your work account — there&#39;s no separate
+login. Your name appears in the top-right of the app bar. (In a demo/dev build you&#39;ll instead see a
+<strong>&quot;view as&quot;</strong> switcher there to preview the app as different roles.)</p>
+<p>What you can see depends on your role: everyone gets <strong>Learn, Community, Compete, and the Studio</strong>;
+people-leaders also get <strong>Supervision</strong>; platform administrators get the <strong>Admin</strong> console.</p>
+<h2>2. The home page &amp; getting around</h2>
+<p>The left menu is your map: <strong>Home, Learn, Community, Help</strong>, your <strong>profile</strong> and <strong>dashboard</strong>, <strong>Compete</strong>,
+and the <strong>Studio</strong> group (Datasets, Workflows, AutoML, Node catalog, Runs, Experiments, Models). A live
+<strong>notification bell</strong> in the app bar tells you when a competition concludes, someone replies to you, or you
+earn a badge.</p>
+<h2>3. Learn — guided tracks</h2>
+<p><strong>Learn</strong> offers structured tracks with real lessons.</p>
+<ol>
+<li>Open <strong>Learn</strong> and pick a track.</li>
+<li><strong>Enroll</strong>, then work through the lessons in order.</li>
+<li>Mark lessons complete; finishing a track records a <strong>completion</strong> and earns you standing.</li>
+</ol>
+<p>Some competitions recommend a track to start with — a handy on-ramp if the topic is new to you.</p>
+<h2>4. Build a model in the Studio</h2>
+<p>The <strong>Studio</strong> is where you turn data into a model. Two ways in:</p>
+<ul>
+<li><strong>AutoML</strong> (<code>Studio → AutoML</code>): the fast path — pick a CSV and a task (binary / multiclass / regression)
+and let the platform find a model for you.</li>
+<li><strong>Workflow designer</strong> (<code>Studio → Workflows → Open</code>, or <strong>New workflow</strong>): the visual, hands-on path.</li>
+</ul>
+<h3>Using the designer</h3>
+<ol>
+<li><strong>Drag nodes</strong> from the left palette onto the canvas and <strong>wire</strong> them left-to-right — a typical flow is
+<code>dataset → (prepare/transform) → split → train → evaluate</code>.</li>
+<li>Bring in data with SQL/ETL nodes when you need to: <strong>SQL query</strong>, <strong>Filter</strong>, <strong>Group &amp; aggregate</strong>,
+<strong>Sort</strong>, <strong>Deduplicate</strong>, and <strong>Join / Append another dataset</strong> to combine a second dataset.</li>
+<li><strong>Select a node</strong> to configure it in the right-hand property inspector (columns, algorithm, split
+fraction, SQL, etc.).</li>
+<li>In <strong>Run pipeline</strong>, choose a dataset (or upload a CSV), set the label column and task, and press
+<strong>Run</strong> — you&#39;ll see each node execute and a trained metric at the end.</li>
+<li><strong>Save draft</strong> as you go; <strong>Publish</strong> freezes an immutable version you can run or submit.</li>
+</ol>
+<h2>5. Datasets</h2>
+<p>Under <strong>Studio → Datasets</strong> you can create and <strong>version</strong> datasets. When you create one, pick <strong>who can
+see it</strong> (Team / Group / Directorate / Company) — you&#39;ll see a live count of the potential audience. Upload
+a CSV (or import from a URL); publishing freezes a version, and a new upload starts a fresh draft.</p>
+<h2>6. Compete</h2>
+<p><strong>Compete</strong> hosts internal, Kaggle-style challenges on real KOC problems.</p>
+<ol>
+<li><strong>Browse</strong> competitions and open one to read its overview, get the data, and see the leaderboard.</li>
+<li><strong>Download</strong> the training set (labelled) and the evaluation set (no labels) from the Data tab.</li>
+<li><strong>Build a pipeline</strong> in the Studio for the competition&#39;s task.</li>
+<li><strong>Submit your pipeline</strong> — the platform trains and scores it on a <strong>hidden</strong> test set (the same data for
+everyone), so only your modelling choices move your rank.</li>
+<li>Watch the <strong>live leaderboard</strong> update in real time. Final standings are revealed on the host&#39;s chosen day.</li>
+</ol>
+<p>Anyone in a competition&#39;s scope can enter. <strong>Hosting</strong> a competition requires permission from an admin — if
+you&#39;d like to run one, ask a platform administrator to grant you creator access at the level you need.</p>
+<h2>7. Your profile &amp; standing</h2>
+<p><strong>My profile</strong> is your face on the platform — avatar, bio, and skills — plus your earned standing:
+<strong>Barrels</strong> (points), <strong>level</strong>, a <strong>streak</strong> for staying active, and <strong>badges</strong>. Give a colleague <strong>kudos</strong>
+to recognize good work. Leaderboards (personal and team) show where you stand.</p>
+<h2>8. Community</h2>
+<p><strong>Community</strong> is for discussions — ask questions, share solutions, react to posts, and mention colleagues.
+It&#39;s scoped to your part of the org so the conversation stays relevant.</p>
+<h2>9. The desktop app (optional)</h2>
+<p>There&#39;s a <strong>KOC Studio desktop app</strong> — the same designer, but it runs <strong>offline</strong>. You build and <em>run</em>
+pipelines locally on your machine (no server needed), and connect to the network only to <strong>submit to a
+competition</strong>. It signs you in with your Windows account automatically. Drop CSV files into your local
+workspace and they appear in the designer&#39;s Run panel.</p>
+<h2>10. Tips &amp; FAQ</h2>
+<ul>
+<li><strong>I can&#39;t host a competition.</strong> Hosting needs an admin-granted permission (and a level). Ask an admin.</li>
+<li><strong>My submission scored lower than my local run.</strong> The competition scores on a <strong>hidden</strong> test set — that&#39;s
+the honest measure; keep improving your pipeline.</li>
+<li><strong>A page says my role can&#39;t view it.</strong> That area needs a higher role (e.g. Supervision needs a
+team-lead position; Admin needs Platform Admin).</li>
+<li><strong>The final leaderboard is hidden.</strong> It unlocks at the competition&#39;s <strong>reveal</strong> time.</li>
+<li><strong>Where do I get help?</strong> The in-app <strong>Help</strong> section has searchable articles and FAQs.</li>
+</ul>
+</div></section>
+  <section class="major" id="admin-guide"><h2>Administrator guide</h2><div class="guide"><p>A manual for <strong>Platform Administrators</strong> running the KOC Training &amp; Career Development platform: how to
+manage users and access, run competitions, seed demo content, tune settings, and read the audit trail.</p>
+<blockquote>
+<p>This guide is about <em>operating</em> a running instance. For building/extending the code see
+<a href="#developer"><code>docs/DEVELOPER_GUIDE.md</code></a>; for deployment/hosting see
+<a href="#developer"><code>docs/DEPLOYMENT.md</code></a>.</p>
+</blockquote>
+<hr>
+<h2>1. Who can administer</h2>
+<p>The admin console requires the <strong><code>PlatformAdmin</code></strong> role. Roles come from your sign-in:</p>
+<ul>
+<li><strong>Intranet / production</strong>: your real KOC identity (Microsoft Entra, or IIS Windows SSO on the
+intranet — no separate login). Roles are assigned in your identity provider (and, for competitions,
+via grants in the console — see §3).</li>
+<li><strong>Dev/demo</strong>: a <strong>&quot;view as&quot; persona switcher</strong> in the app bar (Employee … Platform Admin). Pick
+<strong>Platform Admin</strong> to reach the console.</li>
+</ul>
+<p>Two role families exist: <strong>positions</strong> (Employee → TeamLeader → Manager → DCEO → CEO) and <strong>function
+roles</strong> (PlatformAdmin, CompetitionAdmin, LearningAdmin, Auditor).</p>
+<h2>2. The Admin Console (<code>/admin</code>)</h2>
+<p>Open <strong>Admin → Console</strong>. It has these tabs:</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>What you do</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Dashboard</strong></td>
+<td>Live KPIs (users, workflows, competitions, models, discussions), health, recent audit.</td>
+</tr>
+<tr>
+<td><strong>RBAC / Users</strong></td>
+<td>Manage who can create competitions + at what level; set users&#39; org/department + email; assign org-unit codes.</td>
+</tr>
+<tr>
+<td><strong>Settings</strong></td>
+<td>Typed platform settings (secrets stored encrypted), edited per key.</td>
+</tr>
+<tr>
+<td><strong>Feature flags</strong></td>
+<td>Toggle features on/off with a rollout percentage.</td>
+</tr>
+<tr>
+<td><strong>Demo data</strong></td>
+<td>Seed / unseed a self-contained explorable demo.</td>
+</tr>
+<tr>
+<td><strong>Audit</strong></td>
+<td>The full admin action trail.</td>
+</tr>
+</tbody></table>
+<h2>3. RBAC / Users — the core admin task</h2>
+<p>This is where you control <strong>who can create competitions and how widely</strong>, and record each user&#39;s
+<strong>org identity</strong>.</p>
+<h3>Org structure &amp; codes</h3>
+<p>KOC is modelled as a tree: <strong>Company → Directorate → Group → Team</strong>. Each unit can carry a short
+<strong>business code</strong> (e.g. <code>AX01</code> for a team, <code>KOC</code> for the company). In <strong>RBAC / Users → Org units &amp;
+codes</strong>, assign each unit its code. Codes are <strong>unique</strong>.</p>
+<h3>A user&#39;s identity</h3>
+<p>Each user has an <strong>email</strong>, a <strong>Company ID</strong> and a <strong>Department ID</strong> — the last two are org-unit <strong>codes</strong>.
+When you set a user&#39;s <strong>department</strong> (pick a unit from the list), the platform writes the department code
+<strong>and</strong> derives the company-root code together, so they never drift. Department &amp; profile fields can also
+be enriched automatically from the KOC directory once that API is connected.</p>
+<h3>Competition-creation grants</h3>
+<p>By default <strong>no one can create competitions</strong> except Platform Admins. To let someone host:</p>
+<ol>
+<li>Find the user in the <strong>Users</strong> table.</li>
+<li>In the <strong>&quot;Can create competitions&quot;</strong> dropdown, pick their <strong>maximum level</strong>:
+<code>None / Team / Group / Directorate / Company</code>.</li>
+<li>The level is a <strong>ceiling</strong> — granting <em>Directorate</em> also allows <em>Group</em> and <em>Team</em> competitions.
+Choosing <strong>None</strong> revokes the grant.</li>
+</ol>
+<p>Every grant/revoke, profile edit, and org-code change is written to the <strong>Audit</strong> trail.</p>
+<h2>4. Competitions</h2>
+<ul>
+<li><strong>Who can create</strong>: only granted users (§3) + Platform Admins. A user&#39;s create wizard only offers the
+levels they&#39;re entitled to; the server enforces it (an over-scope attempt is rejected).</li>
+<li><strong>Lifecycle</strong>: a competition moves through <strong>draft → active → concluded</strong>. Set a <strong>reveal time</strong> to keep
+the final leaderboard hidden until a chosen day; the <strong>live</strong> leaderboard updates in real time.</li>
+<li><strong>Data</strong>: the host uploads the <strong>training</strong> set (labelled, downloadable), the <strong>evaluation</strong> set (no
+label), and the <strong>hidden answer key</strong> (only the platform sees it, used to score). Participants submit a
+Studio pipeline, which is trained + scored server-side against the hidden key.</li>
+<li><strong>Audience</strong>: a competition is scoped to Team / Group / Directorate / Company via org-scoped visibility —
+only people in that scope see and enter it.</li>
+</ul>
+<h2>5. Demo data</h2>
+<p><strong>Admin → Demo data</strong> seeds a full explorable demo — colleagues with Barrels/badges, a competition with a
+leaderboard, a discussion, and a dataset — so a fresh install is immediately explorable. Everything is
+namespaced <code>demo-*</code>, so <strong>Unseed</strong> removes exactly the demo and never touches real KOC records. The status
+chip shows whether demo data is present and its counts.</p>
+<h2>6. Settings &amp; feature flags</h2>
+<ul>
+<li><strong>Settings</strong>: typed configuration grouped by category (e.g. platform name, support email, session
+lifetime, SMTP, storage provider). <strong>Secret</strong> settings (passwords, API keys) are stored <strong>encrypted</strong> and
+shown masked. Editing bumps a version and is audited.</li>
+<li><strong>Feature flags</strong>: enable/disable features with an optional <strong>rollout percentage</strong> (a stable per-user
+bucket), and add new flags.</li>
+</ul>
+<h2>7. Audit trail</h2>
+<p><strong>Admin → Audit</strong> lists every administrative action (settings changes, grants, demo seed/unseed, org-code
+edits) with the actor, action, resource, timestamp, and before/after where relevant. Filter by action.
+Use it to answer &quot;who changed what, when&quot;.</p>
+<h2>8. Supervision (for people-leaders)</h2>
+<p>Users who <strong>lead</strong> an org unit (TeamLeader/Manager/DCEO/CEO) get <strong><code>/supervision</code></strong> — a read-only rollup of
+their people&#39;s learning and competition activity. This is not part of the admin console but is role-gated
+the same way (a leader position, or Platform Admin).</p>
+<h2>9. Identity &amp; sign-in modes (for admins/ops)</h2>
+<p>The platform authenticates in one of three modes (configured at deploy time):</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>When</th>
+<th>Config</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Dev auth</strong></td>
+<td>Local dev / demo</td>
+<td>default (no config); persona switcher forwards <code>X-Dev-*</code> headers</td>
+</tr>
+<tr>
+<td><strong>Microsoft Entra</strong></td>
+<td>Cloud / federated</td>
+<td>set <code>AzureAd</code> (TenantId, ClientId, …)</td>
+</tr>
+<tr>
+<td><strong>Intranet Windows SSO</strong></td>
+<td>On-prem intranet, no login</td>
+<td><code>WindowsAuth:Enabled=true</code> on the Web + IIS Windows Authentication (Anonymous off)</td>
+</tr>
+</tbody></table>
+<p>With Windows SSO, employees are signed in <strong>automatically</strong> from their intranet session; the platform uses
+their real account. See <a href="#developer"><code>docs/DEPLOYMENT.md</code></a> and the README &quot;Production auth&quot; section.</p>
+<h2>10. The desktop app (for your users)</h2>
+<p>Users can install the <strong>KOC Studio</strong> desktop app — the same workflow designer, running <strong>offline</strong>: they
+build and run ML pipelines locally (no server), and connect to the network only to <strong>submit to a
+competition</strong>. It signs them in silently with their Windows account (no extra login). Nothing extra to
+administer beyond ensuring the competitions API is reachable from their machines.</p>
+<h2>11. Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause / fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&quot;You need the PlatformAdmin role&quot; on <code>/admin</code></td>
+<td>You&#39;re not signed in as an admin — switch persona (dev) or check your Entra/AD role.</td>
+</tr>
+<tr>
+<td>Admin dashboard shows 0 users</td>
+<td>No org/profile data yet — seed the dev org or connect the directory; check the API is running.</td>
+</tr>
+<tr>
+<td>A user can&#39;t create a competition</td>
+<td>They have no active creator grant — set their level in RBAC / Users.</td>
+</tr>
+<tr>
+<td>&quot;You can only create competitions up to X scope&quot;</td>
+<td>The user targeted an audience wider than their granted maximum — raise their grant or pick a narrower scope.</td>
+</tr>
+<tr>
+<td>Duplicate org code rejected</td>
+<td>Codes are unique — pick a free code.</td>
+</tr>
+<tr>
+<td>Competition final board is empty/locked</td>
+<td>It&#39;s before the <strong>reveal time</strong>, or the answer key/datasets aren&#39;t set.</td>
+</tr>
+<tr>
+<td>Desktop app: competitions unavailable</td>
+<td>The machine can&#39;t reach the API — the designer still works offline; check <code>KOC_API_BASEURL</code>/network.</td>
+</tr>
+</tbody></table>
+<h2>12. Reference</h2>
+<ul>
+<li>Product overview &amp; running: <a href="#top"><code>README.md</code></a></li>
+<li>Feature/architecture history &amp; decisions: <code>plans/koc-ai-community-platform/</code> (+ <code>MASTER_TODO_TRACKER.md</code>)</li>
+<li>RBAC design: <code>plans/koc-ai-community-platform/MASTER_TODO_TRACKER.md</code> (Admin RBAC section)</li>
+</ul>
+</div></section>
+  <section class="major" id="developer"><h2>Developer guide</h2><div class="guide"><p>A practical manual for engineers working on the KOC Training &amp; Career Development platform: how the
+solution is put together, how to run it, and how to extend it safely.</p>
+<blockquote>
+<p>New here? Read the root <a href="#top"><code>README.md</code></a> first for the product overview, then this guide.
+Deploying? See <a href="#developer"><code>docs/DEPLOYMENT.md</code></a>. Administering a running instance? See
+<a href="#admin-guide"><code>docs/ADMIN_GUIDE.md</code></a>.</p>
+</blockquote>
+<hr>
+<h2>1. What it is</h2>
+<p>An internal, Kaggle-style AI/ML learning + competition platform for KOC: guided learning tracks,
+competitions with live/final leaderboards, a visual ML <strong>Studio</strong> (node-based pipeline designer over
+ML.NET + DuckDB), a model registry, community discussions, gamification, and a platform-admin console.
+There are two front-ends over one API: the <strong>Blazor Web app</strong> and a <strong>WinForms desktop app</strong> that
+reuses the same designer and runs offline.</p>
+<h2>2. Prerequisites</h2>
+<ul>
+<li><strong>.NET SDK 10</strong> (pinned in <code>global.json</code>).</li>
+<li>Windows is required only for the <strong>desktop app</strong> (<code>net10.0-windows</code>) and SQL Server LocalDB; the rest
+is cross-platform.</li>
+<li>No database to install for dev — the API auto-creates a local <strong>SQLite</strong> file.</li>
+</ul>
+<h2>3. Solution layout</h2>
+<pre><code>src/
+  Domain            Entity types + enums. No EF, no framework.
+  Contracts         DTOs shared across every host and both front-ends.
+  Application       Service interfaces, role/policy constants, domain events, ML abstractions.
+  Workflow          Workflow compiler (validate + topological order).
+  ML                ML.NET + DuckDB runtime: node handlers, PluginNodeExecutor, AutoML trainer.
+  Infrastructure    EF Core (DbContext, configs, migrations), service impls, storage, seeders.
+  Infrastructure.SqlServerMigrations   Provider-specific SQL Server migrations.
+  Client            Framework-agnostic HTTP API client (IKocApiClient) + dev identity. Web + desktop.
+  Ui.Shared         MudBlazor theme + shared components (the &quot;KOC blueprint&quot; look).
+  Ui.Studio         The workflow designer RCL (shared by Web and desktop).
+  Ui.Community/Admin Feature RCLs.
+  ServiceDefaults   Aspire defaults + shared security wiring (auth, policies, current user).
+  Web               Blazor Web App (Interactive Server). Calls the API; never the DB directly.
+  Api               Minimal API (/api/v1) + SignalR hub + transactional-outbox dispatcher.
+  Worker            Background worker (durable jobs: training runs, etc.).
+  Desktop.Local     Offline in-process Studio engine for the desktop (LocalKocApiClient).
+  WinForms          Desktop app hosting the Studio designer via BlazorWebView.
+  AppHost           .NET Aspire orchestration.
+tests/              UnitTests, IntegrationTests, ComponentTests (bUnit), ArchitectureTests, EndToEndTests.
+</code></pre>
+<p><strong>Dependency direction is enforced</strong> by <code>ArchitectureTests</code>: Domain/Application stay free of EF Core,
+ASP.NET, MudBlazor, and ML.NET; the Web talks to the API, never the database.</p>
+<h2>4. Run it locally</h2>
+<p>Two terminals (the API migrates + seeds a local SQLite DB and enables dev auth):</p>
+<pre><code class="language-bash"># API on :5250 (migrate + seed + dev auth)
+ASPNETCORE_ENVIRONMENT=Development Seed__Enabled=true ASPNETCORE_URLS=http://localhost:5250 \
+  dotnet run --project src/Beep.KocAiCommunity.Api
 
-    <section id="learn">
-      <h3>Learn — guided tracks <span class="route">/learn</span></h3>
-      <p class="desc">Structured learning tracks with real lessons. Enroll, work through lessons, and complete a track to earn standing.</p>
-      <figure><img src="img/learn.png" alt="Learn" onerror="this.closest('figure').style.display='none'"><figcaption>Learn — enroll and progress through tracks.</figcaption></figure>
-    </section>
+# Web on :5150 (calls the API)
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5150 \
+  dotnet run --project src/Beep.KocAiCommunity.Web
+</code></pre>
+<p>Open <a href="http://localhost:5150">http://localhost:5150</a>. Aspire alternative: <code>dotnet run --project src/Beep.KocAiCommunity.AppHost</code>.</p>
+<p><strong>Desktop app</strong> (offline; no API needed for the designer + local runs):</p>
+<pre><code class="language-bash">dotnet run --project src/Beep.KocAiCommunity.WinForms
+</code></pre>
+<h2>5. Identity &amp; auth in dev</h2>
+<ul>
+<li><strong>Dev personas.</strong> With no Entra tenant, the Web forwards a selected persona to the API via
+<code>X-Dev-User</code>/<code>X-Dev-Roles</code> headers (<code>DevIdentity</code> + <code>DevIdentityHandler</code> in <code>Client</code>). The app-bar
+<strong>&quot;view as&quot;</strong> switcher changes persona live. Personas: <code>guest, employee, teamleader, manager, dceo, ceo, compadmin, platformadmin</code> (default <strong>platformadmin</strong>, so every area is visible out of the box).</li>
+<li><strong>The API</strong> resolves the current user from claims (<code>IKocCurrentUser</code> → <code>ClaimsKocCurrentUser</code>). In dev
+those claims come from the forwarded headers (<code>DevAutoAuthHandler</code>); in prod from Entra or Windows auth.</li>
+<li><strong>Roles</strong>: positions (<code>Employee → TeamLeader → Manager → DCEO → CEO</code>) + function roles
+(<code>PlatformAdmin, CompetitionAdmin, LearningAdmin, Auditor</code>). Policies live in <code>KocPolicies</code> /
+<code>SecurityExtensions</code> (<code>RequireEmployee</code>, <code>RequirePlatformAdmin</code>, …).</li>
+<li><strong>Production</strong>: set <code>AzureAd</code> config for Entra, or <code>WindowsAuth:Enabled=true</code> for intranet Windows SSO
+(IIS Windows Authentication). See the README &quot;Production auth&quot; section.</li>
+</ul>
+<h2>6. Data &amp; migrations</h2>
+<p>Dual-provider EF Core: <strong>SQLite</strong> (dev/test) and <strong>SQL Server</strong> (prod), chosen by <code>Database:Provider</code>.
+Migrations are <strong>generated for both providers</strong>:</p>
+<pre><code class="language-bash"># SQLite (default provider project)
+dotnet ef migrations add &lt;Name&gt; \
+  --project src/Beep.KocAiCommunity.Infrastructure \
+  --startup-project src/Beep.KocAiCommunity.Api
 
-    <section id="community">
-      <h3>Community <span class="route">/community</span></h3>
-      <p class="desc">Discussions and replies — ask questions, share solutions, and react. Org-scoped so you see your community.</p>
-      <figure><img src="img/community.png" alt="Community" onerror="this.closest('figure').style.display='none'"><figcaption>Community — discussions and replies.</figcaption></figure>
-    </section>
-
-    <section id="compete">
-      <h3>Competitions <span class="route">/compete</span></h3>
-      <p class="desc">Internal, Kaggle-style challenges on real KOC problems. Download the data, build a model in the Studio, and
-        submit your pipeline to climb the <strong>live</strong> leaderboard; final standings stay hidden until reveal day.</p>
-      <ul><li>Only granted users (and admins) can <em>host</em> a competition — at their permitted level.</li><li>Everyone in scope can enter and submit.</li></ul>
-      <figure><img src="img/compete.png" alt="Competitions" onerror="this.closest('figure').style.display='none'"><figcaption>Competitions — browse, enter, and submit a pipeline.</figcaption></figure>
-    </section>
-
-    <section id="datasets">
-      <h3>Datasets <span class="route">/datasets</span></h3>
-      <p class="desc">Create and version datasets with a "who can see this" picker (Team/Group/Directorate/Company) and audience counts.</p>
-      <figure><img src="img/datasets.png" alt="Datasets" onerror="this.closest('figure').style.display='none'"><figcaption>Datasets — governed, versioned data with visibility scoping.</figcaption></figure>
-    </section>
-
-    <section id="workflows">
-      <h3>Workflows registry <span class="route">/workflows</span></h3>
-      <p class="desc">Version your ML pipelines: save drafts, publish an immutable snapshot once it compiles, then export or run.
-        Start from an O&amp;G template, or open a workflow in the designer.</p>
-      <figure><img src="img/workflows.png" alt="Workflows" onerror="this.closest('figure').style.display='none'"><figcaption>Workflows — the versioned pipeline registry.</figcaption></figure>
-    </section>
-
-    <section id="designer">
-      <h3>Studio — the workflow designer <span class="route">/workflow</span></h3>
-      <p class="desc">The visual node editor. Drag nodes from the palette onto the canvas, wire them, and configure each in the
-        property inspector, then run the pipeline node-by-node. ML.NET and DuckDB (SQL/ETL) nodes mix freely — including
-        <strong>join</strong> / <strong>append</strong> of a second dataset.</p>
-      <ul><li>Palette + inspector are driven by the live node catalog.</li><li>Run on a dataset to see each node execute and a trained metric.</li><li>Submit the pipeline to a competition from its Submit card.</li></ul>
-      <figure><img src="img/designer.png" alt="Workflow designer" onerror="this.closest('figure').style.display='none'"><figcaption>Studio designer — palette, canvas, and property inspector.</figcaption></figure>
-    </section>
-
-    <section id="studio">
-      <h3>AutoML studio <span class="route">/studio</span></h3>
-      <p class="desc">Point-and-shoot AutoML: pick a CSV and a task (binary / multiclass / regression) and let ML.NET find a model. Runs feed the registry.</p>
-      <figure><img src="img/studio.png" alt="AutoML studio" onerror="this.closest('figure').style.display='none'"><figcaption>AutoML — train a model over a CSV.</figcaption></figure>
-    </section>
-
-    <section id="nodes">
-      <h3>Node catalog <span class="route">/nodes</span></h3>
-      <p class="desc">The full library of pipeline nodes — data sources, DuckDB SQL/ETL, feature engineering, splitting, models, and evaluation — with their parameters.</p>
-      <figure><img src="img/nodes.png" alt="Node catalog" onerror="this.closest('figure').style.display='none'"><figcaption>Node catalog — every building block and its options.</figcaption></figure>
-    </section>
-
-    <section id="runs">
-      <h3>Runs <span class="route">/runs</span></h3>
-      <p class="desc">Durable background jobs (training runs and workflow executions) with their status, logs, and attempts.</p>
-      <figure><img src="img/runs.png" alt="Runs" onerror="this.closest('figure').style.display='none'"><figcaption>Runs — background job status and logs.</figcaption></figure>
-    </section>
-
-    <section id="experiments">
-      <h3>Experiment tracking <span class="route">/experiments</span></h3>
-      <p class="desc">Group runs into experiments and compare their metrics and parameters side by side.</p>
-      <figure><img src="img/experiments.png" alt="Experiments" onerror="this.closest('figure').style.display='none'"><figcaption>Experiments — compare runs, metrics, and parameters.</figcaption></figure>
-    </section>
-
-    <section id="models">
-      <h3>Model registry <span class="route">/models</span></h3>
-      <p class="desc">Register a trained model, take it through a two-approval promotion, deploy or retire it, and serve inference.</p>
-      <figure><img src="img/models.png" alt="Models" onerror="this.closest('figure').style.display='none'"><figcaption>Models — register → approve → deploy.</figcaption></figure>
-    </section>
-
-    <section id="profile">
-      <h3>My profile <span class="route">/profile</span></h3>
-      <p class="desc">Your public face on the platform — avatar, bio, skills — plus earned standing (Barrels, level, streak, badges).</p>
-      <figure><img src="img/profile.png" alt="My profile" onerror="this.closest('figure').style.display='none'"><figcaption>Profile — your standing and gamification.</figcaption></figure>
-    </section>
-
-    <section id="help">
-      <h3>In-app help <span class="route">/help</span></h3>
-      <p class="desc">Searchable help articles and FAQs, in the app.</p>
-      <figure><img src="img/help.png" alt="Help" onerror="this.closest('figure').style.display='none'"><figcaption>Help — in-app articles and FAQ.</figcaption></figure>
-    </section>
-
-    <section id="admin">
-      <h3>Admin console <span class="route">/admin</span> <em style="font-weight:400;color:var(--muted)">— Platform Admin only</em></h3>
-      <p class="desc">Live health KPIs, the <strong>RBAC / Users</strong> tab (who can create competitions + at what level, org codes,
-        departments), typed settings (secrets encrypted), feature flags, demo data, and the audit trail. See the
-        <a href="../ADMIN_GUIDE.md">Administrator Guide</a> for details.</p>
-      <figure><img src="img/admin.png" alt="Admin console" onerror="this.closest('figure').style.display='none'"><figcaption>Admin console — platform health, RBAC, settings, and audit.</figcaption></figure>
-    </section>
-  </main>
-</div>
-</body>
-</html>
+# SQL Server (its own migrations assembly)
+dotnet ef migrations add &lt;Name&gt; \
+  --project src/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations \
+  --startup-project src/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations
+</code></pre>
+<p>Entity configs live under <code>Infrastructure/Persistence/Configurations</code>. Seeders (dev org tree, learning
+tracks, demo data) live under <code>Infrastructure/Organization</code> and <code>Infrastructure/Admin</code>.</p>
+<h2>7. The Studio pipeline engine (nodes)</h2>
+<p>The designer is a graph of typed <strong>nodes</strong> executed node-by-node. The engine is <strong>plug-and-play</strong>:</p>
+<ul>
+<li>Every node kind is one <strong><code>IPipelineNodeHandler</code></strong> in <code>src/Beep.KocAiCommunity.ML/Nodes/</code>. It exposes a
+<code>NodeDescriptor</code> (kind, category, ports, typed parameters) and an <code>Execute</code> method.</li>
+<li><strong><code>PluginNodeRegistry</code></strong> derives the whole catalog from the registered handlers; <strong><code>PluginNodeExecutor</code></strong>
+dispatches. DI auto-registers every handler in the ML assembly — <strong>adding a node kind = adding one
+handler class</strong>; the catalog (<code>GET /api/v1/ml/nodes</code>), the compiler&#39;s known kinds, and execution all
+pick it up automatically.</li>
+<li>Data flows on a uniform <strong><code>PipelineTable</code></strong> (CSV-file-backed) contract, so <strong>ML.NET</strong> nodes and
+<strong>DuckDB</strong> (SQL/ETL) nodes interoperate in either order. DuckDB nodes: <code>sql</code>, <code>sql-filter</code>, <code>group-by</code>,
+<code>sort</code>, <code>distinct</code>, <code>join-dataset</code>, <code>union-dataset</code> (the last two pull in a <em>second</em> dataset).</li>
+<li>~37 node kinds total across categories: Source, Data (DuckDB), Prepare, Shape, Transform, Split, Model,
+Evaluate.</li>
+</ul>
+<p><strong>To add a node:</strong> create a handler class in <code>ML/Nodes/</code> implementing <code>IPipelineNodeHandler</code>; that&#39;s it.
+Verify with <code>NodeCatalogTests</code> (registry ↔ compiler known-kinds parity) and the designer palette (it is
+API-driven — <code>Ui.Studio</code> renders from <code>GetMlNodesAsync()</code>; only the icon/colour live client-side in
+<code>NodeVisuals</code>).</p>
+<h2>8. Workflows, competitions, models</h2>
+<ul>
+<li><strong>Workflows registry</strong> (<code>/workflows</code>): versioned pipelines — save draft → publish an immutable snapshot
+→ export/import → run. A workflow can optionally target a <strong>competition</strong> (<code>Workflow.CompetitionId</code>).</li>
+<li><strong>Competitions</strong> (<code>/compete</code>): creation is <strong>grant-gated</strong> — a user needs an active
+<code>CompetitionCreatorGrant</code> (or <code>PlatformAdmin</code>) and may only target audiences up to their granted
+<code>MaxScope</code> (Team ≤ Group ≤ Directorate ≤ Company). Enforced in <code>CompetitionService.CreateAsync</code>.
+Submissions turn a Studio pipeline into a scored leaderboard entry.</li>
+<li><strong>Model registry</strong> (<code>/models</code>): register → two-approval promote → deploy/retire; inference serving.</li>
+</ul>
+<h2>9. The WinForms desktop app</h2>
+<ul>
+<li><strong>BlazorWebView hybrid</strong>: hosts the exact <code>Ui.Studio</code> Blazor components in a WinForms window — the same
+designer, on the desktop.</li>
+<li><strong>Offline-first</strong>: <code>Desktop.Local</code>&#39;s <code>LocalKocApiClient</code> runs the Studio surface <strong>in-process</strong> — node
+catalog from <code>PluginNodeRegistry</code>, datasets from local CSVs, <strong>pipeline runs</strong> via <code>PluginNodeExecutor</code>,
+workflows as local JSON. Only competitions call the API (<code>RemoteFallbackKocApiClient</code> delegates the
+rest). Workspace: <code>%LOCALAPPDATA%/KocStudio/{datasets,workflows,temp}</code>.</li>
+<li><strong>Identity</strong>: the real signed-in Windows/Entra user by default (<code>IEnvironmentUserProvider</code> →
+<code>WindowsEnvironmentUserProvider</code>); dev personas remain as a Settings override. Dept/profile enrich via
+the same seam once the KOC directory API is wired.</li>
+<li>Publish: <code>dotnet publish src/Beep.KocAiCommunity.WinForms -c Release -r win-x64</code> (bundles ML.NET/DuckDB
+<code>win-x64</code> natives). Requires the WebView2 runtime (standard on Win10/11).</li>
+</ul>
+<h2>10. Testing &amp; the definition of done</h2>
+<p>Every change must pass the <strong>DoD gate</strong> before commit:</p>
+<pre><code class="language-bash">dotnet build  Beep.KocAiCommunity.slnx -warnaserror
+dotnet format Beep.KocAiCommunity.slnx --verify-no-changes
+dotnet test   Beep.KocAiCommunity.slnx
+</code></pre>
+<p>Test suites: <strong>UnitTests</strong> (engine, services, local desktop engine), <strong>IntegrationTests</strong> (API over an
+in-memory SQLite DB + a test auth scheme), <strong>ComponentTests</strong> (bUnit), <strong>ArchitectureTests</strong> (dependency
+rules), <strong>EndToEndTests</strong>. Warnings are errors for non-test projects. Commit each logical change on
+<code>master</code> with a descriptive message; update the plan docs + <code>plans/koc-ai-community-platform/MASTER_TODO_TRACKER.md</code>.</p>
+<p>Note: <code>MlDeterminismTests</code> (AutoML) can flake under full-suite parallel load — re-run to confirm.</p>
+<h2>11. Common extension recipes</h2>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Add a pipeline node</td>
+<td>one <code>IPipelineNodeHandler</code> in <code>ML/Nodes/</code></td>
+</tr>
+<tr>
+<td>Add an API endpoint</td>
+<td>a <code>Map…Endpoints</code> group in <code>Api/Endpoints</code>, mapped in <code>Api/Program.cs</code></td>
+</tr>
+<tr>
+<td>Add a DTO</td>
+<td><code>Contracts/&lt;area&gt;</code> (shared by all hosts)</td>
+</tr>
+<tr>
+<td>Add a Web page</td>
+<td>a <code>.razor</code> under <code>Web/Components/Pages</code> (or a feature RCL)</td>
+</tr>
+<tr>
+<td>Add a client method</td>
+<td><code>IKocApiClient</code> + <code>KocApiClient</code> in <code>Client</code></td>
+</tr>
+<tr>
+<td>Add a service</td>
+<td>interface in <code>Application</code>, impl in <code>Infrastructure</code>, register in <code>Infrastructure/DependencyInjection.cs</code></td>
+</tr>
+<tr>
+<td>Enrich signed-in user (dept/roles)</td>
+<td>implement <code>IEnvironmentUserProvider</code> (<code>Client</code>) against the KOC directory API</td>
+</tr>
+</tbody></table>
+<h2>12. Where to read more</h2>
+<ul>
+<li>Architecture decisions &amp; phase history: <code>plans/koc-ai-community-platform/</code> (numbered docs +
+<code>MASTER_TODO_TRACKER.md</code>).</li>
+<li>Node engine: <code>16_PLUGGABLE_NODE_ENGINE.md</code>, <code>17_DUCKDB_ENGINE.md</code>.</li>
+<li>Desktop app: <code>19_WINFORMS_DESKTOP_STUDIO.md</code> (+ 19a–19d).</li>
+</ul>
+</div></section>
+</main>
+</div></body></html>

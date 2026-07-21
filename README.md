@@ -11,12 +11,15 @@ Built on **.NET 10**, **ASP.NET Core**, **Blazor (MudBlazor)**, **EF Core**, **M
 
 ### 📚 Manuals
 
+- **[User Guide](docs/USER_GUIDE.md)** — for employees: signing in, learning, building & running models in
+  the Studio, competing, and your profile.
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** — architecture, running locally, the node engine, the
   desktop app, testing, and how to extend the platform.
 - **[Administrator Guide](docs/ADMIN_GUIDE.md)** — the admin console, RBAC / users, competition-creation
   grants, org codes, demo data, settings, and audit.
 - **[Deployment Guide](docs/DEPLOYMENT.md)** — hosting, auth modes, SQL Server, publishing.
-- **[Visual Help](docs/help/index.html)** — a screenshot tour of every screen (open in a browser).
+- **[Visual Help](docs/help/index.html)** — one HTML page with a screenshot tour of every screen **plus** the
+  User, Administrator, and Developer guides (open in a browser).
 
 ## The loop
 
