@@ -2,6 +2,7 @@ using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.ServiceDefaults.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
@@ -51,6 +52,13 @@ public static class SecurityExtensions
             services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
                 .AddMicrosoftIdentityWebApp(configuration.GetSection(AzureAdSection));
         }
+        else if (IsWindowsAuthEnabled(configuration))
+        {
+            // Intranet SSO — the browser hands the site the signed-in Windows/Entra account with no
+            // login page. Enable "Windows Authentication" (and disable Anonymous) on the IIS site;
+            // Negotiate also covers Kestrel/HTTP.sys and IIS out-of-process hosting.
+            services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
+        }
         else
         {
             AddDevFallback(services);
@@ -58,6 +66,10 @@ public static class SecurityExtensions
 
         return services;
     }
+
+    /// <summary>True when intranet Windows (Negotiate) authentication is opted in via <c>WindowsAuth:Enabled</c>.</summary>
+    public static bool IsWindowsAuthEnabled(IConfiguration configuration) =>
+        configuration.GetValue("WindowsAuth:Enabled", false);
 
     /// <summary>
     /// API JWT bearer validation against the KOC Entra tenant when configured; otherwise registers

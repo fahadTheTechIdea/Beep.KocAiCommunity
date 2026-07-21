@@ -1,6 +1,7 @@
 using Beep.KocAiCommunity.Client;
 using Beep.KocAiCommunity.ServiceDefaults;
 using Beep.KocAiCommunity.Web.Components;
+using Beep.KocAiCommunity.Web.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,15 @@ builder.Services.AddKocWebAuthentication(builder.Configuration);
 // Typed API client. The Web calls /api/v1 and never touches the database directly.
 var apiBaseUrl = builder.Configuration["KocApi:BaseUrl"] ?? "http://localhost:5250";
 builder.Services.AddKocHttpClient(apiBaseUrl);
+
+// Intranet Windows auth (opt-in, IIS Windows Authentication): forward the real signed-in user to the
+// API instead of the dev persona. Off by default so dev/tests use the persona switcher unchanged.
+if (SecurityExtensions.IsWindowsAuthEnabled(builder.Configuration))
+{
+    builder.Services.AddTransient<WindowsIdentityForwardingHandler>();
+    builder.Services.AddHttpClient<IKocApiClient, KocApiClient>()
+        .AddHttpMessageHandler<WindowsIdentityForwardingHandler>();
+}
 
 // Blazor Web App with global Interactive Server render mode.
 builder.Services.AddRazorComponents()

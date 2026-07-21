@@ -160,6 +160,17 @@ Set the `AzureAd` configuration (TenantId, ClientId, …) and the app switches f
 (OIDC for the Web, JWT bearer for the API). Set `Database:Provider=SqlServer` with `ConnectionStrings:kocdb` for
 SQL Server.
 
+**Intranet Windows SSO (no login).** For an on-prem intranet without Entra, set `WindowsAuth:Enabled=true` on the
+**Web** and host it in **IIS with Windows Authentication enabled and Anonymous disabled**. The browser then hands
+the site the signed-in domain/Entra account with no login page, and the Web forwards that **real user** to the API
+(fail-closed — an unauthenticated request is never treated as the default persona). Roles default to `Employee`
+until the KOC directory API maps them (see the identity seam below). The dev-persona "view as" switcher remains for
+local dev (`WindowsAuth` off). The desktop app already uses the signed-in Windows account the same way.
+
+> Identity/profile seam: `IEnvironmentUserProvider` + `EnvironmentUser` (email/company/department/roles) exist so a
+> KOC directory-API provider can be dropped in later to enrich the signed-in user; per-user Blazor Server nav/roles
+> reflecting the real user's directory roles is the remaining follow-up (validate in the IIS environment).
+
 ## Develop
 
 ```bash
