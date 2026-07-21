@@ -11,9 +11,13 @@
     <MudTextField @bind-Value="_apiBaseUrl" Label="API base URL" Variant="Variant.Outlined" Margin="Margin.Dense"
                   HelperText="Used for competitions (browse, submit, leaderboard). Applied on next launch." Class="mb-4" />
 
-    <MudText Typo="Typo.subtitle1" Class="mb-2">Identity</MudText>
-    <MudSelect T="string" @bind-Value="_personaKey" Label="Sign in as" Variant="Variant.Outlined" Margin="Margin.Dense"
-               HelperText="Dev persona forwarded to the API. Applied immediately.">
+    <MudText Typo="Typo.subtitle1" Class="mb-1">Identity</MudText>
+    <MudField Label="Signed in as (Windows account)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3"
+              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountCircle">@_windowsUser</MudField>
+
+    <MudSelect T="string" @bind-Value="_personaKey" Label="Act as (dev override)" Variant="Variant.Outlined" Margin="Margin.Dense"
+               HelperText="Leave as the signed-in user in production. The dev personas are for testing roles against a dev API.">
+        <MudSelectItem Value="@DevIdentity.RealUserKey">Signed-in user (@_windowsDisplay)</MudSelectItem>
         @foreach (var p in DevIdentity.Personas)
         {
             <MudSelectItem Value="@p.Key">@p.Label</MudSelectItem>
@@ -28,16 +32,28 @@
 @code {
     private string _apiBaseUrl = "";
     private string _personaKey = "";
+    private string _windowsUser = "";
+    private string _windowsDisplay = "";
 
     protected override void OnInitialized()
     {
         _apiBaseUrl = Config.ApiBaseUrl;
         _personaKey = Identity.Current.Key;
+        (_windowsUser, _windowsDisplay) = WindowsUser.Current();
     }
 
     private Task SaveAsync()
     {
-        Identity.SetPersona(_personaKey);       // live
+        // Apply the chosen identity live.
+        if (_personaKey == DevIdentity.RealUserKey)
+        {
+            Identity.SetRealUser(_windowsUser, _windowsDisplay, []);
+        }
+        else
+        {
+            Identity.SetPersona(_personaKey);
+        }
+
         Config.ApiBaseUrl = _apiBaseUrl.Trim();
         Config.PersonaKey = _personaKey;
         Config.Save();

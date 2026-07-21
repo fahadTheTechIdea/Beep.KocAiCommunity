@@ -6,7 +6,9 @@ namespace Beep.KocAiCommunity.WinForms;
 public sealed class AppSettings
 {
     public string ApiBaseUrl { get; set; } = "http://localhost:5250";
-    public string PersonaKey { get; set; } = "platformadmin";
+
+    /// <summary>Which identity to act as: "__me" (the real signed-in Windows user, default) or a dev persona key.</summary>
+    public string PersonaKey { get; set; } = "__me";
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KocStudio", "settings.json");

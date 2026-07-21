@@ -81,4 +81,22 @@ public class DevIdentityTests
         id.SetPersona("ceo"); // same persona → no-op
         raised.Should().Be(1);
     }
+
+    [Fact]
+    public void Real_signed_in_user_forwards_its_id_and_defaults_to_employee()
+    {
+        var id = new DevIdentity();
+        id.SetRealUser(@"KOC\aldhubaib", "aldhubaib", []);
+
+        id.IsRealUser.Should().BeTrue();
+        id.UserId.Should().Be(@"KOC\aldhubaib");
+        id.Current.Label.Should().Be("aldhubaib");
+        id.HasAnyPosition.Should().BeTrue();          // defaulted to Employee so the API accepts them
+        id.IsPlatformAdmin.Should().BeFalse();
+
+        // A dev persona still overrides it for testing.
+        id.SetPersona("manager");
+        id.IsRealUser.Should().BeFalse();
+        id.UserId.Should().Be("dev-user");
+    }
 }

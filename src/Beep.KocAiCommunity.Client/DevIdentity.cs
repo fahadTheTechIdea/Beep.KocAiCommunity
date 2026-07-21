@@ -58,6 +58,23 @@ public sealed class DevIdentity
         UserId = next.UserId ?? string.Empty;
         Changed?.Invoke();
     }
+
+    /// <summary>The synthetic persona key that stands for the real, environment-signed-in user.</summary>
+    public const string RealUserKey = "__me";
+
+    /// <summary>True when acting as the real signed-in user rather than a dev persona.</summary>
+    public bool IsRealUser => _persona.Key == RealUserKey;
+
+    /// <summary>
+    /// Acts as the real user resolved from the host environment (e.g. the Windows/Entra account on the
+    /// desktop) instead of a seeded dev persona. Roles default to Employee when unknown.
+    /// </summary>
+    public void SetRealUser(string userId, string displayName, IReadOnlyList<string> roles)
+    {
+        _persona = new Persona(RealUserKey, displayName, userId, roles.Count > 0 ? roles : ["Employee"]);
+        UserId = userId;
+        Changed?.Invoke();
+    }
 }
 
 /// <summary>Attaches the current dev identity to outgoing API requests (nothing for a guest).</summary>

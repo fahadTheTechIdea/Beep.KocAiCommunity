@@ -27,7 +27,18 @@ internal static class Program
         services.AddKocLocalStudio(apiBaseUrl);
 
         using var provider = services.BuildServiceProvider();
-        provider.GetRequiredService<DevIdentity>().SetPersona(settings.PersonaKey);
+
+        // Identity: default to the real signed-in Windows/Entra user; a saved dev persona overrides it.
+        var identity = provider.GetRequiredService<DevIdentity>();
+        if (settings.PersonaKey == DevIdentity.RealUserKey)
+        {
+            var (userId, displayName) = WindowsUser.Current();
+            identity.SetRealUser(userId, displayName, []);
+        }
+        else
+        {
+            identity.SetPersona(settings.PersonaKey);
+        }
         // Fully qualified: the Beep.KocAiCommunity.Application namespace shadows WinForms' Application here.
         System.Windows.Forms.Application.Run(new MainForm(provider));
     }
