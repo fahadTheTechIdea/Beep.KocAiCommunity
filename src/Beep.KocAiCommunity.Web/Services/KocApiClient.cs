@@ -119,6 +119,14 @@ public interface IKocApiClient
     Task<(DemoDataStatusDto? Status, string? Error)> SeedDemoAsync(CancellationToken ct = default);
     Task<(DemoDataStatusDto? Status, string? Error)> UnseedDemoAsync(CancellationToken ct = default);
 
+    // Admin RBAC / Users.
+    Task<IReadOnlyList<AdminUserDto>> GetAdminUsersAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<OrgUnitCodeDto>> GetAdminOrgUnitsAsync(CancellationToken ct = default);
+    Task<(AdminUserDto? User, string? Error)> UpsertUserProfileAsync(string userId, UpsertUserProfileRequest request, CancellationToken ct = default);
+    Task<string?> SetCompetitionGrantAsync(string userId, string maxScope, CancellationToken ct = default);
+    Task<string?> RevokeCompetitionGrantAsync(string userId, CancellationToken ct = default);
+    Task<string?> SetOrgUnitCodeAsync(Guid orgUnitId, string? code, CancellationToken ct = default);
+
     // Versioned workflow registry.
     Task<IReadOnlyList<WorkflowSummaryDto>> GetWorkflowsAsync(CancellationToken ct = default);
     Task<(WorkflowSummaryDto? Workflow, string? Error)> CreateWorkflowAsync(CreateWorkflowRequest request, CancellationToken ct = default);
@@ -612,6 +620,24 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         return await http.GetFromJsonAsync<List<AuditLogDto>>(url, ct) ?? [];
     }
 
+    public async Task<IReadOnlyList<AdminUserDto>> GetAdminUsersAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<AdminUserDto>>("/api/v1/admin/users", ct) ?? [];
+
+    public async Task<IReadOnlyList<OrgUnitCodeDto>> GetAdminOrgUnitsAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<OrgUnitCodeDto>>("/api/v1/admin/org-units", ct) ?? [];
+
+    public Task<(AdminUserDto? User, string? Error)> UpsertUserProfileAsync(string userId, UpsertUserProfileRequest request, CancellationToken ct = default) =>
+        PutJsonAsync<AdminUserDto>($"/api/v1/admin/users/{userId}/profile", request, ct);
+
+    public Task<string?> SetCompetitionGrantAsync(string userId, string maxScope, CancellationToken ct = default) =>
+        PutVoidAsync($"/api/v1/admin/users/{userId}/competition-grant", new SetCompetitionGrantRequest(maxScope), ct);
+
+    public Task<string?> RevokeCompetitionGrantAsync(string userId, CancellationToken ct = default) =>
+        DeleteVoidAsync($"/api/v1/admin/users/{userId}/competition-grant", ct);
+
+    public Task<string?> SetOrgUnitCodeAsync(Guid orgUnitId, string? code, CancellationToken ct = default) =>
+        PutVoidAsync($"/api/v1/admin/org-units/{orgUnitId}/code", new SetOrgUnitCodeRequest(code), ct);
+
     public async Task<IReadOnlyList<WorkflowSummaryDto>> GetWorkflowsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<WorkflowSummaryDto>>("/api/v1/workflows", ct) ?? [];
 
@@ -718,6 +744,21 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         }
 
         return await ReadErrorAsync(response, ct);
+    }
+
+    private async Task<(T? Result, string? Error)> PutJsonAsync<T>(string url, object body, CancellationToken ct)
+    {
+        var response = await http.PutAsJsonAsync(url, body, ct);
+        return response.IsSuccessStatusCode
+            ? (await response.Content.ReadFromJsonAsync<T>(ct), null)
+            : (default, await ReadErrorAsync(response, ct));
+    }
+
+    /// <summary>PUT with a body, returning null on success or the error message on a 400.</summary>
+    private async Task<string?> PutVoidAsync(string url, object body, CancellationToken ct)
+    {
+        var response = await http.PutAsJsonAsync(url, body, ct);
+        return response.IsSuccessStatusCode ? null : await ReadErrorAsync(response, ct);
     }
 
     private static MultipartFormDataContent CsvForm(Stream csv, string fileName)

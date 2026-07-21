@@ -1,6 +1,7 @@
 using Beep.KocAiCommunity.Application.Admin;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Admin;
+using Beep.KocAiCommunity.Domain.Organization;
 
 namespace Beep.KocAiCommunity.Api.Endpoints;
 
@@ -78,8 +79,67 @@ public static class AdminEndpoints
             return Results.Ok(rows.Select(ToAuditDto).ToList());
         }).WithName("AdminListAudit");
 
+        // RBAC / Users: who exists, their org identity, and their competition-creation rights.
+        admin.MapGet("/users", async (IAccessAdminService svc, CancellationToken ct) =>
+        {
+            var users = await svc.ListUsersAsync(ct);
+            return Results.Ok(users.Select(ToUserDto).ToList());
+        }).WithName("AdminListUsers");
+
+        admin.MapGet("/org-units", async (IAccessAdminService svc, CancellationToken ct) =>
+        {
+            var units = await svc.ListOrgUnitsAsync(ct);
+            return Results.Ok(units.Select(u => new OrgUnitCodeDto(u.Id, u.Name, u.Type.ToString(), u.Path, u.Code)).ToList());
+        }).WithName("AdminListOrgUnits");
+
+        admin.MapPut("/users/{userId}/profile", async (string userId, UpsertUserProfileRequest req, IAccessAdminService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                return Results.Ok(ToUserDto(await svc.UpsertProfileAsync(userId, req.Email, req.DisplayName, req.OrgUnitId, ct)));
+            }
+            catch (AccessAdminException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        }).WithName("AdminUpsertUserProfile");
+
+        admin.MapPut("/users/{userId}/competition-grant", async (string userId, SetCompetitionGrantRequest req, IAccessAdminService svc, CancellationToken ct) =>
+        {
+            if (!Enum.TryParse<VisibilityScope>(req.MaxScope, ignoreCase: true, out var scope))
+            {
+                return Results.BadRequest(new { error = $"Unknown scope '{req.MaxScope}'." });
+            }
+
+            await svc.SetCompetitionGrantAsync(userId, scope, ct);
+            return Results.NoContent();
+        }).WithName("AdminSetCompetitionGrant");
+
+        admin.MapDelete("/users/{userId}/competition-grant", async (string userId, IAccessAdminService svc, CancellationToken ct) =>
+        {
+            await svc.RevokeCompetitionGrantAsync(userId, ct);
+            return Results.NoContent();
+        }).WithName("AdminRevokeCompetitionGrant");
+
+        admin.MapPut("/org-units/{id:guid}/code", async (Guid id, SetOrgUnitCodeRequest req, IAccessAdminService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.SetOrgUnitCodeAsync(id, req.Code, ct);
+                return Results.NoContent();
+            }
+            catch (AccessAdminException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        }).WithName("AdminSetOrgUnitCode");
+
         return group;
     }
+
+    private static AdminUserDto ToUserDto(AccessUserView u) =>
+        new(u.UserId, u.Email, u.DisplayName, u.CompanyId, u.DepartmentId, u.OrgUnitId,
+            u.OrgUnitCode, u.OrgUnitName, u.PositionLevel.ToString(), u.MaxCompetitionScope?.ToString());
 
     private static DemoDataStatusDto ToDemoDto(DemoDataStatus s) =>
         new(s.Seeded, s.Users, s.Competitions, s.Discussions, s.Datasets);

@@ -223,8 +223,14 @@
     and caps the create wizard's scope picker. `DevOrgSeeder` seeds unit codes, user profiles,
     and per-persona grants. New integration tests: ungranted → 403, above-cap → 403, at-cap →
     200, platform-admin any-level → 200.
-22. **Phase 2 — admin RBAC console** (NEXT) — `IAccessAdminService` (list users, upsert profile,
-    set/revoke grant, set org-unit code) + admin endpoints + Admin.razor "RBAC / Users" tab.
+22. **Phase 2 — admin RBAC console** ✅ DONE (2026-07-21) — `IAccessAdminService` (list users,
+    upsert profile with company/dept-code derivation from the picked org unit, set/revoke
+    competition grant, set unique org-unit code; every mutation audited via `IAuditEnvelope`) +
+    six `RequirePlatformAdmin` endpoints under `/api/v1/admin` + a **"RBAC / Users"** tab in
+    `Admin.razor` (per-user "Can create competitions" level picker, email + department editors,
+    and an org-unit code editor) + `KocApiClient` methods. New integration tests: grant→create
+    allowed / above-cap 403 / revoke→403, org-code set + uniqueness, department→derived codes,
+    and non-admin 403 on the new endpoints.
 
 ## Global definition of done
 

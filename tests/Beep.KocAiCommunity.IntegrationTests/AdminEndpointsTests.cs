@@ -15,10 +15,74 @@ public class AdminEndpointsTests(KocApiFactory factory) : IClassFixture<KocApiFa
     [InlineData("/api/v1/admin/settings")]
     [InlineData("/api/v1/admin/feature-flags")]
     [InlineData("/api/v1/admin/audit")]
+    [InlineData("/api/v1/admin/users")]
+    [InlineData("/api/v1/admin/org-units")]
     public async Task Admin_endpoints_reject_non_admins(string url)
     {
         var employee = _factory.CreateClientAs("plain-emp", "Employee");
         (await employee.GetAsync(url)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Granting_and_revoking_competition_creation_controls_access_and_is_listed()
+    {
+        var admin = _factory.CreateClientAs("rbac-admin", "Employee", "PlatformAdmin");
+        var user = _factory.CreateClientAs("rbac-user", competitionCreator: false, "Employee");
+
+        static HttpContent Comp(string scope) =>
+            JsonContent.Create(new Contracts.Competitions.CreateCompetitionRequest("C", "d", scope, null, null, 5, "accuracy"));
+
+        // No grant yet → forbidden.
+        (await user.PostAsync("/api/v1/competitions", Comp("Group"))).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Admin grants Group.
+        (await admin.PutAsJsonAsync("/api/v1/admin/users/rbac-user/competition-grant", new SetCompetitionGrantRequest("Group")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Group is within the cap → allowed; Company exceeds it → forbidden.
+        (await user.PostAsync("/api/v1/competitions", Comp("Group"))).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await user.PostAsync("/api/v1/competitions", Comp("Company"))).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var users = await admin.GetFromJsonAsync<List<AdminUserDto>>("/api/v1/admin/users");
+        users!.Single(u => u.UserId == "rbac-user").MaxCompetitionScope.Should().Be("Group");
+
+        // Revoke → back to forbidden.
+        (await admin.DeleteAsync("/api/v1/admin/users/rbac-user/competition-grant"))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await user.PostAsync("/api/v1/competitions", Comp("Group"))).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Org_unit_code_is_settable_and_unique()
+    {
+        var admin = _factory.CreateClientAs("code-admin", "Employee", "PlatformAdmin");
+
+        (await admin.PutAsJsonAsync($"/api/v1/admin/org-units/{_factory.T1}/code", new SetOrgUnitCodeRequest("ZZ9")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var units = await admin.GetFromJsonAsync<List<OrgUnitCodeDto>>("/api/v1/admin/org-units");
+        units!.Single(u => u.Id == _factory.T1).Code.Should().Be("ZZ9");
+
+        // The same code on another unit is rejected.
+        (await admin.PutAsJsonAsync($"/api/v1/admin/org-units/{_factory.T2}/code", new SetOrgUnitCodeRequest("ZZ9")))
+            .StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Setting_a_department_derives_company_and_dept_codes()
+    {
+        var admin = _factory.CreateClientAs("dept-admin", "Employee", "PlatformAdmin");
+        await admin.PutAsJsonAsync($"/api/v1/admin/org-units/{_factory.Company}/code", new SetOrgUnitCodeRequest("KOC"));
+        await admin.PutAsJsonAsync($"/api/v1/admin/org-units/{_factory.T1}/code", new SetOrgUnitCodeRequest("RES1"));
+
+        var response = await admin.PutAsJsonAsync("/api/v1/admin/users/dept-user/profile",
+            new UpsertUserProfileRequest("dept@koc.com.kw", "Dept User", _factory.T1));
+        var dto = await response.Content.ReadFromJsonAsync<AdminUserDto>();
+
+        dto!.OrgUnitId.Should().Be(_factory.T1);
+        dto.DepartmentId.Should().Be("RES1");
+        dto.CompanyId.Should().Be("KOC");
+        dto.Email.Should().Be("dept@koc.com.kw");
     }
 
     [Fact]

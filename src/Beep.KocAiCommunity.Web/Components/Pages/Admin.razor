@@ -152,6 +152,102 @@ else
             }
         </MudTabPanel>
 
+        <MudTabPanel Text="RBAC / Users" Icon="@Icons.Material.Filled.ManageAccounts" OnClick="EnsureRbac">
+            <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:80ch;">
+                Manage who can <b>create competitions</b> and at what level, and each user's org identity
+                (email, company, department). Department is picked from the org tree, which keeps the
+                <code>Company&nbsp;ID</code> / <code>Dept&nbsp;ID</code> codes in sync with the unit.
+            </MudText>
+
+            @if (_users is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                <BlueprintCard Class="pa-0 mb-4">
+                    <MudSimpleTable Dense="true" Hover="true" Style="overflow-x:auto;">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Company</th>
+                                <th>Department</th>
+                                <th>Position</th>
+                                <th style="min-width:190px;">Can create competitions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var u in _users)
+                            {
+                                <tr>
+                                    <td>
+                                        <b>@(u.DisplayName ?? u.UserId)</b>
+                                        <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.6;">@u.UserId</MudText>
+                                    </td>
+                                    <td>
+                                        <MudTextField T="string" Value="@EmailDraft(u)" ValueChanged="@(v => _emailDrafts[u.UserId] = v)"
+                                                      Variant="Variant.Text" Margin="Margin.Dense" Placeholder="name@koc.com.kw"
+                                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Save"
+                                                      OnAdornmentClick="() => SaveProfile(u)" />
+                                    </td>
+                                    <td>@(u.CompanyId ?? "—")</td>
+                                    <td>
+                                        <MudSelect T="Guid?" Value="@u.OrgUnitId" ValueChanged="@(v => OnDeptChanged(u, v))"
+                                                   Variant="Variant.Text" Margin="Margin.Dense" Dense="true">
+                                            <MudSelectItem T="Guid?" Value="@((Guid?)null)">—</MudSelectItem>
+                                            @foreach (var unit in _orgUnits ?? [])
+                                            {
+                                                <MudSelectItem T="Guid?" Value="@unit.Id">@(unit.Code is null ? unit.Name : $"{unit.Code} · {unit.Name}")</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </td>
+                                    <td><MudChip T="string" Size="Size.Small" Variant="Variant.Text">@u.PositionLevel</MudChip></td>
+                                    <td>
+                                        <MudSelect T="string" Value="@(u.MaxCompetitionScope ?? "None")" ValueChanged="@(v => OnGrantChanged(u, v))"
+                                                   Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
+                                            @foreach (var s in GrantOptions)
+                                            {
+                                                <MudSelectItem Value="@s">@s</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </BlueprintCard>
+
+                <MudText Typo="Typo.h6" Class="koc-heading mb-2">Org units &amp; codes</MudText>
+                <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">
+                    Assign each company / directorate / group / team a short business code (e.g. <b>AX01</b>). Codes are unique.
+                </MudText>
+                <BlueprintCard Class="pa-0">
+                    <MudSimpleTable Dense="true" Hover="true" Style="overflow-x:auto;">
+                        <thead>
+                            <tr><th>Unit</th><th>Type</th><th>Path</th><th style="min-width:200px;">Code</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var unit in _orgUnits ?? [])
+                            {
+                                <tr>
+                                    <td><b>@unit.Name</b></td>
+                                    <td><MudChip T="string" Size="Size.Small" Variant="Variant.Text">@unit.Type</MudChip></td>
+                                    <td><MudText Typo="Typo.caption" Style="opacity:.6;">@unit.Path</MudText></td>
+                                    <td>
+                                        <MudTextField T="string" Value="@CodeDraft(unit)" ValueChanged="@(v => _codeDrafts[unit.Id] = v)"
+                                                      Variant="Variant.Text" Margin="Margin.Dense" Placeholder="AX01"
+                                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Save"
+                                                      OnAdornmentClick="() => SaveOrgCode(unit)" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </BlueprintCard>
+            }
+        </MudTabPanel>
+
         <MudTabPanel Text="Audit" Icon="@Icons.Material.Filled.Verified" OnClick="EnsureAudit">
             @if (_audit is null)
             {
@@ -175,6 +271,12 @@ else
     private string _newFlagKey = "";
     private DemoDataStatusDto? _demo;
     private bool _demoBusy;
+
+    private IReadOnlyList<AdminUserDto>? _users;
+    private IReadOnlyList<OrgUnitCodeDto>? _orgUnits;
+    private readonly Dictionary<string, string?> _emailDrafts = new();
+    private readonly Dictionary<Guid, string?> _codeDrafts = new();
+    private static readonly string[] GrantOptions = ["None", "Team", "Group", "Directorate", "Company"];
 
     protected override async Task OnInitializedAsync()
     {
@@ -242,6 +344,56 @@ else
     private async Task EnsureSettings() => _settings ??= await Api.GetSettingsAsync();
     private async Task EnsureFlags() => _flags ??= await Api.GetFeatureFlagsAsync();
     private async Task EnsureAudit() => _audit ??= await Api.GetAuditAsync();
+
+    // ---- RBAC / Users ----
+
+    private async Task EnsureRbac()
+    {
+        _orgUnits ??= await Api.GetAdminOrgUnitsAsync();
+        _users ??= await Api.GetAdminUsersAsync();
+    }
+
+    private string EmailDraft(AdminUserDto u) => _emailDrafts.TryGetValue(u.UserId, out var v) ? (v ?? "") : (u.Email ?? "");
+    private string CodeDraft(OrgUnitCodeDto unit) => _codeDrafts.TryGetValue(unit.Id, out var v) ? (v ?? "") : (unit.Code ?? "");
+
+    private async Task OnGrantChanged(AdminUserDto u, string value)
+    {
+        var error = value == "None"
+            ? await Api.RevokeCompetitionGrantAsync(u.UserId)
+            : await Api.SetCompetitionGrantAsync(u.UserId, value);
+        Snackbar.Add(error ?? $"{u.DisplayName ?? u.UserId} can now create up to {value}.".Replace("up to None", "no longer create competitions"),
+            error is null ? Severity.Success : Severity.Warning);
+        _users = await Api.GetAdminUsersAsync();
+    }
+
+    private async Task OnDeptChanged(AdminUserDto u, Guid? orgUnitId) => await SaveProfile(u, orgUnitId);
+
+    private Task SaveProfile(AdminUserDto u) => SaveProfile(u, u.OrgUnitId);
+
+    private async Task SaveProfile(AdminUserDto u, Guid? orgUnitId)
+    {
+        var email = _emailDrafts.TryGetValue(u.UserId, out var e) ? e : u.Email;
+        var (_, error) = await Api.UpsertUserProfileAsync(u.UserId, new UpsertUserProfileRequest(email, u.DisplayName, orgUnitId));
+        Snackbar.Add(error ?? $"Saved {u.DisplayName ?? u.UserId}.", error is null ? Severity.Success : Severity.Warning);
+        if (error is null)
+        {
+            _emailDrafts.Remove(u.UserId);
+        }
+
+        _users = await Api.GetAdminUsersAsync();
+    }
+
+    private async Task SaveOrgCode(OrgUnitCodeDto unit)
+    {
+        var code = _codeDrafts.TryGetValue(unit.Id, out var c) ? c : unit.Code;
+        var error = await Api.SetOrgUnitCodeAsync(unit.Id, code);
+        Snackbar.Add(error ?? $"Code saved for {unit.Name}.", error is null ? Severity.Success : Severity.Warning);
+        if (error is null)
+        {
+            _codeDrafts.Remove(unit.Id);
+            _orgUnits = await Api.GetAdminOrgUnitsAsync();
+        }
+    }
 
     private async Task SaveSetting(SettingDto s)
     {

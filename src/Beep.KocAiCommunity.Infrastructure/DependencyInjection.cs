@@ -137,6 +137,7 @@ public static class DependencyInjection
         services.AddScoped<Application.Admin.IFeatureFlagService, Admin.FeatureFlagService>();
         services.AddScoped<Application.Admin.IAdminDashboardService, Admin.AdminDashboardService>();
         services.AddScoped<Application.Admin.IDemoDataService, Admin.DemoDataService>();
+        services.AddScoped<Application.Admin.IAccessAdminService, Admin.AccessAdminService>();
 
         return services;
     }
