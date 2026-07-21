@@ -240,10 +240,11 @@ designer + node catalog + pipeline **run** work **fully offline** on a local in-
 engine (`PluginNodeExecutor` + ML.NET + DuckDB against local CSVs); only competitions
 call the API. Decisions & architecture: `19_WINFORMS_DESKTOP_STUDIO.md`.
 
-23. **Stage 1 — shared `Beep.KocAiCommunity.Client`** (NEXT) — extract `IKocApiClient`/
-    `KocApiClient`/`DevIdentity`/`RealtimeOptions` from Web into a `net10.0` library +
-    `AddKocHttpClient(baseUrl)`; Web references it. Behaviour-preserving. → `19a_…`
-24. **Stage 2 — Studio UI → `Ui.Studio` RCL** — move `WorkflowDesigner`/`Workflows`/
+23. **Stage 1 — shared `Beep.KocAiCommunity.Client`** ✅ DONE (2026-07-21) — new `net10.0`
+    library holds `IKocApiClient`/`KocApiClient`/`DevIdentity`/`DevIdentityHandler`/
+    `RealtimeOptions` + `AddKocHttpClient(baseUrl)`; Web references it and calls the helper.
+    Behaviour-preserving (255 tests green). → `19a_…`
+24. **Stage 2 — Studio UI → `Ui.Studio` RCL** (NEXT) — move `WorkflowDesigner`/`Workflows`/
     dialogs/`NodeVisuals`/`MlNode` into the shared RCL; Web renders them unchanged. → `19a_…`
 25. **Stage 3 — WinForms BlazorWebView shell (thin client)** — new `net10.0-windows`
     `Beep.KocAiCommunity.WinForms` hosting the Studio UI against a running API; prove the

@@ -1,4 +1,4 @@
-namespace Beep.KocAiCommunity.Web.Services;
+namespace Beep.KocAiCommunity.Client;
 
 /// <summary>A selectable "view as" persona mapping to a dev user id and its roles.</summary>
 public sealed record Persona(string Key, string Label, string? UserId, IReadOnlyList<string> Roles)

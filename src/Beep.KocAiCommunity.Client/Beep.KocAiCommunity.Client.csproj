@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Framework-agnostic HTTP client for the KOC API + dev identity forwarding.
+       Shared by the Web app and the WinForms desktop app. No Blazor/MudBlazor deps. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.KocAiCommunity.Contracts\Beep.KocAiCommunity.Contracts.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+</Project>

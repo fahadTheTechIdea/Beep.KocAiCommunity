@@ -1,4 +1,4 @@
-using Beep.KocAiCommunity.Web.Services;
+using Beep.KocAiCommunity.Client;
 using FluentAssertions;
 using Xunit;
 

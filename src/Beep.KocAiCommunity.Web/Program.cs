@@ -1,6 +1,6 @@
+using Beep.KocAiCommunity.Client;
 using Beep.KocAiCommunity.ServiceDefaults;
 using Beep.KocAiCommunity.Web.Components;
-using Beep.KocAiCommunity.Web.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,11 +14,7 @@ builder.Services.AddKocWebAuthentication(builder.Configuration);
 
 // Typed API client. The Web calls /api/v1 and never touches the database directly.
 var apiBaseUrl = builder.Configuration["KocApi:BaseUrl"] ?? "http://localhost:5250";
-builder.Services.AddSingleton<DevIdentity>();
-builder.Services.AddTransient<DevIdentityHandler>();
-builder.Services.AddHttpClient<IKocApiClient, KocApiClient>(client => client.BaseAddress = new Uri(apiBaseUrl))
-    .AddHttpMessageHandler<DevIdentityHandler>();
-builder.Services.AddSingleton(new RealtimeOptions($"{apiBaseUrl.TrimEnd('/')}/hubs/leaderboard"));
+builder.Services.AddKocHttpClient(apiBaseUrl);
 
 // Blazor Web App with global Interactive Server render mode.
 builder.Services.AddRazorComponents()

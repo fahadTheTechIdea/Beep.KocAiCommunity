@@ -21,7 +21,7 @@ using ExperimentRunDto = Beep.KocAiCommunity.Contracts.Experiments.RunDto;
 // RunDto exists in both Jobs (background jobs) and Experiments; the unqualified name means the job one.
 using RunDto = Beep.KocAiCommunity.Contracts.Jobs.RunDto;
 
-namespace Beep.KocAiCommunity.Web.Services;
+namespace Beep.KocAiCommunity.Client;
 
 /// <summary>Typed client the Web uses to talk to <c>/api/v1</c>. The Web never touches the database.</summary>
 public interface IKocApiClient

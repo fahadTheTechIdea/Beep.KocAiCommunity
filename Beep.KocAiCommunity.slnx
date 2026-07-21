@@ -3,6 +3,7 @@
     <Project Path="src/Beep.KocAiCommunity.Api/Beep.KocAiCommunity.Api.csproj" />
     <Project Path="src/Beep.KocAiCommunity.AppHost/Beep.KocAiCommunity.AppHost.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Application/Beep.KocAiCommunity.Application.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Client/Beep.KocAiCommunity.Client.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Contracts/Beep.KocAiCommunity.Contracts.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Domain/Beep.KocAiCommunity.Domain.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.csproj" />
