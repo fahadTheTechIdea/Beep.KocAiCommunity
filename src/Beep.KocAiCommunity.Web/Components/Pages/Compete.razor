@@ -418,7 +418,10 @@
     private double? _lastScore;
     private string? _error;
 
-    private bool CanCreate => Identity.IsInRole("CompetitionAdmin") || Identity.IsPlatformAdmin;
+    // The server is authoritative: a user may host only if they hold a competition-creator grant
+    // (or are a platform admin). _maxScope is the widest audience they may target, from /me.
+    private string? _maxScope;
+    private bool CanCreate => _maxScope is not null;
 
     private string? _trainingCsv;
     private string? _evalCsv;
@@ -433,6 +436,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _maxScope = (await Api.GetMeAsync())?.MaxCompetitionScope;
         await LoadCompetitions();
         await ConnectAsync();
     }
@@ -500,7 +504,8 @@
     private async Task OpenCreate()
     {
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true };
-        var dialog = await DialogService.ShowAsync<CreateCompetitionDialog>("New competition", options);
+        var parameters = new DialogParameters<CreateCompetitionDialog> { { x => x.MaxScope, _maxScope } };
+        var dialog = await DialogService.ShowAsync<CreateCompetitionDialog>("New competition", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled)
         {

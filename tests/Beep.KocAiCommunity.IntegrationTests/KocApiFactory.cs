@@ -73,9 +73,22 @@ public sealed class KocApiFactory : WebApplicationFactory<Program>
         });
     }
 
-    public HttpClient CreateClientAs(string? sub, params string[] roles)
+    public HttpClient CreateClientAs(string? sub, params string[] roles) =>
+        CreateClientAs(sub, competitionCreator: true, roles);
+
+    /// <summary>
+    /// Creates an authenticated test client. By default the user is granted Company-scope
+    /// competition-creation (competition creation now requires a grant); pass
+    /// <paramref name="competitionCreator"/> = false to test the ungranted / capped paths.
+    /// </summary>
+    public HttpClient CreateClientAs(string? sub, bool competitionCreator, params string[] roles)
     {
         EnsureSeeded();
+        if (sub is not null && competitionCreator)
+        {
+            GrantCompetitionCreator(sub, VisibilityScope.Company);
+        }
+
         var client = CreateClient();
         if (sub is not null)
         {
@@ -87,6 +100,33 @@ public sealed class KocApiFactory : WebApplicationFactory<Program>
         }
 
         return client;
+    }
+
+    /// <summary>Grants (or updates) a user's competition-creation capability at the given max scope.</summary>
+    public void GrantCompetitionCreator(string sub, VisibilityScope max)
+    {
+        lock (_seedLock)
+        {
+            using var scope = Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<KocDbContext>();
+            var grant = db.CompetitionCreatorGrants.FirstOrDefault(g => g.UserId == sub);
+            if (grant is null)
+            {
+                db.CompetitionCreatorGrants.Add(new Domain.Authorization.CompetitionCreatorGrant
+                {
+                    UserId = sub,
+                    MaxScope = max,
+                    GrantedByUserId = "test-seed",
+                    CreatedUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                });
+            }
+            else
+            {
+                grant.MaxScope = max;
+            }
+
+            db.SaveChanges();
+        }
     }
 
     private readonly object _seedLock = new();

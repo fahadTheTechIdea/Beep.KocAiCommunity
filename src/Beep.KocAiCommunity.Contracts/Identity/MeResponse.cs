@@ -7,4 +7,6 @@ public sealed record MeResponse(
     IReadOnlyList<string> Roles,
     string PositionLevel,
     Guid? HomeOrgUnitId,
-    Guid? LedOrgUnitId);
+    Guid? LedOrgUnitId,
+    /// <summary>Widest competition audience this user may create (Team/Group/Directorate/Company), or null if they cannot create competitions.</summary>
+    string? MaxCompetitionScope = null);

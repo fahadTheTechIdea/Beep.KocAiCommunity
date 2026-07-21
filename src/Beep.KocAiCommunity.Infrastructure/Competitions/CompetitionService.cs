@@ -8,6 +8,7 @@ using Beep.KocAiCommunity.Application.RealTime;
 using Beep.KocAiCommunity.Application.Storage;
 using Beep.KocAiCommunity.Application.Workflow;
 using Beep.KocAiCommunity.Contracts.Workflow;
+using Beep.KocAiCommunity.Domain.Authorization;
 using Beep.KocAiCommunity.Domain.Common;
 using Beep.KocAiCommunity.Domain.Competitions;
 using Beep.KocAiCommunity.Domain.Organization;
@@ -28,9 +29,22 @@ public sealed class CompetitionService(
     IEngagementService engagement) : ICompetitionService
 {
     public async Task<Competition> CreateAsync(
-        string userId, string title, string description, VisibilityScope scope, Guid visibilityOrgUnitId,
+        string userId, bool isPlatformAdmin, string title, string description, VisibilityScope scope, Guid visibilityOrgUnitId,
         DateTime? revealUtc, int quotaPerDay, string scorerCode, CancellationToken ct = default)
     {
+        // Authorization: a platform admin may create at any level; anyone else needs an active
+        // creator grant, and may only target an audience at or narrower than their granted maximum.
+        var max = await GetMaxCreateScopeAsync(userId, isPlatformAdmin, ct);
+        if (max is null)
+        {
+            throw new CompetitionAccessException("You are not authorized to create competitions. Ask an admin for access.");
+        }
+
+        if ((int)scope > (int)max.Value)
+        {
+            throw new CompetitionAccessException($"You can only create competitions up to {max} scope.");
+        }
+
         // Fail fast if the scorer code is unknown.
         _ = scorers.Resolve(scorerCode);
 
@@ -51,6 +65,17 @@ public sealed class CompetitionService(
         db.Set<Competition>().Add(competition);
         await db.SaveChangesAsync(ct);
         return competition;
+    }
+
+    public async Task<VisibilityScope?> GetMaxCreateScopeAsync(string userId, bool isPlatformAdmin, CancellationToken ct = default)
+    {
+        if (isPlatformAdmin)
+        {
+            return VisibilityScope.Company;
+        }
+
+        var grant = await db.Set<CompetitionCreatorGrant>().FirstOrDefaultAsync(g => g.UserId == userId, ct);
+        return grant is not null && grant.IsActive(DateTime.UtcNow) ? grant.MaxScope : null;
     }
 
     public async Task SetAnswerKeyAsync(string userId, Guid competitionId, Stream answerKey, CancellationToken ct = default)

@@ -211,6 +211,21 @@
 
 19. ~~Projects → Workflows merge~~ ✅ DONE (2026-07-20) — the `Projects` concept is retired; the versioned **Workflows** registry is the single home for pipelines. A workflow optionally carries a `CompetitionId` (replacing the old `Project.CompetitionId`); the "New workflow" dialog picks an optional competition, and a competition-targeting workflow submits its pipeline from the canvas. `Project` domain/service/endpoints/DTOs/dialog deleted; dual-provider `MergeProjectsIntoWorkflows` migration (drops `Projects`, renames `Workflows.ProjectId` → `CompetitionId`). The `/workflow` designer is always registry-backed (no more project-browse mode); `/workflow` with no id redirects to `/workflows`.
 
+## Admin RBAC — competition-creator grants, org codes, user profiles
+
+21. **Phase 1 — model + enforcement** ✅ DONE (2026-07-21) — `OrgUnit.Code` (e.g. `AX01`);
+    `UserProfile` extended with `Email`/`CompanyId`/`DepartmentId`/`OrgUnitId` (authoritative
+    org pointer); new `CompetitionCreatorGrant` (per-user, `MaxScope`) with dual-provider
+    `AddRbacUserProfiles` migration. Competition creation is now **granted-only**:
+    `CompetitionService.CreateAsync` requires a platform-admin caller or an active grant whose
+    max scope covers the requested audience (else `CompetitionAccessException` → HTTP 403);
+    `GetMaxCreateScopeAsync` feeds `MeResponse.MaxCompetitionScope`, which gates the Host button
+    and caps the create wizard's scope picker. `DevOrgSeeder` seeds unit codes, user profiles,
+    and per-persona grants. New integration tests: ungranted → 403, above-cap → 403, at-cap →
+    200, platform-admin any-level → 200.
+22. **Phase 2 — admin RBAC console** (NEXT) — `IAccessAdminService` (list users, upsert profile,
+    set/revoke grant, set org-unit code) + admin endpoints + Admin.razor "RBAC / Users" tab.
+
 ## Global definition of done
 
 ```bash

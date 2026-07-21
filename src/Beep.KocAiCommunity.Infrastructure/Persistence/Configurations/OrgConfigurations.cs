@@ -13,9 +13,11 @@ public sealed class OrgUnitConfiguration : IEntityTypeConfiguration<OrgUnit>
         b.ToTable("OrgUnits", "koc");
         b.HasKey(x => x.Id);
         b.Property(x => x.Name).HasMaxLength(256).IsRequired();
+        b.Property(x => x.Code).HasMaxLength(32);
         b.Property(x => x.Path).HasMaxLength(1024).IsRequired();
         b.Property(x => x.LeaderUserId).HasMaxLength(450);
         b.HasIndex(x => x.ParentId);
+        b.HasIndex(x => x.Code);   // uniqueness enforced in the admin service (cross-provider filtered-null)
         b.HasIndex(x => x.Path);
         b.HasIndex(x => new { x.Type, x.LeaderUserId });
         b.HasOne<OrgUnit>().WithMany().HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Restrict);
@@ -48,6 +50,18 @@ public sealed class UserEntityPermissionConfiguration : IEntityTypeConfiguration
         b.Property(x => x.GrantedByUserId).HasMaxLength(450).IsRequired();
         b.HasIndex(x => new { x.UserId, x.ResourceType, x.ResourceId });
         b.HasIndex(x => new { x.UserId, x.ResourceType, x.ResourceId, x.PermissionKey }).IsUnique();
+    }
+}
+
+public sealed class CompetitionCreatorGrantConfiguration : IEntityTypeConfiguration<CompetitionCreatorGrant>
+{
+    public void Configure(EntityTypeBuilder<CompetitionCreatorGrant> b)
+    {
+        b.ToTable("CompetitionCreatorGrants", "koc");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.UserId).HasMaxLength(450).IsRequired();
+        b.Property(x => x.GrantedByUserId).HasMaxLength(450).IsRequired();
+        b.HasIndex(x => x.UserId).IsUnique();   // one grant per user
     }
 }
 

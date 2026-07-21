@@ -7,13 +7,25 @@ namespace Beep.KocAiCommunity.Application.Competitions;
 /// <summary>Raised when a competition action is not permitted (visibility, quota, state).</summary>
 public sealed class CompetitionException(string message) : Exception(message);
 
+/// <summary>
+/// Raised when a user is not authorized to create a competition at the requested level
+/// (no creator grant, or the requested scope exceeds their granted maximum). Maps to HTTP 403.
+/// </summary>
+public sealed class CompetitionAccessException(string message) : Exception(message);
+
 /// <summary>A leaderboard row with the entrant's display name resolved for UI use.</summary>
 public sealed record NamedLeaderboardEntry(int Rank, string UserId, string DisplayName, double Score);
 
 public interface ICompetitionService
 {
+    /// <summary>
+    /// Creates a competition. The caller must hold a <c>CompetitionCreatorGrant</c> whose max scope
+    /// covers <paramref name="scope"/>, or be a platform admin (<paramref name="isPlatformAdmin"/>);
+    /// otherwise a <see cref="CompetitionAccessException"/> is thrown.
+    /// </summary>
     Task<Competition> CreateAsync(
         string userId,
+        bool isPlatformAdmin,
         string title,
         string description,
         VisibilityScope scope,
@@ -22,6 +34,12 @@ public interface ICompetitionService
         int quotaPerDay,
         string scorerCode,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// The widest audience level this user may create a competition at: <c>Company</c> for a platform
+    /// admin, else their active creator grant's max scope, else <c>null</c> (not allowed to create).
+    /// </summary>
+    Task<VisibilityScope?> GetMaxCreateScopeAsync(string userId, bool isPlatformAdmin, CancellationToken ct = default);
 
     /// <summary>Uploads (or replaces) the hidden answer key. Creator only.</summary>
     Task SetAnswerKeyAsync(string userId, Guid competitionId, Stream answerKey, CancellationToken ct = default);

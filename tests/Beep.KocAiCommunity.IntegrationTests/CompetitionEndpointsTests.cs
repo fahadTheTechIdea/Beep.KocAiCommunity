@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using Beep.KocAiCommunity.Contracts.Competitions;
 using Beep.KocAiCommunity.Contracts.Workflow;
+using Beep.KocAiCommunity.Domain.Organization;
 using FluentAssertions;
 using Xunit;
 
@@ -20,6 +21,41 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var response = await client.PostAsJsonAsync("/api/v1/competitions",
             new CreateCompetitionRequest("X", "y", "Company", null, null, 5, "accuracy"));
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Create_is_forbidden_without_a_creator_grant()
+    {
+        var client = _factory.CreateClientAs("no-grant", competitionCreator: false, "Employee");
+        var response = await client.PostAsJsonAsync("/api/v1/competitions",
+            new CreateCompetitionRequest("Nope", "y", "Team", null, null, 5, "accuracy"));
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Create_above_granted_scope_is_forbidden_but_within_cap_succeeds()
+    {
+        var client = _factory.CreateClientAs("cap-team", competitionCreator: false, "Employee");
+        _factory.GrantCompetitionCreator("cap-team", VisibilityScope.Team);
+
+        // Directorate is wider than the Team cap → forbidden.
+        (await client.PostAsJsonAsync("/api/v1/competitions",
+            new CreateCompetitionRequest("Too wide", "y", "Directorate", null, null, 5, "accuracy")))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Team is at the cap → allowed.
+        (await client.PostAsJsonAsync("/api/v1/competitions",
+            new CreateCompetitionRequest("My team", "y", "Team", null, null, 5, "accuracy")))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Platform_admin_can_create_at_any_level_without_a_grant()
+    {
+        var admin = _factory.CreateClientAs("plat-admin", competitionCreator: false, "Employee", "PlatformAdmin");
+        (await admin.PostAsJsonAsync("/api/v1/competitions",
+            new CreateCompetitionRequest("Company-wide", "y", "Company", null, null, 5, "accuracy")))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]

@@ -11,6 +11,21 @@ public class UserProfile : AuditableEntity
 {
     public string UserId { get; set; } = default!;              // Entra oid — same key style as OrgMembership
     public string DisplayName { get; set; } = default!;
+
+    // ---- Identity & org placement (managed in the admin RBAC console) ----
+
+    /// <summary>Work email. Unique when set (enforced by the admin service).</summary>
+    public string? Email { get; set; }
+
+    /// <summary>The Company-root <see cref="OrgUnit.Code"/> this user belongs to, e.g. "KOC".</summary>
+    public string? CompanyId { get; set; }
+
+    /// <summary>The <see cref="OrgUnit.Code"/> of the exact unit (department/team) this user belongs to, e.g. "AX01".</summary>
+    public string? DepartmentId { get; set; }
+
+    /// <summary>FK to the exact <see cref="OrgUnit"/> this user belongs to — the authoritative org pointer.</summary>
+    public Guid? OrgUnitId { get; set; }
+
     public string? Bio { get; set; }                            // max 280
     public string AvatarIcon { get; set; } = "185-worker.png";  // file name resolved via KocBrand.Icon()
     public string? SkillsCsv { get; set; }                      // "ML.NET,Python,Reservoir"

@@ -12,10 +12,15 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
         b.HasKey(x => x.Id);
         b.Property(x => x.UserId).HasMaxLength(450).IsRequired();
         b.Property(x => x.DisplayName).HasMaxLength(256).IsRequired();
+        b.Property(x => x.Email).HasMaxLength(256);
+        b.Property(x => x.CompanyId).HasMaxLength(32);
+        b.Property(x => x.DepartmentId).HasMaxLength(32);
         b.Property(x => x.Bio).HasMaxLength(280);
         b.Property(x => x.AvatarIcon).HasMaxLength(128).IsRequired();
         b.Property(x => x.SkillsCsv).HasMaxLength(512);
         b.HasIndex(x => x.UserId).IsUnique();
+        b.HasIndex(x => x.Email);           // uniqueness enforced in the admin service
+        b.HasIndex(x => x.OrgUnitId);
         b.HasIndex(x => x.XpTotal);
     }
 }

@@ -1,3 +1,5 @@
+using Beep.KocAiCommunity.Domain.Authorization;
+using Beep.KocAiCommunity.Domain.Engagement;
 using Beep.KocAiCommunity.Domain.Learning;
 using Beep.KocAiCommunity.Domain.Organization;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
@@ -22,11 +24,11 @@ public static class DevOrgSeeder
 
         var stamp = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var company = Unit("Kuwait Oil Company", OrgUnitType.Company, null, "/koc", "dev-ceo", stamp);
-        var directorate = Unit("Exploration & Subsurface", OrgUnitType.Directorate, company.Id, "/koc/exploration", "dev-dceo", stamp);
-        var group = Unit("Subsurface", OrgUnitType.Group, directorate.Id, "/koc/exploration/subsurface", "dev-user", stamp);
-        var reservoir = Unit("Reservoir Analytics", OrgUnitType.Team, group.Id, "/koc/exploration/subsurface/reservoir", "dev-lead", stamp);
-        var production = Unit("Production Engineering", OrgUnitType.Team, group.Id, "/koc/exploration/subsurface/production", null, stamp);
+        var company = Unit("Kuwait Oil Company", OrgUnitType.Company, null, "/koc", "KOC", "dev-ceo", stamp);
+        var directorate = Unit("Exploration & Subsurface", OrgUnitType.Directorate, company.Id, "/koc/exploration", "EXP", "dev-dceo", stamp);
+        var group = Unit("Subsurface", OrgUnitType.Group, directorate.Id, "/koc/exploration/subsurface", "SUB", "dev-user", stamp);
+        var reservoir = Unit("Reservoir Analytics", OrgUnitType.Team, group.Id, "/koc/exploration/subsurface/reservoir", "AX01", "dev-lead", stamp);
+        var production = Unit("Production Engineering", OrgUnitType.Team, group.Id, "/koc/exploration/subsurface/production", "AX02", null, stamp);
 
         db.OrgUnits.AddRange(company, directorate, group, reservoir, production);
         db.OrgMemberships.AddRange(
@@ -36,6 +38,28 @@ public static class DevOrgSeeder
             Member("dev-emp-1", reservoir.Id, PositionLevel.Employee, stamp),
             Member("dev-emp-2", reservoir.Id, PositionLevel.Employee, stamp),
             Member("dev-emp-3", production.Id, PositionLevel.Employee, stamp));
+
+        // Identity/org profiles (email + company/dept codes + the authoritative OrgUnitId) so the
+        // admin RBAC console has real users to manage.
+        db.UserProfiles.AddRange(
+            Profile("dev-ceo", "Nasser Al-Sabah", company, stamp),
+            Profile("dev-dceo", "Huda Al-Fadhli", directorate, stamp),
+            Profile("dev-user", "Yousef Al-Mutairi", group, stamp),
+            Profile("dev-admin", "Platform Admin", group, stamp),
+            Profile("dev-compadmin", "Competition Admin", group, stamp),
+            Profile("dev-lead", "Sara Al-Rashidi", reservoir, stamp),
+            Profile("dev-emp-1", "Ali Al-Ajmi", reservoir, stamp),
+            Profile("dev-emp-2", "Mariam Al-Enezi", reservoir, stamp),
+            Profile("dev-emp-3", "Khaled Al-Dosari", production, stamp));
+
+        // Competition-creator grants so the non-admin personas can still host, capped to their level.
+        // The Platform Admin persona (dev-admin) needs none — it may always create at any level.
+        db.CompetitionCreatorGrants.AddRange(
+            Grant("dev-lead", VisibilityScope.Team, stamp),
+            Grant("dev-user", VisibilityScope.Group, stamp),
+            Grant("dev-dceo", VisibilityScope.Directorate, stamp),
+            Grant("dev-ceo", VisibilityScope.Company, stamp),
+            Grant("dev-compadmin", VisibilityScope.Company, stamp));
         await db.SaveChangesAsync(ct);
 
         // Sample participation so the rollup isn't empty.
@@ -65,12 +89,13 @@ public static class DevOrgSeeder
         }
     }
 
-    private static OrgUnit Unit(string name, OrgUnitType type, Guid? parent, string path, string? leader, DateTime stamp) => new()
+    private static OrgUnit Unit(string name, OrgUnitType type, Guid? parent, string path, string code, string? leader, DateTime stamp) => new()
     {
         Name = name,
         Type = type,
         ParentId = parent,
         Path = path,
+        Code = code,
         LeaderUserId = leader,
         CreatedUtc = stamp,
     };
@@ -82,6 +107,25 @@ public static class DevOrgSeeder
         PositionLevel = level,
         IsPrimary = true,
         FromUtc = stamp,
+        CreatedUtc = stamp,
+    };
+
+    private static UserProfile Profile(string userId, string displayName, OrgUnit unit, DateTime stamp) => new()
+    {
+        UserId = userId,
+        DisplayName = displayName,
+        Email = $"{userId}@koc.com.kw",
+        CompanyId = "KOC",
+        DepartmentId = unit.Code,
+        OrgUnitId = unit.Id,
+        CreatedUtc = stamp,
+    };
+
+    private static CompetitionCreatorGrant Grant(string userId, VisibilityScope maxScope, DateTime stamp) => new()
+    {
+        UserId = userId,
+        MaxScope = maxScope,
+        GrantedByUserId = "dev-seed",
         CreatedUtc = stamp,
     };
 }

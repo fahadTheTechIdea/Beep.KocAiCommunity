@@ -60,11 +60,23 @@
                         </div>
 
                         <MudSelect T="string" Value="_scope" ValueChanged="OnScopeChanged" Label="Who can compete" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   HelperText="Only people in this scope see and enter the competition.">
-                            <MudSelectItem Value="@("Company")">🏢 All of KOC</MudSelectItem>
-                            <MudSelectItem Value="@("Directorate")">My directorate</MudSelectItem>
-                            <MudSelectItem Value="@("Group")">My group</MudSelectItem>
-                            <MudSelectItem Value="@("Team")">My team</MudSelectItem>
+                                   HelperText="Only people in this scope see and enter the competition. Levels above your access are hidden.">
+                            @if (Allowed("Company"))
+                            {
+                                <MudSelectItem Value="@("Company")">🏢 All of KOC</MudSelectItem>
+                            }
+                            @if (Allowed("Directorate"))
+                            {
+                                <MudSelectItem Value="@("Directorate")">My directorate</MudSelectItem>
+                            }
+                            @if (Allowed("Group"))
+                            {
+                                <MudSelectItem Value="@("Group")">My group</MudSelectItem>
+                            }
+                            @if (Allowed("Team"))
+                            {
+                                <MudSelectItem Value="@("Team")">My team</MudSelectItem>
+                            }
                         </MudSelect>
                         @if (_audience is not null)
                         {
@@ -206,6 +218,15 @@
 @code {
     [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
 
+    /// <summary>The widest audience the current user may target (from /me), or null if none. Caps the scope picker.</summary>
+    [Parameter] public string? MaxScope { get; set; }
+
+    // VisibilityScope is ordered narrow→wide; a user may target any level at or below their cap.
+    private static readonly string[] ScopeRank = ["Team", "Group", "Directorate", "Company"];
+
+    private bool Allowed(string scope) =>
+        MaxScope is null || Array.IndexOf(ScopeRank, scope) <= Array.IndexOf(ScopeRank, MaxScope);
+
     private static readonly string[] Steps = ["Overview", "Task & data", "Rules", "Review"];
 
     private static readonly string[] TitleExamples =
@@ -310,7 +331,16 @@
         _ => !string.IsNullOrWhiteSpace(_title),
     };
 
-    protected override async Task OnInitializedAsync() => await LoadAudience();
+    protected override async Task OnInitializedAsync()
+    {
+        // Start at the widest audience the user is entitled to (Company default may be out of reach).
+        if (MaxScope is not null && !Allowed(_scope))
+        {
+            _scope = MaxScope;
+        }
+
+        await LoadAudience();
+    }
 
     private void Next()
     {

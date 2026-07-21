@@ -12,6 +12,9 @@ public class OrgUnit : AuditableEntity
     public string Name { get; set; } = default!;
     public OrgUnitType Type { get; set; }
 
+    /// <summary>Short business code for the unit, e.g. "AX01" or "KOC". Unique when set (enforced by the admin service).</summary>
+    public string? Code { get; set; }
+
     /// <summary>Null only for the single Company root.</summary>
     public Guid? ParentId { get; set; }
 

@@ -25,8 +25,13 @@ public static class CompetitionEndpoints
 
             try
             {
-                var competition = await svc.CreateAsync(me.UserId!, req.Title, req.Description, scope, unit, req.RevealUtc, req.QuotaPerDay, req.ScorerCode, ct);
+                var isPlatformAdmin = me.IsInRole(KocRoles.PlatformAdmin);
+                var competition = await svc.CreateAsync(me.UserId!, isPlatformAdmin, req.Title, req.Description, scope, unit, req.RevealUtc, req.QuotaPerDay, req.ScorerCode, ct);
                 return Results.Ok(ToDto(competition));
+            }
+            catch (CompetitionAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
             catch (CompetitionException ex)
             {

@@ -1,3 +1,4 @@
+using Beep.KocAiCommunity.Application.Competitions;
 using Beep.KocAiCommunity.Application.Organization;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Identity;
@@ -9,7 +10,7 @@ public static class MeEndpoints
 {
     public static RouteGroupBuilder MapMeEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/me", async (IKocCurrentUser me, IOrgDirectory directory, CancellationToken ct) =>
+        group.MapGet("/me", async (IKocCurrentUser me, IOrgDirectory directory, ICompetitionService competitions, CancellationToken ct) =>
         {
             if (!me.IsAuthenticated || me.UserId is null)
             {
@@ -17,13 +18,15 @@ public static class MeEndpoints
             }
 
             var profile = await directory.GetProfileAsync(me.UserId, ct);
+            var maxScope = await competitions.GetMaxCreateScopeAsync(me.UserId, me.IsInRole(KocRoles.PlatformAdmin), ct);
             return Results.Ok(new MeResponse(
                 me.UserId,
                 me.DisplayName,
                 [.. me.Roles],
                 me.PositionLevel.ToString(),
                 profile?.HomeOrgUnitId,
-                profile?.LedOrgUnitId));
+                profile?.LedOrgUnitId,
+                maxScope?.ToString()));
         })
         .WithName("GetMe")
         .RequireAuthorization(KocPolicies.RequireEmployee);
