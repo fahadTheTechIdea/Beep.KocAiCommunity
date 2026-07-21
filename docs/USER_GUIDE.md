@@ -24,6 +24,8 @@ and the **Studio** group (Datasets, Workflows, AutoML, Node catalog, Runs, Exper
 **notification bell** in the app bar tells you when a competition concludes, someone replies to you, or you
 earn a badge.
 
+![The home page — the left menu, your standing, live competitions, and learning tracks](help/img/home.png)
+
 ## 3. Learn — guided tracks
 
 **Learn** offers structured tracks with real lessons.
@@ -54,11 +56,15 @@ The **Studio** is where you turn data into a model. Two ways in:
    **Run** — you'll see each node execute and a trained metric at the end.
 5. **Save draft** as you go; **Publish** freezes an immutable version you can run or submit.
 
+![The workflow designer: ① the palette, ② the property inspector, ③ the run panel, ④ save/publish](help/img/designer-annotated.png)
+
 ## 5. Datasets
 
 Under **Studio → Datasets** you can create and **version** datasets. When you create one, pick **who can
 see it** (Team / Group / Directorate / Company) — you'll see a live count of the potential audience. Upload
 a CSV (or import from a URL); publishing freezes a version, and a new upload starts a fresh draft.
+
+![Datasets — governed, versioned data with a visibility picker](help/img/datasets.png)
 
 ## 6. Compete
 
@@ -71,6 +77,8 @@ a CSV (or import from a URL); publishing freezes a version, and a new upload sta
    everyone), so only your modelling choices move your rank.
 5. Watch the **live leaderboard** update in real time. Final standings are revealed on the host's chosen day.
 
+![A competition — overview, data, leaderboard, and your submissions](help/img/compete-detail.png)
+
 Anyone in a competition's scope can enter. **Hosting** a competition requires permission from an admin — if
 you'd like to run one, ask a platform administrator to grant you creator access at the level you need.
 
@@ -79,6 +87,8 @@ you'd like to run one, ask a platform administrator to grant you creator access 
 **My profile** is your face on the platform — avatar, bio, and skills — plus your earned standing:
 **Barrels** (points), **level**, a **streak** for staying active, and **badges**. Give a colleague **kudos**
 to recognize good work. Leaderboards (personal and team) show where you stand.
+
+![My profile — avatar, skills, and your standing](help/img/profile.png)
 
 ## 8. Community
 

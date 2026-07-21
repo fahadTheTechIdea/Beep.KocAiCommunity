@@ -3,10 +3,10 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KOC Studio — Help</title>
 <style>
-  :root{--bg:#f6f8fb;--panel:#fff;--ink:#172033;--muted:#5b6b86;--accent:#0369a1;--accent-700:#075985;--border:#e2e8f0;--code:#0b3a52;--codebg:#eef4f9;--shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06)}
-  @media (prefers-color-scheme:dark){:root{--bg:#0e141f;--panel:#151d2b;--ink:#e6edf7;--muted:#9fb0c8;--accent:#38bdf8;--accent-700:#7dd3fc;--border:#243044;--code:#bfe3f5;--codebg:#0c1622;--shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
-  :root[data-theme="dark"]{--bg:#0e141f;--panel:#151d2b;--ink:#e6edf7;--muted:#9fb0c8;--accent:#38bdf8;--accent-700:#7dd3fc;--border:#243044;--code:#bfe3f5;--codebg:#0c1622;--shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}
-  :root[data-theme="light"]{--bg:#f6f8fb;--panel:#fff;--ink:#172033;--muted:#5b6b86;--accent:#0369a1;--accent-700:#075985;--border:#e2e8f0;--code:#0b3a52;--codebg:#eef4f9;--shadow:0 1px 3px rgba(16,24,40,.08),0 8px 24px rgba(16,24,40,.06)}
+  :root{--bg:#f6f8fb;--panel:#fff;--ink:#172033;--muted:#5b6b86;--accent:#0369a1;--accent-700:#075985;--border:#e2e8f0;--code:#0b3a52;--codebg:#eef4f9;--shadow:0 1px 3px rgba(16,24,40,.08),0 10px 30px rgba(16,24,40,.09)}
+  @media (prefers-color-scheme:dark){:root{--bg:#0e141f;--panel:#151d2b;--ink:#e6edf7;--muted:#9fb0c8;--accent:#38bdf8;--accent-700:#7dd3fc;--border:#243044;--code:#bfe3f5;--codebg:#0c1622;--shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4)}}
+  :root[data-theme="dark"]{--bg:#0e141f;--panel:#151d2b;--ink:#e6edf7;--muted:#9fb0c8;--accent:#38bdf8;--accent-700:#7dd3fc;--border:#243044;--code:#bfe3f5;--codebg:#0c1622;--shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4)}
+  :root[data-theme="light"]{--bg:#f6f8fb;--panel:#fff;--ink:#172033;--muted:#5b6b86;--accent:#0369a1;--accent-700:#075985;--border:#e2e8f0;--code:#0b3a52;--codebg:#eef4f9;--shadow:0 1px 3px rgba(16,24,40,.08),0 10px 30px rgba(16,24,40,.09)}
   *{box-sizing:border-box}
   body{margin:0;font:15px/1.65 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
   a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
@@ -16,63 +16,50 @@
   nav .grp{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:16px 8px 4px}
   nav a{display:block;padding:6px 10px;border-radius:8px;color:var(--ink);font-size:13.5px}
   nav a:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);text-decoration:none}
-  main{padding:30px clamp(16px,4vw,56px);max-width:1180px}
+  main{padding:30px clamp(16px,4vw,60px);max-width:1120px}
   .eyebrow{color:var(--accent);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
   h2.page{font-size:30px;margin:6px 0 6px;text-wrap:balance}
   .lede{color:var(--muted);max-width:72ch;margin:0 0 22px}
-  .note{background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:12px 16px;margin:10px 0 28px;max-width:74ch}
-  section.major{scroll-margin-top:14px;border-top:1px solid var(--border);padding-top:30px;margin-top:40px}
-  section.major>h2{font-size:25px;margin:0 0 4px}
-  h3.grp{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-700);margin:26px 0 10px;scroll-margin-top:14px}
-  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:20px}
-  .shot{margin:0}
+  .note{background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:12px 16px;margin:10px 0 30px;max-width:74ch}
+  section.major{scroll-margin-top:14px;border-top:1px solid var(--border);padding-top:30px;margin-top:44px}
+  section.major>h2{font-size:26px;margin:0 0 10px}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:20px}
+  .shot{margin:0}.shot b{color:var(--ink)}
   .shot img{width:100%;height:auto;display:block;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);background:var(--panel)}
   .shot figcaption{color:var(--muted);font-size:12.5px;margin-top:8px}
-  .shot b{color:var(--ink)}
-  .guide{max-width:80ch}
-  .guide h1{font-size:24px;margin:0 0 6px}.guide h2{font-size:19px;margin:26px 0 6px;border-top:1px solid var(--border);padding-top:20px}
-  .guide h3{font-size:16px;margin:18px 0 4px}
-  .guide p,.guide li{max-width:80ch}.guide ul,.guide ol{color:var(--muted)}.guide li{margin:.25em 0}
-  .guide blockquote{margin:12px 0;padding:6px 16px;border-left:3px solid var(--accent);color:var(--muted);background:color-mix(in srgb,var(--accent) 6%,transparent);border-radius:0 8px 8px 0}
+  .guide{max-width:86ch}
+  .guide h1{font-size:24px;margin:0 0 6px}
+  .guide h2{font-size:19px;margin:30px 0 8px;border-top:1px solid var(--border);padding-top:22px}
+  .guide h3{font-size:16px;margin:20px 0 4px}
+  .guide p,.guide li{max-width:82ch}.guide ul,.guide ol{color:var(--muted)}.guide li{margin:.25em 0}
+  .guide img{display:block;max-width:100%;height:auto;margin:18px 0;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);background:var(--panel)}
+  .guide blockquote{margin:14px 0;padding:6px 16px;border-left:3px solid var(--accent);color:var(--muted);background:color-mix(in srgb,var(--accent) 6%,transparent);border-radius:0 8px 8px 0}
   .guide code{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--codebg);color:var(--code);padding:1px 6px;border-radius:5px}
   .guide pre{background:var(--codebg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto}.guide pre code{background:none;padding:0}
-  .guide table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px;display:block;overflow-x:auto}
+  .guide table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px;display:block;overflow-x:auto}
   .guide th,.guide td{border:1px solid var(--border);padding:7px 11px;text-align:left;vertical-align:top}
   .guide th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
-  .guide a{color:var(--accent)}
   @media (max-width:840px){.wrap{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--border)}.gallery{grid-template-columns:1fr}}
 </style></head>
 <body><div class="wrap" id="top">
 <nav>
-  <h1>KOC Studio</h1><div class="sub">Help &amp; visual tour</div>
-  <div class="grp">Explore</div>
-  <a href="#tour">Visual tour</a>
+  <h1>KOC Studio</h1><div class="sub">Help — guides &amp; screens</div>
   <div class="grp">Guides</div>
   <a href="#user">User guide</a>
   <a href="#admin-guide">Administrator guide</a>
   <a href="#developer">Developer guide</a>
-  <div class="grp">Tour sections</div>
-  <a href="#g-getting-started">Getting started</a><a href="#g-learn-community">Learn & community</a><a href="#g-compete">Compete</a><a href="#g-studio-build-run">Studio — build & run</a><a href="#g-runs-experiments-models">Runs, experiments & models</a><a href="#g-administration">Administration</a><a href="#g-help">Help</a>
+  <div class="grp">Reference</div>
+  <a href="#more">More screens</a>
 </nav>
 <main>
   <div class="eyebrow">KOC Training &amp; Career Development</div>
-  <h2 class="page">Help &amp; visual tour</h2>
-  <p class="lede">A guided tour of every screen with live screenshots, plus the full <b>user</b>,
-    <b>administrator</b>, and <b>developer</b> manuals — all in one place.</p>
+  <h2 class="page">Help</h2>
+  <p class="lede">The full <b>user</b>, <b>administrator</b>, and <b>developer</b> manuals, illustrated with
+    live, annotated screenshots — plus a quick reference of every other screen at the end.</p>
   <div class="note">Screens are shown as the <b>Platform Admin</b> role, so everything is visible. What you
     see depends on your role: an Employee gets Learn, Community, Compete and the Studio; leaders also get
-    Supervision; only admins get the Admin console.</div>
-
-  <section class="major" id="tour"><h2>Visual tour</h2>
-    <p class="lede">Click any screenshot to open it full size.</p>
-    <h3 class="grp" id="g-getting-started">Getting started</h3><div class="gallery"><figure class="shot"><a href="img/home.png" target="_blank" rel="noopener"><img src="img/home.png" alt="Home" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Home.</b> The landing page — role switcher, notification bell, and entry points.</figcaption></figure><figure class="shot"><a href="img/dashboard.png" target="_blank" rel="noopener"><img src="img/dashboard.png" alt="Dashboard" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Dashboard.</b> Your learning + competition standings; a team overview if you lead people.</figcaption></figure><figure class="shot"><a href="img/profile.png" target="_blank" rel="noopener"><img src="img/profile.png" alt="My profile" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>My profile.</b> Avatar, bio, skills, and earned standing (Barrels, level, streak, badges).</figcaption></figure></div>
-<h3 class="grp" id="g-learn-community">Learn & community</h3><div class="gallery"><figure class="shot"><a href="img/learn.png" target="_blank" rel="noopener"><img src="img/learn.png" alt="Learn" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Learn.</b> Guided tracks — enroll and progress through lessons.</figcaption></figure><figure class="shot"><a href="img/learn-track.png" target="_blank" rel="noopener"><img src="img/learn-track.png" alt="Inside a track" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Inside a track.</b> A track’s lessons and your progress.</figcaption></figure><figure class="shot"><a href="img/community.png" target="_blank" rel="noopener"><img src="img/community.png" alt="Community" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Community.</b> Discussions and replies, scoped to your org.</figcaption></figure></div>
-<h3 class="grp" id="g-compete">Compete</h3><div class="gallery"><figure class="shot"><a href="img/compete.png" target="_blank" rel="noopener"><img src="img/compete.png" alt="Competitions" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Competitions.</b> Browse challenges and watch live leaderboards.</figcaption></figure><figure class="shot"><a href="img/compete-detail.png" target="_blank" rel="noopener"><img src="img/compete-detail.png" alt="Competition detail" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Competition detail.</b> Overview, data, leaderboard, and your submissions.</figcaption></figure><figure class="shot"><a href="img/create-competition.png" target="_blank" rel="noopener"><img src="img/create-competition.png" alt="Host a competition" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Host a competition.</b> The guided create wizard (granted users only).</figcaption></figure></div>
-<h3 class="grp" id="g-studio-build-run">Studio — build & run</h3><div class="gallery"><figure class="shot"><a href="img/workflows.png" target="_blank" rel="noopener"><img src="img/workflows.png" alt="Workflows" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Workflows.</b> The versioned pipeline registry.</figcaption></figure><figure class="shot"><a href="img/new-workflow.png" target="_blank" rel="noopener"><img src="img/new-workflow.png" alt="New workflow" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>New workflow.</b> Start a personal pipeline or one targeting a competition.</figcaption></figure><figure class="shot"><a href="img/designer.png" target="_blank" rel="noopener"><img src="img/designer.png" alt="The designer" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>The designer.</b> Palette, canvas, property inspector, and the run panel.</figcaption></figure><figure class="shot"><a href="img/studio.png" target="_blank" rel="noopener"><img src="img/studio.png" alt="AutoML" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>AutoML.</b> Train a model over a CSV in a few clicks.</figcaption></figure><figure class="shot"><a href="img/nodes.png" target="_blank" rel="noopener"><img src="img/nodes.png" alt="Node catalog" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Node catalog.</b> Every building block and its parameters.</figcaption></figure><figure class="shot"><a href="img/datasets.png" target="_blank" rel="noopener"><img src="img/datasets.png" alt="Datasets" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Datasets.</b> Governed, versioned data with visibility scoping.</figcaption></figure></div>
-<h3 class="grp" id="g-runs-experiments-models">Runs, experiments & models</h3><div class="gallery"><figure class="shot"><a href="img/runs.png" target="_blank" rel="noopener"><img src="img/runs.png" alt="Runs" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Runs.</b> Background jobs with status and logs.</figcaption></figure><figure class="shot"><a href="img/experiments.png" target="_blank" rel="noopener"><img src="img/experiments.png" alt="Experiments" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Experiments.</b> Compare runs, metrics, and parameters.</figcaption></figure><figure class="shot"><a href="img/models.png" target="_blank" rel="noopener"><img src="img/models.png" alt="Models" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Models.</b> Register → approve → deploy.</figcaption></figure></div>
-<h3 class="grp" id="g-administration">Administration</h3><div class="gallery"><figure class="shot"><a href="img/admin.png" target="_blank" rel="noopener"><img src="img/admin.png" alt="Admin console" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Admin console.</b> Health KPIs, settings, feature flags, demo data, and audit.</figcaption></figure><figure class="shot"><a href="img/admin-rbac.png" target="_blank" rel="noopener"><img src="img/admin-rbac.png" alt="RBAC / Users" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>RBAC / Users.</b> Who can create competitions + at what level; org codes; departments.</figcaption></figure><figure class="shot"><a href="img/admin-settings.png" target="_blank" rel="noopener"><img src="img/admin-settings.png" alt="Settings" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Settings.</b> Typed platform settings (secrets stored encrypted).</figcaption></figure></div>
-<h3 class="grp" id="g-help">Help</h3><div class="gallery"><figure class="shot"><a href="img/help.png" target="_blank" rel="noopener"><img src="img/help.png" alt="In-app help" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>In-app help.</b> Searchable articles and FAQ.</figcaption></figure></div>
-  </section>
+    Supervision; only admins get the Admin console. Red ①②③ markers on some screenshots point to the parts
+    the text describes.</div>
 
   <section class="major" id="user"><h2>User guide</h2><div class="guide"><p>Welcome! This platform helps you <strong>learn AI/ML, practice on real KOC problems, and compete</strong> with
 colleagues. This guide walks through everything you can do as an employee.</p>
@@ -92,6 +79,7 @@ people-leaders also get <strong>Supervision</strong>; platform administrators ge
 and the <strong>Studio</strong> group (Datasets, Workflows, AutoML, Node catalog, Runs, Experiments, Models). A live
 <strong>notification bell</strong> in the app bar tells you when a competition concludes, someone replies to you, or you
 earn a badge.</p>
+<p><img src="img/home.png" alt="The home page — the left menu, your standing, live competitions, and learning tracks"></p>
 <h2>3. Learn — guided tracks</h2>
 <p><strong>Learn</strong> offers structured tracks with real lessons.</p>
 <ol>
@@ -119,10 +107,12 @@ fraction, SQL, etc.).</li>
 <strong>Run</strong> — you&#39;ll see each node execute and a trained metric at the end.</li>
 <li><strong>Save draft</strong> as you go; <strong>Publish</strong> freezes an immutable version you can run or submit.</li>
 </ol>
+<p><img src="img/designer-annotated.png" alt="The workflow designer: ① the palette, ② the property inspector, ③ the run panel, ④ save/publish"></p>
 <h2>5. Datasets</h2>
 <p>Under <strong>Studio → Datasets</strong> you can create and <strong>version</strong> datasets. When you create one, pick <strong>who can
 see it</strong> (Team / Group / Directorate / Company) — you&#39;ll see a live count of the potential audience. Upload
 a CSV (or import from a URL); publishing freezes a version, and a new upload starts a fresh draft.</p>
+<p><img src="img/datasets.png" alt="Datasets — governed, versioned data with a visibility picker"></p>
 <h2>6. Compete</h2>
 <p><strong>Compete</strong> hosts internal, Kaggle-style challenges on real KOC problems.</p>
 <ol>
@@ -133,12 +123,14 @@ a CSV (or import from a URL); publishing freezes a version, and a new upload sta
 everyone), so only your modelling choices move your rank.</li>
 <li>Watch the <strong>live leaderboard</strong> update in real time. Final standings are revealed on the host&#39;s chosen day.</li>
 </ol>
+<p><img src="img/compete-detail.png" alt="A competition — overview, data, leaderboard, and your submissions"></p>
 <p>Anyone in a competition&#39;s scope can enter. <strong>Hosting</strong> a competition requires permission from an admin — if
 you&#39;d like to run one, ask a platform administrator to grant you creator access at the level you need.</p>
 <h2>7. Your profile &amp; standing</h2>
 <p><strong>My profile</strong> is your face on the platform — avatar, bio, and skills — plus your earned standing:
 <strong>Barrels</strong> (points), <strong>level</strong>, a <strong>streak</strong> for staying active, and <strong>badges</strong>. Give a colleague <strong>kudos</strong>
 to recognize good work. Leaderboards (personal and team) show where you stand.</p>
+<p><img src="img/profile.png" alt="My profile — avatar, skills, and your standing"></p>
 <h2>8. Community</h2>
 <p><strong>Community</strong> is for discussions — ask questions, share solutions, react to posts, and mention colleagues.
 It&#39;s scoped to your part of the org so the conversation stays relevant.</p>
@@ -211,6 +203,7 @@ roles</strong> (PlatformAdmin, CompetitionAdmin, LearningAdmin, Auditor).</p>
 <td>The full admin action trail.</td>
 </tr>
 </tbody></table>
+<p><img src="img/admin.png" alt="The admin console — health KPIs, tabs, and recent activity"></p>
 <h2>3. RBAC / Users — the core admin task</h2>
 <p>This is where you control <strong>who can create competitions and how widely</strong>, and record each user&#39;s
 <strong>org identity</strong>.</p>
@@ -232,6 +225,7 @@ be enriched automatically from the KOC directory once that API is connected.</p>
 <li>The level is a <strong>ceiling</strong> — granting <em>Directorate</em> also allows <em>Group</em> and <em>Team</em> competitions.
 Choosing <strong>None</strong> revokes the grant.</li>
 </ol>
+<p><img src="img/admin-rbac-annotated.png" alt="RBAC / Users: ① set each user&#39;s create level, ② assign their department, ③ give units their codes"></p>
 <p>Every grant/revoke, profile edit, and org-code change is written to the <strong>Audit</strong> trail.</p>
 <h2>4. Competitions</h2>
 <ul>
@@ -258,6 +252,7 @@ shown masked. Editing bumps a version and is audited.</li>
 <li><strong>Feature flags</strong>: enable/disable features with an optional <strong>rollout percentage</strong> (a stable per-user
 bucket), and add new flags.</li>
 </ul>
+<p><img src="img/admin-settings.png" alt="Settings — typed platform configuration, secrets stored encrypted"></p>
 <h2>7. Audit trail</h2>
 <p><strong>Admin → Audit</strong> lists every administrative action (settings changes, grants, demo seed/unseed, org-code
 edits) with the actor, action, resource, timestamp, and before/after where relevant. Filter by action.
@@ -449,6 +444,7 @@ Evaluate.</li>
 Verify with <code>NodeCatalogTests</code> (registry ↔ compiler known-kinds parity) and the designer palette (it is
 API-driven — <code>Ui.Studio</code> renders from <code>GetMlNodesAsync()</code>; only the icon/colour live client-side in
 <code>NodeVisuals</code>).</p>
+<p><img src="img/nodes.png" alt="The node catalog — every handler surfaces here automatically, with its parameters"></p>
 <h2>8. Workflows, competitions, models</h2>
 <ul>
 <li><strong>Workflows registry</strong> (<code>/workflows</code>): versioned pipelines — save draft → publish an immutable snapshot
@@ -529,5 +525,10 @@ rules), <strong>EndToEndTests</strong>. Warnings are errors for non-test project
 <li>Desktop app: <code>19_WINFORMS_DESKTOP_STUDIO.md</code> (+ 19a–19d).</li>
 </ul>
 </div></section>
+
+  <section class="major" id="more"><h2>More screens</h2>
+    <p class="lede">Other screens at a glance. Click any to open it full size.</p>
+    <div class="gallery"><figure class="shot"><a href="img/dashboard.png" target="_blank" rel="noopener"><img src="img/dashboard.png" alt="Dashboard" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Dashboard.</b> Your standings, with a team overview if you lead people.</figcaption></figure><figure class="shot"><a href="img/learn.png" target="_blank" rel="noopener"><img src="img/learn.png" alt="Learn" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Learn.</b> Guided learning tracks.</figcaption></figure><figure class="shot"><a href="img/learn-track.png" target="_blank" rel="noopener"><img src="img/learn-track.png" alt="Inside a track" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Inside a track.</b> A track’s lessons and your progress.</figcaption></figure><figure class="shot"><a href="img/community.png" target="_blank" rel="noopener"><img src="img/community.png" alt="Community" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Community.</b> Discussions and replies, scoped to your org.</figcaption></figure><figure class="shot"><a href="img/workflows.png" target="_blank" rel="noopener"><img src="img/workflows.png" alt="Workflows" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Workflows.</b> The versioned pipeline registry.</figcaption></figure><figure class="shot"><a href="img/new-workflow.png" target="_blank" rel="noopener"><img src="img/new-workflow.png" alt="New workflow" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>New workflow.</b> Start a pipeline (optionally targeting a competition).</figcaption></figure><figure class="shot"><a href="img/create-competition.png" target="_blank" rel="noopener"><img src="img/create-competition.png" alt="Host a competition" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Host a competition.</b> The guided create wizard (granted users).</figcaption></figure><figure class="shot"><a href="img/studio.png" target="_blank" rel="noopener"><img src="img/studio.png" alt="AutoML" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>AutoML.</b> Train a model over a CSV in a few clicks.</figcaption></figure><figure class="shot"><a href="img/runs.png" target="_blank" rel="noopener"><img src="img/runs.png" alt="Runs" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Runs.</b> Background jobs — status and logs.</figcaption></figure><figure class="shot"><a href="img/experiments.png" target="_blank" rel="noopener"><img src="img/experiments.png" alt="Experiments" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Experiments.</b> Compare runs, metrics, and parameters.</figcaption></figure><figure class="shot"><a href="img/models.png" target="_blank" rel="noopener"><img src="img/models.png" alt="Models" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Models.</b> Register → approve → deploy.</figcaption></figure><figure class="shot"><a href="img/help.png" target="_blank" rel="noopener"><img src="img/help.png" alt="In-app help" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>In-app help.</b> Searchable articles and FAQ.</figcaption></figure></div>
+  </section>
 </main>
 </div></body></html>

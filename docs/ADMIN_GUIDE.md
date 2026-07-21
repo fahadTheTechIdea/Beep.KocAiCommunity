@@ -35,6 +35,8 @@ Open **Admin → Console**. It has these tabs:
 | **Demo data** | Seed / unseed a self-contained explorable demo. |
 | **Audit** | The full admin action trail. |
 
+![The admin console — health KPIs, tabs, and recent activity](help/img/admin.png)
+
 ## 3. RBAC / Users — the core admin task
 
 This is where you control **who can create competitions and how widely**, and record each user's
@@ -62,6 +64,8 @@ By default **no one can create competitions** except Platform Admins. To let som
    `None / Team / Group / Directorate / Company`.
 3. The level is a **ceiling** — granting *Directorate* also allows *Group* and *Team* competitions.
    Choosing **None** revokes the grant.
+
+![RBAC / Users: ① set each user's create level, ② assign their department, ③ give units their codes](help/img/admin-rbac-annotated.png)
 
 Every grant/revoke, profile edit, and org-code change is written to the **Audit** trail.
 
@@ -91,6 +95,8 @@ chip shows whether demo data is present and its counts.
   shown masked. Editing bumps a version and is audited.
 - **Feature flags**: enable/disable features with an optional **rollout percentage** (a stable per-user
   bucket), and add new flags.
+
+![Settings — typed platform configuration, secrets stored encrypted](help/img/admin-settings.png)
 
 ## 7. Audit trail
 

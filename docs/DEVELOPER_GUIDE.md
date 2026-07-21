@@ -129,6 +129,8 @@ Verify with `NodeCatalogTests` (registry ↔ compiler known-kinds parity) and th
 API-driven — `Ui.Studio` renders from `GetMlNodesAsync()`; only the icon/colour live client-side in
 `NodeVisuals`).
 
+![The node catalog — every handler surfaces here automatically, with its parameters](help/img/nodes.png)
+
 ## 8. Workflows, competitions, models
 
 - **Workflows registry** (`/workflows`): versioned pipelines — save draft → publish an immutable snapshot
