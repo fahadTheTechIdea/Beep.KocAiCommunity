@@ -1,0 +1,14 @@
+@* Gold / silver / bronze medal for the top three; a plain numbered badge otherwise. *@
+<span class="@Cls" title="Rank @Rank">@(Rank <= 3 ? "🏅" : Rank.ToString())</span>
+
+@code {
+    [Parameter, EditorRequired] public int Rank { get; set; }
+
+    private string Cls => Rank switch
+    {
+        1 => "koc-rank koc-rank-1",
+        2 => "koc-rank koc-rank-2",
+        3 => "koc-rank koc-rank-3",
+        _ => "koc-rank",
+    };
+}

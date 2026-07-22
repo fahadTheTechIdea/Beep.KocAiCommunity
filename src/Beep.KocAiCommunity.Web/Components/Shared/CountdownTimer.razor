@@ -1,0 +1,112 @@
+@implements IAsyncDisposable
+
+@* Live countdown to a UTC instant. Full mode renders unit boxes; Compact renders inline text.
+   Renders nothing when TargetUtc is null. The only time semantics competitions have today is
+   the final-reveal instant, so the default label says exactly that. *@
+
+@if (TargetUtc is { } target)
+{
+    var remaining = target - DateTime.UtcNow;
+    if (Compact)
+    {
+        <span class="koc-countdown-compact" title="@Label">
+            @(remaining <= TimeSpan.Zero ? "🔓 revealed" : $"⏳ {CompactText(remaining)}")
+        </span>
+    }
+    else if (remaining <= TimeSpan.Zero)
+    {
+        <div>
+            <span class="koc-eyebrow">@Label</span>
+            <div class="koc-countdown-compact" style="font-size:20px;">🔓 Revealed</div>
+        </div>
+    }
+    else
+    {
+        <div>
+            <span class="koc-eyebrow">@Label</span>
+            <div class="koc-countdown @(remaining < TimeSpan.FromHours(24) ? "koc-countdown-urgent" : null)" role="timer" aria-label="@Label">
+                @Unit((int)remaining.TotalDays, "days")
+                @Unit(remaining.Hours, "hrs")
+                @Unit(remaining.Minutes, "min")
+                @Unit(remaining.Seconds, "sec")
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public DateTime? TargetUtc { get; set; }
+    [Parameter] public string Label { get; set; } = "Final reveal";
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public int RefreshSeconds { get; set; } = 1;
+
+    /// <summary>Fired once when the countdown crosses zero while on screen.</summary>
+    [Parameter] public EventCallback Elapsed { get; set; }
+
+    private readonly CancellationTokenSource _cts = new();
+    private PeriodicTimer? _timer;
+    private bool _loopStarted;
+    private bool _elapsedFired;
+
+    private static RenderFragment Unit(int value, string label) => __builder =>
+    {
+        <span class="koc-countdown-unit">
+            <span class="koc-cd-num">@value.ToString("00")</span>
+            <span class="koc-cd-label">@label</span>
+        </span>
+    };
+
+    private static string CompactText(TimeSpan r) =>
+        r.TotalDays >= 1 ? $"{(int)r.TotalDays}d {r.Hours:00}h"
+        : r.TotalHours >= 1 ? $"{r.Hours}h {r.Minutes:00}m"
+        : $"{r.Minutes}m {r.Seconds:00}s";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && TargetUtc is not null)
+        {
+            _loopStarted = true;
+            _ = TickAsync();
+        }
+    }
+
+    private async Task TickAsync()
+    {
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(Math.Max(1, RefreshSeconds)));
+        try
+        {
+            while (await _timer.WaitForNextTickAsync(_cts.Token))
+            {
+                if (!_elapsedFired && TargetUtc is { } t && t <= DateTime.UtcNow)
+                {
+                    _elapsedFired = true;
+                    await InvokeAsync(async () =>
+                    {
+                        StateHasChanged();
+                        await Elapsed.InvokeAsync();
+                    });
+                }
+                else
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Component disposed — the circuit is going away; nothing to render.
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (_loopStarted)
+        {
+            _cts.Cancel();
+        }
+
+        _timer?.Dispose();
+        _cts.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

@@ -1,0 +1,122 @@
+@using Beep.KocAiCommunity.Contracts.Competitions
+
+@* Leaderboard table with live rank movement. Movement is computed client-side by diffing the
+   previous snapshot against the current one on every refresh (the hub event carries no deltas);
+   the first render shows no arrows because there is nothing to compare against yet. *@
+
+@if (Entries is null)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (Entries.Count == 0)
+{
+    <MudText Typo="Typo.body2">No submissions yet — be the first on the board!</MudText>
+}
+else
+{
+    <MudSimpleTable Dense="true" Hover="true">
+        <thead>
+            <tr><th style="width:56px;">Rank</th><th style="width:64px;"></th><th>Competitor</th><th style="text-align:right;">Score</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Entries)
+            {
+                <tr @key="RowKey(e)" class="@RowClass(e)" style="@(e.UserId == MyUserId ? "outline:1px solid var(--koc-accent-500);" : null)">
+                    <td><RankMedal Rank="e.Rank" /></td>
+                    <td><span class="koc-move @MoveClass(e)">@MoveText(e)</span></td>
+                    <td>@e.DisplayName @(e.UserId == MyUserId ? "(you)" : "")</td>
+                    <td style="text-align:right;font-weight:600;font-variant-numeric:tabular-nums;">@e.Score.ToString("0.###")</td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<LeaderboardEntryDto>? Entries { get; set; }
+    [Parameter] public string? MyUserId { get; set; }
+
+    /// <summary>Distinguishes snapshot streams (e.g. "live" vs "final") so their histories don't mix.</summary>
+    [Parameter] public string BoardKey { get; set; } = "live";
+
+    private string _snapshotKey = "";
+    private Dictionary<string, (int Rank, double Score)> _previous = new();
+    private Dictionary<string, int> _delta = new();          // +n moved up, -n moved down
+    private HashSet<string> _new = [];
+    private HashSet<string> _changed = [];
+    private int _pulseGeneration;
+
+    protected override void OnParametersSet()
+    {
+        if (BoardKey != _snapshotKey)
+        {
+            // A different board stream — start history over.
+            _snapshotKey = BoardKey;
+            _previous = new();
+            _delta = new();
+            _new = [];
+            _changed = [];
+        }
+
+        if (Entries is null)
+        {
+            return;
+        }
+
+        var current = Entries.ToDictionary(e => e.UserId, e => (e.Rank, e.Score));
+        if (_previous.Count > 0 && !SameSnapshot(current))
+        {
+            _delta = new();
+            _new = [];
+            _changed = [];
+            foreach (var (userId, now) in current)
+            {
+                if (_previous.TryGetValue(userId, out var was))
+                {
+                    _delta[userId] = was.Rank - now.Rank;                    // rank 3 → 1 = +2 (up)
+                    if (was.Rank != now.Rank || Math.Abs(was.Score - now.Score) > 1e-12)
+                    {
+                        _changed.Add(userId);
+                    }
+                }
+                else
+                {
+                    _new.Add(userId);
+                    _changed.Add(userId);
+                }
+            }
+
+            _pulseGeneration++;                                              // re-keys changed rows → animation re-runs
+        }
+
+        _previous = current;
+    }
+
+    private bool SameSnapshot(Dictionary<string, (int Rank, double Score)> current) =>
+        current.Count == _previous.Count
+        && current.All(kv => _previous.TryGetValue(kv.Key, out var was) && was.Rank == kv.Value.Rank && Math.Abs(was.Score - kv.Value.Score) < 1e-12);
+
+    private string RowKey(LeaderboardEntryDto e) =>
+        _changed.Contains(e.UserId) ? $"{e.UserId}|{_pulseGeneration}" : e.UserId;
+
+    private string? RowClass(LeaderboardEntryDto e)
+    {
+        var pulse = _changed.Contains(e.UserId) ? "koc-row-pulse" : null;
+        var podium = e.Rank <= 3 ? "koc-podium" : null;
+        return pulse is null ? podium : $"{podium} {pulse}".Trim();
+    }
+
+    private string MoveClass(LeaderboardEntryDto e) =>
+        _new.Contains(e.UserId) ? "koc-move-new"
+        : _delta.GetValueOrDefault(e.UserId) > 0 ? "koc-move-up"
+        : _delta.GetValueOrDefault(e.UserId) < 0 ? "koc-move-down"
+        : _delta.Count > 0 && _delta.ContainsKey(e.UserId) ? "koc-move-same"
+        : "";
+
+    private string MoveText(LeaderboardEntryDto e) =>
+        _new.Contains(e.UserId) ? "NEW"
+        : _delta.GetValueOrDefault(e.UserId) is > 0 and var up ? $"▲{up}"
+        : _delta.GetValueOrDefault(e.UserId) is < 0 and var down ? $"▼{-down}"
+        : _delta.ContainsKey(e.UserId) ? "–"
+        : "";
+}

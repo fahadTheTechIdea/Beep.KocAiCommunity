@@ -1,0 +1,39 @@
+@using Beep.KocAiCommunity.Contracts.Competitions
+
+@* The top three as staggered podium columns (2 · 1 · 3). *@
+
+@if (Entries is null || Entries.Count == 0)
+{
+    <MudText Typo="Typo.body2" Style="opacity:.75;">The podium is wide open — be the first on the board!</MudText>
+}
+else
+{
+    <div class="koc-podium-row" style="@(Dense ? "max-width:420px;" : null)">
+        @foreach (var entry in Ordered())
+        {
+            <div class="koc-podium-col koc-podium-col-@entry.Rank" title="Rank @entry.Rank — @entry.DisplayName">
+                <RankMedal Rank="entry.Rank" />
+                <div class="koc-podium-name">@entry.DisplayName @(entry.UserId == MyUserId ? "(you)" : "")</div>
+                <div class="koc-podium-score">@entry.Score.ToString("0.###")</div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<LeaderboardEntryDto>? Entries { get; set; }
+    [Parameter] public string? MyUserId { get; set; }
+    [Parameter] public bool Dense { get; set; }
+
+    // Silver · Gold · Bronze arrangement; gracefully degrades with fewer than three entries.
+    private IEnumerable<LeaderboardEntryDto> Ordered()
+    {
+        var top = Entries!.Where(e => e.Rank <= 3).OrderBy(e => e.Rank).ToList();
+        if (top.Count == 3)
+        {
+            return [top[1], top[0], top[2]];
+        }
+
+        return top;
+    }
+}

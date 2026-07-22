@@ -113,3 +113,120 @@
     border: 1px solid transparent;
 }
 .koc-palette-node:hover { background: var(--koc-surface); border-color: var(--koc-divider); }
+
+/* ============================================================
+   Arena — competition-oriented visual language
+   ============================================================ */
+
+/* Full-width competition banner: deep accent gradient with a faint grid overlay. */
+.koc-arena-banner {
+    position: relative;
+    color: #fff;
+    background:
+        linear-gradient(120deg, var(--koc-accent-900) 0%, var(--koc-accent-700) 70%, var(--koc-accent-500) 100%);
+    overflow: hidden;
+}
+
+.koc-arena-banner::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
+    background-size: 22px 22px;
+    pointer-events: none;
+}
+
+.koc-arena-banner > * { position: relative; }
+.koc-arena-banner .koc-eyebrow { color: #cfe4f5; }
+.koc-arena-banner .koc-stat-value { color: #fff; }
+
+/* Countdown: big unit boxes ("03" DAYS · "12" HRS …) */
+.koc-countdown { display: inline-flex; gap: 10px; align-items: stretch; }
+
+.koc-countdown-unit {
+    min-width: 58px; padding: 8px 10px; text-align: center;
+    border: 1px solid rgba(255,255,255,.35); border-radius: 6px;
+    background: rgba(255,255,255,.08);
+}
+
+.koc-countdown-unit .koc-cd-num {
+    display: block; font-family: var(--koc-font-heading);
+    font-size: 26px; font-weight: 700; line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.koc-countdown-unit .koc-cd-label {
+    display: block; font-size: 10px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; opacity: .8;
+}
+
+/* Compact variant used on cards: "3d 04h 12m" inline text. */
+.koc-countdown-compact {
+    font-family: var(--koc-font-heading); font-weight: 600;
+    font-variant-numeric: tabular-nums; letter-spacing: .02em;
+}
+
+@keyframes koc-countdown-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 138, 101, .0); }
+    50% { box-shadow: 0 0 0 5px rgba(255, 138, 101, .35); }
+}
+
+.koc-countdown-urgent .koc-countdown-unit {
+    border-color: #ff8a65;
+    animation: koc-countdown-pulse 1.6s ease-in-out infinite;
+}
+
+/* Podium: staggered 2-1-3 columns reusing the medal gradients. */
+.koc-podium-row { display: flex; align-items: flex-end; gap: 10px; justify-content: center; }
+
+.koc-podium-col {
+    flex: 1 1 0; max-width: 190px; text-align: center;
+    border-radius: 8px 8px 0 0; padding: 10px 8px 8px;
+    color: var(--koc-text); background: var(--koc-surface);
+    border: 1px solid var(--koc-divider); border-bottom-width: 4px;
+}
+
+.koc-podium-col-1 { min-height: 120px; border-bottom-color: #d4af37; background: linear-gradient(180deg, #fdf6dd, #f8ecc0); }
+.koc-podium-col-2 { min-height: 92px;  border-bottom-color: #b8c0c8; background: linear-gradient(180deg, #f4f6f8, #e6e9ec); }
+.koc-podium-col-3 { min-height: 74px;  border-bottom-color: #cd7f32; background: linear-gradient(180deg, #faeadd, #f3d9c4); }
+
+.koc-podium-name { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.koc-podium-score { font-family: var(--koc-font-heading); font-weight: 600; font-size: 13px; opacity: .8; font-variant-numeric: tabular-nums; }
+
+/* Rank movement (client-side diff between live refreshes). */
+.koc-move { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.koc-move-up { color: #2e7d32; }
+.koc-move-down { color: #c62828; }
+.koc-move-same { color: var(--koc-text); opacity: .35; }
+.koc-move-new {
+    color: var(--koc-accent-700);
+    background: color-mix(in srgb, var(--koc-accent-300) 22%, transparent);
+    border-radius: 4px; padding: 0 5px; font-size: 11px; letter-spacing: .06em;
+}
+
+/* Row flash when a live update lands. */
+@keyframes koc-row-pulse {
+    0% { background: color-mix(in srgb, var(--koc-accent-300) 45%, transparent); }
+    100% { background: transparent; }
+}
+.koc-row-pulse td { animation: koc-row-pulse 1.2s ease-out 1; }
+
+/* Thin progress bar: how far along the competition is toward its final reveal. */
+.koc-deadline-bar {
+    position: relative; height: 5px; border-radius: 3px;
+    background: color-mix(in srgb, var(--koc-accent-300) 25%, transparent);
+    overflow: hidden;
+}
+.koc-deadline-bar > span {
+    position: absolute; inset: 0 auto 0 0; display: block;
+    background: linear-gradient(90deg, var(--koc-accent-500), var(--koc-accent-700));
+    border-radius: 3px;
+}
+.koc-arena-banner .koc-deadline-bar { background: rgba(255,255,255,.22); }
+.koc-arena-banner .koc-deadline-bar > span { background: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+    .koc-row-pulse td { animation: none; }
+    .koc-countdown-urgent .koc-countdown-unit { animation: none; }
+}
