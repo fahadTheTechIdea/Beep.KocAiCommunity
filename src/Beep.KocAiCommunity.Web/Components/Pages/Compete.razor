@@ -133,11 +133,12 @@ else
         }
     }
 
-    // Active first (nearest reveal leading, undated last), then everything else newest-first.
+    // Active first (nearest reveal leading, then the liveliest race), then everything else newest-first.
     private static IReadOnlyList<CompetitionDto> Sort(IReadOnlyList<CompetitionDto> items) =>
     [
         .. items.OrderBy(c => c.Status switch { "active" => 0, "draft" => 1, _ => 2 })
             .ThenBy(c => c.Status == "active" ? c.RevealUtc ?? DateTime.MaxValue : DateTime.MaxValue)
+            .ThenByDescending(c => c.ParticipantCount)
             .ThenByDescending(c => c.CreatedUtc ?? DateTime.MinValue),
     ];
 

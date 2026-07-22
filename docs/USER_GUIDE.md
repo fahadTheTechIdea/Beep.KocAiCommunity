@@ -68,14 +68,20 @@ a CSV (or import from a URL); publishing freezes a version, and a new upload sta
 
 ## 6. Compete
 
-**Compete** hosts internal, Kaggle-style challenges on real KOC problems.
+**Compete** is the arena: internal, Kaggle-style challenges on real KOC problems. The landing page
+leads with the **featured competition** — a live countdown to reveal day, the current top-3 podium,
+and an **Enter the arena** button.
 
-1. **Browse** competitions and open one to read its overview, get the data, and see the leaderboard.
+1. **Browse** the competition grid — each card shows competitors, submissions, the scoring metric,
+   and a countdown. Every competition has **its own page** (`/compete/…`) you can bookmark or share;
+   notifications take you straight there.
 2. **Download** the training set (labelled) and the evaluation set (no labels) from the Data tab.
 3. **Build a pipeline** in the Studio for the competition's task.
 4. **Submit your pipeline** — the platform trains and scores it on a **hidden** test set (the same data for
-   everyone), so only your modelling choices move your rank.
-5. Watch the **live leaderboard** update in real time. Final standings are revealed on the host's chosen day.
+   everyone), so only your modelling choices move your rank. Every scored entry earns Barrels; the
+   **What you can win** panel on each competition lists the podium rewards and badges.
+5. Watch the **live leaderboard** update in real time — rank arrows (▲/▼/NEW) show who's moving.
+   Final standings are revealed on the host's chosen day.
 
 ![A competition — overview, data, leaderboard, and your submissions](help/img/compete-detail.png)
 

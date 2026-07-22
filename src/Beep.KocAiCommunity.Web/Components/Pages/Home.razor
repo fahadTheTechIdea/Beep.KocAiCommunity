@@ -412,6 +412,7 @@
             var all = await Api.GetCompetitionsAsync();
             _activeCompetitions = all.Where(c => c.Status == "active")
                 .OrderBy(c => c.RevealUtc ?? DateTime.MaxValue)
+                .ThenByDescending(c => c.ParticipantCount)          // liveliest race first when reveals tie
                 .ThenByDescending(c => c.CreatedUtc ?? DateTime.MinValue)
                 .ToList();
 

@@ -278,6 +278,31 @@ call the API. Decisions & architecture: `19_WINFORMS_DESKTOP_STUDIO.md`.
     two new projects in the solution-layout; memory note `winforms-desktop-studio.md`. The RID is passed
     at publish time so the solution build stays cross-platform. **WinForms initiative complete.**
 
+## Competition Arena UI/UX revamp (landing + competitions)
+
+Decisions: featured-competition hero on Home; full Kaggle-style pages per competition
+(`/compete/{id}`); bold arena visuals (podiums, countdowns, live pulses, rank movement) inside the
+KOC blueprint theme. No DB schema change anywhere.
+
+29. ~~Stage 1 — DTO enrichment~~ ✅ DONE (2026-07-22) — `CompetitionDto` + ParticipantCount/
+    SubmissionCount/HostName/QuotaPerDay/MetricName/HigherIsBetter/CreatedUtc (append-only,
+    computed via `GetStatsAsync` in one grouped query + `IScorerRegistry`); shared
+    `CompetitionRewards` constants wired into `XpSources` so prize copy can't drift.
+30. ~~Stage 2 — arena vocabulary~~ ✅ DONE (2026-07-22) — koc-blueprint.css Arena section +
+    shared components: `CountdownTimer`, `RankMedal`, `PodiumBlock`, `CompetitionCard`,
+    `LiveBoard` (client-side ▲/▼/NEW rank movement), `CompetitionDisplay`; 9 bUnit tests.
+31. ~~Stage 3 — /compete/{id}~~ ✅ DONE (2026-07-22) — full-width arena page (banner + Overview/
+    Data/Leaderboard/Submissions/Host tabs, "What you can win" rewards strip, `?tab=` deep link);
+    SignalR joins `competition:{id}` and re-joins on reconnect; notification LinkUrls deep-link.
+32. ~~Stage 4 — /compete grid~~ ✅ DONE (2026-07-22) — browse grid of `CompetitionCard`s with
+    status/task filters + a spotlight card (single fetched podium); hosting lands on
+    `/compete/{id}?tab=host`; no per-card board fetches; 748→~170 lines.
+33. ~~Stage 5 — Home hero~~ ✅ DONE (2026-07-22) — landing leads with the featured competition
+    (nearest reveal): countdown, live top-3 podium, stats, prize strip, ENTER THE ARENA;
+    champions mini-card + live-competitions section run on the enriched DTO with deep links.
+34. ~~Stage 6 — polish + docs~~ ✅ DONE (2026-07-22) — user guide + tracker updated; visual
+    verification of the new pages via Playwright.
+
 ## Global definition of done
 
 ```bash
