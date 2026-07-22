@@ -87,6 +87,16 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         leaderboard[0].Score.Should().Be(1.0);
         leaderboard[1].Rank.Should().Be(2);
         leaderboard[1].UserId.Should().Be("comp-b");
+
+        // Arena enrichment: the DTO carries live stats + metric facts computed server-side.
+        var dto = (await a.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!;
+        dto.ParticipantCount.Should().Be(2);
+        dto.SubmissionCount.Should().Be(2);
+        dto.MetricName.Should().Be("Accuracy");
+        dto.HigherIsBetter.Should().BeTrue();
+        dto.QuotaPerDay.Should().Be(5);
+        dto.HostName.Should().NotBeNullOrEmpty();   // falls back to the creator's user id without a profile
+        dto.CreatedUtc.Should().NotBeNull();
     }
 
     [Fact]
@@ -217,6 +227,12 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var leaderboard = (await participant.GetFromJsonAsync<List<LeaderboardEntryDto>>(
             $"/api/v1/competitions/{competitionId}/leaderboard?board=live"))!;
         leaderboard.Should().ContainSingle(e => e.UserId == "reg-a");
+
+        // RMSE competitions advertise a lower-is-better metric on the enriched DTO.
+        var dto = (await participant.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!;
+        dto.MetricName.Should().Be("RMSE");
+        dto.HigherIsBetter.Should().BeFalse();
+        dto.QuotaPerDay.Should().Be(25);
     }
 
     [Fact]

@@ -1,3 +1,5 @@
+using Beep.KocAiCommunity.Contracts.Competitions;
+
 namespace Beep.KocAiCommunity.Infrastructure.Engagement;
 
 /// <summary>Stable Barrels (bbl) source discriminators and their award values. One source of truth.</summary>
@@ -19,9 +21,11 @@ public static class XpSources
     {
         LessonCompleted => 25,
         TrackCompleted => 150,
-        SubmissionScored => 20,
-        SubmissionFirst => 50,
-        CompetitionTop3 => 300,
+        // Competition awards come from the shared CompetitionRewards constants so the arena UI's
+        // prize copy is guaranteed to match what is actually granted.
+        SubmissionScored => CompetitionRewards.ScoredSubmissionBarrels,
+        SubmissionFirst => CompetitionRewards.FirstSubmissionBonusBarrels,
+        CompetitionTop3 => CompetitionRewards.PodiumBarrels,
         CompetitionWin => 0,
         DiscussionCreated => 10,
         DiscussionReplied => 5,

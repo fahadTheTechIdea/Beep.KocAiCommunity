@@ -22,7 +22,15 @@ public sealed record CompetitionDto(
     string LabelColumn,
     string IdColumn,
     string TaskType,
-    Guid? RecommendedTrackId);
+    Guid? RecommendedTrackId,
+    // Arena enrichment (appended, optional — older callers keep working).
+    int ParticipantCount = 0,
+    int SubmissionCount = 0,
+    string HostName = "",
+    int QuotaPerDay = 0,
+    string MetricName = "",
+    bool HigherIsBetter = true,
+    DateTime? CreatedUtc = null);
 
 public sealed record SetStatusRequest(string Status);
 

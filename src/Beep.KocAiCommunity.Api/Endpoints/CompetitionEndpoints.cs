@@ -12,7 +12,7 @@ public static class CompetitionEndpoints
 {
     public static RouteGroupBuilder MapCompetitionEndpoints(this RouteGroupBuilder group)
     {
-        group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
         {
             if (!Enum.TryParse<VisibilityScope>(req.Scope, ignoreCase: true, out var scope))
             {
@@ -27,7 +27,7 @@ public static class CompetitionEndpoints
             {
                 var isPlatformAdmin = me.IsInRole(KocRoles.PlatformAdmin);
                 var competition = await svc.CreateAsync(me.UserId!, isPlatformAdmin, req.Title, req.Description, scope, unit, req.RevealUtc, req.QuotaPerDay, req.ScorerCode, ct);
-                return Results.Ok(ToDto(competition));
+                return Results.Ok(ToDto(competition, stats: null, scorers));
             }
             catch (CompetitionAccessException ex)
             {
@@ -41,18 +41,25 @@ public static class CompetitionEndpoints
         .WithName("CreateCompetition")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
-        group.MapGet("/competitions", async (IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        group.MapGet("/competitions", async (IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
         {
             var visible = await svc.BrowseVisibleAsync(me.UserId!, ct);
-            return Results.Ok(visible.Select(ToDto).ToList());
+            var stats = await svc.GetStatsAsync([.. visible.Select(c => c.Id)], ct);
+            return Results.Ok(visible.Select(c => ToDto(c, stats.GetValueOrDefault(c.Id), scorers)).ToList());
         })
         .WithName("BrowseCompetitions")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
-        group.MapGet("/competitions/{id:guid}", async (Guid id, ICompetitionService svc, CancellationToken ct) =>
+        group.MapGet("/competitions/{id:guid}", async (Guid id, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
         {
             var competition = await svc.GetAsync(id, ct);
-            return competition is null ? Results.NotFound() : Results.Ok(ToDto(competition));
+            if (competition is null)
+            {
+                return Results.NotFound();
+            }
+
+            var stats = await svc.GetStatsAsync([id], ct);
+            return Results.Ok(ToDto(competition, stats.GetValueOrDefault(id), scorers));
         })
         .WithName("GetCompetition")
         .RequireAuthorization(KocPolicies.RequireEmployee);
@@ -212,9 +219,22 @@ public static class CompetitionEndpoints
         return group;
     }
 
-    private static CompetitionDto ToDto(Competition c) =>
-        new(c.Id, c.Title, c.Description, c.Status, c.VisibilityScope.ToString(), c.RevealUtc,
+    private static CompetitionDto ToDto(Competition c, CompetitionStats? stats, IScorerRegistry scorers)
+    {
+        var scorer = scorers.Resolve(c.ScorerCode);
+        var metric = scorer.Code.Equals("rmse", StringComparison.OrdinalIgnoreCase) ? "RMSE"
+            : scorer.Code.Equals("accuracy", StringComparison.OrdinalIgnoreCase) ? "Accuracy"
+            : scorer.Code;
+        return new(c.Id, c.Title, c.Description, c.Status, c.VisibilityScope.ToString(), c.RevealUtc,
             c.AnswerKeyArtifactId is not null,
             c.TrainingDatasetArtifactId is not null && c.EvaluationArtifactId is not null,
-            c.LabelColumn, c.IdColumn, c.TaskType, c.RecommendedTrackId);
+            c.LabelColumn, c.IdColumn, c.TaskType, c.RecommendedTrackId,
+            stats?.ParticipantCount ?? 0,
+            stats?.SubmissionCount ?? 0,
+            stats?.HostName ?? c.CreatedByUserId ?? "",
+            c.SubmissionQuotaPerDay,
+            metric,
+            scorer.HigherIsBetter,
+            c.CreatedUtc);
+    }
 }

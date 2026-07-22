@@ -345,6 +345,38 @@ public sealed class CompetitionService(
             .ToList();
     }
 
+    public async Task<IReadOnlyDictionary<Guid, CompetitionStats>> GetStatsAsync(IReadOnlyCollection<Guid> competitionIds, CancellationToken ct = default)
+    {
+        if (competitionIds.Count == 0)
+        {
+            return new Dictionary<Guid, CompetitionStats>();
+        }
+
+        // One grouped pass over submissions for participant + submission counts.
+        var counts = await db.Set<Submission>().AsNoTracking()
+            .Where(s => competitionIds.Contains(s.CompetitionId))
+            .GroupBy(s => s.CompetitionId)
+            .Select(g => new { g.Key, Participants = g.Select(s => s.SubmitterUserId).Distinct().Count(), Submissions = g.Count() })
+            .ToDictionaryAsync(x => x.Key, ct);
+
+        // Host display names via the profile table (falls back to the raw user id).
+        var hosts = await db.Set<Competition>().AsNoTracking()
+            .Where(c => competitionIds.Contains(c.Id))
+            .Select(c => new { c.Id, HostId = c.CreatedByUserId ?? "" })
+            .ToListAsync(ct);
+        var hostIds = hosts.Select(h => h.HostId).Distinct().ToList();
+        var names = await db.Set<Domain.Engagement.UserProfile>().AsNoTracking()
+            .Where(p => hostIds.Contains(p.UserId))
+            .ToDictionaryAsync(p => p.UserId, p => p.DisplayName, ct);
+
+        return hosts.ToDictionary(
+            h => h.Id,
+            h => new CompetitionStats(
+                counts.TryGetValue(h.Id, out var c) ? c.Participants : 0,
+                counts.TryGetValue(h.Id, out var c2) ? c2.Submissions : 0,
+                names.GetValueOrDefault(h.HostId, h.HostId)));
+    }
+
     public async Task<IReadOnlyList<Submission>> GetMySubmissionsAsync(string userId, Guid competitionId, CancellationToken ct = default) =>
         await db.Set<Submission>().AsNoTracking()
             .Where(s => s.CompetitionId == competitionId && s.SubmitterUserId == userId)

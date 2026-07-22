@@ -16,6 +16,9 @@ public sealed class CompetitionAccessException(string message) : Exception(messa
 /// <summary>A leaderboard row with the entrant's display name resolved for UI use.</summary>
 public sealed record NamedLeaderboardEntry(int Rank, string UserId, string DisplayName, double Score);
 
+/// <summary>Arena stats for a competition: distinct competitors, total submissions, and the host's display name.</summary>
+public sealed record CompetitionStats(int ParticipantCount, int SubmissionCount, string HostName);
+
 public interface ICompetitionService
 {
     /// <summary>
@@ -67,6 +70,9 @@ public interface ICompetitionService
 
     Task<IReadOnlyList<Competition>> BrowseVisibleAsync(string userId, CancellationToken ct = default);
     Task<Competition?> GetAsync(Guid competitionId, CancellationToken ct = default);
+
+    /// <summary>Arena stats for a set of competitions, computed in one pass (no per-competition queries).</summary>
+    Task<IReadOnlyDictionary<Guid, CompetitionStats>> GetStatsAsync(IReadOnlyCollection<Guid> competitionIds, CancellationToken ct = default);
 
     /// <summary>Scores a prediction file against the hidden key and updates the leaderboard.</summary>
     Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, CancellationToken ct = default);
