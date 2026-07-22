@@ -12,6 +12,36 @@
 
 <PageTitle>@KocBrand.ProductName</PageTitle>
 
+@if (!Identity.IsGuest && Featured is { } featured)
+{
+    <!-- The arena leads: the featured competition with a live countdown and podium. -->
+    <BlueprintCard Class="koc-arena-banner pa-6 mb-6">
+        <div class="d-flex justify-space-between flex-wrap gap-5">
+            <div style="min-width:280px;max-width:60ch;">
+                <span class="koc-eyebrow">⚔ Featured competition</span>
+                <MudText Typo="Typo.h4" Class="koc-heading" Style="color:#fff;">🏆 @featured.Title</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2" Style="opacity:.85;max-width:56ch;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                    @featured.Description
+                </MudText>
+                <div class="d-flex gap-4 align-center mb-3 flex-wrap">
+                    <div><span class="koc-stat-value" style="font-size:24px;">@featured.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">competitors</MudText></div>
+                    <div><span class="koc-stat-value" style="font-size:24px;">@featured.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">submissions</MudText></div>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);">@CompetitionDisplay.MetricLabel(featured)</MudChip>
+                </div>
+                <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.85;">
+                    🥇 Winner takes the <b>Gusher</b> badge · top 3 earn <b>@CompetitionRewards.PodiumBarrels bbl</b> + <b>On the Podium</b> · every scored entry @CompetitionRewards.ScoredSubmissionBarrels bbl
+                </MudText>
+                <MudButton Size="Size.Large" Variant="Variant.Filled" Style="background:#fff;color:var(--koc-accent-900);font-weight:700;"
+                           StartIcon="@Icons.Material.Filled.EmojiEvents" Href="@($"/compete/{featured.Id}")">Enter the arena</MudButton>
+            </div>
+            <div class="d-flex flex-column gap-3" style="min-width:280px;">
+                <CountdownTimer TargetUtc="featured.RevealUtc" />
+                <PodiumBlock Entries="_featuredBoard" MyUserId="@Identity.UserId" Dense="true" />
+            </div>
+        </div>
+    </BlueprintCard>
+}
+
 @if (!Identity.IsGuest && _myProfile is not null)
 {
     <BlueprintCard Class="pa-5 mb-6" Style="border-color:var(--koc-accent-500);">
@@ -123,22 +153,15 @@
                     {
                         <div class="mb-3">
                             <MudText Typo="Typo.body2" Class="koc-heading"><b>@c.Title</b></MudText>
-                            @if (_compBoards.TryGetValue(c.Id, out var board) && board.Count > 0)
-                            {
-                                @foreach (var e in board.Take(3))
+                            <div class="d-flex gap-3 align-center" style="font-size:13px;">
+                                <span><b>@c.ParticipantCount</b> competitors</span>
+                                <span><b>@c.SubmissionCount</b> entries</span>
+                                @if (c.RevealUtc is not null)
                                 {
-                                    <div class="d-flex align-center gap-2" style="font-size:13px;">
-                                        <span style="width:24px;text-align:center;">@HomeMedal(e.Rank)</span>
-                                        <span class="flex-grow-1">@e.DisplayName @(e.UserId == Identity.UserId ? "(you)" : "")</span>
-                                        <b>@e.Score.ToString("0.###")</b>
-                                    </div>
+                                    <CountdownTimer TargetUtc="c.RevealUtc" Compact="true" RefreshSeconds="60" />
                                 }
-                            }
-                            else
-                            {
-                                <MudText Typo="Typo.caption" Style="opacity:.65;">No submissions yet — be first on the board!</MudText>
-                            }
-                            <MudButton Href="/compete" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-1"
+                            </div>
+                            <MudButton Href="@($"/compete/{c.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-1"
                                        StartIcon="@Icons.Material.Filled.EmojiEvents">Enter</MudButton>
                         </div>
                     }
@@ -276,15 +299,7 @@
         @foreach (var c in _activeCompetitions.Take(3))
         {
             <MudItem xs="12" md="4">
-                <BlueprintCard Class="pa-5" Style="height:100%;">
-                    <div class="d-flex justify-space-between align-center mb-1">
-                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@c.Status</MudChip>
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@(c.TaskType == "Regression" ? "RMSE" : "Accuracy")</MudChip>
-                    </div>
-                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">@c.Title</MudText>
-                    <MudText Typo="Typo.body2" Class="mb-3">@c.Description</MudText>
-                    <MudButton Href="/compete" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.EmojiEvents">Enter</MudButton>
-                </BlueprintCard>
+                <CompetitionCard Competition="c" MyUserId="@Identity.UserId" />
             </MudItem>
         }
     </MudGrid>
@@ -339,7 +354,10 @@
     private SupervisionRollupDto? _rollup;
     private IReadOnlyList<TeamLeaderboardRowDto>? _teamBoard;
     private IReadOnlyList<XpLeaderboardRowDto>? _xpBoard;
-    private readonly Dictionary<Guid, IReadOnlyList<LeaderboardEntryDto>> _compBoards = new();
+    private IReadOnlyList<LeaderboardEntryDto>? _featuredBoard;
+
+    /// <summary>The hero competition: the active one whose reveal is nearest (undated last, then newest).</summary>
+    private CompetitionDto? Featured => _activeCompetitions is { Count: > 0 } ? _activeCompetitions[0] : null;
 
     private async Task LoadAsync()
     {
@@ -392,14 +410,17 @@
         try
         {
             var all = await Api.GetCompetitionsAsync();
-            _activeCompetitions = all.Where(c => c.Status == "active").ToList();
+            _activeCompetitions = all.Where(c => c.Status == "active")
+                .OrderBy(c => c.RevealUtc ?? DateTime.MaxValue)
+                .ThenByDescending(c => c.CreatedUtc ?? DateTime.MinValue)
+                .ToList();
 
-            // Top-3 podium preview for the challenge cards.
-            _compBoards.Clear();
-            foreach (var c in _activeCompetitions.Take(2))
+            // Live top-3 podium for the featured hero only (cards run on the enriched DTO).
+            _featuredBoard = null;
+            if (Featured is { } featured)
             {
-                try { _compBoards[c.Id] = await Api.GetLeaderboardAsync(c.Id); }
-                catch { _compBoards[c.Id] = []; }
+                try { _featuredBoard = (await Api.GetLeaderboardAsync(featured.Id)).Take(3).ToList(); }
+                catch { _featuredBoard = []; }
             }
         }
         catch
