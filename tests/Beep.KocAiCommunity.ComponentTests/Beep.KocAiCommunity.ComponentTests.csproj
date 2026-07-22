@@ -18,6 +18,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Ui.Shared\Beep.KocAiCommunity.Ui.Shared.csproj" />
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Web\Beep.KocAiCommunity.Web.csproj" />
+    <!-- RemoteFallbackKocApiClient doubles as a convenient IKocApiClient fake base for page tests. -->
+    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Desktop.Local\Beep.KocAiCommunity.Desktop.Local.csproj" />
   </ItemGroup>
 
 </Project>
