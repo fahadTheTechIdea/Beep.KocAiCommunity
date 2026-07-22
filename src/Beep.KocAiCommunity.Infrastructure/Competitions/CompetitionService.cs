@@ -146,7 +146,7 @@ public sealed class CompetitionService(
                 competition.RevealUtc is { } reveal
                     ? $"Submissions are closed. Final standings reveal {reveal.ToLocalTime():g}."
                     : "Submissions are closed. Check the leaderboard for final standings.",
-                "/compete", ct);
+                $"/compete/{competition.Id}", ct);
 
             await AwardPodiumAsync(competition, ct);
         }
@@ -320,7 +320,7 @@ public sealed class CompetitionService(
         await notifications.NotifyAsync(userId, "submission-scored",
             $"Submission scored: {score:0.###}",
             $"Your submission to \"{competition.Title}\" scored {score:0.###}.",
-            "/compete", ct);
+            $"/compete/{competition.Id}", ct);
 
         // Barrels for a scored submission (idempotent per submission; a first-ever submission earns a bonus + badge).
         await AwardSafelyAsync(userId, XpSources.SubmissionScored, "submission", submission.Id, ct);

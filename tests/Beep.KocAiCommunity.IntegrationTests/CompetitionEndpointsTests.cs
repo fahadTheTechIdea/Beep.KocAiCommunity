@@ -301,6 +301,11 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A")))
             .StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // Participant notifications deep-link to the competition's arena page.
+        var notifications = (await competitor.GetFromJsonAsync<List<Beep.KocAiCommunity.Contracts.Notifications.NotificationDto>>("/api/v1/notifications"))!;
+        notifications.Should().Contain(n => n.Type == "competition-concluded" && n.LinkUrl == $"/compete/{competitionId}");
+        notifications.Should().Contain(n => n.Type == "submission-scored" && n.LinkUrl == $"/compete/{competitionId}");
     }
 
     [Fact]

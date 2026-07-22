@@ -33,6 +33,9 @@ public interface IKocApiClient
     Task CompleteLessonAsync(Guid trackId, Guid lessonId, CancellationToken ct = default);
     Task<IReadOnlyList<MyLearningDto>> GetMyLearningAsync(CancellationToken ct = default);
     Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default);
+
+    /// <summary>A single competition with its arena stats, or null when not found.</summary>
+    Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default);
     Task<CompetitionDto?> CreateCompetitionAsync(CreateCompetitionRequest request, CancellationToken ct = default);
     Task SetAnswerKeyAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default);
     Task<SubmissionResultDto?> SubmitAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default);
@@ -211,6 +214,12 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public async Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<CompetitionDto>>("/api/v1/competitions", ct) ?? [];
+
+    public async Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default)
+    {
+        var response = await http.GetAsync($"/api/v1/competitions/{competitionId}", ct);
+        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<CompetitionDto>(ct) : null;
+    }
 
     public async Task<CompetitionDto?> CreateCompetitionAsync(CreateCompetitionRequest request, CancellationToken ct = default)
     {

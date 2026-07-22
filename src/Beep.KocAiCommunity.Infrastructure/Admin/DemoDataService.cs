@@ -607,11 +607,10 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
         foreach (var user in new[] { "dev-admin", "dev-user" })
         {
             db.Add(new Notification { UserId = user, Type = "welcome", Title = "Demo data is live", Message = "Explore the ESP Failure Challenge, the leaderboards, and the demo colleagues.", LinkUrl = "/compete", CreatedByUserId = Marker, CreatedUtc = now });
-            db.Add(new Notification { UserId = user, Type = "submission-scored", Title = "Submission scored", Message = "Your ESP challenge entry landed on the leaderboard.", LinkUrl = "/compete", CreatedByUserId = Marker, CreatedUtc = now.AddHours(-2) });
+            db.Add(new Notification { UserId = user, Type = "submission-scored", Title = "Submission scored", Message = "Your ESP challenge entry landed on the leaderboard.", LinkUrl = $"/compete/{active.Id}", CreatedByUserId = Marker, CreatedUtc = now.AddHours(-2) });
         }
 
         db.Add(new Notification { UserId = "dev-emp-1", Type = "kudos", Title = "You received kudos 👏", Message = $"{People[3].Name}: Welcome to the challenge — strong first submission!", LinkUrl = "/profile", CreatedByUserId = Marker, CreatedUtc = now.AddDays(-3) });
-        _ = active;
     }
 
     // ---- Data builders ----

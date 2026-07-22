@@ -1,0 +1,664 @@
+@page "/compete/{Id:guid}"
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.SignalR.Client
+@using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Web.Components.Shared
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@implements IAsyncDisposable
+@inject IKocApiClient Api
+@inject DevIdentity Identity
+@inject RealtimeOptions Realtime
+@inject ISnackbar Snackbar
+
+<PageTitle>@(_competition?.Title ?? "Competition") · @KocBrand.ProductName</PageTitle>
+
+@if (_notFound)
+{
+    <BlueprintCard Class="pa-8" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">Competition not found</MudText>
+        <MudText Typo="Typo.body2" Class="mb-3">It may have been removed, or the link is out of date.</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/compete">Back to the arena</MudButton>
+    </BlueprintCard>
+}
+else if (_competition is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <!-- Arena banner -->
+    <BlueprintCard Class="koc-arena-banner pa-6 mb-4">
+        <MudLink Href="/compete" Style="color:#cfe4f5;font-size:13px;">← All competitions</MudLink>
+        <div class="d-flex justify-space-between align-end flex-wrap gap-4 mt-2">
+            <div style="min-width:280px;max-width:62ch;">
+                <span class="koc-eyebrow">⚔ Competition</span>
+                <MudText Typo="Typo.h4" Class="koc-heading" Style="color:#fff;">🏆 @_competition.Title</MudText>
+                <MudText Typo="Typo.caption" Style="opacity:.85;">Hosted by @_competition.HostName</MudText>
+                <div class="d-flex gap-1 flex-wrap mt-2">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(_competition.Status)">@_competition.Status</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);">@CompetitionDisplay.TaskLabel(_competition.TaskType)</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);">@CompetitionDisplay.MetricLabel(_competition)</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);" Icon="@Icons.Material.Filled.Visibility">@_competition.Scope</MudChip>
+                </div>
+                <div class="d-flex gap-5 mt-3">
+                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">competitors</MudText></div>
+                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">submissions</MudText></div>
+                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.QuotaPerDay</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">entries/day</MudText></div>
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-2" style="min-width:270px;">
+                <CountdownTimer TargetUtc="_competition.RevealUtc" />
+                @if (CompetitionDisplay.RevealProgress(_competition, DateTime.UtcNow) is { } progress)
+                {
+                    <div class="koc-deadline-bar" title="Progress toward the final reveal"><span style="width:@(((int)(progress * 100)))%"></span></div>
+                }
+            </div>
+        </div>
+    </BlueprintCard>
+
+    <BlueprintCard Class="pa-0">
+        <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true" ActivePanelIndex="_initialTab">
+            <!-- 1 · Overview -->
+            <MudTabPanel Text="Overview" Icon="@Icons.Material.Filled.Description" Class="pa-5">
+                <MudText Typo="Typo.body1" Class="mb-4" Style="white-space:pre-wrap;max-width:80ch;">@_competition.Description</MudText>
+
+                @if (_competition.RecommendedTrackId is not null)
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-4">
+                        New to this? <MudLink Href="/learn">Start with the recommended learning track →</MudLink>
+                    </MudAlert>
+                }
+
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">How it works</MudText>
+                <MudGrid Spacing="3" Class="mb-4">
+                    <MudItem xs="12" md="4">
+                        <BlueprintCard Class="pa-4" Style="height:100%;">
+                            <span class="koc-stat-value" style="font-size:26px;">1</span>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Get the data</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.75;">Download the labelled training set and the evaluation set from the Data tab.</MudText>
+                        </BlueprintCard>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <BlueprintCard Class="pa-4" Style="height:100%;">
+                            <span class="koc-stat-value" style="font-size:26px;">2</span>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Build your model</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.75;">Design a pipeline in the Studio node editor — features, split, algorithm.</MudText>
+                        </BlueprintCard>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <BlueprintCard Class="pa-4" Style="height:100%;">
+                            <span class="koc-stat-value" style="font-size:26px;">3</span>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Submit &amp; climb</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.75;">Scored on a hidden answer key shared by everyone — only modelling moves your rank.</MudText>
+                        </BlueprintCard>
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">What you can win</MudText>
+                <MudGrid Spacing="3" Class="mb-4">
+                    <MudItem xs="12" md="4">
+                        <BlueprintCard Class="pa-4" Style="height:100%;">
+                            <div class="d-flex align-center gap-2 mb-1">
+                                <img src="@KocBrand.Icon("039-oil-well.png")" alt="" width="34" height="34" />
+                                <MudText Typo="Typo.subtitle2" Class="koc-heading">🥇 Winner</MudText>
+                            </div>
+                            <MudText Typo="Typo.caption" Style="opacity:.8;">The <b>@CompetitionRewards.WinnerBadge</b> gold badge + @CompetitionRewards.PodiumBarrels bbl.</MudText>
+                        </BlueprintCard>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <BlueprintCard Class="pa-4" Style="height:100%;">
+                            <div class="d-flex align-center gap-2 mb-1">
+                                <img src="@KocBrand.Icon("100-goal.png")" alt="" width="34" height="34" />
+                                <MudText Typo="Typo.subtitle2" Class="koc-heading">🏅 Top 3</MudText>
+                            </div>
+                            <MudText Typo="Typo.caption" Style="opacity:.8;">The <b>@CompetitionRewards.PodiumBadge</b> badge + @CompetitionRewards.PodiumBarrels bbl on conclusion.</MudText>
+                        </BlueprintCard>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <BlueprintCard Class="pa-4" Style="height:100%;">
+                            <div class="d-flex align-center gap-2 mb-1">
+                                <img src="@KocBrand.Icon("179-exploration.png")" alt="" width="34" height="34" />
+                                <MudText Typo="Typo.subtitle2" Class="koc-heading">Every entry</MudText>
+                            </div>
+                            <MudText Typo="Typo.caption" Style="opacity:.8;">@CompetitionRewards.ScoredSubmissionBarrels bbl per scored submission; your first ever earns the <b>@CompetitionRewards.FirstSubmissionBadge</b> badge (+@CompetitionRewards.FirstSubmissionBonusBarrels bbl).</MudText>
+                        </BlueprintCard>
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Evaluation</MudText>
+                <MudText Typo="Typo.body2" Style="max-width:75ch;">
+                    Submissions are scored with <b>@CompetitionDisplay.MetricLabel(_competition)</b> against a hidden answer key.
+                    @(_competition.RevealUtc is null
+                        ? "The live leaderboard reflects your best score."
+                        : "The live leaderboard shows public scores; final private standings unlock on reveal day so no one can game the last hours.")
+                </MudText>
+            </MudTabPanel>
+
+            <!-- 2 · Data -->
+            <MudTabPanel Text="Data" Icon="@Icons.Material.Filled.Dataset" Class="pa-5">
+                @if (_competition.HasDatasets)
+                {
+                    <MudGrid Spacing="3" Class="mb-3">
+                        @if (_trainingCsv is not null)
+                        {
+                            <MudItem xs="12" md="6">
+                                <BlueprintCard Class="pa-4">
+                                    <div class="d-flex align-center gap-2 mb-1">
+                                        <MudIcon Icon="@Icons.Material.Filled.TableChart" Color="Color.Primary" />
+                                        <MudText Typo="Typo.subtitle2" Class="koc-heading">training.csv</MudText>
+                                    </div>
+                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@RowCount(_trainingCsv) rows · <code>@_competition.IdColumn, features…, @_competition.LabelColumn</code></MudText>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                                               Href="@DataUri(_trainingCsv)" download="training.csv">Download</MudButton>
+                                </BlueprintCard>
+                            </MudItem>
+                        }
+                        @if (_evalCsv is not null)
+                        {
+                            <MudItem xs="12" md="6">
+                                <BlueprintCard Class="pa-4">
+                                    <div class="d-flex align-center gap-2 mb-1">
+                                        <MudIcon Icon="@Icons.Material.Filled.Quiz" Color="Color.Primary" />
+                                        <MudText Typo="Typo.subtitle2" Class="koc-heading">evaluation.csv</MudText>
+                                    </div>
+                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@RowCount(_evalCsv) rows · <code>@_competition.IdColumn, features…</code> — you predict <code>@_competition.LabelColumn</code></MudText>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                                               Href="@DataUri(_evalCsv)" download="evaluation.csv">Download</MudButton>
+                                </BlueprintCard>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree" Href="/workflow">
+                        Build a pipeline in the Studio
+                    </MudButton>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
+                        No data files attached yet — this challenge currently accepts uploaded prediction files only.
+                        @(CanCreate ? "Attach the files in the Host tab." : "")
+                    </MudAlert>
+                }
+            </MudTabPanel>
+
+            <!-- 3 · Leaderboard -->
+            <MudTabPanel Text="Leaderboard" Icon="@Icons.Material.Filled.Leaderboard" Class="pa-0">
+                <div class="pa-5 pb-3">
+                    <PodiumBlock Entries="_leaderboard" MyUserId="@Identity.UserId" />
+                </div>
+                <LiveBoard Entries="_leaderboard" MyUserId="@Identity.UserId" BoardKey="live" />
+
+                <div class="pa-4 d-flex align-center gap-2" style="border-top:1px solid var(--koc-divider);">
+                    <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" />
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading">Final standings</MudText>
+                </div>
+                @if (_finalLeaderboard is null)
+                {
+                    <MudText Typo="Typo.body2" Class="pa-4 pt-0">
+                        Concealed until reveal day@(_competition.RevealUtc is { } fr ? $" ({fr.ToLocalTime():g})" : "") — the private leaderboard stays hidden so no one games the last day.
+                    </MudText>
+                }
+                else if (_finalLeaderboard.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="pa-4 pt-0">Revealed — no submissions were made.</MudText>
+                }
+                else
+                {
+                    <LiveBoard Entries="_finalLeaderboard" MyUserId="@Identity.UserId" BoardKey="final" />
+                }
+            </MudTabPanel>
+
+            <!-- 4 · My submissions -->
+            <MudTabPanel Text="My submissions" Icon="@Icons.Material.Filled.UploadFile" Class="pa-5">
+                @if (_competition.Status == "concluded")
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-3">Submissions are closed — this challenge has concluded.</MudAlert>
+                }
+                else
+                {
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Submit a prediction</MudText>
+                    <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="opacity:.75;">
+                        CSV of <code>@_competition.IdColumn, @_competition.LabelColumn</code> — scored instantly against the hidden answer key.
+                    </MudText>
+                    <InputFile OnChange="OnPredictionSelected" accept=".csv" />
+                    @if (_lastScore is not null)
+                    {
+                        <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="mt-2">
+                            Scored: <b>@_lastScore.Value.ToString("0.###")</b> (+@CompetitionRewards.ScoredSubmissionBarrels bbl) — your best result counts on the leaderboard.
+                        </MudAlert>
+                    }
+                }
+
+                @if (_mySubmissions is { Count: > 0 })
+                {
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mt-4 mb-1">History</MudText>
+                    <MudSimpleTable Dense="true" Hover="true">
+                        <thead><tr><th>When</th><th>Status</th><th style="text-align:right;">Score</th></tr></thead>
+                        <tbody>
+                            @foreach (var sub in _mySubmissions)
+                            {
+                                <tr>
+                                    <td>@sub.SubmittedUtc.ToLocalTime().ToString("g")</td>
+                                    <td>@sub.Status</td>
+                                    <td style="text-align:right;">@(sub.Score?.ToString("0.###") ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+                else if (_competition.Status != "concluded")
+                {
+                    <MudText Typo="Typo.body2" Class="mt-4" Style="opacity:.7;">No submissions yet — your first upload puts you on the board.</MudText>
+                }
+            </MudTabPanel>
+
+            @if (CanCreate)
+            {
+                <!-- 5 · Host -->
+                <MudTabPanel Text="Host" Icon="@Icons.Material.Filled.Tune" Class="pa-5">
+                    <div class="d-flex align-center gap-2 mb-4">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_competition.HasDatasets ? Color.Success : Color.Default)"
+                                 Icon="@(_competition.HasDatasets ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Data</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_competition.HasAnswerKey ? Color.Success : Color.Default)"
+                                 Icon="@(_competition.HasAnswerKey ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Answer key</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(_competition.Status)">@_competition.Status</MudChip>
+                    </div>
+
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Competition data</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
+                        Competitors download the training data, build a model, and are scored on the evaluation set against your hidden answer key.
+                    </MudText>
+                    <div class="d-flex gap-3 flex-wrap mb-3">
+                        <MudTextField @bind-Value="_dsLabel" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
+                        <MudTextField @bind-Value="_dsId" Label="Id column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
+                        <MudSelect @bind-Value="_dsTask" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:220px;">
+                            <MudSelectItem Value="@("BinaryClassification")">Binary classification</MudSelectItem>
+                            <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
+                            <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
+                        </MudSelect>
+                    </div>
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="4">
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Training data</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, features…, label</code> — public to competitors.</MudText>
+                            <InputFile OnChange="OnTrainingSelected" accept=".csv" />
+                            @if (_dsTraining is not null)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="mt-1">ready</MudChip>
+                            }
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Evaluation set</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, features…</code> — no label; what they predict.</MudText>
+                            <InputFile OnChange="OnEvalSelected" accept=".csv" />
+                            @if (_dsEval is not null)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="mt-1">ready</MudChip>
+                            }
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Hidden answer key</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, label</code> — kept Restricted; never exposed.</MudText>
+                            <InputFile OnChange="OnKeySelected" accept=".csv" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" StartIcon="@Icons.Material.Filled.CloudUpload"
+                               OnClick="UploadDatasets" Disabled="_dsTraining is null || _dsEval is null">Publish training + evaluation data</MudButton>
+
+                    <MudDivider Class="my-4" />
+
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Timeline</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">Until the reveal, the final private standings stay concealed so no one games the last day.</MudText>
+                    <div class="d-flex gap-2 align-center flex-wrap">
+                        <MudDatePicker @bind-Date="_revealDate" Label="Reveal date" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:200px;" />
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SetReveal" Disabled="_revealDate is null">Set reveal</MudButton>
+                        @if (_competition.RevealUtc is not null)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Event">@_competition.RevealUtc.Value.ToLocalTime().ToString("g")</MudChip>
+                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearReveal">Clear</MudButton>
+                        }
+                    </div>
+
+                    <MudDivider Class="my-4" />
+
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Lifecycle</MudText>
+                    <div class="d-flex align-center gap-1 mb-3">
+                        @foreach (var (stage, index) in new[] { "draft", "active", "concluded" }.Select((x, i) => (x, i)))
+                        {
+                            <MudChip T="string" Size="Size.Small"
+                                     Variant="@(_competition.Status == stage ? Variant.Filled : Variant.Text)"
+                                     Color="@(_competition.Status == stage ? CompetitionDisplay.StatusColor(stage) : Color.Default)">@stage</MudChip>
+                            @if (index < 2)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="opacity:.4;" />
+                            }
+                        }
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap align-center">
+                        @if (_competition.Status != "active")
+                        {
+                            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.RocketLaunch"
+                                       OnClick='() => SetStatus("active")'>Activate — open submissions</MudButton>
+                        }
+                        @if (_competition.Status != "concluded")
+                        {
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.SportsScore"
+                                       OnClick='() => SetStatus("concluded")'>Conclude — close submissions</MudButton>
+                        }
+                        @if (_competition.Status != "draft")
+                        {
+                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick='() => SetStatus("draft")'>Back to draft</MudButton>
+                        }
+                    </div>
+                </MudTabPanel>
+            }
+        </MudTabs>
+    </BlueprintCard>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tab")] public string? Tab { get; set; }
+
+    private CompetitionDto? _competition;
+    private bool _notFound;
+    private Guid _loadedId;
+    private int _initialTab;
+
+    private IReadOnlyList<LeaderboardEntryDto>? _leaderboard;
+    private IReadOnlyList<LeaderboardEntryDto>? _finalLeaderboard;
+    private IReadOnlyList<SubmissionResultDto>? _mySubmissions;
+    private double? _lastScore;
+
+    private string? _trainingCsv;
+    private string? _evalCsv;
+
+    private string _dsLabel = "label";
+    private string _dsId = "id";
+    private string _dsTask = "BinaryClassification";
+    private MemoryStream? _dsTraining;
+    private MemoryStream? _dsEval;
+    private DateTime? _revealDate;
+
+    private string? _maxScope;
+    private bool CanCreate => _maxScope is not null;
+
+    private HubConnection? _hub;
+    private Guid? _joinedCompetition;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _maxScope = (await Api.GetMeAsync())?.MaxCompetitionScope;
+        }
+        catch
+        {
+            _maxScope = null;
+        }
+
+        _initialTab = Tab?.ToLowerInvariant() switch
+        {
+            "data" => 1,
+            "leaderboard" => 2,
+            "submissions" => 3,
+            "host" => 4,
+            _ => 0,
+        };
+
+        await ConnectAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id == _loadedId)
+        {
+            return;
+        }
+
+        _loadedId = Id;
+        await LoadAllAsync();
+        await JoinCompetitionGroupAsync(Id);
+    }
+
+    private async Task LoadAllAsync()
+    {
+        _notFound = false;
+        _competition = null;
+        _lastScore = null;
+        _trainingCsv = _evalCsv = null;
+        _dsTraining = _dsEval = null;
+
+        _competition = await Api.GetCompetitionAsync(Id);
+        if (_competition is null)
+        {
+            _notFound = true;
+            return;
+        }
+
+        _revealDate = _competition.RevealUtc?.ToLocalTime();
+        await LoadLeaderboard();
+        await LoadMySubmissions();
+        await LoadData();
+    }
+
+    private async Task LoadLeaderboard()
+    {
+        _leaderboard = await Api.GetLeaderboardAsync(Id);
+        _finalLeaderboard = await Api.GetFinalLeaderboardAsync(Id);
+    }
+
+    private async Task LoadMySubmissions() => _mySubmissions = await Api.GetMySubmissionsAsync(Id);
+
+    private async Task LoadData()
+    {
+        if (_competition is { HasDatasets: true })
+        {
+            _trainingCsv = await Api.GetCompetitionDataAsync(Id, "training");
+            _evalCsv = await Api.GetCompetitionDataAsync(Id, "evaluation");
+        }
+    }
+
+    /// <summary>Re-fetch the competition (enriched stats included) after a host action or live update.</summary>
+    private async Task ReloadCompetitionAsync()
+    {
+        _competition = await Api.GetCompetitionAsync(Id) ?? _competition;
+        _revealDate = _competition?.RevealUtc?.ToLocalTime();
+        await LoadLeaderboard();
+    }
+
+    // ---- Realtime: join this competition's leaderboard group; re-join after reconnects ----
+
+    private async Task ConnectAsync()
+    {
+        try
+        {
+            _hub = new HubConnectionBuilder().WithUrl(Realtime.HubUrl).WithAutomaticReconnect().Build();
+            _hub.On<string>("leaderboard.updated", async _ =>
+            {
+                await ReloadCompetitionAsync();
+                await InvokeAsync(StateHasChanged);
+            });
+            _hub.Reconnected += async _ =>
+            {
+                if (_joinedCompetition is { } id)
+                {
+                    try
+                    {
+                        await _hub.SendAsync("JoinCompetition", id.ToString());
+                    }
+                    catch { /* best effort */ }
+                }
+            };
+            await _hub.StartAsync();
+            if (_joinedCompetition is null && Id != Guid.Empty)
+            {
+                await JoinCompetitionGroupAsync(Id);
+            }
+        }
+        catch
+        {
+            // Live board is best-effort; the page still works with manual refreshes.
+        }
+    }
+
+    private async Task JoinCompetitionGroupAsync(Guid competitionId)
+    {
+        if (_hub is null || _hub.State != HubConnectionState.Connected || _joinedCompetition == competitionId)
+        {
+            return;
+        }
+
+        try
+        {
+            if (_joinedCompetition is { } prev)
+            {
+                await _hub.SendAsync("LeaveCompetition", prev.ToString());
+            }
+
+            await _hub.SendAsync("JoinCompetition", competitionId.ToString());
+            _joinedCompetition = competitionId;
+        }
+        catch { /* best effort */ }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hub is not null)
+        {
+            await _hub.DisposeAsync();
+        }
+    }
+
+    // ---- Submissions ----
+
+    private async Task OnPredictionSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var ms = await ReadAsync(e.File);
+            var result = await Api.SubmitAsync(Id, ms, e.File.Name);
+            _lastScore = result?.Score;
+            await ReloadCompetitionAsync();
+            await LoadMySubmissions();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Submission failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ---- Host actions ----
+
+    private async Task SetStatus(string status)
+    {
+        try
+        {
+            await Api.SetCompetitionStatusAsync(Id, status);
+            await ReloadCompetitionAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Status change failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SetReveal()
+    {
+        if (_revealDate is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await Api.SetCompetitionRevealAsync(Id, DateTime.SpecifyKind(_revealDate.Value, DateTimeKind.Local).ToUniversalTime());
+            await ReloadCompetitionAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Reveal update failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ClearReveal()
+    {
+        try
+        {
+            await Api.SetCompetitionRevealAsync(Id, null);
+            _revealDate = null;
+            await ReloadCompetitionAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Reveal update failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void OnTrainingSelected(InputFileChangeEventArgs e) => _ = CaptureAsync(e, s => _dsTraining = s);
+
+    private void OnEvalSelected(InputFileChangeEventArgs e) => _ = CaptureAsync(e, s => _dsEval = s);
+
+    private async Task CaptureAsync(InputFileChangeEventArgs e, Action<MemoryStream> assign)
+    {
+        assign(await ReadAsync(e.File));
+        StateHasChanged();
+    }
+
+    private async Task UploadDatasets()
+    {
+        if (_dsTraining is null || _dsEval is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _dsTraining.Position = 0;
+            _dsEval.Position = 0;
+            await Api.SetCompetitionDatasetsAsync(Id, _dsTraining, _dsEval, _dsLabel, _dsId, _dsTask);
+            Snackbar.Add("Competition data uploaded.", Severity.Success);
+            await ReloadCompetitionAsync();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnKeySelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var ms = await ReadAsync(e.File);
+            await Api.SetAnswerKeyAsync(Id, ms, e.File.Name);
+            Snackbar.Add("Answer key set.", Severity.Success);
+            await ReloadCompetitionAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ---- Helpers ----
+
+    private static string DataUri(string csv) =>
+        $"data:text/csv;charset=utf-8;base64,{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(csv))}";
+
+    private static int RowCount(string csv) =>
+        Math.Max(0, csv.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length - 1);
+
+    private static async Task<MemoryStream> ReadAsync(IBrowserFile file)
+    {
+        var ms = new MemoryStream();
+        await using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        await stream.CopyToAsync(ms);
+        ms.Position = 0;
+        return ms;
+    }
+}

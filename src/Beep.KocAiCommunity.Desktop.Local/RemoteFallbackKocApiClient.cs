@@ -37,6 +37,7 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient remote) : IKocApi
     public virtual Task CompleteLessonAsync(Guid trackId, Guid lessonId, CancellationToken ct = default) => remote.CompleteLessonAsync(trackId, lessonId, ct);
     public virtual Task<IReadOnlyList<MyLearningDto>> GetMyLearningAsync(CancellationToken ct = default) => remote.GetMyLearningAsync(ct);
     public virtual Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default) => remote.GetCompetitionsAsync(ct);
+    public virtual Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default) => remote.GetCompetitionAsync(competitionId, ct);
     public virtual Task<CompetitionDto?> CreateCompetitionAsync(CreateCompetitionRequest request, CancellationToken ct = default) => remote.CreateCompetitionAsync(request, ct);
     public virtual Task SetAnswerKeyAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default) => remote.SetAnswerKeyAsync(competitionId, csv, fileName, ct);
     public virtual Task<SubmissionResultDto?> SubmitAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default) => remote.SubmitAsync(competitionId, csv, fileName, ct);
