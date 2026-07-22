@@ -36,6 +36,8 @@ earn a badge.
 
 Some competitions recommend a track to start with — a handy on-ramp if the topic is new to you.
 
+![Learn — structured tracks; enroll and work through the lessons in order](help/img/learn.png)
+
 ## 4. Build a model in the Studio
 
 The **Studio** is where you turn data into a model. Two ways in:
@@ -43,6 +45,8 @@ The **Studio** is where you turn data into a model. Two ways in:
 - **AutoML** (`Studio → AutoML`): the fast path — pick a CSV and a task (binary / multiclass / regression)
   and let the platform find a model for you.
 - **Workflow designer** (`Studio → Workflows → Open`, or **New workflow**): the visual, hands-on path.
+
+![AutoML — pick a CSV and a task, and the platform trains and compares models for you](help/img/studio.png)
 
 ### Using the designer
 
@@ -75,6 +79,9 @@ and an **Enter the arena** button.
 1. **Browse** the competition grid — each card shows competitors, submissions, the scoring metric,
    and a countdown. Every competition has **its own page** (`/compete/…`) you can bookmark or share;
    notifications take you straight there.
+
+![The arena grid — filter by status or task; the leading competition gets a spotlight card with its live podium](help/img/compete.png)
+
 2. **Download** the training set (labelled) and the evaluation set (no labels) from the Data tab.
 3. **Build a pipeline** in the Studio for the competition's task.
 4. **Submit your pipeline** — the platform trains and scores it on a **hidden** test set (the same data for
@@ -84,6 +91,12 @@ and an **Enter the arena** button.
    Final standings are revealed on the host's chosen day.
 
 ![A competition — overview, data, leaderboard, and your submissions](help/img/compete-detail.png)
+
+The **Leaderboard** tab is the heart of the arena: a gold/silver/bronze podium sits above the full
+standings, your own row is highlighted, and while a competition is live the ranks move in real time
+with ▲/▼/NEW arrows. When the host's reveal day arrives, the **final standings** appear below.
+
+![The live leaderboard — podium, medals, your highlighted row, and the revealed final standings](help/img/compete-leaderboard.png)
 
 Anyone in a competition's scope can enter. **Hosting** a competition requires permission from an admin — if
 you'd like to run one, ask a platform administrator to grant you creator access at the level you need.
@@ -100,6 +113,8 @@ to recognize good work. Leaderboards (personal and team) show where you stand.
 
 **Community** is for discussions — ask questions, share solutions, react to posts, and mention colleagues.
 It's scoped to your part of the org so the conversation stays relevant.
+
+![Community — org-scoped discussions with replies and reactions](help/img/community.png)
 
 ## 9. The desktop app (optional)
 

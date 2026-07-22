@@ -88,6 +88,7 @@ earn a badge.</p>
 <li>Mark lessons complete; finishing a track records a <strong>completion</strong> and earns you standing.</li>
 </ol>
 <p>Some competitions recommend a track to start with — a handy on-ramp if the topic is new to you.</p>
+<p><img src="img/learn.png" alt="Learn — structured tracks; enroll and work through the lessons in order"></p>
 <h2>4. Build a model in the Studio</h2>
 <p>The <strong>Studio</strong> is where you turn data into a model. Two ways in:</p>
 <ul>
@@ -95,6 +96,7 @@ earn a badge.</p>
 and let the platform find a model for you.</li>
 <li><strong>Workflow designer</strong> (<code>Studio → Workflows → Open</code>, or <strong>New workflow</strong>): the visual, hands-on path.</li>
 </ul>
+<p><img src="img/studio.png" alt="AutoML — pick a CSV and a task, and the platform trains and compares models for you"></p>
 <h3>Using the designer</h3>
 <ol>
 <li><strong>Drag nodes</strong> from the left palette onto the canvas and <strong>wire</strong> them left-to-right — a typical flow is
@@ -121,6 +123,9 @@ and an <strong>Enter the arena</strong> button.</p>
 <li><strong>Browse</strong> the competition grid — each card shows competitors, submissions, the scoring metric,
 and a countdown. Every competition has <strong>its own page</strong> (<code>/compete/…</code>) you can bookmark or share;
 notifications take you straight there.</li>
+</ol>
+<p><img src="img/compete.png" alt="The arena grid — filter by status or task; the leading competition gets a spotlight card with its live podium"></p>
+<ol start="2">
 <li><strong>Download</strong> the training set (labelled) and the evaluation set (no labels) from the Data tab.</li>
 <li><strong>Build a pipeline</strong> in the Studio for the competition&#39;s task.</li>
 <li><strong>Submit your pipeline</strong> — the platform trains and scores it on a <strong>hidden</strong> test set (the same data for
@@ -130,6 +135,10 @@ everyone), so only your modelling choices move your rank. Every scored entry ear
 Final standings are revealed on the host&#39;s chosen day.</li>
 </ol>
 <p><img src="img/compete-detail.png" alt="A competition — overview, data, leaderboard, and your submissions"></p>
+<p>The <strong>Leaderboard</strong> tab is the heart of the arena: a gold/silver/bronze podium sits above the full
+standings, your own row is highlighted, and while a competition is live the ranks move in real time
+with ▲/▼/NEW arrows. When the host&#39;s reveal day arrives, the <strong>final standings</strong> appear below.</p>
+<p><img src="img/compete-leaderboard.png" alt="The live leaderboard — podium, medals, your highlighted row, and the revealed final standings"></p>
 <p>Anyone in a competition&#39;s scope can enter. <strong>Hosting</strong> a competition requires permission from an admin — if
 you&#39;d like to run one, ask a platform administrator to grant you creator access at the level you need.</p>
 <h2>7. Your profile &amp; standing</h2>
@@ -140,6 +149,7 @@ to recognize good work. Leaderboards (personal and team) show where you stand.</
 <h2>8. Community</h2>
 <p><strong>Community</strong> is for discussions — ask questions, share solutions, react to posts, and mention colleagues.
 It&#39;s scoped to your part of the org so the conversation stays relevant.</p>
+<p><img src="img/community.png" alt="Community — org-scoped discussions with replies and reactions"></p>
 <h2>9. The desktop app (optional)</h2>
 <p>There&#39;s a <strong>KOC Studio desktop app</strong> — the same designer, but it runs <strong>offline</strong>. You build and <em>run</em>
 pipelines locally on your machine (no server needed), and connect to the network only to <strong>submit to a
@@ -250,6 +260,7 @@ only people in that scope see and enter it.</li>
 leaderboard, a discussion, and a dataset — so a fresh install is immediately explorable. Everything is
 namespaced <code>demo-*</code>, so <strong>Unseed</strong> removes exactly the demo and never touches real KOC records. The status
 chip shows whether demo data is present and its counts.</p>
+<p><img src="img/admin-demo-annotated.png" alt="Demo data: ① the status chip with live counts, ② seed a full demo, ③ unseed only the demo-* records"></p>
 <h2>6. Settings &amp; feature flags</h2>
 <ul>
 <li><strong>Settings</strong>: typed configuration grouped by category (e.g. platform name, support email, session
@@ -263,10 +274,12 @@ bucket), and add new flags.</li>
 <p><strong>Admin → Audit</strong> lists every administrative action (settings changes, grants, demo seed/unseed, org-code
 edits) with the actor, action, resource, timestamp, and before/after where relevant. Filter by action.
 Use it to answer &quot;who changed what, when&quot;.</p>
+<p><img src="img/admin-audit.png" alt="The audit trail — when, actor, action, and resource for every administrative action"></p>
 <h2>8. Supervision (for people-leaders)</h2>
 <p>Users who <strong>lead</strong> an org unit (TeamLeader/Manager/DCEO/CEO) get <strong><code>/supervision</code></strong> — a read-only rollup of
 their people&#39;s learning and competition activity. This is not part of the admin console but is role-gated
 the same way (a leader position, or Platform Admin).</p>
+<p><img src="img/supervision-annotated.png" alt="Supervision: ① roll-up KPIs, ② team learning status + per-person bars, ③ a row per report"></p>
 <h2>9. Identity &amp; sign-in modes (for admins/ops)</h2>
 <p>The platform authenticates in one of three modes (configured at deploy time):</p>
 <table>
@@ -461,6 +474,8 @@ API-driven — <code>Ui.Studio</code> renders from <code>GetMlNodesAsync()</code
 Submissions turn a Studio pipeline into a scored leaderboard entry.</li>
 <li><strong>Model registry</strong> (<code>/models</code>): register → two-approval promote → deploy/retire; inference serving.</li>
 </ul>
+<p><img src="img/workflows.png" alt="The workflow registry — versioned pipelines: draft → publish → export/import → run"></p>
+<p><img src="img/models.png" alt="The model registry — register → two-approval promote → deploy/retire"></p>
 <h2>9. The WinForms desktop app</h2>
 <ul>
 <li><strong>BlazorWebView hybrid</strong>: hosts the exact <code>Ui.Studio</code> Blazor components in a WinForms window — the same
@@ -534,7 +549,7 @@ rules), <strong>EndToEndTests</strong>. Warnings are errors for non-test project
 
   <section class="major" id="more"><h2>More screens</h2>
     <p class="lede">Other screens at a glance. Click any to open it full size.</p>
-    <div class="gallery"><figure class="shot"><a href="img/dashboard.png" target="_blank" rel="noopener"><img src="img/dashboard.png" alt="Dashboard" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Dashboard.</b> Your standings, with a team overview if you lead people.</figcaption></figure><figure class="shot"><a href="img/learn.png" target="_blank" rel="noopener"><img src="img/learn.png" alt="Learn" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Learn.</b> Guided learning tracks.</figcaption></figure><figure class="shot"><a href="img/learn-track.png" target="_blank" rel="noopener"><img src="img/learn-track.png" alt="Inside a track" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Inside a track.</b> A track’s lessons and your progress.</figcaption></figure><figure class="shot"><a href="img/community.png" target="_blank" rel="noopener"><img src="img/community.png" alt="Community" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Community.</b> Discussions and replies, scoped to your org.</figcaption></figure><figure class="shot"><a href="img/workflows.png" target="_blank" rel="noopener"><img src="img/workflows.png" alt="Workflows" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Workflows.</b> The versioned pipeline registry.</figcaption></figure><figure class="shot"><a href="img/new-workflow.png" target="_blank" rel="noopener"><img src="img/new-workflow.png" alt="New workflow" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>New workflow.</b> Start a pipeline (optionally targeting a competition).</figcaption></figure><figure class="shot"><a href="img/create-competition.png" target="_blank" rel="noopener"><img src="img/create-competition.png" alt="Host a competition" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Host a competition.</b> The guided create wizard (granted users).</figcaption></figure><figure class="shot"><a href="img/compete-leaderboard.png" target="_blank" rel="noopener"><img src="img/compete-leaderboard.png" alt="Live leaderboard" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Live leaderboard.</b> Podium, medals, and live rank movement on a competition page.</figcaption></figure><figure class="shot"><a href="img/studio.png" target="_blank" rel="noopener"><img src="img/studio.png" alt="AutoML" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>AutoML.</b> Train a model over a CSV in a few clicks.</figcaption></figure><figure class="shot"><a href="img/runs.png" target="_blank" rel="noopener"><img src="img/runs.png" alt="Runs" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Runs.</b> Background jobs — status and logs.</figcaption></figure><figure class="shot"><a href="img/experiments.png" target="_blank" rel="noopener"><img src="img/experiments.png" alt="Experiments" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Experiments.</b> Compare runs, metrics, and parameters.</figcaption></figure><figure class="shot"><a href="img/models.png" target="_blank" rel="noopener"><img src="img/models.png" alt="Models" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Models.</b> Register → approve → deploy.</figcaption></figure><figure class="shot"><a href="img/help.png" target="_blank" rel="noopener"><img src="img/help.png" alt="In-app help" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>In-app help.</b> Searchable articles and FAQ.</figcaption></figure></div>
+    <div class="gallery"><figure class="shot"><a href="img/dashboard.png" target="_blank" rel="noopener"><img src="img/dashboard.png" alt="Dashboard" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Dashboard.</b> Your standings, with a team overview if you lead people.</figcaption></figure><figure class="shot"><a href="img/learn.png" target="_blank" rel="noopener"><img src="img/learn.png" alt="Learn" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Learn.</b> Guided learning tracks.</figcaption></figure><figure class="shot"><a href="img/learn-track.png" target="_blank" rel="noopener"><img src="img/learn-track.png" alt="Inside a track" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Inside a track.</b> A track’s lessons and your progress.</figcaption></figure><figure class="shot"><a href="img/community.png" target="_blank" rel="noopener"><img src="img/community.png" alt="Community" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Community.</b> Discussions and replies, scoped to your org.</figcaption></figure><figure class="shot"><a href="img/workflows.png" target="_blank" rel="noopener"><img src="img/workflows.png" alt="Workflows" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Workflows.</b> The versioned pipeline registry.</figcaption></figure><figure class="shot"><a href="img/new-workflow.png" target="_blank" rel="noopener"><img src="img/new-workflow.png" alt="New workflow" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>New workflow.</b> Start a pipeline (optionally targeting a competition).</figcaption></figure><figure class="shot"><a href="img/create-competition.png" target="_blank" rel="noopener"><img src="img/create-competition.png" alt="Host a competition" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Host a competition.</b> The guided create wizard (granted users).</figcaption></figure><figure class="shot"><a href="img/compete-leaderboard.png" target="_blank" rel="noopener"><img src="img/compete-leaderboard.png" alt="Live leaderboard" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Live leaderboard.</b> Podium, medals, and live rank movement on a competition page.</figcaption></figure><figure class="shot"><a href="img/admin-dashboard.png" target="_blank" rel="noopener"><img src="img/admin-dashboard.png" alt="Admin · Dashboard" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Admin · Dashboard.</b> Live platform KPIs, health, and recent activity.</figcaption></figure><figure class="shot"><a href="img/admin-demo.png" target="_blank" rel="noopener"><img src="img/admin-demo.png" alt="Admin · Demo data" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Admin · Demo data.</b> Seed / unseed a self-contained explorable demo.</figcaption></figure><figure class="shot"><a href="img/admin-flags.png" target="_blank" rel="noopener"><img src="img/admin-flags.png" alt="Admin · Feature flags" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Admin · Feature flags.</b> Toggle features with a rollout percentage.</figcaption></figure><figure class="shot"><a href="img/admin-audit.png" target="_blank" rel="noopener"><img src="img/admin-audit.png" alt="Admin · Audit" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Admin · Audit.</b> The full administrative action trail.</figcaption></figure><figure class="shot"><a href="img/supervision.png" target="_blank" rel="noopener"><img src="img/supervision.png" alt="Supervision" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Supervision.</b> A people-leader’s read-only rollup of their team.</figcaption></figure><figure class="shot"><a href="img/studio.png" target="_blank" rel="noopener"><img src="img/studio.png" alt="AutoML" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>AutoML.</b> Train a model over a CSV in a few clicks.</figcaption></figure><figure class="shot"><a href="img/runs.png" target="_blank" rel="noopener"><img src="img/runs.png" alt="Runs" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Runs.</b> Background jobs — status and logs.</figcaption></figure><figure class="shot"><a href="img/experiments.png" target="_blank" rel="noopener"><img src="img/experiments.png" alt="Experiments" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Experiments.</b> Compare runs, metrics, and parameters.</figcaption></figure><figure class="shot"><a href="img/models.png" target="_blank" rel="noopener"><img src="img/models.png" alt="Models" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>Models.</b> Register → approve → deploy.</figcaption></figure><figure class="shot"><a href="img/help.png" target="_blank" rel="noopener"><img src="img/help.png" alt="In-app help" loading="lazy" onerror="this.closest('figure').style.display='none'"></a><figcaption><b>In-app help.</b> Searchable articles and FAQ.</figcaption></figure></div>
   </section>
 </main>
 </div></body></html>

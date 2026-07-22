@@ -141,6 +141,10 @@ API-driven — `Ui.Studio` renders from `GetMlNodesAsync()`; only the icon/colou
   Submissions turn a Studio pipeline into a scored leaderboard entry.
 - **Model registry** (`/models`): register → two-approval promote → deploy/retire; inference serving.
 
+![The workflow registry — versioned pipelines: draft → publish → export/import → run](help/img/workflows.png)
+
+![The model registry — register → two-approval promote → deploy/retire](help/img/models.png)
+
 ## 9. The WinForms desktop app
 
 - **BlazorWebView hybrid**: hosts the exact `Ui.Studio` Blazor components in a WinForms window — the same

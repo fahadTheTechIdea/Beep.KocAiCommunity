@@ -88,6 +88,8 @@ leaderboard, a discussion, and a dataset — so a fresh install is immediately e
 namespaced `demo-*`, so **Unseed** removes exactly the demo and never touches real KOC records. The status
 chip shows whether demo data is present and its counts.
 
+![Demo data: ① the status chip with live counts, ② seed a full demo, ③ unseed only the demo-* records](help/img/admin-demo-annotated.png)
+
 ## 6. Settings & feature flags
 
 - **Settings**: typed configuration grouped by category (e.g. platform name, support email, session
@@ -104,11 +106,15 @@ chip shows whether demo data is present and its counts.
 edits) with the actor, action, resource, timestamp, and before/after where relevant. Filter by action.
 Use it to answer "who changed what, when".
 
+![The audit trail — when, actor, action, and resource for every administrative action](help/img/admin-audit.png)
+
 ## 8. Supervision (for people-leaders)
 
 Users who **lead** an org unit (TeamLeader/Manager/DCEO/CEO) get **`/supervision`** — a read-only rollup of
 their people's learning and competition activity. This is not part of the admin console but is role-gated
 the same way (a leader position, or Platform Admin).
+
+![Supervision: ① roll-up KPIs, ② team learning status + per-person bars, ③ a row per report](help/img/supervision-annotated.png)
 
 ## 9. Identity & sign-in modes (for admins/ops)
 
