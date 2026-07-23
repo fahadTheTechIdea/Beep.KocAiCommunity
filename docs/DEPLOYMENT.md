@@ -45,6 +45,24 @@ dotnet ef migrations add <Name> \
 
 (Also add the matching SQLite migration in the Infrastructure project for dev parity.)
 
+## Environment resolution (dev vs production)
+
+The same compiled binaries run everywhere; **what ships beside them** decides the environment. The API
+and Web resolve the environment at startup (`KocHostEnvironment.Resolve()`) with this precedence:
+
+1. An explicit **`ASPNETCORE_ENVIRONMENT`** / **`DOTNET_ENVIRONMENT`** always wins — the recommended
+   production lever. Set it per target: IIS `<EnvironmentName>Production</EnvironmentName>` in the
+   publish profile (`.pubxml` → `web.config`), Docker `ENV`, or an Azure App Service app setting.
+2. If neither is set, the environment is **inferred from whether `appsettings.Development.json` shipped**
+   next to the binaries: present ⇒ `Development`, absent ⇒ `Production`. Production publishes exclude
+   that file (`<CopyToPublishDirectory>Never</CopyToPublishDirectory>`), so a deployed build resolves to
+   Production automatically — no one has to remember to set a variable.
+
+A **fail-fast preflight** (`KocProductionPreflight`) then refuses to start a Production host that is
+still configured for dev/demo: `Database:Provider` not `SqlServer`, `Seed:Enabled=true`,
+`DevAuth:Enabled=true`, or no real authentication (neither Entra nor Windows SSO). The dev **persona
+switcher** is hidden outside Development.
+
 ## Configuration (environment variables)
 
 Configuration binds from environment variables using the `__` separator.
@@ -58,6 +76,50 @@ Configuration binds from environment variables using the `__` separator.
 | `AzureAd__TenantId`, `AzureAd__ClientId`, `AzureAd__ClientSecret`, `AzureAd__Instance`, `AzureAd__Audience` | Microsoft Entra (KOC tenant). Presence of TenantId + ClientId switches auth from dev-fallback to real Entra (OIDC for Web, JWT for API) |
 | `KocApi__BaseUrl` (Web) | Internal URL of the API |
 | `Artifacts__RootPath` | Local artifact path (or configure the Azure Blob provider) |
+
+## Database credentials & connection strings
+
+The app switches provider by `Database:Provider` and reads `ConnectionStrings:kocdb`
+(`Infrastructure/DependencyInjection.cs`). **Changing databases is configuration only — no code change.**
+Where the credential lives depends on the environment; **prefer passwordless** so there is no secret to
+store or rotate:
+
+| Environment | Recommended approach | Secret stored? |
+|---|---|---|
+| **Local dev** | **User Secrets** — `dotnet user-secrets set "ConnectionStrings:kocdb" "…" --project src/Beep.KocAiCommunity.Api`. Active only in Development, never in source. Default stays SQLite (no config needed). | On the dev machine only |
+| **On-prem IIS (intranet)** | **Windows Integrated auth** — run the app-pool as a dedicated Windows service account / **gMSA** granted a SQL login; connection string uses `Integrated Security=true` (no password). | **None** |
+| **Azure Kuwait Central** | **Entra Managed Identity** — the app's managed identity is granted a SQL user; connection string uses `Authentication=Active Directory Default` (no password). Any residual secret goes in **Key Vault**. | None (or Key Vault only) |
+
+**How the connection string changes per environment** — config layering, highest wins, no rebuild:
+
+```
+appsettings.json                 no secrets; safe defaults (Provider defaults to Sqlite)
+  → appsettings.{Environment}.json   non-secret overrides (Database:Provider=SqlServer, server/db host)
+    → environment variables          ConnectionStrings__kocdb, injected by the IIS app-pool / container
+      → Key Vault / User Secrets      the actual secret, if any
+```
+
+**Passwordless connection string examples** (no secret in any file):
+
+```
+# On-prem SQL Server via the app-pool's Windows identity
+Server=KOC-SQL01;Database=Koc;Integrated Security=true;TrustServerCertificate=true
+
+# Azure SQL via the app's Managed Identity
+Server=tcp:koc.database.windows.net,1433;Database=Koc;Authentication=Active Directory Default;Encrypt=true
+```
+
+**Optional — Azure Key Vault** (cloud only; not needed for the on-prem passwordless path). Add the
+`Azure.Extensions.AspNetCore.Configuration.Secrets` + `Azure.Identity` packages and, guarded by a
+`KeyVault:Uri` setting, one line in host startup:
+
+```csharp
+if (builder.Configuration["KeyVault:Uri"] is { Length: > 0 } vault)
+    builder.Configuration.AddAzureKeyVault(new Uri(vault), new DefaultAzureCredential());
+```
+
+Never commit a real connection string or password — today `appsettings.json` holds only logging and
+`AllowedHosts`; keep it that way.
 
 ## Production checklist
 

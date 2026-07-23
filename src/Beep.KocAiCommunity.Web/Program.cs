@@ -4,7 +4,14 @@ using Beep.KocAiCommunity.Web.Components;
 using Beep.KocAiCommunity.Web.Services;
 using MudBlazor.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    EnvironmentName = KocHostEnvironment.Resolve(),
+});
+
+// The Web calls the API (never the DB) — in Production it just needs real authentication configured.
+KocProductionPreflight.Validate(builder.Configuration, builder.Environment, checkDatabase: false, checkSeed: false);
 
 builder.AddServiceDefaults();
 

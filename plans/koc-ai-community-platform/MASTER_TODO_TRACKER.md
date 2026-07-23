@@ -313,6 +313,19 @@ KOC blueprint theme. No DB schema change anywhere.
     (`sessionStorage`); hidden on production Entra/Windows-SSO or once unseeded. Integration test
     covers the anonymous endpoint + seed/unseed toggle; user & admin guides + help visuals updated.
 
+## Environment awareness & production hardening
+
+36. ~~Reliable dev/prod detection + fail-fast guard~~ ✅ DONE (2026-07-23) — immutable binaries:
+    `KocHostEnvironment.Resolve()` (ServiceDefaults) honours explicit `ASPNETCORE_ENVIRONMENT`/
+    `DOTNET_ENVIRONMENT`, else infers `Development` from `appsettings.Development.json` presence
+    (excluded from prod publishes via `CopyToPublishDirectory=Never`); wired into API + Web via
+    `WebApplicationOptions.EnvironmentName`. `KocProductionPreflight` throws at startup when a Production
+    host is misconfigured (SQLite / Seed / DevAuth / no real auth). Dev persona switcher hidden outside
+    Development (`MainLayout` gates on `IHostEnvironment.IsDevelopment()`). User Secrets ids added to
+    API + Web. `DEPLOYMENT.md` gains an environment-resolution note + a DB credentials matrix
+    (dev = User Secrets; on-prem = Integrated Security/gMSA; Azure = Managed Identity + Key Vault) and
+    "how to change the connection string per environment". Best practice per MS Learn (.NET 10).
+
 ## Global definition of done
 
 ```bash

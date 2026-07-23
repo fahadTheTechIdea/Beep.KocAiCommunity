@@ -87,6 +87,11 @@ dotnet run --project src/Beep.KocAiCommunity.WinForms
   `SecurityExtensions` (`RequireEmployee`, `RequirePlatformAdmin`, …).
 - **Production**: set `AzureAd` config for Entra, or `WindowsAuth:Enabled=true` for intranet Windows SSO
   (IIS Windows Authentication). See the README "Production auth" section.
+- **Dev vs production detection.** Same binaries everywhere: `KocHostEnvironment.Resolve()`
+  (`ServiceDefaults`) honours an explicit `ASPNETCORE_ENVIRONMENT`/`DOTNET_ENVIRONMENT`, else infers
+  `Development` from the presence of `appsettings.Development.json` (excluded from production publishes).
+  `KocProductionPreflight` fails startup fast if a Production host is still configured for dev/demo, and
+  the persona switcher is hidden outside Development. See [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## 6. Data & migrations
 
@@ -107,6 +112,11 @@ dotnet ef migrations add <Name> \
 
 Entity configs live under `Infrastructure/Persistence/Configurations`. Seeders (dev org tree, learning
 tracks, demo data) live under `Infrastructure/Organization` and `Infrastructure/Admin`.
+
+**Credentials.** The provider is chosen by `Database:Provider` and the connection string read from
+`ConnectionStrings:kocdb` — switching databases is config-only. Keep secrets out of source: **User
+Secrets** in dev, and **passwordless** connections in production (Integrated Security on-prem, Entra
+Managed Identity on Azure). See the credentials matrix in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## 7. The Studio pipeline engine (nodes)
 

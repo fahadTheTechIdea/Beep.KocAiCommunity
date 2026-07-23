@@ -9,7 +9,14 @@ using Beep.KocAiCommunity.ServiceDefaults.Security;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    EnvironmentName = KocHostEnvironment.Resolve(),
+});
+
+// Refuse to start a misconfigured Production host (SQLite, seeding, or no real auth).
+KocProductionPreflight.Validate(builder.Configuration, builder.Environment);
 
 builder.AddServiceDefaults();
 builder.Services.AddOpenApi();

@@ -2,7 +2,9 @@
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Web.Components.Shared
+@using Microsoft.Extensions.Hosting
 @inject DevIdentity Identity
+@inject IHostEnvironment Env
 @inject NavigationManager Nav
 @implements IDisposable
 
@@ -30,37 +32,52 @@
             <NotificationBell />
         }
 
-        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-2">
-            <ActivatorContent>
-                @if (Identity.IsGuest)
-                {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login">Sign in with KOC</MudButton>
-                }
-                else
-                {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" EndIcon="@Icons.Material.Filled.ArrowDropDown">
-                        @Identity.Current.Label
-                    </MudButton>
-                }
-            </ActivatorContent>
-            <ChildContent>
-                <MudText Typo="Typo.caption" Class="px-4 py-2 d-block">View the app as (dev)</MudText>
-                <MudDivider />
-                @foreach (var p in DevIdentity.Personas)
-                {
-                    <MudMenuItem OnClick="@(() => Switch(p.Key))">
-                        @if (p.Key == Identity.Current.Key)
-                        {
-                            <b>@p.Label ✓</b>
-                        }
-                        else
-                        {
-                            @p.Label
-                        }
-                    </MudMenuItem>
-                }
-            </ChildContent>
-        </MudMenu>
+        @if (Env.IsDevelopment())
+        {
+            @* Dev/demo only: switch personas to preview the app as different roles. Never in Production. *@
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-2">
+                <ActivatorContent>
+                    @if (Identity.IsGuest)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login">Sign in with KOC</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" EndIcon="@Icons.Material.Filled.ArrowDropDown">
+                            @Identity.Current.Label
+                        </MudButton>
+                    }
+                </ActivatorContent>
+                <ChildContent>
+                    <MudText Typo="Typo.caption" Class="px-4 py-2 d-block">View the app as (dev)</MudText>
+                    <MudDivider />
+                    @foreach (var p in DevIdentity.Personas)
+                    {
+                        <MudMenuItem OnClick="@(() => Switch(p.Key))">
+                            @if (p.Key == Identity.Current.Key)
+                            {
+                                <b>@p.Label ✓</b>
+                            }
+                            else
+                            {
+                                @p.Label
+                            }
+                        </MudMenuItem>
+                    }
+                </ChildContent>
+            </MudMenu>
+        }
+        else if (Identity.IsGuest)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" Class="ml-2">Sign in with KOC</MudButton>
+        }
+        else
+        {
+            @* Production: show the real signed-in identity, with no role switching. *@
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" Class="ml-2" Style="pointer-events:none;">
+                @Identity.Current.Label
+            </MudButton>
+        }
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
