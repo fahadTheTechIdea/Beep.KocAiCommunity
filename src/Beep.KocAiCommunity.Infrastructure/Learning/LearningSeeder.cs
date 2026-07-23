@@ -6,39 +6,52 @@ using Microsoft.EntityFrameworkCore;
 namespace Beep.KocAiCommunity.Infrastructure.Learning;
 
 /// <summary>
-/// Seeds the three company-wide starter tracks (idempotent). Runs at dev startup and from tests.
+/// Seeds the company-wide starter tracks. Idempotent <b>per track</b> (a missing track is added even
+/// when other tracks already exist), so new tracks appear without resetting the database. Lesson
+/// content is markdown and is rendered richly in the app (headings, lists, tables, images, inline
+/// SVG diagrams, and embedded/placeholder video).
 /// </summary>
 public static class LearningSeeder
 {
+    private const string Icons = "_content/Beep.KocAiCommunity.Ui.Shared/icons";
+
     public static async Task SeedTracksAsync(KocDbContext db, CancellationToken ct = default)
     {
-        if (await db.LearningTracks.AnyAsync(ct))
-        {
-            return;
-        }
-
         var stamp = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        AddTrack(db, stamp, order: 1, TrackLevel.Beginner,
+        // Order 0: the true entry point for people with no AI background — images and a video slot.
+        await EnsureTrackAsync(db, stamp, order: 0, TrackLevel.Beginner,
+            "AI for Everyone — Start Here",
+            "Never touched AI before? Start here. Plain words, pictures, and a first challenge — no maths, no code.",
+            BeginnerLessons(), ct);
+
+        await EnsureTrackAsync(db, stamp, order: 1, TrackLevel.Beginner,
             "Getting started with data",
             "Read, clean, and make sense of a dataset. For anyone curious about AI — no coding needed.",
-            ["What is a dataset?", "Loading well data", "Spotting gaps and outliers", "Simple summaries", "Charts that tell the truth", "Your first insight"]);
+            Simple("What is a dataset?", "Loading well data", "Spotting gaps and outliers", "Simple summaries", "Charts that tell the truth", "Your first insight"), ct);
 
-        AddTrack(db, stamp, order: 2, TrackLevel.Intermediate,
+        await EnsureTrackAsync(db, stamp, order: 2, TrackLevel.Intermediate,
             "Solve a real problem",
             "Build a model for a production, facilities, or subsurface question using your own data.",
-            ["Framing the question", "Features from sensor tags", "Train / test split by time", "Fit your first model", "Read the metrics", "Avoid leakage", "Compare two models", "Ship a prediction"]);
+            Simple("Framing the question", "Features from sensor tags", "Train / test split by time", "Fit your first model", "Read the metrics", "Avoid leakage", "Compare two models", "Ship a prediction"), ct);
 
-        AddTrack(db, stamp, order: 3, TrackLevel.Advanced,
+        await EnsureTrackAsync(db, stamp, order: 3, TrackLevel.Advanced,
             "Make it dependable",
             "Tune, check, and package a model your team can trust and reuse day to day.",
-            ["Reproducible runs", "Tuning with AutoML", "Validation that holds up", "Explainability basics", "Versioning a model", "Rollback and approvals", "Hand-over to the team"]);
+            Simple("Reproducible runs", "Tuning with AutoML", "Validation that holds up", "Explainability basics", "Versioning a model", "Rollback and approvals", "Hand-over to the team"), ct);
 
         await db.SaveChangesAsync(ct);
     }
 
-    private static void AddTrack(KocDbContext db, DateTime stamp, int order, TrackLevel level, string title, string summary, string[] lessonTitles)
+    private static async Task EnsureTrackAsync(
+        KocDbContext db, DateTime stamp, int order, TrackLevel level, string title, string summary,
+        (string Title, string? Content)[] lessons, CancellationToken ct)
     {
+        if (await db.LearningTracks.AnyAsync(t => t.Title == title, ct))
+        {
+            return;
+        }
+
         var track = new LearningTrack
         {
             Title = title,
@@ -52,20 +65,186 @@ public static class LearningSeeder
         };
         db.LearningTracks.Add(track);
 
-        for (var i = 0; i < lessonTitles.Length; i++)
+        for (var i = 0; i < lessons.Length; i++)
         {
             db.Lessons.Add(new Lesson
             {
                 TrackId = track.Id,
                 OrderNo = i + 1,
-                Title = lessonTitles[i],
+                Title = lessons[i].Title,
                 ContentRef = $"seed://{level}/{order}/{i + 1}",
-                Content = Body(lessonTitles[i], level, i + 1),
-                EstimatedMinutes = 20,
+                Content = lessons[i].Content ?? Body(lessons[i].Title, level, i + 1),
+                EstimatedMinutes = level == TrackLevel.Beginner ? 8 : 20,
                 CreatedUtc = stamp,
             });
         }
     }
+
+    // Lessons whose body is generated from the generic template.
+    private static (string Title, string? Content)[] Simple(params string[] titles) =>
+        [.. titles.Select(t => (t, (string?)null))];
+
+    // ---------------------------------------------------------------- beginner track content
+
+    private static (string Title, string? Content)[] BeginnerLessons() =>
+    [
+        ("What is AI, really?", """
+        # What is AI, really?
+
+        You do not need any background to understand this. **Artificial intelligence (AI)** simply means
+        teaching a computer to **learn from past examples** so it can make **useful predictions** about new
+        situations.
+
+        <figure class="koc-figure"><svg viewBox="0 0 640 150" width="640" role="img" aria-label="Examples flow into Learn, which produces Predict" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="ai-ar1" markerWidth="10" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#a9761a"/></marker></defs>
+          <rect x="18" y="45" width="170" height="62" rx="10" fill="#eaf2f9" stroke="#1466A5" stroke-width="2"/>
+          <text x="103" y="72" text-anchor="middle" font-family="system-ui" font-size="19" font-weight="600" fill="#0E4F80">Examples</text>
+          <text x="103" y="93" text-anchor="middle" font-family="system-ui" font-size="12" fill="#586a7b">what happened before</text>
+          <line x1="192" y1="76" x2="242" y2="76" stroke="#a9761a" stroke-width="3" marker-end="url(#ai-ar1)"/>
+          <rect x="246" y="45" width="150" height="62" rx="10" fill="#eaf2f9" stroke="#1466A5" stroke-width="2"/>
+          <text x="321" y="72" text-anchor="middle" font-family="system-ui" font-size="19" font-weight="600" fill="#0E4F80">Learn</text>
+          <text x="321" y="93" text-anchor="middle" font-family="system-ui" font-size="12" fill="#586a7b">find the pattern</text>
+          <line x1="400" y1="76" x2="450" y2="76" stroke="#a9761a" stroke-width="3" marker-end="url(#ai-ar1)"/>
+          <rect x="454" y="45" width="168" height="62" rx="10" fill="#0E4F80"/>
+          <text x="538" y="72" text-anchor="middle" font-family="system-ui" font-size="19" font-weight="600" fill="#ffffff">Predict</text>
+          <text x="538" y="93" text-anchor="middle" font-family="system-ui" font-size="12" fill="#cfe0ee">on something new</text>
+        </svg><figcaption>AI in one picture: learn the pattern from past examples, then predict on new data.</figcaption></figure>
+
+        ## An everyday example
+        By learning from the history of our pumps — their pressure, temperature, and vibration — a computer
+        can **warn us that a pump is likely to fail before it does**, so we can fix it on plan instead of in an
+        emergency.
+
+        <div class="koc-callout"><strong>The big idea:</strong> AI does not "think". It spots patterns in
+        numbers, then applies them. If the pattern is real, the prediction is useful.</div>
+
+        You will build exactly this kind of thing on this platform — starting with a friendly challenge, no
+        experience required.
+        """),
+
+        ("How a computer learns from examples", """
+        # How a computer learns from examples
+
+        Imagine a new engineer who has never seen a pump. You show them **hundreds of past pumps** and, for
+        each, whether it later failed. After enough examples, they start to notice: *hot motor + heavy
+        vibration + long runtime often ends in failure.*
+
+        That is precisely what a computer does — only faster, and across many more numbers at once.
+
+        ## Three simple steps
+        - **Show examples.** Give the computer past cases where we already know the answer.
+        - **Learn the pattern.** It adjusts itself until it can reproduce those known answers well.
+        - **Predict.** Now give it a *new* case with no answer — it fills in its best guess.
+
+        <div class="koc-callout"><strong>Why "hidden" tests matter:</strong> to know if the computer truly
+        learned (and didn't just memorise), we check it on examples it has <em>never seen</em>. That is how
+        competitions on this platform score you — fairly, on hidden data.</div>
+
+        <p><img src="{ICONS}/074-predictive-chart.png" alt="Predictive chart" width="72" height="72"/></p>
+
+        You do not need to know *how* it adjusts itself. You need to know what to feed it and how to read the
+        result — which is what the rest of these lessons cover.
+        """.Replace("{ICONS}", Icons)),
+
+        ("What is a dataset? (rows, columns, and the answer)", """
+        # What is a dataset?
+
+        A **dataset** is just a table — like a spreadsheet. Nothing scary.
+
+        - Each **row** is one example (one pump, one well, one passenger).
+        - Each **column** is one detail we know about it (a *feature*).
+        - One special column is the **answer** we want to predict (the *label*).
+
+        Here is a tiny dataset for our first challenge — did a Titanic passenger survive?
+
+        | Age | Class | Sex | Fare | **Survived (answer)** |
+        |----:|:-----:|:------|-----:|:----------------------:|
+        | 29 | 1 | female | 211 | **Yes** |
+        | 40 | 3 | male | 7 | **No** |
+        | 8 | 2 | female | 30 | **Yes** |
+
+        The computer studies the first four columns and learns to predict the last one. Later, we give it rows
+        **without** the answer and ask it to fill in "Survived — Yes or No?".
+
+        <div class="koc-callout"><strong>Remember:</strong> features go in, the answer comes out. Choosing good
+        features is most of the skill — and it is something anyone can get better at with practice.</div>
+        """),
+
+        ("Watch: the big idea in a few minutes", """
+        # Watch: the big idea
+
+        Sometimes a short video explains it best. Below is where a **1–3 minute intro video** plays — your
+        team can drop in a KOC-hosted explainer or a chosen clip.
+
+        <div class="koc-video"><div class="koc-video-ph"><div class="play">▶</div><div>Intro video — "What is AI, in plain words"</div></div></div>
+
+        Once you have a video URL, embed it by replacing the placeholder with a standard frame:
+
+        ```html
+        <div class="koc-video">
+          <iframe src="https://your-video-host/koc-ai-intro" allowfullscreen></iframe>
+        </div>
+        ```
+
+        <div class="koc-callout"><strong>No video yet?</strong> That's fine — everything you need is written in
+        these lessons. The video is a bonus, not a requirement.</div>
+        """),
+
+        ("Your journey here: Learn → Build → Compete", """
+        # Your journey on the AI Digital Campus
+
+        This platform turns learning into doing. You follow one simple loop:
+
+        <figure class="koc-figure"><svg viewBox="0 0 660 130" width="660" role="img" aria-label="Learn then Build then Compete then get Recognised" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="jr-ar" markerWidth="10" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#a9761a"/></marker></defs>
+          <rect x="10" y="40" width="140" height="52" rx="26" fill="#eaf2f9" stroke="#1466A5" stroke-width="2"/>
+          <text x="80" y="72" text-anchor="middle" font-family="system-ui" font-size="17" font-weight="600" fill="#0E4F80">Learn</text>
+          <line x1="154" y1="66" x2="196" y2="66" stroke="#a9761a" stroke-width="3" marker-end="url(#jr-ar)"/>
+          <rect x="200" y="40" width="140" height="52" rx="26" fill="#eaf2f9" stroke="#1466A5" stroke-width="2"/>
+          <text x="270" y="72" text-anchor="middle" font-family="system-ui" font-size="17" font-weight="600" fill="#0E4F80">Build</text>
+          <line x1="344" y1="66" x2="386" y2="66" stroke="#a9761a" stroke-width="3" marker-end="url(#jr-ar)"/>
+          <rect x="390" y="40" width="150" height="52" rx="26" fill="#eaf2f9" stroke="#1466A5" stroke-width="2"/>
+          <text x="465" y="72" text-anchor="middle" font-family="system-ui" font-size="17" font-weight="600" fill="#0E4F80">Compete</text>
+          <line x1="544" y1="66" x2="586" y2="66" stroke="#a9761a" stroke-width="3" marker-end="url(#jr-ar)"/>
+          <rect x="590" y="40" width="60" height="52" rx="26" fill="#a9761a"/>
+          <text x="620" y="71" text-anchor="middle" font-family="system-ui" font-size="22" fill="#ffffff">★</text>
+        </svg><figcaption>Learn the idea, build a solution with guided tools, enter a challenge, and earn recognition.</figcaption></figure>
+
+        - **Learn** — short lessons like this one.
+        - **Build** — in the **Studio**, you connect simple blocks (or let AutoML do it) to make a model. No code.
+        - **Compete** — enter a challenge, submit your model, and watch the live scoreboard.
+        - **Get recognised** — earn points and badges as you go.
+
+        You are already on step one. Ready to try step three?
+        """),
+
+        ("Try your first challenge: Titanic", """
+        # Try your first challenge
+
+        The best way to understand this platform is to *use* it. We picked the world's most famous starter
+        problem so **anyone** can join in — no oil-&-gas knowledge needed.
+
+        <p><img src="{ICONS}/072-analytics.png" alt="Analytics" width="64" height="64"/></p>
+
+        ## The Titanic challenge
+        From a passenger's details — travel class, sex, age, fare, family aboard — predict **who survived**.
+        It sounds simple, and the ideas you use here are the very same ones behind predicting a pump failure or
+        an oil rate.
+
+        ## What to do
+        - Open **Compete** in the left menu and choose **"Titanic — Who Survives?"**.
+        - Read the challenge page, then open the **Studio** and let **AutoML** build a first model for you.
+        - **Submit** it and see your score on the leaderboard. Then try to improve it.
+
+        <div class="koc-callout"><strong>You cannot break anything.</strong> Experiment freely — every attempt
+        teaches you something, and only your best score counts.</div>
+
+        When you're comfortable, move on to **"Getting started with data"** and then a real KOC challenge like
+        **ESP Pump Failure** or **Production Forecast**.
+        """),
+    ];
+
+    // ---------------------------------------------------------------- generic lesson template
 
     // A real, structured markdown lesson body — KOC-flavoured so the content feels like the job.
     private static string Body(string title, TrackLevel level, int order)

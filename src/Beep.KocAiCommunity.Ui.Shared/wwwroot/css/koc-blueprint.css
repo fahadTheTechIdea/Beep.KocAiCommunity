@@ -93,6 +93,24 @@
 .koc-lesson blockquote { border-left: 3px solid var(--koc-accent-300); margin: .6rem 0; padding: .2rem .8rem; background: var(--koc-surface); }
 .koc-lesson pre { background: var(--koc-accent-900); color: #dfeaf3; padding: .7rem; border-radius: 6px; overflow-x: auto; }
 .koc-lesson code { font-family: ui-monospace, monospace; }
+/* Rich lesson media: images, inline diagrams (SVG), and embedded/placeholder video. */
+.koc-lesson img, .koc-lesson svg { max-width: 100%; height: auto; }
+.koc-lesson figure { margin: 1rem 0; text-align: center; }
+.koc-lesson figure img, .koc-lesson figure svg { border: 1px solid var(--koc-border); border-radius: 10px; background: #fff; }
+.koc-lesson figcaption { color: var(--koc-muted); font-size: .82rem; margin-top: .4rem; }
+.koc-lesson .koc-figure { margin: 1rem 0; }
+/* Responsive 16:9 video frame for <iframe>/<video> embeds. */
+.koc-lesson .koc-video { position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 1rem 0;
+    border-radius: 12px; overflow: hidden; border: 1px solid var(--koc-border); background: var(--koc-accent-900); }
+.koc-lesson .koc-video iframe, .koc-lesson .koc-video video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* Placeholder shown until a real video is dropped in. */
+.koc-lesson .koc-video-ph { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: #dfeaf3; text-align: center; gap: .5rem;
+    background: radial-gradient(circle at 50% 40%, var(--koc-accent-700), var(--koc-accent-900)); }
+.koc-lesson .koc-video-ph .play { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,.15);
+    border: 2px solid rgba(255,255,255,.6); display: grid; place-items: center; font-size: 26px; }
+.koc-lesson .koc-callout { border: 1px solid var(--koc-border); border-left: 4px solid var(--koc-accent-500);
+    background: var(--koc-surface); border-radius: 0 10px 10px 0; padding: .7rem 1rem; margin: 1rem 0; }
 
 /* Leaderboard rank medals (gold/silver/bronze) */
 .koc-rank {

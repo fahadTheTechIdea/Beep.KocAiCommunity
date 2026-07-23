@@ -18,13 +18,14 @@ public class LearningEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
     }
 
     [Fact]
-    public async Task Browse_returns_the_three_starter_tracks()
+    public async Task Browse_returns_the_starter_tracks()
     {
         var client = _factory.CreateClientAs("learner-browse", "Employee");
         var tracks = (await client.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks"))!;
 
-        tracks.Should().HaveCount(3);
-        tracks.Select(t => t.Title).Should().Contain("Getting started with data");
+        tracks.Should().HaveCount(4);
+        tracks.Select(t => t.Title).Should().Contain("AI for Everyone — Start Here")
+            .And.Contain("Getting started with data");
         tracks.First(t => t.Title == "Getting started with data").LessonCount.Should().Be(6);
     }
 
