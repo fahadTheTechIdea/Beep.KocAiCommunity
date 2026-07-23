@@ -90,6 +90,11 @@ chip shows whether demo data is present and its counts.
 
 ![Demo data: ① the status chip with live counts, ② seed a full demo, ③ unseed only the demo-* records](help/img/admin-demo-annotated.png)
 
+While demo data is seeded, **every visitor sees a bilingual (English / Arabic) "Demonstration
+environment" notice** on first load, so no one mistakes the sample colleagues or results for real KOC
+records. It disappears automatically once you **Unseed** (and never shows on a production Entra /
+Windows-SSO deployment).
+
 ## 6. Settings & feature flags
 
 - **Settings**: typed configuration grouped by category (e.g. platform name, support email, session

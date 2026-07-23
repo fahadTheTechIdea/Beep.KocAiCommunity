@@ -72,6 +72,7 @@ app.MapDefaultEndpoints();
 // Versioned application surface.
 var v1 = app.MapGroup("/api/v1");
 v1.MapGet("/ping", () => Results.Ok(new { message = "pong" }));
+v1.MapMetaEndpoints();
 v1.MapMeEndpoints();
 v1.MapOrgEndpoints();
 v1.MapLearningEndpoints();

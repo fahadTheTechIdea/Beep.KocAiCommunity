@@ -13,6 +13,7 @@ using Beep.KocAiCommunity.Contracts.Jobs;
 using Beep.KocAiCommunity.Contracts.Learning;
 using Beep.KocAiCommunity.Contracts.ML;
 using Beep.KocAiCommunity.Contracts.Notifications;
+using Beep.KocAiCommunity.Contracts.Platform;
 using Beep.KocAiCommunity.Contracts.Studio;
 using Beep.KocAiCommunity.Contracts.Supervision;
 using Beep.KocAiCommunity.Contracts.Workflow;
@@ -30,6 +31,7 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient remote) : IKocApi
 {
     protected IKocApiClient Remote => remote;
 
+    public virtual Task<PlatformMetaDto?> GetPlatformMetaAsync(CancellationToken ct = default) => remote.GetPlatformMetaAsync(ct);
     public virtual Task<MeResponse?> GetMeAsync(CancellationToken ct = default) => remote.GetMeAsync(ct);
     public virtual Task<IReadOnlyList<TrackDto>> GetTracksAsync(CancellationToken ct = default) => remote.GetTracksAsync(ct);
     public virtual Task<TrackDetailDto?> GetTrackAsync(Guid trackId, CancellationToken ct = default) => remote.GetTrackAsync(trackId, ct);

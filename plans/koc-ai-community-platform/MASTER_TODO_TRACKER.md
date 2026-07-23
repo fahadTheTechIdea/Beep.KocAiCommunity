@@ -303,6 +303,16 @@ KOC blueprint theme. No DB schema change anywhere.
 34. ~~Stage 6 — polish + docs~~ ✅ DONE (2026-07-22) — user guide + tracker updated; visual
     verification of the new pages via Playwright.
 
+## Demo-environment disclaimer
+
+35. ~~Bilingual demo notice~~ ✅ DONE (2026-07-23) — when seeded demo data is present, a one-time
+    English/Arabic "Demonstration environment" overlay greets every visitor so sample colleagues,
+    competitions, and results aren't mistaken for real KOC records. New anonymous `GET /api/v1/meta`
+    (`PlatformMetaDto{DemoMode, DemoDataSeeded}`, reusing `IDemoDataService` + `SecurityExtensions`);
+    `DemoDisclaimer.razor` in `MainLayout` gates on `DemoDataSeeded`, dismissed per browser session
+    (`sessionStorage`); hidden on production Entra/Windows-SSO or once unseeded. Integration test
+    covers the anonymous endpoint + seed/unseed toggle; user & admin guides + help visuals updated.
+
 ## Global definition of done
 
 ```bash

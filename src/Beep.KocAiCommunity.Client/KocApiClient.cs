@@ -14,6 +14,7 @@ using Beep.KocAiCommunity.Contracts.Jobs;
 using Beep.KocAiCommunity.Contracts.Learning;
 using Beep.KocAiCommunity.Contracts.ML;
 using Beep.KocAiCommunity.Contracts.Notifications;
+using Beep.KocAiCommunity.Contracts.Platform;
 using Beep.KocAiCommunity.Contracts.Studio;
 using Beep.KocAiCommunity.Contracts.Supervision;
 using Beep.KocAiCommunity.Contracts.Workflow;
@@ -26,6 +27,8 @@ namespace Beep.KocAiCommunity.Client;
 /// <summary>Typed client the Web uses to talk to <c>/api/v1</c>. The Web never touches the database.</summary>
 public interface IKocApiClient
 {
+    /// <summary>Anonymous platform metadata (demo mode / demo data present) for the startup notice.</summary>
+    Task<PlatformMetaDto?> GetPlatformMetaAsync(CancellationToken ct = default);
     Task<MeResponse?> GetMeAsync(CancellationToken ct = default);
     Task<IReadOnlyList<TrackDto>> GetTracksAsync(CancellationToken ct = default);
     Task<TrackDetailDto?> GetTrackAsync(Guid trackId, CancellationToken ct = default);
@@ -194,6 +197,9 @@ public interface IKocApiClient
 
 public sealed class KocApiClient(HttpClient http) : IKocApiClient
 {
+    public Task<PlatformMetaDto?> GetPlatformMetaAsync(CancellationToken ct = default) =>
+        http.GetFromJsonAsync<PlatformMetaDto>("/api/v1/meta", ct);
+
     public Task<MeResponse?> GetMeAsync(CancellationToken ct = default) =>
         http.GetFromJsonAsync<MeResponse>("/api/v1/me", ct);
 

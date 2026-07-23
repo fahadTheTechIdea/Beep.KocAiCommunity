@@ -1,0 +1,94 @@
+@* A one-time, bilingual (English + Arabic) notice shown at startup whenever demonstration
+   content is present, so no one mistakes the sample colleagues/competitions for real KOC data.
+   Anonymous check via /api/v1/meta; dismissed per browser session. *@
+@using Beep.KocAiCommunity.Client
+@inject IKocApiClient Api
+@inject IJSRuntime JS
+
+@if (_show)
+{
+    <MudOverlay Visible="true" DarkBackground="true" AutoClose="false" ZIndex="10050">
+        <MudPaper Elevation="12" Class="pa-6 mx-auto" Style="max-width:600px;width:calc(100vw - 32px);border-radius:16px;">
+            <div class="d-flex align-center gap-3 mb-4">
+                <MudIcon Icon="@Icons.Material.Outlined.Info" Color="Color.Primary" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.h6" Class="koc-heading" Style="line-height:1.2;">Demonstration environment</MudText>
+                    <MudText Typo="Typo.subtitle2" Style="opacity:.7;" dir="rtl">بيئة عرض تجريبية</MudText>
+                </div>
+            </div>
+
+            <MudText Typo="Typo.body2" Class="mb-1">
+                You're exploring a demonstration of the <b>@KocBrand.ProductName</b> platform. The colleagues,
+                competitions, leaderboards, discussions, and datasets shown here are illustrative sample data —
+                <b>not real @KocBrand.Company records</b> — provided to show how the platform works. Nothing here
+                represents actual employees, results, or official company information.
+            </MudText>
+
+            <MudDivider Class="my-4" />
+
+            <MudText Typo="Typo.body2" dir="rtl" Style="text-align:right;line-height:1.9;">
+                أنت تستعرض نسخةً تجريبيةً من منصة شركة نفط الكويت للتدريب والتطوير الوظيفي. جميع ما يظهر من زملاء
+                ومسابقات ولوحات صدارة ونقاشات ومجموعات بيانات هو <b>محتوى توضيحي افتراضي</b> أُعِدّ لعرض إمكانات
+                المنصة، <b>وليس بيانات حقيقية لشركة نفط الكويت</b>. ولا يمثّل أيٌّ من هذا المحتوى موظفين فعليين أو
+                نتائج أو معلومات رسمية للشركة.
+            </MudText>
+
+            <div class="d-flex justify-end mt-6">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                           StartIcon="@Icons.Material.Filled.Check" OnClick="Acknowledge">
+                    I understand · أفهم
+                </MudButton>
+            </div>
+        </MudPaper>
+    </MudOverlay>
+}
+
+@code {
+    private bool _show;
+    private bool _checked;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _checked)
+        {
+            return;
+        }
+
+        _checked = true;
+        try
+        {
+            // Already acknowledged in this browser session? Stay out of the way.
+            var acked = await JS.InvokeAsync<string?>("sessionStorage.getItem", "koc-demo-disclaimer-ack");
+            if (acked == "1")
+            {
+                return;
+            }
+
+            var meta = await Api.GetPlatformMetaAsync();
+            if (meta?.DemoDataSeeded == true)
+            {
+                _show = true;
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // A metadata hiccup must never block the app — simply skip the notice.
+        }
+    }
+
+    private async Task Acknowledge()
+    {
+        _show = false;
+        try
+        {
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "koc-demo-disclaimer-ack", "1");
+        }
+        catch
+        {
+            // Non-fatal: worst case the notice reappears on the next full page load.
+        }
+
+        StateHasChanged();
+    }
+}

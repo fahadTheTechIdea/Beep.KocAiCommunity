@@ -14,6 +14,13 @@ On the KOC intranet you're signed in **automatically** with your work account �
 login. Your name appears in the top-right of the app bar. (In a demo/dev build you'll instead see a
 **"view as"** switcher there to preview the app as different roles.)
 
+If the platform is running on **sample demonstration data**, a short bilingual (English / Arabic)
+notice greets you on first load, making clear that the colleagues, competitions, and results shown are
+illustrative — not real records. Dismiss it with **I understand · أفهم**; it won't nag you again for
+the rest of your session.
+
+![The demonstration-environment notice — shown in English and Arabic while sample data is loaded](help/img/demo-disclaimer.png)
+
 What you can see depends on your role: everyone gets **Learn, Community, Compete, and the Studio**;
 people-leaders also get **Supervision**; platform administrators get the **Admin** console.
 
