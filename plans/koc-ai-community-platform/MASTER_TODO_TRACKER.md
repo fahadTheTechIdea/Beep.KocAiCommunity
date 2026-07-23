@@ -326,6 +326,18 @@ KOC blueprint theme. No DB schema change anywhere.
     (dev = User Secrets; on-prem = Integrated Security/gMSA; Azure = Managed Identity + Key Vault) and
     "how to change the connection string per environment". Best practice per MS Learn (.NET 10).
 
+## Pipeline & scoring correctness (audit remediation)
+
+37. ~~CSV codec + scoring correctness~~ ✅ IN PROGRESS (2026-07-23) — end-to-end audit of nodes →
+    executor → scoring. Fixed: shared RFC-4180 `KocCsv` codec (Application/Common) replacing naive
+    `Split(',')`; id-aligned robust scorers with boolean-convention tolerance (fixes the latent binary
+    `1/0` zero-score bug incl. Titanic); `TaskType`↔`ScorerCode` guard; answer-key validation on upload;
+    deterministic leaderboard tie-break; scorer/CSV property-test battery. **Remaining follow-ups:**
+    predict id↔prediction alignment (`Math.Min` shear), `__fold` leakage guard, DuckDB `ORDER BY`
+    determinism, binary emission of non-boolean training tokens. Deferred (design): the two execution
+    engines (`workflow.run`/`/studio/workflows/run` run AutoML, not the graph), schema-carrying
+    `PipelineTable`, RMSE-as-headline for regression.
+
 ## Global definition of done
 
 ```bash

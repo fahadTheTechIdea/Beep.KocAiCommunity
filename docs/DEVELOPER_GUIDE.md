@@ -151,6 +151,19 @@ API-driven — `Ui.Studio` renders from `GetMlNodesAsync()`; only the icon/colou
   Submissions turn a Studio pipeline into a scored leaderboard entry.
 - **Model registry** (`/models`): register → two-approval promote → deploy/retire; inference serving.
 
+**Scoring contract (competitions).** Predictions and the hidden answer key are CSV `{IdColumn},value`
+and are compared **by id** (order-independent). Rules enforced/observed:
+
+- `TaskType`↔`ScorerCode` must match — `accuracy` ⇒ Binary/Multiclass, `rmse` ⇒ Regression (rejected at
+  `SetDatasetsAsync`).
+- **Classification tokens** must match the training-label tokens; common boolean conventions interoperate
+  (`true/1/yes` ≡, `false/0/no` ≡), so a `1/0` key scores a `true/false` pipeline correctly.
+- **Regression** values are numeric, `InvariantCulture`; non-finite predictions are treated as missing.
+- The **answer key** is validated on upload: non-empty, no duplicate ids, and (when an evaluation set
+  exists) it must cover every evaluation id exactly once.
+- All CSV parsing goes through the shared RFC-4180 codec `KocCsv` (`Application/Common`), so quoted
+  commas/newlines don't corrupt column/row counts or id reads.
+
 ![The workflow registry — versioned pipelines: draft → publish → export/import → run](help/img/workflows.png)
 
 ![The model registry — register → two-approval promote → deploy/retire](help/img/models.png)

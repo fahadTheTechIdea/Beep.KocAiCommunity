@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Text;
 using Beep.KocAiCommunity.Application.Authorization;
+using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.Competitions;
 using Beep.KocAiCommunity.Application.Engagement;
 using Beep.KocAiCommunity.Application.ML;
@@ -88,11 +90,95 @@ public sealed class CompetitionService(
             throw new CompetitionException("Only the competition creator can set the answer key.");
         }
 
+        // Buffer once so we can validate and then store the same bytes.
+        using var buffer = new MemoryStream();
+        await answerKey.CopyToAsync(buffer, ct);
+        buffer.Position = 0;
+        await ValidateAnswerKeyAsync(competition, buffer, ct);
+
+        buffer.Position = 0;
         var artifact = await artifacts.SaveAsync(
-            answerKey, $"competitions/{competitionId}/answer-key.csv", "text/csv", KocDataClassification.Restricted, ct);
+            buffer, $"competitions/{competitionId}/answer-key.csv", "text/csv", KocDataClassification.Restricted, ct);
 
         competition.AnswerKeyArtifactId = artifact.Id;
         await db.SaveChangesAsync(ct);
+    }
+
+    // An invalid answer key silently zeroes or corrupts every submission's score, so it is rejected at
+    // upload: it must cover every evaluation id exactly once, and (for rmse) hold finite numbers.
+    private async Task ValidateAnswerKeyAsync(Competition competition, Stream keyStream, CancellationToken ct)
+    {
+        var keyRows = await CompetitionCsv.ReadAsync(keyStream, competition.IdColumn, ct);
+        if (keyRows.Count == 0)
+        {
+            throw new CompetitionException("The answer key is empty (expected a header plus one row per evaluation id).");
+        }
+
+        var duplicates = keyRows.GroupBy(r => r.Id, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1).Select(g => g.Key).Take(5).ToList();
+        if (duplicates.Count > 0)
+        {
+            throw new CompetitionException($"The answer key has duplicate ids: {string.Join(", ", duplicates)}.");
+        }
+
+        // When an evaluation set exists (a Studio-pipeline competition), the key must cover it exactly.
+        // A direct-upload-only competition may have just an answer key, so this check is conditional.
+        if (competition.EvaluationArtifactId is { } evalArtifactId)
+        {
+            var keyIds = new HashSet<string>(keyRows.Select(r => r.Id), StringComparer.OrdinalIgnoreCase);
+            await using var evalStream = await artifacts.OpenReadAsync(evalArtifactId, ct);
+            var evalIds = new HashSet<string>(await ReadColumnAsync(evalStream, competition.IdColumn, ct), StringComparer.OrdinalIgnoreCase);
+
+            var missing = evalIds.Except(keyIds).Take(5).ToList();
+            if (missing.Count > 0)
+            {
+                throw new CompetitionException($"The answer key is missing evaluation ids: {string.Join(", ", missing)}.");
+            }
+
+            var extra = keyIds.Except(evalIds).Take(5).ToList();
+            if (extra.Count > 0)
+            {
+                throw new CompetitionException($"The answer key has ids not in the evaluation set: {string.Join(", ", extra)}.");
+            }
+        }
+
+        if (string.Equals(competition.ScorerCode, "rmse", StringComparison.OrdinalIgnoreCase))
+        {
+            var bad = keyRows.Where(r => !(double.TryParse(r.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v)))
+                .Select(r => r.Id).Take(5).ToList();
+            if (bad.Count > 0)
+            {
+                throw new CompetitionException($"The answer key has non-numeric values for a regression competition (ids: {string.Join(", ", bad)}).");
+            }
+        }
+    }
+
+    // Reads one named column from a CSV stream using the shared RFC-4180 codec.
+    private static async Task<List<string>> ReadColumnAsync(Stream stream, string columnName, CancellationToken ct)
+    {
+        using var reader = new StreamReader(stream, leaveOpen: true);
+        var text = await reader.ReadToEndAsync(ct);
+        var values = new List<string>();
+        string[]? header = null;
+        var index = 0;
+        foreach (var record in KocCsv.ParseRecords(text))
+        {
+            if (header is null)
+            {
+                header = record;
+                index = Array.FindIndex(header, c => c.Trim().Equals(columnName, StringComparison.OrdinalIgnoreCase));
+                if (index < 0)
+                {
+                    index = 0;
+                }
+
+                continue;
+            }
+
+            values.Add(index < record.Length ? record[index].Trim() : string.Empty);
+        }
+
+        return values;
     }
 
     public async Task SetDatasetsAsync(

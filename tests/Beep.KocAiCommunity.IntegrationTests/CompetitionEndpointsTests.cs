@@ -322,6 +322,35 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
             .StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task Regression_task_with_accuracy_scorer_is_rejected()
+    {
+        var creator = _factory.CreateClientAs("bad-pairing", "Employee");
+        var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5); // scorer = accuracy
+
+        var response = await creator.PostAsync(
+            $"/api/v1/competitions/{competitionId}/datasets?labelColumn=y&idColumn=id&task=Regression",
+            TwoFiles("id,x,y\n1,1,2\n", "id,x\ne0,1\n"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Answer_key_missing_an_evaluation_id_is_rejected()
+    {
+        var creator = _factory.CreateClientAs("bad-key", "Employee");
+        var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
+
+        (await creator.PostAsync(
+            $"/api/v1/competitions/{competitionId}/datasets?labelColumn=label&idColumn=id&task=BinaryClassification",
+            TwoFiles("id,x,label\n1,1,true\n", "id,x\ne0,1\ne1,2\n")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Key covers e0 but not e1 → rejected.
+        var response = await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\ne0,true"));
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     private static async Task<Guid> CreateCompetition(HttpClient client, DateTime? revealUtc, int quota)
     {
         var response = await client.PostAsJsonAsync("/api/v1/competitions",
