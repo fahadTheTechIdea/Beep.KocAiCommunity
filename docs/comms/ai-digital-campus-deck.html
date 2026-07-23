@@ -239,7 +239,49 @@
       html:`<div class="brand"><span>AI Digital Campus</span><span class="dot"></span><span>Kuwait Oil Company</span></div>
             <h2>Thank you — let's discuss</h2>
             <p>Fahad Al-Dhubaib · Head, AI Digital Campus Task Force Team · [Contact]</p>`,
-      note:`Backup slides available: architecture, security detail, pilot plan, cost model.` },
+      note:`Backup slides follow: architecture, security detail, pilot plan, cost model.` },
+
+    { type:'content', ey:'Backup · Architecture',
+      html:`<h2>How it's built</h2>
+            <div class="cols">
+              <div><h3>Experience</h3><ul class="pts"><li>Blazor web app + WinForms desktop, sharing one designer.</li></ul></div>
+              <div><h3>Services</h3><ul class="pts"><li>Versioned Web API · background Worker · real-time hub.</li></ul></div>
+              <div><h3>Machine learning</h3><ul class="pts"><li>ML.NET + an embedded analytical (SQL/ETL) engine.</li></ul></div>
+              <div><h3>Data &amp; deploy</h3><ul class="pts"><li>SQL Server / Azure SQL · 3 containers · IIS or Azure.</li></ul></div>
+            </div>`,
+      note:`Layered, standard .NET. The web tier never touches the DB directly; the ML engine is plug-in extensible.` },
+
+    { type:'content', ey:'Backup · Security &amp; residency',
+      html:`<h2>Security in depth</h2>
+            <ul class="pts">
+              <li>Authentication: Windows SSO (intranet) or Microsoft Entra.</li>
+              <li>RBAC: positions + function roles; org-scoped visibility (Company → Team).</li>
+              <li>Passwordless database access; encrypted secrets; no credentials in source.</li>
+              <li>Data residency: intranet or Azure Kuwait Central — nothing leaves KOC.</li>
+              <li>Full audit trail; fail-fast production configuration guard.</li>
+            </ul>`,
+      note:`This is the slide for the security / CISO question.` },
+
+    { type:'content', ey:'Backup · The 90-day pilot',
+      html:`<h2>Pilot at a glance</h2>
+            <div class="cols">
+              <div><h3>Scope</h3><ul class="pts"><li>2 directorates · ~[100–150] people</li><li>3–4 competitions on nominated problems</li></ul></div>
+              <div><h3>Measure</h3><ul class="pts"><li>Adoption · engagement · capability</li><li>≥[1–2] candidate models</li></ul></div>
+              <div><h3>Timeline</h3><ul class="pts"><li>Setup → Launch → Run → Evaluate (13 weeks)</li></ul></div>
+              <div><h3>Decision</h3><ul class="pts"><li>Go / No-go: Scale · Iterate · Stop</li></ul></div>
+            </div>`,
+      note:`Condensed pilot plan; full detail in AI_DIGITAL_CAMPUS_PILOT_PLAN.md.` },
+
+    { type:'content', ey:'Backup · Cost model',
+      html:`<h2>Low cost by design</h2>
+            <ul class="pts">
+              <li><strong>No per-seat SaaS fees</strong> — standard Microsoft .NET, self-hosted.</li>
+              <li>Runs on existing [intranet / Azure] capacity; no new licences.</li>
+              <li>Pilot effort: part-time product owner + administrator; front-loaded SME time.</li>
+              <li>Small recognition / prizes budget: [to confirm].</li>
+              <li>The main cost is people's time — offset by capability built and external spend avoided.</li>
+            </ul>`,
+      note:`Frame cost as mostly internal time; the ROI is capability plus avoided consultant spend.` },
   ];
 
   const stage = document.getElementById('stage');

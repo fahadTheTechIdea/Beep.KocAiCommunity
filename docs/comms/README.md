@@ -19,6 +19,7 @@ All figures, dates, names, and contacts in brackets are **placeholders** to comp
 | [`TFT_KICKOFF_EMAIL.md`](TFT_KICKOFF_EMAIL.md) | Kickoff meeting invitation | TFT members |
 | [`TFT_KICKOFF_AGENDA_AND_TOR.md`](TFT_KICKOFF_AGENDA_AND_TOR.md) | Kickoff agenda + Terms of Reference | TFT members |
 | [`ANNOUNCEMENT_EMAIL.md`](ANNOUNCEMENT_EMAIL.md) | Employee launch announcement | Employees (pilot → company-wide) |
+| [`PROTOTYPE_DEMO_SCRIPT.md`](PROTOTYPE_DEMO_SCRIPT.md) | One-page live-demo run of show (deck slide 5) | Presenter |
 
 ## Presentable web versions (self-contained HTML)
 
