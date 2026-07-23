@@ -19,11 +19,12 @@ public static class LearningSeeder
     {
         var stamp = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        // Order 0: the true entry point for people with no AI background — images and a video slot.
+        // Order 0: the true entry point for people with no AI background — images and video.
+        // refreshContent keeps this authored track's lessons current on existing databases.
         await EnsureTrackAsync(db, stamp, order: 0, TrackLevel.Beginner,
             "AI for Everyone — Start Here",
             "Never touched AI before? Start here. Plain words, pictures, and a first challenge — no maths, no code.",
-            BeginnerLessons(), ct);
+            BeginnerLessons(), ct, refreshContent: true);
 
         await EnsureTrackAsync(db, stamp, order: 1, TrackLevel.Beginner,
             "Getting started with data",
@@ -45,10 +46,27 @@ public static class LearningSeeder
 
     private static async Task EnsureTrackAsync(
         KocDbContext db, DateTime stamp, int order, TrackLevel level, string title, string summary,
-        (string Title, string? Content)[] lessons, CancellationToken ct)
+        (string Title, string? Content)[] lessons, CancellationToken ct, bool refreshContent = false)
     {
-        if (await db.LearningTracks.AnyAsync(t => t.Title == title, ct))
+        var existing = await db.LearningTracks.FirstOrDefaultAsync(t => t.Title == title, ct);
+        if (existing is not null)
         {
+            // Authored tracks (e.g. the beginner track) refresh their lesson text in place so content
+            // edits ship without a database reset. Lesson rows are matched by order, preserving progress.
+            if (refreshContent)
+            {
+                var rows = await db.Lessons.Where(l => l.TrackId == existing.Id).OrderBy(l => l.OrderNo).ToListAsync(ct);
+                foreach (var lesson in rows)
+                {
+                    var index = lesson.OrderNo - 1;
+                    if (index >= 0 && index < lessons.Length)
+                    {
+                        lesson.Title = lessons[index].Title;
+                        lesson.Content = lessons[index].Content ?? Body(lessons[index].Title, level, lesson.OrderNo);
+                    }
+                }
+            }
+
             return;
         }
 
@@ -173,21 +191,13 @@ public static class LearningSeeder
         ("Watch: the big idea in a few minutes", """
         # Watch: the big idea
 
-        Sometimes a short video explains it best. Below is where a **1–3 minute intro video** plays — your
-        team can drop in a KOC-hosted explainer or a chosen clip.
+        Sometimes a short video explains it best. Here is a plain-language introduction to what AI is and
+        how it learns from examples — no background needed.
 
-        <div class="koc-video"><div class="koc-video-ph"><div class="play">▶</div><div>Intro video — "What is AI, in plain words"</div></div></div>
+        <div class="koc-video"><iframe src="https://www.youtube.com/embed/ukzFI9rgwfU" title="What is AI — a plain-language introduction" allowfullscreen loading="lazy"></iframe></div>
 
-        Once you have a video URL, embed it by replacing the placeholder with a standard frame:
-
-        ```html
-        <div class="koc-video">
-          <iframe src="https://your-video-host/koc-ai-intro" allowfullscreen></iframe>
-        </div>
-        ```
-
-        <div class="koc-callout"><strong>No video yet?</strong> That's fine — everything you need is written in
-        these lessons. The video is a bonus, not a requirement.</div>
+        <div class="koc-callout"><strong>On the offline intranet?</strong> If the video doesn't load, don't
+        worry — the written lessons cover everything you need. The video is a bonus, not a requirement.</div>
         """),
 
         ("Your journey here: Learn → Build → Compete", """
