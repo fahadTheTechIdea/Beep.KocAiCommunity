@@ -1,0 +1,369 @@
+<style>
+  :root{
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
+    --accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9;
+    --gold:#a9761a;
+    --ink:#151c24; --muted:#586a7b; --border:#e3e9ef;
+    --bg:#ffffff; --panel:#f7f9fb; --panel-2:#eef3f8;
+    --shadow:0 1px 2px rgba(16,32,48,.06), 0 12px 32px rgba(16,32,48,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --accent:#57a6de; --accent-deep:#8ac6ee; --accent-tint:#122636;
+      --gold:#d6ac5c;
+      --ink:#e7edf4; --muted:#9fb0c2; --border:#25313e;
+      --bg:#0d141c; --panel:#131c26; --panel-2:#18232f;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --accent:#57a6de; --accent-deep:#8ac6ee; --accent-tint:#122636; --gold:#d6ac5c;
+    --ink:#e7edf4; --muted:#9fb0c2; --border:#25313e; --bg:#0d141c; --panel:#131c26; --panel-2:#18232f;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.45);
+  }
+  :root[data-theme="light"]{
+    --accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9; --gold:#a9761a;
+    --ink:#151c24; --muted:#586a7b; --border:#e3e9ef; --bg:#ffffff; --panel:#f7f9fb; --panel-2:#eef3f8;
+    --shadow:0 1px 2px rgba(16,32,48,.06), 0 12px 32px rgba(16,32,48,.08);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.68;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+
+  /* ---- Cover band ---- */
+  .cover{position:relative;overflow:hidden;color:#fff;
+    background:linear-gradient(135deg,var(--accent-deep),var(--accent) 78%);
+    border-bottom:3px solid var(--gold)}
+  .cover::after{content:"";position:absolute;inset:0;opacity:.16;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);
+    background-size:32px 32px;mask-image:linear-gradient(120deg,#000,transparent 70%)}
+  .cover-inner{position:relative;max-width:1060px;margin:0 auto;padding:34px clamp(20px,4vw,52px) 40px}
+  .brandline{display:flex;align-items:center;gap:12px;font-family:var(--mono);
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+  .brandline .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .cover h1{font-family:var(--serif);font-weight:600;letter-spacing:-.01em;
+    font-size:clamp(38px,6vw,66px);line-height:1.02;margin:20px 0 8px;text-wrap:balance}
+  .cover .sub{font-size:clamp(16px,2.2vw,21px);color:rgba(255,255,255,.92);max-width:46ch;margin:0}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 26px;
+    margin-top:30px;padding-top:22px;border-top:1px solid rgba(255,255,255,.22);max-width:820px}
+  .meta div{font-size:13.5px;line-height:1.4}
+  .meta .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:rgba(255,255,255,.7);display:block;margin-bottom:3px}
+  .meta .v{color:#fff}
+
+  /* ---- Stat strip ---- */
+  .stats{max-width:1060px;margin:-26px auto 0;padding:0 clamp(20px,4vw,52px);position:relative;z-index:2}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+  .stat{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+  .stat .big{font-family:var(--serif);font-size:23px;color:var(--accent);line-height:1.1;margin-bottom:4px}
+  .stat .lbl{font-size:13px;color:var(--muted)}
+
+  /* ---- Layout ---- */
+  .layout{max-width:1060px;margin:44px auto 0;padding:0 clamp(20px,4vw,52px);
+    display:grid;grid-template-columns:212px 1fr;gap:48px;align-items:start}
+  nav.toc{position:sticky;top:22px;font-size:13.5px}
+  nav.toc .toc-h{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 10px}
+  nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+  nav.toc li{counter-increment:toc;margin:2px 0}
+  nav.toc a{display:flex;gap:9px;padding:5px 8px;border-radius:7px;color:var(--ink);line-height:1.3}
+  nav.toc a::before{content:counter(toc,decimal-leading-zero);font-family:var(--mono);font-size:11px;
+    color:var(--gold);padding-top:2px}
+  nav.toc a:hover{background:var(--accent-tint);text-decoration:none}
+
+  main{min-width:0;max-width:760px}
+  section{scroll-margin-top:18px;padding-top:14px;margin-top:40px}
+  section:first-child{margin-top:0}
+  .ey{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(23px,3.2vw,30px);line-height:1.15;
+    margin:6px 0 14px;text-wrap:balance}
+  h3{font-family:var(--sans);font-weight:650;font-size:17px;margin:26px 0 6px;color:var(--ink)}
+  p{margin:0 0 15px}
+  main ul{margin:0 0 16px;padding-left:0;list-style:none}
+  main ul li{position:relative;padding-left:22px;margin:7px 0}
+  main ul li::before{content:"";position:absolute;left:4px;top:10px;width:6px;height:6px;border-radius:50%;
+    background:var(--accent)}
+  strong{color:var(--ink);font-weight:650}
+
+  .lead{font-size:18px;line-height:1.6;color:var(--ink)}
+  .callout{border-left:3px solid var(--accent);background:var(--accent-tint);
+    border-radius:0 12px 12px 0;padding:16px 20px;margin:18px 0;font-size:15.5px}
+  .flow{font-family:var(--serif);font-size:clamp(19px,3vw,26px);color:var(--accent-deep);
+    text-align:center;margin:6px 0 2px;letter-spacing:.01em}
+  @media (prefers-color-scheme:dark){.flow{color:var(--accent-deep)}}
+
+  table{border-collapse:collapse;width:100%;margin:16px 0 20px;font-size:14.5px;
+    font-variant-numeric:tabular-nums}
+  .twrap{overflow-x:auto}
+  th,td{border:1px solid var(--border);padding:9px 13px;text-align:left;vertical-align:top}
+  th{background:var(--accent-tint);color:var(--ink);font-weight:650;font-size:13px}
+  tbody tr:nth-child(even){background:var(--panel)}
+
+  .num{color:var(--gold);font-family:var(--mono);font-size:13px;margin-right:2px}
+  .divider{height:1px;background:var(--border);border:0;margin:44px 0 0}
+
+  footer.doc-foot{max-width:1060px;margin:52px auto 60px;padding:26px clamp(20px,4vw,52px) 0;
+    border-top:1px solid var(--border);color:var(--muted);font-size:13px}
+  .classpill{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--accent);border:1px solid var(--border);border-radius:20px;
+    padding:3px 11px;background:var(--panel)}
+
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;gap:8px}
+    nav.toc{position:static;border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+      margin-bottom:8px;background:var(--panel)}
+    nav.toc ol{columns:2;column-gap:22px}
+  }
+  @media print{
+    :root{--bg:#fff;--ink:#111;--muted:#333;--border:#bbb;--accent:#0E4F80;--accent-tint:#f0f4f8}
+    .stats,nav.toc{display:none!important}
+    .cover{color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .layout{display:block;margin-top:26px}
+    main{max-width:none}
+    section{margin-top:22px;page-break-inside:avoid}
+    h2{page-break-after:avoid}
+    a{color:inherit;text-decoration:none}
+  }
+</style>
+
+<article class="doc">
+  <header class="cover">
+    <div class="cover-inner">
+      <div class="brandline"><span>Kuwait Oil Company</span><span class="dot"></span><span>Internal White Paper</span></div>
+      <h1>AI Digital Campus</h1>
+      <p class="sub">An internal AI/ML learning &amp; innovation platform — learn, build, and compete on real KOC problems, securely and in-house.</p>
+      <div class="meta">
+        <div><span class="k">Prepared for</span><span class="v">Executive Management &amp; the AI Digital Campus TFT</span></div>
+        <div><span class="k">Prepared by</span><span class="v">Fahad Al-Dhubaib — Head, AI Digital Campus TFT</span></div>
+        <div><span class="k">Date</span><span class="v">23 July 2026</span></div>
+        <div><span class="k">Status</span><span class="v">Draft for TFT review</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stats-grid">
+      <div class="stat"><div class="big">Private &amp; sovereign</div><div class="lbl">Data &amp; models never leave KOC — intranet or Azure Kuwait Central</div></div>
+      <div class="stat"><div class="big">Learn → Build → Compete</div><div class="lbl">A single journey from AI literacy to real, scored models</div></div>
+      <div class="stat"><div class="big">Prototype ready</div><div class="lbl">Built &amp; quality-assured in-house — ready to demonstrate and pilot</div></div>
+      <div class="stat"><div class="big">Standard .NET</div><div class="lbl">Self-hosted, low-cost, no per-seat SaaS fees</div></div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Contents">
+      <p class="toc-h">Contents</p>
+      <ol>
+        <li><a href="#s1">Executive summary</a></li>
+        <li><a href="#s2">Context &amp; rationale</a></li>
+        <li><a href="#s3">The concept</a></li>
+        <li><a href="#s4">Platform overview</a></li>
+        <li><a href="#s5">Capabilities in depth</a></li>
+        <li><a href="#s6">Architecture &amp; technology</a></li>
+        <li><a href="#s7">Security &amp; data residency</a></li>
+        <li><a href="#s8">Alignment with KOC goals</a></li>
+        <li><a href="#s9">Feasibility assessment</a></li>
+        <li><a href="#s10">Value &amp; target outcomes</a></li>
+        <li><a href="#s11">Implementation roadmap</a></li>
+        <li><a href="#s12">Governance &amp; operating model</a></li>
+        <li><a href="#s13">Recommended way forward</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <section id="s1">
+        <div class="ey">01 · Executive summary</div>
+        <h2>Turning AI capability from a dependency into an in-house engine</h2>
+        <p class="lead">Kuwait Oil Company generates vast operational, subsurface, and enterprise data. The organizations that convert such data into decisions operate more safely, produce more efficiently, and maintain assets more cheaply. Realizing that advantage at KOC depends less on any single algorithm than on <strong>people</strong> — a workforce fluent enough in AI/ML to frame problems, build models, and challenge results.</p>
+        <p>The <strong>AI Digital Campus</strong> builds this capability at scale by combining three things employees rarely get in one place: <strong>structured learning</strong>, <strong>hands-on tools to build models without heavy coding</strong>, and <strong>competitions on real KOC problems</strong> that make learning purposeful and measurable. It is, in effect, a <strong>private, secure "Kaggle" for KOC</strong> — with all data and models kept inside the company.</p>
+        <div class="callout">A <strong>functional prototype has already been built and quality-assured in-house</strong>, so the Task Force Team's feasibility study can be grounded in a working system rather than a concept.</div>
+        <h3>Headline points</h3>
+        <ul>
+          <li><strong>Capability, not consultants</strong> — upskills employees on KOC's own data, creating a durable internal asset rather than recurring external dependency.</li>
+          <li><strong>Learning that produces value</strong> — the same challenges that train people surface candidate models for genuine operational problems.</li>
+          <li><strong>Secure and sovereign</strong> — self-hosted on the intranet or in Azure Kuwait Central, with enterprise authentication, role-based access, and a full audit trail.</li>
+          <li><strong>Low cost, standards-based</strong> — standard Microsoft/.NET technology; no per-seat SaaS fees and no data leaving KOC.</li>
+        </ul>
+      </section>
+
+      <section id="s2">
+        <div class="ey">02 · Context &amp; strategic rationale</div>
+        <h2>Why broad, in-house AI literacy — and why now</h2>
+        <p><strong>The capability gap.</strong> Advanced analytics at KOC today relies on a small number of specialists and external vendors. This concentrates knowledge, slows iteration, and means insight — and the data behind it — too often leaves the company. Broad, in-house AI literacy is a prerequisite for digital transformation, not a by-product of it.</p>
+        <p><strong>Why learning-by-competition.</strong> Adults retain skills they <em>apply</em>. Passive e-learning has low completion and lower transfer to the job. Competitions on real problems invert this: participants learn because they need to in order to climb a leaderboard, and the work they produce is immediately relevant. This "Kaggle model" is the global standard for building applied data-science capability.</p>
+        <p><strong>Strategic alignment.</strong> Workforce nationalization and capability building, digital transformation of operations, and knowledge retention are recurring themes in Kuwait's and KOC's direction. The AI Digital Campus operationalizes all three — within Training &amp; Career Development, on KOC infrastructure, under KOC governance.</p>
+      </section>
+
+      <section id="s3">
+        <div class="ey">03 · The concept</div>
+        <h2>One journey: Learn → Build → Compete → Recognize → Apply</h2>
+        <p class="flow">Learn → Build → Compete → Recognize → Apply</p>
+        <ul>
+          <li><strong>Learn</strong> AI/ML fundamentals through guided tracks.</li>
+          <li><strong>Build</strong> models in a visual, low-code studio — no prior programming required.</li>
+          <li><strong>Compete</strong> on challenges based on real KOC problems, scored objectively.</li>
+          <li><strong>Recognize</strong> achievement through points, levels, badges, and leaderboards.</li>
+          <li><strong>Apply</strong> the resulting skills — and the winning models — to the business.</li>
+        </ul>
+        <p>Each stage feeds the next: a competition recommends a learning track as its on-ramp; a track equips the learner to enter; a strong submission earns recognition; and the best models become candidates for real deployment.</p>
+      </section>
+
+      <section id="s4">
+        <div class="ey">04 · Platform overview</div>
+        <h2>The working prototype</h2>
+        <p>A working prototype implements the full journey today, presenting a single branded web experience on the KOC intranet with role-appropriate areas:</p>
+        <ul>
+          <li><strong>Home</strong> — a competition-forward landing page: the featured challenge with a live countdown, the current podium, and entry points into learning and community.</li>
+          <li><strong>Learn</strong> — guided tracks with lessons, enrollment, and completion tracking.</li>
+          <li><strong>Compete ("The Arena")</strong> — a browsable grid of competitions, each with its own page: overview, data, live leaderboard, submissions, and rewards.</li>
+          <li><strong>Studio</strong> — datasets, a visual workflow designer, an AutoML fast path, runs, experiments, and a model registry.</li>
+          <li><strong>Community</strong> — organization-scoped discussions and knowledge sharing.</li>
+          <li><strong>Profile &amp; standing</strong> — points, levels, streaks, badges, and peer kudos.</li>
+          <li><strong>Supervision</strong> — a read-only rollup for people-leaders to see their teams' progress.</li>
+          <li><strong>Admin console</strong> — access control, settings, feature flags, demo data, and audit.</li>
+        </ul>
+        <p>A companion <strong>offline desktop Studio</strong> lets employees build and run models on their own machines and connect only to submit — useful for hands-on training and low-connectivity settings.</p>
+      </section>
+
+      <section id="s5">
+        <div class="ey">05 · Capabilities in depth</div>
+        <h2>What employees can do</h2>
+        <h3>Learn — guided tracks</h3>
+        <p>Structured tracks deliver AI/ML fundamentals as ordered lessons. Employees enroll, work through content, and record completions that count toward their standing. Competitions can recommend a track as a starting point.</p>
+        <h3>Compete — the Arena</h3>
+        <p>Internal, Kaggle-style challenges built on <strong>real KOC problem statements</strong> — for example ESP failure prediction, production analytics, reservoir tasks, and HSE intelligence. Submissions are <strong>trained and scored automatically against a withheld answer key</strong> that is never exposed, so only modelling skill moves a rank. A <strong>live leaderboard</strong> updates in real time; <strong>final standings</strong> are revealed on a set date. Hosting a competition is permission-gated, so challenges are curated and appropriately scoped.</p>
+        <h3>Build — the visual ML Studio</h3>
+        <ul>
+          <li><strong>Datasets</strong> — governed, versioned data with explicit visibility scope (Team / Group / Directorate / Company).</li>
+          <li><strong>Visual workflow designer</strong> — a drag-and-connect canvas of typed nodes (data prep, SQL/ETL, transformation, training, evaluation) that runs an end-to-end pipeline; extensible by design.</li>
+          <li><strong>AutoML</strong> — choose a dataset and a task, and the platform trains and compares models automatically.</li>
+          <li><strong>Runs, experiments, models</strong> — background training jobs, experiment comparison, and a model registry with a register → approve → deploy lifecycle.</li>
+        </ul>
+        <h3>Community, engagement &amp; governance</h3>
+        <p>Org-scoped discussions keep collaboration relevant. A points economy ("Barrels"), levels, streaks, badges, kudos, and leaderboards sustain motivation and make development visible to leaders. A platform-admin console provides role-based access control, org/business-code management, encrypted settings, feature flags, one-click demo data, and a complete <strong>audit trail</strong>.</p>
+      </section>
+
+      <section id="s6">
+        <div class="ey">06 · Architecture &amp; technology</div>
+        <h2>Standard, maintainable, low-cost</h2>
+        <p>The platform is built on <strong>standard, well-supported Microsoft technology</strong>, favouring maintainability and low operating cost:</p>
+        <ul>
+          <li><strong>Front end</strong> — a Blazor web application with a component library; a WinForms desktop companion reusing the same designer.</li>
+          <li><strong>Services</strong> — a versioned Web API, a background worker for durable jobs (model training), and real-time updates for live leaderboards.</li>
+          <li><strong>Machine learning</strong> — ML.NET with an embedded analytical engine for data/ETL nodes.</li>
+          <li><strong>Data</strong> — a relational database via a standard ORM, with a dual-provider design: a lightweight file database for development and <strong>Microsoft SQL Server / Azure SQL</strong> for production.</li>
+          <li><strong>Deployment</strong> — three containers (API, Web, Worker) for IIS intranet or Azure, with health probes and a continuous-integration quality gate.</li>
+        </ul>
+        <p>The design deliberately separates concerns — the web tier never touches the database directly, all access flows through the API, and the ML engine is extensible via self-contained plug-ins.</p>
+      </section>
+
+      <section id="s7">
+        <div class="ey">07 · Security, compliance &amp; data residency</div>
+        <h2>Sovereign by design</h2>
+        <ul>
+          <li><strong>Authentication</strong> — intranet <strong>Windows single sign-on</strong> (no separate login), with a Microsoft Entra option for federated scenarios.</li>
+          <li><strong>Authorization</strong> — <strong>role-based access control</strong> (organizational positions + function roles) with <strong>org-scoped data visibility</strong> (Company → Directorate → Group → Team).</li>
+          <li><strong>Credential hygiene</strong> — <strong>passwordless</strong> database access (Windows Integrated Security on-prem, managed identity in Azure); encrypted secrets; no credentials in source.</li>
+          <li><strong>Data residency</strong> — self-hosted on the KOC intranet, or in <strong>Azure Kuwait Central</strong>; data and models <strong>never leave KOC</strong>.</li>
+          <li><strong>Auditability &amp; safety</strong> — administrative actions are logged; a fail-fast guard refuses to start a misconfigured production deployment, and dev-only tooling is hidden outside development.</li>
+        </ul>
+      </section>
+
+      <section id="s8">
+        <div class="ey">08 · Alignment with organizational goals</div>
+        <h2>Coherence with KOC direction</h2>
+        <div class="twrap"><table>
+          <thead><tr><th>KOC objective</th><th>How the AI Digital Campus contributes</th></tr></thead>
+          <tbody>
+            <tr><td>Workforce capability &amp; nationalization</td><td>Builds broad in-house AI/ML skills across grades and directorates, reducing dependence on external specialists.</td></tr>
+            <tr><td>Digital transformation of operations</td><td>Produces candidate models for real problems and a pipeline of practitioners to sustain them.</td></tr>
+            <tr><td>Knowledge retention</td><td>Keeps expertise, data, and models inside KOC; captures solutions in a searchable community.</td></tr>
+            <tr><td>Safety &amp; efficiency</td><td>Directs learning at HSE, predictive maintenance, and production optimization.</td></tr>
+            <tr><td>Cost discipline</td><td>Standard technology, self-hosted, no per-seat SaaS fees, low maintenance footprint.</td></tr>
+            <tr><td>Governance &amp; compliance</td><td>Enterprise access control, data residency, and a full audit trail.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="s9">
+        <div class="ey">09 · Feasibility assessment</div>
+        <h2>Applicability, options, and risks</h2>
+        <p><strong>Applicability.</strong> The prototype demonstrates technical feasibility end-to-end today: employees can learn, build, submit, and be scored on realistic problems, under KOC authentication and governance.</p>
+        <p><strong>Build vs. buy.</strong> External platforms would require KOC data to leave the company or be duplicated externally, carry recurring per-seat costs, and fit KOC's org model and security posture poorly. The in-house approach keeps data resident, fits the existing IIS/Azure estate, and reuses standard Microsoft skills already present in IT.</p>
+        <div class="twrap"><table>
+          <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+          <tbody>
+            <tr><td>Low adoption / engagement</td><td>Competition-first design, gamification, leader visibility; launch with a sponsored pilot and real recognition.</td></tr>
+            <tr><td>Data sensitivity of datasets</td><td>Org-scoped visibility, withheld answer keys, and a curation/approval step for hosting competitions.</td></tr>
+            <tr><td>Quality of learning content</td><td>Start with a curated core track set; expand with subject-matter experts and community contributions.</td></tr>
+            <tr><td>Sustaining operations</td><td>Standard technology and CI gate; a small product-owner + admin footprint within T&amp;CD / IT.</td></tr>
+            <tr><td>Model-to-production gap</td><td>Treat winning models as candidates entering the existing model-governance lifecycle, not automatic deployments.</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout"><strong>Preliminary verdict:</strong> technically proven by the prototype; organizationally coherent; recommended to validate adoption and business impact through a time-boxed pilot.</div>
+      </section>
+
+      <section id="s10">
+        <div class="ey">10 · Business value &amp; target outcomes</div>
+        <h2>Illustrative targets — to be validated in the pilot</h2>
+        <p>The following are <strong>planning targets</strong>, not measured results:</p>
+        <ul>
+          <li><strong>Reach</strong> — [300–500] employees onboarded in the first 12 months across [3+] directorates.</li>
+          <li><strong>Capability</strong> — [X] guided tracks completed; [Y] employees advancing from learner to competent model-builder.</li>
+          <li><strong>Relevance</strong> — [6–8] competitions on business-nominated problems per year.</li>
+          <li><strong>Value pipeline</strong> — at least [2–3] competition-derived models advanced into the model-governance lifecycle for potential operational use.</li>
+          <li><strong>Engagement</strong> — sustained participation and completion materially above traditional e-learning benchmarks.</li>
+          <li><strong>Cost avoidance</strong> — reduced reliance on external analytics engagements for exploratory work.</li>
+        </ul>
+        <div class="callout">A single successful predictive-maintenance model — for example reducing ESP-related unplanned downtime — can justify the initiative's cost many times over. The Campus is designed to make such wins <strong>repeatable</strong>.</div>
+      </section>
+
+      <section id="s11">
+        <div class="ey">11 · Implementation roadmap</div>
+        <h2>From prototype to company-wide</h2>
+        <div class="twrap"><table>
+          <thead><tr><th>Phase</th><th>Timeframe</th><th>Focus</th></tr></thead>
+          <tbody>
+            <tr><td><strong>0 — Prototype</strong> (complete)</td><td>—</td><td>Working platform built and quality-assured in-house.</td></tr>
+            <tr><td><strong>1 — Pilot</strong></td><td>90 days</td><td>2 directorates, ~[100–150] participants, 3–4 seeded competitions on nominated problems; measure adoption, learning, and value.</td></tr>
+            <tr><td><strong>2 — Hardening &amp; content</strong></td><td>Months 4–6</td><td>Expand tracks, integrate the KOC identity directory, finalize production hosting and support model.</td></tr>
+            <tr><td><strong>3 — Company-wide rollout</strong></td><td>Months 6–12</td><td>Open to more directorates; a regular competition calendar and a model-to-production pathway.</td></tr>
+            <tr><td><strong>4 — Sustain &amp; scale</strong></td><td>Ongoing</td><td>Community-driven content, recurring challenges, and continuous capability measurement.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="s12">
+        <div class="ey">12 · Governance &amp; operating model</div>
+        <h2>Who runs it</h2>
+        <p>The initiative is governed by the <strong>AI Digital Campus Task Force Team</strong>, chaired by the initiative head, with a three-month mandate to review the initiative, conduct this feasibility study, assess alignment with organizational goals, and propose the way forward. Ongoing operation is proposed to sit within <strong>Training &amp; Career Development</strong>, supported by <strong>IT</strong>, with a named product owner, an administrator, and subject-matter experts to curate learning and competitions. Winning models enter KOC's existing model-governance process for any operational deployment.</p>
+      </section>
+
+      <section id="s13">
+        <div class="ey">13 · Recommended way forward</div>
+        <h2>Endorse a 90-day pilot</h2>
+        <p>The AI Digital Campus turns AI capability-building from a cost and a dependency into a <strong>repeatable, in-house engine</strong> that develops people and produces useful models on KOC's own data — securely and sovereignly. A working prototype has removed the principal technical uncertainties.</p>
+        <ul>
+          <li><strong>Endorse a 90-day pilot</strong> with two directorates and a business-nominated problem set, as the empirical heart of the TFT feasibility study.</li>
+          <li><strong>Nominate an executive sponsor</strong> and pilot directorate leads.</li>
+          <li><strong>Confirm the target problem set</strong> with the business so challenges map to real priorities.</li>
+        </ul>
+        <p>A phased company-wide rollout follows a successful pilot.</p>
+      </section>
+
+      <hr class="divider">
+      <footer class="doc-foot">
+        <p><span class="classpill">KOC Internal</span></p>
+        <p>Prepared by the AI Digital Campus Initiative Task Force Team, Kuwait Oil Company. This document describes an internal working prototype and initiative proposal; bracketed figures are planning placeholders to be confirmed during the pilot.</p>
+      </footer>
+    </main>
+  </div>
+</article>

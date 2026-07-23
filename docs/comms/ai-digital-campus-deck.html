@@ -1,0 +1,289 @@
+<style>
+  :root{
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
+    --accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9; --gold:#a9761a;
+    --ink:#151c24; --muted:#586a7b; --border:#e3e9ef; --bg:#ffffff; --panel:#f7f9fb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--accent:#57a6de; --accent-deep:#8ac6ee; --accent-tint:#122636; --gold:#d6ac5c;
+      --ink:#e7edf4; --muted:#9fb0c2; --border:#25313e; --bg:#0e161f; --panel:#151f2a;}
+  }
+  :root[data-theme="dark"]{--accent:#57a6de; --accent-deep:#8ac6ee; --accent-tint:#122636; --gold:#d6ac5c;
+    --ink:#e7edf4; --muted:#9fb0c2; --border:#25313e; --bg:#0e161f; --panel:#151f2a;}
+  :root[data-theme="light"]{--accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9; --gold:#a9761a;
+    --ink:#151c24; --muted:#586a7b; --border:#e3e9ef; --bg:#ffffff; --panel:#f7f9fb;}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:#0a0f15;color:var(--ink);font-family:var(--sans);overflow:hidden}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  #stage{position:fixed;inset:0;display:grid;place-items:center;background:#0a0f15}
+  .slide{position:absolute;inset:0;background:var(--bg);opacity:0;visibility:hidden;
+    transition:opacity .28s ease;display:flex;flex-direction:column;justify-content:center;
+    padding:7vmin 9vmin;overflow:hidden}
+  .slide.active{opacity:1;visibility:visible}
+  .slide .ey{font-family:var(--mono);font-size:1.7vmin;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:1.6vmin}
+  .slide h2{font-family:var(--serif);font-weight:600;font-size:clamp(26px,5.6vmin,64px);line-height:1.08;
+    margin:0 0 2.4vmin;text-wrap:balance;color:var(--ink);max-width:24ch}
+  .slide p{font-size:clamp(15px,2.5vmin,26px);line-height:1.5;margin:0 0 1.6vmin;color:var(--ink);max-width:40ch}
+  .slide .muted{color:var(--muted)}
+  ul.pts{list-style:none;margin:1vmin 0 0;padding:0;max-width:52ch}
+  ul.pts li{position:relative;padding-left:3.4vmin;margin:1.7vmin 0;font-size:clamp(15px,2.5vmin,25px);
+    line-height:1.42}
+  ul.pts li::before{content:"";position:absolute;left:.4vmin;top:1.1vmin;width:1.3vmin;height:1.3vmin;
+    border-radius:50%;background:var(--accent)}
+  strong{font-weight:650}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:2vmin 6vmin;max-width:none}
+  .cols h3{font-family:var(--sans);font-size:clamp(15px,2.5vmin,24px);margin:0 0 .6vmin;color:var(--accent)}
+
+  /* cover / statement / close variants */
+  .slide.cover, .slide.statement, .slide.close{color:#fff;background:linear-gradient(135deg,var(--accent-deep),var(--accent) 80%)}
+  .slide.cover::after, .slide.statement::after, .slide.close::after{content:"";position:absolute;inset:0;opacity:.16;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);
+    background-size:4.4vmin 4.4vmin;mask-image:linear-gradient(120deg,#000,transparent 72%)}
+  .slide.cover h1{position:relative;font-family:var(--serif);font-weight:600;font-size:clamp(38px,9vmin,104px);
+    line-height:1;margin:0 0 2vmin;letter-spacing:-.01em}
+  .slide.cover .sub{position:relative;font-size:clamp(16px,3vmin,30px);color:rgba(255,255,255,.94);max-width:38ch;margin:0}
+  .slide.cover .who{position:relative;margin-top:5vmin;font-size:clamp(13px,2vmin,19px);color:rgba(255,255,255,.85);
+    border-top:1px solid rgba(255,255,255,.25);padding-top:2.4vmin;max-width:50ch}
+  .slide.cover .brand,.slide.close .brand{position:relative;font-family:var(--mono);font-size:1.7vmin;letter-spacing:.16em;
+    text-transform:uppercase;color:rgba(255,255,255,.85);margin-bottom:3vmin;display:flex;align-items:center;gap:1.4vmin}
+  .slide.cover .brand .dot{width:.8vmin;height:.8vmin;border-radius:50%;background:var(--gold)}
+  .slide.statement .ey{color:rgba(255,255,255,.8)}
+  .slide.statement h2{position:relative;color:#fff;font-size:clamp(28px,6.8vmin,76px);max-width:20ch}
+  .slide.statement p{position:relative;color:rgba(255,255,255,.94);max-width:42ch;font-size:clamp(16px,2.8vmin,28px)}
+  .slide.statement .demo{position:relative;display:inline-block;margin-top:2.4vmin;background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.4);border-radius:12px;padding:1.6vmin 2.4vmin;font-size:clamp(15px,2.4vmin,24px)}
+  .slide.close h2{position:relative;color:#fff}
+  .slide.close p{position:relative;color:rgba(255,255,255,.92)}
+
+  /* roadmap chips */
+  .road{display:flex;flex-wrap:wrap;gap:1.6vmin;margin-top:1vmin}
+  .road .ph{border:1px solid var(--border);border-radius:12px;padding:1.6vmin 2vmin;background:var(--panel);min-width:22vmin}
+  .road .ph b{display:block;color:var(--accent);font-size:clamp(14px,2.3vmin,22px)}
+  .road .ph span{color:var(--muted);font-size:clamp(12px,1.9vmin,17px)}
+  .road .ph.now{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-tint)}
+
+  /* chrome */
+  .bar{position:fixed;top:0;left:0;height:4px;background:var(--gold);z-index:40;transition:width .28s ease}
+  .chrome{position:fixed;bottom:14px;right:16px;z-index:40;display:flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:12px;color:#fff;mix-blend-mode:difference}
+  .chrome button{font:inherit;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.5);
+    border-radius:7px;width:30px;height:30px;cursor:pointer}
+  .chrome button:hover{background:rgba(255,255,255,.15)}
+  .count{min-width:52px;text-align:center}
+  .notes{position:fixed;left:0;right:0;bottom:0;z-index:35;background:#0a0f15;color:#cdd6e0;
+    border-top:2px solid var(--gold);padding:14px 20px;font-size:14px;line-height:1.5;
+    transform:translateY(100%);transition:transform .2s ease;font-family:var(--sans)}
+  .notes.show{transform:translateY(0)}
+  .notes b{color:var(--gold);font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+  .hint{position:fixed;bottom:14px;left:16px;z-index:40;font-family:var(--mono);font-size:11px;color:#fff;
+    mix-blend-mode:difference;opacity:.7}
+
+  @media print{
+    body{overflow:visible;background:#fff}
+    #stage{position:static}
+    .slide{position:relative;opacity:1!important;visibility:visible!important;height:100vh;
+      page-break-after:always;border-bottom:1px solid #ccc}
+    .bar,.chrome,.notes,.hint{display:none!important}
+  }
+</style>
+
+<div id="stage"></div>
+<div class="bar" id="bar"></div>
+<div class="hint">← → navigate · S notes · F full-screen</div>
+<div class="chrome">
+  <button id="prev" aria-label="Previous">‹</button>
+  <span class="count" id="count">1 / 1</span>
+  <button id="next" aria-label="Next">›</button>
+</div>
+<div class="notes" id="notes"><b>Presenter note</b><div id="noteText" style="margin-top:6px"></div></div>
+
+<script>
+  const S = [
+    { type:'cover',
+      html:`<div class="brand"><span>Kuwait Oil Company</span><span class="dot"></span><span>Management Briefing</span></div>
+            <h1>AI Digital Campus</h1>
+            <p class="sub">Building AI capability in-house — learn, build, and compete on real KOC problems.</p>
+            <div class="who">Prepared by Fahad Al-Dhubaib — Head, AI Digital Campus Task Force Team · Training &amp; Career Development · [Date] · KOC Internal</div>`,
+      note:`Set the frame: how KOC builds AI capability in-house, on our own data. ~15 minutes plus discussion.` },
+
+    { type:'statement', ey:'The bottom line',
+      html:`<h2>Build AI capability in-house — and endorse a 90-day pilot.</h2>
+            <p>A working prototype already exists. We're asking to prove it with real users, on real problems, at low cost and low risk.</p>`,
+      note:`Lead with the recommendation. Everything after this is support.` },
+
+    { type:'content', ey:'02 · The challenge',
+      html:`<h2>AI capability is scarce — and our data keeps leaving</h2>
+            <ul class="pts">
+              <li>Advanced analytics relies on a few specialists and external vendors.</li>
+              <li>Insight — and the data behind it — too often leaves the company.</li>
+              <li>Digital transformation needs <strong>broad</strong> AI literacy, not a handful of experts.</li>
+            </ul>`,
+      note:`Establish the gap before the solution. This is a capability and sovereignty problem.` },
+
+    { type:'content', ey:'03 · The idea',
+      html:`<h2>One journey: Learn → Build → Compete</h2>
+            <ul class="pts">
+              <li><strong>Learn</strong> AI/ML through guided tracks.</li>
+              <li><strong>Build</strong> models in a visual studio — no coding required.</li>
+              <li><strong>Compete</strong> on real KOC problems, scored objectively, on a live leaderboard.</li>
+            </ul>
+            <p class="muted">A private, secure "Kaggle" for KOC — engaging, measurable, purposeful.</p>`,
+      note:`The competition model is why skills stick and transfer to the job.` },
+
+    { type:'statement', ey:'04 · What we built',
+      html:`<h2>A functional platform — ready to show</h2>
+            <p>Home · Learn · the Arena (competitions) · the Studio · Community · Admin.</p>
+            <div class="demo">▶ Live demo: featured competition → leaderboard → build a model</div>`,
+      note:`3–4 minutes of live demo here is the most persuasive part. Keep it crisp and rehearsed.` },
+
+    { type:'content', ey:'05 · Capabilities',
+      html:`<h2>What employees can do</h2>
+            <div class="cols">
+              <div><h3>Learn</h3><p class="muted">Guided tracks from basics to real models.</p></div>
+              <div><h3>Compete</h3><p class="muted">Challenges on real KOC problems; live leaderboard.</p></div>
+              <div><h3>Build</h3><p class="muted">Visual Studio + AutoML; datasets, runs, model registry.</p></div>
+              <div><h3>Connect</h3><p class="muted">Community, recognition, points &amp; badges.</p></div>
+            </div>`,
+      note:`Breadth without drowning them in detail. Tie back to the demo they just saw.` },
+
+    { type:'content', ey:'06 · Real problems',
+      html:`<h2>Learning aimed at real KOC value</h2>
+            <ul class="pts">
+              <li>Competitions on ESP failure prediction, production analytics, reservoir, HSE.</li>
+              <li>Scored automatically on <strong>withheld</strong> data — only modelling skill moves a rank.</li>
+              <li>Winning models become candidates for genuine operational use.</li>
+            </ul>`,
+      note:`The training and the value are the same activity.` },
+
+    { type:'content', ey:'07 · Security',
+      html:`<h2>Secure &amp; sovereign by design</h2>
+            <ul class="pts">
+              <li>Windows single sign-on; role-based access; org-scoped data visibility.</li>
+              <li><strong>Data and models never leave KOC</strong> — intranet or Azure Kuwait Central.</li>
+              <li>Passwordless database access; full audit trail; production safety guard.</li>
+            </ul>`,
+      note:`Pre-empt the security and data-residency question — it's already handled.` },
+
+    { type:'content', ey:'08 · Technology',
+      html:`<h2>Standard, low-cost technology</h2>
+            <ul class="pts">
+              <li>Built on standard Microsoft <strong>.NET</strong> — self-hosted, maintainable.</li>
+              <li><strong>No per-seat SaaS fees</strong>; reuses skills IT already has.</li>
+              <li>Containerized for IIS intranet or Azure; continuous-integration quality gate.</li>
+            </ul>`,
+      note:`Low cost, low risk, familiar stack.` },
+
+    { type:'content', ey:'09 · Alignment',
+      html:`<h2>Coherent with KOC direction</h2>
+            <ul class="pts">
+              <li>Workforce capability &amp; nationalization.</li>
+              <li>Digital transformation of operations.</li>
+              <li>Knowledge retention — expertise and data stay in KOC.</li>
+              <li>Safety &amp; efficiency; cost discipline; governance.</li>
+            </ul>`,
+      note:`Map to the corporate objectives your audience owns.` },
+
+    { type:'content', ey:'10 · Feasibility',
+      html:`<h2>Proven — with risks managed</h2>
+            <div class="cols">
+              <div><h3>Proven</h3><ul class="pts"><li>Works end-to-end today.</li><li>Fits our estate &amp; security.</li></ul></div>
+              <div><h3>Risks → mitigations</h3><ul class="pts"><li>Adoption → sponsorship, gamification, clinics.</li><li>Data → scoped visibility, curation.</li><li>Sustainment → small T&amp;CD/IT footprint.</li></ul></div>
+            </div>`,
+      note:`Show it's been thought through; honesty builds credibility.` },
+
+    { type:'content', ey:'11 · Value',
+      html:`<h2>Target outcomes <span class="muted" style="font-size:.5em">(to validate in the pilot)</span></h2>
+            <ul class="pts">
+              <li>Reach <strong>[300–500]</strong> employees in year one.</li>
+              <li><strong>[6–8]</strong> competitions/year on nominated problems.</li>
+              <li><strong>[2–3]</strong> candidate models into model governance.</li>
+              <li>One predictive-maintenance win can pay for the initiative many times over.</li>
+            </ul>`,
+      note:`Stress these are targets to validate, not promises. The ROI logic is the ESP-downtime example.` },
+
+    { type:'content', ey:'12 · Roadmap',
+      html:`<h2>From prototype to company-wide</h2>
+            <div class="road">
+              <div class="ph"><b>Phase 0</b><span>Prototype — done</span></div>
+              <div class="ph now"><b>Phase 1</b><span>Pilot · 90 days</span></div>
+              <div class="ph"><b>Phase 2</b><span>Hardening · M4–6</span></div>
+              <div class="ph"><b>Phase 3</b><span>Company-wide · M6–12</span></div>
+              <div class="ph"><b>Phase 4</b><span>Sustain &amp; scale</span></div>
+            </div>`,
+      note:`Emphasize the low-commitment, high-learning pilot step.` },
+
+    { type:'content', ey:'13 · Governance',
+      html:`<h2>Who runs it</h2>
+            <ul class="pts">
+              <li>Governed by the Task Force Team during the study.</li>
+              <li>Operated by <strong>Training &amp; Career Development</strong>, supported by IT.</li>
+              <li>Winning models enter KOC's existing model-governance process.</li>
+            </ul>`,
+      note:`Clarify ownership after the study — no orphaned initiative.` },
+
+    { type:'statement', ey:'14 · The ask',
+      html:`<h2>Three decisions</h2>
+            <ul class="pts" style="color:#fff">
+              <li><strong>Endorse the 90-day pilot</strong> — 2 directorates, ~[100–150] participants, 3–4 competitions.</li>
+              <li><strong>Nominate an executive sponsor</strong> and pilot directorate leads.</li>
+              <li><strong>Confirm the target problem set</strong> with the business.</li>
+            </ul>`,
+      note:`Close on three specific, easy decisions. Then invite discussion.` },
+
+    { type:'close',
+      html:`<div class="brand"><span>AI Digital Campus</span><span class="dot"></span><span>Kuwait Oil Company</span></div>
+            <h2>Thank you — let's discuss</h2>
+            <p>Fahad Al-Dhubaib · Head, AI Digital Campus Task Force Team · [Contact]</p>`,
+      note:`Backup slides available: architecture, security detail, pilot plan, cost model.` },
+  ];
+
+  const stage = document.getElementById('stage');
+  S.forEach((s, idx) => {
+    const el = document.createElement('section');
+    el.className = 'slide ' + s.type;
+    const eyeb = s.ey ? `<div class="ey">${s.ey.replace(/^\d+\s*·\s*/, '')}</div>` : '';
+    el.innerHTML = eyeb + s.html;
+    el.dataset.i = idx;
+    stage.appendChild(el);
+  });
+
+  const slides = [...document.querySelectorAll('.slide')];
+  const bar = document.getElementById('bar');
+  const count = document.getElementById('count');
+  const notes = document.getElementById('notes');
+  const noteText = document.getElementById('noteText');
+  let i = 0, notesOn = false;
+
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    bar.style.width = ((i) / (slides.length - 1) * 100) + '%';
+    count.textContent = (i + 1) + ' / ' + slides.length;
+    noteText.textContent = S[i].note || '';
+    if (location.hash !== '#' + (i+1)) history.replaceState(null, '', '#' + (i+1));
+  }
+  function go(d){ show(i + d); }
+
+  document.getElementById('next').onclick = () => go(1);
+  document.getElementById('prev').onclick = () => go(-1);
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); go(1); }
+    else if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key.toLowerCase() === 's') { notesOn = !notesOn; notes.classList.toggle('show', notesOn); }
+    else if (e.key.toLowerCase() === 'f') { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
+  });
+  // click zones (ignore clicks on chrome buttons)
+  document.getElementById('stage').addEventListener('click', e => {
+    go(e.clientX < window.innerWidth * 0.4 ? -1 : 1);
+  });
+
+  const start = parseInt((location.hash || '').slice(1), 10);
+  show(Number.isFinite(start) && start >= 1 ? start - 1 : 0);
+</script>
