@@ -1,0 +1,186 @@
+<style>
+  :root{
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, 'Segoe UI Mono', Menlo, Consolas, monospace;
+    --accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9; --gold:#a9761a;
+    --ink:#17212b; --muted:#586a7b; --border:#e3e9ef; --bg:#ffffff; --panel:#f6f9fc;
+    --shadow:0 1px 2px rgba(16,32,48,.05), 0 10px 28px rgba(16,32,48,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--accent:#5aa8e0; --accent-deep:#8ac6ee; --accent-tint:#12263699; --gold:#d6ac5c;
+      --ink:#e9eff5; --muted:#a2b2c3; --border:#26323f; --bg:#0e161f; --panel:#151f2a;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 30px rgba(0,0,0,.45);}
+  }
+  :root[data-theme="dark"]{--accent:#5aa8e0; --accent-deep:#8ac6ee; --accent-tint:#12263699; --gold:#d6ac5c;
+    --ink:#e9eff5; --muted:#a2b2c3; --border:#26323f; --bg:#0e161f; --panel:#151f2a;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 30px rgba(0,0,0,.45);}
+  :root[data-theme="light"]{--accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9; --gold:#a9761a;
+    --ink:#17212b; --muted:#586a7b; --border:#e3e9ef; --bg:#ffffff; --panel:#f6f9fc;
+    --shadow:0 1px 2px rgba(16,32,48,.05), 0 10px 28px rgba(16,32,48,.08);}
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:17.5px;line-height:1.72;-webkit-font-smoothing:antialiased}
+
+  .cover{color:#fff;background:linear-gradient(135deg,var(--accent-deep),var(--accent) 82%);
+    border-bottom:3px solid var(--gold);position:relative;overflow:hidden}
+  .cover::after{content:"";position:absolute;inset:0;opacity:.14;
+    background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);
+    background-size:30px 30px;mask-image:linear-gradient(120deg,#000,transparent 70%)}
+  .cover .in{position:relative;max-width:760px;margin:0 auto;padding:34px clamp(22px,5vw,40px) 38px}
+  .brand{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(255,255,255,.85);display:flex;align-items:center;gap:11px}
+  .brand .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .cover h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,7vw,58px);line-height:1.03;
+    margin:16px 0 8px;letter-spacing:-.01em}
+  .cover .sub{font-size:clamp(16px,2.4vw,21px);color:rgba(255,255,255,.94);margin:0}
+  .cover .who{margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.22);
+    font-size:13.5px;color:rgba(255,255,255,.85)}
+
+  main{max-width:760px;margin:0 auto;padding:8px clamp(22px,5vw,40px) 40px}
+  section{margin-top:38px}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(22px,3.4vw,28px);line-height:1.2;
+    margin:0 0 10px;color:var(--ink);text-wrap:balance}
+  p{margin:0 0 14px}
+  strong{font-weight:650}
+  .lead{font-size:19px}
+
+  ul{list-style:none;margin:6px 0 14px;padding:0}
+  ul li{position:relative;padding-left:26px;margin:10px 0}
+  ul li::before{content:"";position:absolute;left:4px;top:12px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  ol.ask{counter-reset:a;list-style:none;margin:6px 0 0;padding:0}
+  ol.ask li{counter-increment:a;position:relative;padding-left:40px;margin:12px 0}
+  ol.ask li::before{content:counter(a);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;
+    background:var(--accent);color:#fff;font-weight:700;font-size:14px;text-align:center;line-height:26px}
+
+  .whatis{border:1px solid var(--border);border-left:4px solid var(--gold);background:var(--panel);
+    border-radius:0 16px 16px 0;padding:22px 24px;box-shadow:var(--shadow)}
+  .whatis .tag{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);
+    display:block;margin-bottom:10px}
+  .whatis p{margin:0 0 12px}.whatis p:last-child{margin:0}
+
+  .journey{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0 4px}
+  .journey .step{background:var(--accent-tint);color:var(--accent-deep);border:1px solid var(--border);
+    border-radius:999px;padding:9px 18px;font-weight:650;font-size:15.5px}
+  .journey .arw{color:var(--gold);font-weight:700}
+  @media (prefers-color-scheme:dark){.journey .step{color:#dbeafe}}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:6px}
+  .card{border:1px solid var(--border);border-radius:14px;padding:16px 18px;background:var(--bg);box-shadow:var(--shadow)}
+  .card b{display:block;color:var(--accent);font-size:16px;margin-bottom:3px}
+  .card span{color:var(--muted);font-size:14.5px}
+
+  .ask-box{border:1px solid var(--border);background:var(--accent-tint);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow)}
+  .bottom{border-top:3px solid var(--gold);background:var(--panel);border-radius:16px;padding:22px 24px;margin-top:22px}
+  .bottom h2{margin-top:0}
+  .foot{max-width:760px;margin:34px auto 56px;padding:18px clamp(22px,5vw,40px) 0;border-top:1px solid var(--border);
+    color:var(--muted);font-size:13px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--accent);border:1px solid var(--border);border-radius:20px;padding:3px 11px;background:var(--panel)}
+
+  @media print{
+    :root{--bg:#fff;--ink:#111;--muted:#333;--border:#bbb;--accent:#0E4F80;--accent-tint:#eef4f8}
+    .cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    section{page-break-inside:avoid}
+  }
+</style>
+
+<header class="cover">
+  <div class="in">
+    <div class="brand"><span>Kuwait Oil Company</span><span class="dot"></span><span>Executive Brief · Plain language</span></div>
+    <h1>AI Digital Campus</h1>
+    <p class="sub">Building our people's skills for the future — explained simply, with no technical background needed.</p>
+    <div class="who">Fahad Al-Dhubaib — Head, AI Digital Campus Task Force Team · [Date] · KOC Internal</div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>In one minute</h2>
+    <p class="lead">KOC's future depends on our people being able to use modern technology — especially <strong>artificial intelligence (AI)</strong> — to work smarter and safer. The <strong>AI Digital Campus</strong> is a simple, in-house way to build these skills across our workforce, by letting employees learn and then take part in <strong>friendly competitions on real KOC challenges</strong>.</p>
+    <p class="lead">A working version already exists. <strong>We are asking for your support to run a small three-month trial.</strong></p>
+  </section>
+
+  <section>
+    <h2>What is the AI Digital Campus?</h2>
+    <p>Think of it as an <strong>in-house academy combined with a friendly competition</strong>. Our employees:</p>
+    <ul>
+      <li><strong>Learn</strong> modern skills through short, guided lessons,</li>
+      <li><strong>Practise</strong> by building simple solutions with easy tools — <strong>no programming needed</strong>, and</li>
+      <li><strong>Compete</strong> on real KOC challenges, with a live scoreboard and recognition.</li>
+    </ul>
+    <p>It works like a <strong>sports league for problem-solving</strong>: people put in the effort because they want to do well, and every challenge is a genuine KOC problem — so the learning is useful from day one.</p>
+  </section>
+
+  <section>
+    <h2>What is "AI", simply?</h2>
+    <div class="whatis">
+      <span class="tag">In one sentence</span>
+      <p>Artificial intelligence means teaching a computer to <strong>learn from past examples</strong> so it can make <strong>useful predictions</strong>.</p>
+      <p><strong>A KOC example:</strong> by learning from the history of our pumps, a computer can <strong>warn us that a pump is likely to fail — before it does</strong>, so we can repair it during planned maintenance instead of a costly emergency.</p>
+      <p style="color:var(--muted)">That's the idea. No science background is needed to benefit from it.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why it matters to KOC</h2>
+    <div class="cards">
+      <div class="card"><b>Skilled people, in-house</b><span>Build valuable skills among our own employees, instead of depending on outside companies.</span></div>
+      <div class="card"><b>Real savings &amp; safety</b><span>The challenges that train our people can also predict equipment problems and avoid costly downtime.</span></div>
+      <div class="card"><b>Our knowledge stays ours</b><span>All information and results remain inside KOC.</span></div>
+      <div class="card"><b>Motivated employees</b><span>A modern, engaging, rewarding way to grow — good for morale and retention.</span></div>
+      <div class="card"><b>Low cost</b><span>Uses systems we already have, with no expensive per-person software fees.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works for an employee</h2>
+    <div class="journey">
+      <span class="step">Learn</span><span class="arw">→</span>
+      <span class="step">Try</span><span class="arw">→</span>
+      <span class="step">Compete</span><span class="arw">→</span>
+      <span class="step">Get recognised</span>
+    </div>
+    <ul>
+      <li>Sign in with the normal work account — nothing to install.</li>
+      <li>Take a short lesson to learn the basics.</li>
+      <li>Enter a challenge and build a simple solution using guided tools.</li>
+      <li>Climb the scoreboard and earn recognition among colleagues.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Is it safe and private?</h2>
+    <p><strong>Yes.</strong> Everyone signs in with their KOC account, people only see what they are meant to see, and <strong>all data and results stay inside KOC</strong> — nothing leaves the company.</p>
+  </section>
+
+  <section>
+    <h2>What does it cost?</h2>
+    <p><strong>Very little.</strong> It runs on systems we already have, with no per-person software fees. The main investment is a small amount of time from a dedicated team to run it well.</p>
+  </section>
+
+  <section>
+    <h2>What we are asking for</h2>
+    <div class="ask-box">
+      <p style="margin-top:0">A <strong>small, low-risk trial</strong>:</p>
+      <ol class="ask">
+        <li><strong>Endorse a three-month trial</strong> with two departments.</li>
+        <li><strong>Name a senior sponsor.</strong></li>
+        <li><strong>Help us choose a few real challenges</strong> to focus on.</li>
+      </ol>
+      <p style="margin:14px 0 0">At the end of the trial, we will report back with <strong>clear results and a recommendation</strong>.</p>
+    </div>
+  </section>
+
+  <section class="bottom">
+    <h2>The bottom line</h2>
+    <p style="margin-bottom:0">The AI Digital Campus is a <strong>simple, low-cost, low-risk</strong> way to build a future-ready workforce — using our own people and our own challenges, <strong>safely inside KOC</strong>. A working version is ready today. With your support, we can prove its value in just three months.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p><span class="pill">KOC Internal</span></p>
+  <p>Prepared by the AI Digital Campus Task Force Team, Kuwait Oil Company. Bracketed items are placeholders to complete before use. A more detailed white paper is available on request.</p>
+</footer>

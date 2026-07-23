@@ -7,7 +7,8 @@ All figures, dates, names, and contacts in brackets are **placeholders** to comp
 
 | Document | Purpose | Audience |
 |---|---|---|
-| [`AI_DIGITAL_CAMPUS_WHITE_PAPER.md`](AI_DIGITAL_CAMPUS_WHITE_PAPER.md) | Comprehensive white paper & feasibility reference | Management + TFT |
+| [`AI_DIGITAL_CAMPUS_EXECUTIVE_BRIEF.md`](AI_DIGITAL_CAMPUS_EXECUTIVE_BRIEF.md) | **Plain-language** brief — non-technical, assumes no AI background | Higher management |
+| [`AI_DIGITAL_CAMPUS_WHITE_PAPER.md`](AI_DIGITAL_CAMPUS_WHITE_PAPER.md) | Comprehensive white paper & feasibility reference (technical detail) | Management + TFT |
 | [`EXECUTIVE_MEMO.md`](EXECUTIVE_MEMO.md) | One-page briefing + recommendation (90-day pilot) | Executive management |
 | [`AI_DIGITAL_CAMPUS_PILOT_PLAN.md`](AI_DIGITAL_CAMPUS_PILOT_PLAN.md) | Detailed 90-day pilot: scope, KPIs, timeline, roles, risks, decision gate | TFT / sponsor |
 | [`WHITE_PAPER_SLIDE_OUTLINE.md`](WHITE_PAPER_SLIDE_OUTLINE.md) | Slide-by-slide outline with speaker notes | Presenter → management |
@@ -25,6 +26,7 @@ All figures, dates, names, and contacts in brackets are **placeholders** to comp
 
 | Page | Source | Live |
 |---|---|---|
+| Executive brief (plain-language) | [`ai-digital-campus-exec-brief.html`](ai-digital-campus-exec-brief.html) | [open](https://claude.ai/code/artifact/66d73e46-8349-4587-9fcb-7596f1cd1e42) |
 | White paper | [`ai-digital-campus-white-paper.html`](ai-digital-campus-white-paper.html) | [open](https://claude.ai/code/artifact/1b60d51b-4578-4c71-bedf-8f89b3f44604) |
 | Management deck | [`ai-digital-campus-deck.html`](ai-digital-campus-deck.html) | [open](https://claude.ai/code/artifact/8615eba7-3405-4d81-abde-395441aa1ed5) |
 
