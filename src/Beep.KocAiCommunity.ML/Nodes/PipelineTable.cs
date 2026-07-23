@@ -1,3 +1,4 @@
+using Beep.KocAiCommunity.Application.Common;
 using Microsoft.ML;
 using Microsoft.ML.AutoML;
 using Microsoft.ML.Data;
@@ -16,14 +17,21 @@ public sealed record PipelineTable(string CsvPath, IReadOnlyList<string> Columns
     public static PipelineTable FromCsvFile(string csvPath)
     {
         using var reader = new StreamReader(csvPath);
-        var header = reader.ReadLine();
-        var columns = header is null ? [] : header.Split(',').Select(h => h.Trim()).ToList();
+        string[]? header = null;
         long rows = 0;
-        while (reader.ReadLine() is not null)
+        foreach (var record in KocCsv.ParseRecords(reader))
         {
-            rows++;
+            if (header is null)
+            {
+                header = record;
+            }
+            else
+            {
+                rows++;
+            }
         }
 
+        var columns = header is null ? [] : header.Select(h => h.Trim()).ToList();
         return new PipelineTable(csvPath, columns, rows);
     }
 

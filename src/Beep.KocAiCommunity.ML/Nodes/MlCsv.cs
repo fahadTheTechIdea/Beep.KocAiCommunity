@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Beep.KocAiCommunity.Application.Common;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 
@@ -62,10 +63,7 @@ internal static class MlCsv
         }
     }
 
-    private static string Escape(string value)
-        => value.Contains(',') || value.Contains('"') || value.Contains('\n')
-            ? "\"" + value.Replace("\"", "\"\"") + "\""
-            : value;
+    private static string Escape(string value) => KocCsv.QuoteField(value);
 
     private abstract class ColumnWriter
     {

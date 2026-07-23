@@ -1,4 +1,5 @@
 using System.Globalization;
+using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Microsoft.ML;
@@ -121,30 +122,25 @@ internal static class MlModelOps
     {
         var values = new List<string>();
         using var reader = new StreamReader(path);
-        var header = reader.ReadLine();
-        if (header is null)
+        string[]? header = null;
+        var index = 0;
+        foreach (var record in KocCsv.ParseRecords(reader))
         {
-            return values;
-        }
-
-        var cols = header.Split(',');
-        var index = Array.FindIndex(cols, c => c.Trim().Equals(columnName, StringComparison.OrdinalIgnoreCase));
-        if (index < 0)
-        {
-            index = 0;
-        }
-
-        string? line;
-        while ((line = reader.ReadLine()) is not null)
-        {
-            if (string.IsNullOrWhiteSpace(line))
+            if (header is null)
             {
+                header = record;
+                index = Array.FindIndex(header, c => c.Trim().Equals(columnName, StringComparison.OrdinalIgnoreCase));
+                if (index < 0)
+                {
+                    index = 0;
+                }
+
                 continue;
             }
 
-            var parts = line.Split(',');
-            values.Add(index < parts.Length ? parts[index].Trim() : string.Empty);
+            values.Add(index < record.Length ? record[index].Trim() : string.Empty);
         }
+
         return values;
     }
 }
