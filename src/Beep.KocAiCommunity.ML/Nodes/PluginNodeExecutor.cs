@@ -1,4 +1,5 @@
 using System.Text;
+using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Application.Workflow;
 using Beep.KocAiCommunity.Contracts.Workflow;
@@ -155,15 +156,24 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             };
         }
 
-        var ids = MlModelOps.ReadColumn(evalPath, idColumn);
+        // Read the ids from the SAME (possibly replayed) table that produces the predictions, so id and
+        // prediction stay row-aligned even when a replayed step changed the eval rows. If a step dropped
+        // the id column or the counts diverge, fail loudly rather than silently mis-pair with Math.Min.
+        var ids = MlModelOps.ReadColumn(evalTable.CsvPath, idColumn);
         var scored = ctx.Model.Transform(evalTable.LoadIntoMl(ctx.Ml, idColumn));
         var predictions = MlModelOps.ReadPredictions(scored, task);
 
-        var count = Math.Min(ids.Count, predictions.Count);
-        var sb = new StringBuilder("id,prediction\n");
-        for (var i = 0; i < count; i++)
+        if (ids.Count != predictions.Count)
         {
-            sb.Append(ids[i]).Append(',').Append(predictions[i]).Append('\n');
+            throw new InvalidOperationException(
+                $"Prediction alignment failed: {ids.Count} ids but {predictions.Count} predictions. "
+                + "A row-changing step (e.g. a filtering SQL node) must preserve the id column so predictions stay aligned.");
+        }
+
+        var sb = new StringBuilder("id,prediction\n");
+        for (var i = 0; i < ids.Count; i++)
+        {
+            sb.Append(KocCsv.QuoteField(ids[i])).Append(',').Append(KocCsv.QuoteField(predictions[i])).Append('\n');
         }
 
         return sb.ToString();

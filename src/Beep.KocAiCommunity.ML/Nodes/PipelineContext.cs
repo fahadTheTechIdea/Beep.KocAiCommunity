@@ -69,6 +69,9 @@ public sealed class PipelineContext : IDisposable
     public ITransformer? LabelMap { get; set; }
     public double PrimaryValue { get; set; }
 
+    /// <summary>Set once a 'split' node has run, so the fold views can detect a dropped marker (leakage).</summary>
+    public bool HasSplit { get; set; }
+
     public List<NodeExecutionResult> Results { get; } = [];
     public List<ReplayStep> Steps { get; } = [];
     public List<string> TempFiles { get; } = [];
@@ -147,15 +150,34 @@ public sealed class PipelineContext : IDisposable
 
     /// <summary>The train rows of a view (fold 0) — or all rows when the table isn't split yet.</summary>
     public IDataView FoldTrainView(IDataView full)
-        => full.Schema.GetColumnOrNull(FoldColumn) is null
-            ? full
-            : Ml.Data.FilterRowsByColumn(full, FoldColumn, lowerBound: double.NegativeInfinity, upperBound: 0.5);
+        => HasFold(full)
+            ? Ml.Data.FilterRowsByColumn(full, FoldColumn, lowerBound: double.NegativeInfinity, upperBound: 0.5)
+            : full;
 
     /// <summary>The held-out test rows of a view (fold 1) — or all rows when the table isn't split.</summary>
     public IDataView FoldTestView(IDataView full)
-        => full.Schema.GetColumnOrNull(FoldColumn) is null
-            ? full
-            : Ml.Data.FilterRowsByColumn(full, FoldColumn, lowerBound: 0.5, upperBound: double.PositiveInfinity);
+        => HasFold(full)
+            ? Ml.Data.FilterRowsByColumn(full, FoldColumn, lowerBound: 0.5, upperBound: double.PositiveInfinity)
+            : full;
+
+    /// <summary>
+    /// True when the fold marker is present. If a split ran but the marker is gone, a downstream node
+    /// dropped it — training and evaluation would then overlap (data leakage), so fail loudly instead.
+    /// </summary>
+    private bool HasFold(IDataView full)
+    {
+        var present = full.Schema.GetColumnOrNull(FoldColumn) is not null;
+        if (!present && HasSplit)
+        {
+            throw new InvalidOperationException(
+                "The train/test split marker was dropped before training. A node after 'split' "
+                + "(e.g. select-columns, drop-columns, group-by, or a SQL node) removed the internal fold "
+                + "column, which would make training and evaluation overlap. Keep 'split' immediately "
+                + "before train/evaluate, or preserve all columns downstream of it.");
+        }
+
+        return present;
+    }
 
     /// <summary>
     /// The standard ML transform lifecycle: build an estimator from the table's schema, fit it on the

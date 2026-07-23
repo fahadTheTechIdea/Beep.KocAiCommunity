@@ -32,6 +32,7 @@ public sealed class SplitHandler : IPipelineNodeHandler
             return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "done", "trained on the full set for prediction"), input);
         }
 
+        ctx.HasSplit = true; // a fold marker now exists; downstream nodes must not drop it (guards leakage)
         var fraction = Math.Clamp(ReadDouble(Cfg(node, "testFraction"), 0.25), 0.05, 0.9);
         var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
         var split = ctx.Ml.Data.TrainTestSplit(full, testFraction: fraction, seed: 1);

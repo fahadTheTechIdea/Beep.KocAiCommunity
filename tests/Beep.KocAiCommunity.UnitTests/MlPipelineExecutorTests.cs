@@ -21,6 +21,38 @@ public class MlPipelineExecutorTests
     }
 
     [Fact]
+    public async Task Dropping_the_fold_marker_after_split_is_rejected_not_silently_leaked()
+    {
+        // split creates the fold marker; a SQL node then projects only features+label, dropping it.
+        // Training must fail loudly (data leakage) rather than silently train == test.
+        var def = new WorkflowDefinition
+        {
+            Name = "leaky",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "q", Kind = "sql", Config = new Dictionary<string, string> { ["sql"] = "SELECT x1, x2, label FROM working" } },
+                new() { Id = "tr", Kind = "train" },
+            ],
+            Edges = [new("d", "sp"), new("sp", "q"), new("q", "tr")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 40; i++)
+        {
+            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
+            sb.Append($"{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+
+        result.Success.Should().BeFalse();
+        result.Nodes.Should().Contain(n => n.Kind == "train" && n.Status != "done");
+    }
+
+    [Fact]
     public async Task Executes_each_node_and_trains_a_model()
     {
         var def = new WorkflowDefinition

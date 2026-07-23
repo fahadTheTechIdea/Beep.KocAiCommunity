@@ -332,11 +332,13 @@ KOC blueprint theme. No DB schema change anywhere.
     executor → scoring. Fixed: shared RFC-4180 `KocCsv` codec (Application/Common) replacing naive
     `Split(',')`; id-aligned robust scorers with boolean-convention tolerance (fixes the latent binary
     `1/0` zero-score bug incl. Titanic); `TaskType`↔`ScorerCode` guard; answer-key validation on upload;
-    deterministic leaderboard tie-break; scorer/CSV property-test battery. **Remaining follow-ups:**
-    predict id↔prediction alignment (`Math.Min` shear), `__fold` leakage guard, DuckDB `ORDER BY`
-    determinism, binary emission of non-boolean training tokens. Deferred (design): the two execution
-    engines (`workflow.run`/`/studio/workflows/run` run AutoML, not the graph), schema-carrying
-    `PipelineTable`, RMSE-as-headline for regression.
+    deterministic leaderboard tie-break; scorer/CSV property-test battery. Data flow: predict
+    id↔prediction alignment now reads ids from the same replayed table (no `Math.Min` shear, fails loud
+    on mismatch); `__fold` leakage guard — a split then a column-dropping SQL node fails loudly instead
+    of silently training on test rows. **Remaining follow-ups:** DuckDB `ORDER BY` determinism, node
+    parameter validation (Columns/Dataset), binary emission of non-boolean training tokens. Deferred
+    (design): the two execution engines (`workflow.run`/`/studio/workflows/run` run AutoML, not the
+    graph), schema-carrying `PipelineTable`, RMSE-as-headline for regression.
 
 ## Global definition of done
 
