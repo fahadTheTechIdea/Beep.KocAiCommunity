@@ -188,26 +188,23 @@ else
                 <div class="pa-5 pb-3">
                     <PodiumBlock Entries="_leaderboard" MyUserId="@Identity.UserId" />
                 </div>
-                <LiveBoard Entries="_leaderboard" MyUserId="@Identity.UserId" BoardKey="live" />
 
-                <div class="pa-4 d-flex align-center gap-2" style="border-top:1px solid var(--koc-divider);">
-                    <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" />
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading">Final standings</MudText>
+                @{
+                    var concluded = _competition.Status == "concluded";
+                    var revealPending = _competition.RevealUtc is { } rv && rv > DateTime.UtcNow;
+                }
+                <div class="pa-4 pb-2 d-flex align-center flex-wrap gap-2">
+                    <MudIcon Icon="@(concluded ? Icons.Material.Filled.MilitaryTech : Icons.Material.Filled.Leaderboard)" />
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading">@(concluded ? "Final standings" : "Live leaderboard")</MudText>
+                    @if (revealPending)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning" Icon="@Icons.Material.Filled.Lock">
+                            Final standings revealed @_competition.RevealUtc!.Value.ToLocalTime().ToString("g")
+                        </MudChip>
+                    }
                 </div>
-                @if (_finalLeaderboard is null)
-                {
-                    <MudText Typo="Typo.body2" Class="pa-4 pt-0">
-                        Concealed until reveal day@(_competition.RevealUtc is { } fr ? $" ({fr.ToLocalTime():g})" : "") — the private leaderboard stays hidden so no one games the last day.
-                    </MudText>
-                }
-                else if (_finalLeaderboard.Count == 0)
-                {
-                    <MudText Typo="Typo.body2" Class="pa-4 pt-0">Revealed — no submissions were made.</MudText>
-                }
-                else
-                {
-                    <LiveBoard Entries="_finalLeaderboard" MyUserId="@Identity.UserId" BoardKey="final" />
-                }
+
+                <LiveBoard Entries="_leaderboard" MyUserId="@Identity.UserId" BoardKey="live" />
             </MudTabPanel>
 
             <!-- 4 · My submissions -->
@@ -369,7 +366,6 @@ else
     private int _initialTab;
 
     private IReadOnlyList<LeaderboardEntryDto>? _leaderboard;
-    private IReadOnlyList<LeaderboardEntryDto>? _finalLeaderboard;
     private IReadOnlyList<SubmissionResultDto>? _mySubmissions;
     private double? _lastScore;
 
@@ -448,7 +444,6 @@ else
     private async Task LoadLeaderboard()
     {
         _leaderboard = await Api.GetLeaderboardAsync(Id);
-        _finalLeaderboard = await Api.GetFinalLeaderboardAsync(Id);
     }
 
     private async Task LoadMySubmissions() => _mySubmissions = await Api.GetMySubmissionsAsync(Id);
