@@ -4,77 +4,53 @@ using Beep.KocAiCommunity.Application.Competitions;
 namespace Beep.KocAiCommunity.Infrastructure.Competitions;
 
 /// <summary>
-/// Root-mean-squared error for regression competitions. Inputs are CSV of <c>id,value</c> with an
-/// optional header whose first field is "id". Lower is better. Only ids present in the answer key
-/// count; a missing or non-numeric prediction is treated as the worst case for that row.
+/// Root-mean-squared error for regression competitions, aligned <b>by id</b>. Lower is better. Each
+/// distinct answer-key id counts once; a missing or non-numeric prediction is penalised (never treated
+/// as free), and a non-finite (NaN/Infinity) prediction is treated as missing so it cannot poison the
+/// aggregate.
 /// </summary>
 public sealed class RmseScorer : IScoringPlugin
 {
     public string Code => "rmse";
     public bool HigherIsBetter => false;
+    public IReadOnlyCollection<string> SupportedTasks => ["Regression"];
 
-    public async Task<double> ScoreAsync(Stream predictions, Stream answerKey, CancellationToken ct = default)
+    public async Task<double> ScoreAsync(Stream predictions, Stream answerKey, string idColumn = "id", CancellationToken ct = default)
     {
-        var preds = await ReadCsvAsync(predictions, ct);
-        var actual = await ReadCsvAsync(answerKey, ct);
-        if (actual.Count == 0)
+        var predRows = await CompetitionCsv.ReadAsync(predictions, idColumn, ct);
+        var actual = await CompetitionCsv.ReadAsync(answerKey, idColumn, ct);
+
+        var preds = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, value) in predRows)
         {
-            return 0d;
+            if (TryNumber(value, out var p))
+            {
+                preds[id] = p; // non-numeric / non-finite predictions fall through to the "missing" penalty
+            }
         }
 
         double sumSquared = 0;
-        foreach (var (id, expected) in actual)
+        var counted = 0;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, raw) in actual)
         {
-            // A missing prediction is penalised relative to the target's magnitude, not treated as free.
+            if (!TryNumber(raw, out var expected) || !seen.Add(id))
+            {
+                continue; // invalid key rows are rejected at upload; duplicates count once
+            }
+
+            counted++;
             var predicted = preds.TryGetValue(id, out var p) ? p : expected + BigMiss(expected);
             var error = predicted - expected;
             sumSquared += error * error;
         }
 
-        return Math.Sqrt(sumSquared / actual.Count);
+        return counted == 0 ? 0d : Math.Sqrt(sumSquared / counted);
     }
+
+    private static bool TryNumber(string raw, out double value)
+        => double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out value) && double.IsFinite(value);
 
     // A missing prediction should not be free — penalise it relative to the target's magnitude.
     private static double BigMiss(double expected) => Math.Max(1d, Math.Abs(expected));
-
-    private static async Task<Dictionary<string, double>> ReadCsvAsync(Stream stream, CancellationToken ct)
-    {
-        var map = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-        using var reader = new StreamReader(stream, leaveOpen: true);
-
-        var isFirst = true;
-        string? line;
-        while ((line = await reader.ReadLineAsync(ct)) is not null)
-        {
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            var parts = line.Split(',');
-            if (parts.Length < 2)
-            {
-                continue;
-            }
-
-            var id = parts[0].Trim();
-            var raw = parts[1].Trim();
-
-            if (isFirst)
-            {
-                isFirst = false;
-                if (id.Equals("id", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue; // header
-                }
-            }
-
-            if (double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
-            {
-                map[id] = value;
-            }
-        }
-
-        return map;
-    }
 }

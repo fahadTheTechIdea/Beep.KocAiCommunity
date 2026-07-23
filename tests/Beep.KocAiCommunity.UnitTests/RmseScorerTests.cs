@@ -28,4 +28,27 @@ public class RmseScorerTests
 
     [Fact]
     public void Lower_is_better_for_regression() => new RmseScorer().HigherIsBetter.Should().BeFalse();
+
+    [Fact]
+    public async Task Aligns_by_id_not_row_order()
+    {
+        var score = await new RmseScorer().ScoreAsync(Csv("id,value\n3,30\n1,10\n2,20\n"), Csv("id,oil_rate\n1,10\n2,20\n3,30\n"));
+        score.Should().Be(0d);
+    }
+
+    [Fact]
+    public async Task Nan_prediction_is_treated_as_missing_not_poison()
+    {
+        // A NaN prediction must not make the whole score NaN — it's penalised like a miss.
+        var score = await new RmseScorer().ScoreAsync(Csv("id,value\n1,10\n2,NaN\n"), Csv("id,oil_rate\n1,10\n2,20\n"));
+        double.IsFinite(score).Should().BeTrue();
+        score.Should().BeGreaterThan(0d);
+    }
+
+    [Fact]
+    public async Task Header_is_detected_by_custom_id_column()
+    {
+        var score = await new RmseScorer().ScoreAsync(Csv("well_id,value\nW1,10\n"), Csv("well_id,oil_rate\nW1,10\n"), idColumn: "well_id");
+        score.Should().Be(0d);
+    }
 }

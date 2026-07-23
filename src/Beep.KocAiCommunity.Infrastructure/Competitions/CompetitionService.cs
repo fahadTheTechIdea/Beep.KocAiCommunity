@@ -112,11 +112,23 @@ public sealed class CompetitionService(
         var evaluation = await artifacts.SaveAsync(
             evaluationData, $"competitions/{competitionId}/evaluation.csv", "text/csv", KocDataClassification.Internal, ct);
 
+        var resolvedTask = string.IsNullOrWhiteSpace(taskType) ? "BinaryClassification" : taskType.Trim();
+
+        // The scorer and the task must be compatible — e.g. a Regression competition cannot be scored
+        // with 'accuracy', nor a classification competition with 'rmse'. Otherwise scores are meaningless.
+        var scorer = scorers.Resolve(competition.ScorerCode);
+        if (!scorer.SupportedTasks.Any(t => t.Equals(resolvedTask, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new CompetitionException(
+                $"Scorer '{competition.ScorerCode}' does not support task '{resolvedTask}'. "
+                + $"It supports: {string.Join(", ", scorer.SupportedTasks)}.");
+        }
+
         competition.TrainingDatasetArtifactId = training.Id;
         competition.EvaluationArtifactId = evaluation.Id;
         competition.LabelColumn = string.IsNullOrWhiteSpace(labelColumn) ? "label" : labelColumn.Trim();
         competition.IdColumn = string.IsNullOrWhiteSpace(idColumn) ? "id" : idColumn.Trim();
-        competition.TaskType = string.IsNullOrWhiteSpace(taskType) ? "BinaryClassification" : taskType.Trim();
+        competition.TaskType = resolvedTask;
         await db.SaveChangesAsync(ct);
     }
 
@@ -298,7 +310,7 @@ public sealed class CompetitionService(
         await using (var predStream = await artifacts.OpenReadAsync(predictionArtifact.Id, ct))
         await using (var keyStream = await artifacts.OpenReadAsync(competition.AnswerKeyArtifactId!.Value, ct))
         {
-            score = await scorers.Resolve(competition.ScorerCode).ScoreAsync(predStream, keyStream, ct);
+            score = await scorers.Resolve(competition.ScorerCode).ScoreAsync(predStream, keyStream, competition.IdColumn, ct);
         }
 
         var submission = new Submission
@@ -429,11 +441,16 @@ public sealed class CompetitionService(
 
         await db.SaveChangesAsync(ct);
 
-        // Recompute ranks (1 = best). Ties share the lower ordinal by insertion order.
+        // Recompute ranks (1 = best). Ties break deterministically by earliest entry, then user id,
+        // so equal scores always rank the same way regardless of database fetch order.
         var entries = await db.Set<LeaderboardEntry>().Where(e => e.CompetitionId == competition.Id).ToListAsync(ct);
-        var ordered = higherIsBetter
-            ? entries.OrderByDescending(e => e.Score).ToList()
-            : entries.OrderBy(e => e.Score).ToList();
+        var byScore = higherIsBetter
+            ? entries.OrderByDescending(e => e.Score)
+            : entries.OrderBy(e => e.Score);
+        var ordered = byScore
+            .ThenBy(e => e.CreatedUtc)
+            .ThenBy(e => e.SubmitterUserId, StringComparer.Ordinal)
+            .ToList();
 
         for (var i = 0; i < ordered.Count; i++)
         {
