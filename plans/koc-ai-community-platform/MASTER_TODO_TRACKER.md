@@ -371,9 +371,12 @@ KOC blueprint theme. No DB schema change anywhere.
     not AutoML). **T1 path B BLOCKED** — the durable `workflow.run` job produces a registerable ML.NET
     `.zip` model, which the graph can't yield (its preprocessing includes non-serializable DuckDB SQL
     steps); it stays on AutoML. Proper fix = serve inference by re-running the graph (`PredictAsync`), a
-    rework of the inference path, tracked as future work. **Still open:** S1 (public/private holdout —
-    schema + dual-provider migration), S5 quota-TOCTOU residual (atomic per-user/day counter + migration),
-    and the golden correctness suite. See `20_PIPELINE_AND_SCORING_AUDIT.md` for the full ledger.
+    rework of the inference path, tracked as future work. **S1 shipped** (`00f33e0`) — real Kaggle-style
+    public/private holdout: each submission scored against a deterministic (stable-hash-halved) public and
+    private partition of the answer key; live board = public (always visible), concealed final board =
+    private (revealed at `RevealUtc`); dual-provider `AddHoldoutScores` migration. **Still open:** S5
+    quota-TOCTOU residual (atomic per-user/day counter + migration) and the golden correctness suite. See
+    `20_PIPELINE_AND_SCORING_AUDIT.md` for the full ledger.
 
 ## Global definition of done
 

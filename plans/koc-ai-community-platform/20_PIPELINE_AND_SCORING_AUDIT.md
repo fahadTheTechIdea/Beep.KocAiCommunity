@@ -96,7 +96,7 @@ temp-file cleanup on success and exception (no leaks).
 | AutoML must not train on the id as a feature | ✅ | `5f53118` |
 | T1 path A — interactive run executes the node graph (was AutoML) | ✅ | `21be420` |
 | **T1 path B — durable `workflow.run` job** | ⏸ BLOCKED (see note) — stays on AutoML | — |
-| **S1 — public/private holdout** | ⬜ open (schema + dual-provider migration + scoring + endpoint) | — |
+| S1 — real public/private holdout (deterministic split + final board + dual-provider migration) | ✅ | `00f33e0` |
 | S5 residual — quota TOCTOU | ⬜ open (needs an atomic per-user/day counter + migration) | — |
 | ColumnRoles refactor (X/y/id/fold typed roles) | ⏸ DISCARDED (reverted `39f5026`) — parked | `scratchpad/columnroles-*` |
 
