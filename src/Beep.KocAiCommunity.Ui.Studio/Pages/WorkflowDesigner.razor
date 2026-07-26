@@ -101,47 +101,7 @@ else
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">@def.Description</MudText>
                 }
 
-                @if (def is null || def.Parameters.Count == 0)
-                {
-                    <MudText Typo="Typo.body2">No options — this step acts on the columns flowing into it.</MudText>
-                }
-                else
-                {
-                    @foreach (var p in def.Parameters)
-                    {
-                        @if (p.Type == "Dataset")
-                        {
-                            <MudSelect T="string" Label="@p.DisplayName" Value="@CfgGet(p.Name)" ValueChanged="@(v => CfgSet(p.Name, v))"
-                                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
-                                @foreach (var d in _fileDatasets)
-                                {
-                                    <MudSelectItem Value="@d.Id.ToString()">@d.Name · @d.Classification</MudSelectItem>
-                                }
-                            </MudSelect>
-                            @if (_fileDatasets.Count == 0)
-                            {
-                                <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">No datasets with a file are visible to you — add one under <b>Datasets</b> to join or append it.</MudText>
-                            }
-                        }
-                        else if (p.Type == "Select")
-                        {
-                            IReadOnlyList<string> options = p.Name == "algorithm" ? AlgorithmsForTask() : (p.Options ?? []);
-                            <MudSelect T="string" Label="@p.DisplayName" Value="@CfgOr(p)" ValueChanged="@(v => CfgSet(p.Name, v))"
-                                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
-                                @foreach (var o in options)
-                                {
-                                    <MudSelectItem Value="@o">@o</MudSelectItem>
-                                }
-                            </MudSelect>
-                        }
-                        else
-                        {
-                            <MudTextField T="string" Label="@p.DisplayName" Value="@CfgGet(p.Name)" ValueChanged="@(v => CfgSet(p.Name, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1"
-                                          Placeholder="@(p.Default ?? (p.Type == "Columns" ? "col1, col2" : ""))" />
-                        }
-                    }
-                }
+                <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" Task="_task" OnChanged="StateHasChanged" />
             }
         </BlueprintCard>
     </div>
@@ -244,9 +204,6 @@ else
 }
 
 @code {
-    private static readonly string[] _binaryAlgorithms = ["sdca", "fasttree", "fastforest", "lbfgs", "perceptron"];
-    private static readonly string[] _regressionAlgorithms = ["sdca", "fasttree", "fastforest", "lbfgs"];
-    private static readonly string[] _multiclassAlgorithms = ["sdca", "lbfgs", "naivebayes"];
     private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web);
 
     private BlazorDiagram _diagram = null!;
@@ -582,41 +539,11 @@ else
         InvokeAsync(StateHasChanged);
     }
 
-    // ---- Config helpers ----
-
-    private string[] AlgorithmsForTask() => _task switch
-    {
-        "Regression" => _regressionAlgorithms,
-        "MulticlassClassification" => _multiclassAlgorithms,
-        _ => _binaryAlgorithms,
-    };
-
     private bool MatchesSearch(NodeDescriptorDto n) =>
         string.IsNullOrWhiteSpace(_search)
         || n.DisplayName.Contains(_search, StringComparison.OrdinalIgnoreCase)
         || n.Kind.Contains(_search, StringComparison.OrdinalIgnoreCase)
         || n.Category.Contains(_search, StringComparison.OrdinalIgnoreCase);
-
-    private string CfgOr(NodeParameterDto p) => CfgGet(p.Name) is { Length: > 0 } v ? v : (p.Default ?? "");
-
-    private string CfgGet(string key) => _selected is not null && _selected.Config.TryGetValue(key, out var v) ? v : string.Empty;
-
-    private void CfgSet(string key, string? value)
-    {
-        if (_selected is null)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            _selected.Config.Remove(key);
-        }
-        else
-        {
-            _selected.Config[key] = value.Trim();
-        }
-    }
 
     // ---- Run / submit ----
 

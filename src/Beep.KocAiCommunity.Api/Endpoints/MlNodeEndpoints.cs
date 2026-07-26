@@ -45,5 +45,10 @@ public static class MlNodeEndpoints
 
     private static NodeDescriptorDto ToDto(NodeDescriptor n) =>
         new(n.Kind, n.Category, n.DisplayName, n.Description, n.Input.ToString(), n.Output.ToString(),
-            [.. n.Parameters.Select(p => new NodeParameterDto(p.Name, p.DisplayName, p.Type.ToString(), p.Required, p.Default, p.Options))]);
+            [.. n.Parameters.Select(ToDto)]);
+
+    private static NodeParameterDto ToDto(NodeParameter p) =>
+        new(p.Name, p.DisplayName, p.Type.ToString(), p.Required, p.Default,
+            p.Options is null ? null : [.. p.Options.Select(o => new LookupOptionDto(o.Value, o.Label, o.AppliesTo))],
+            p.Min, p.Max, p.Help);
 }

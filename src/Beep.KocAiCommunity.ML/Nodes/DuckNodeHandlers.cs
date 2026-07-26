@@ -1,6 +1,5 @@
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
-using static Beep.KocAiCommunity.ML.Nodes.NodeParam;
 using static Beep.KocAiCommunity.ML.Nodes.PipelineContext;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
@@ -39,7 +38,7 @@ public sealed class SqlHandler : IPipelineNodeHandler
         "Transform the data with a SQL SELECT over the table `working`. Full DuckDB SQL — joins, "
         + "aggregations, window functions, CASE, etc. Keep the label column for downstream training.",
         PortKind.Table, PortKind.Table,
-        [P("sql", "SELECT … FROM working", NodeParameterType.Text, required: true)]);
+        new SqlParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -55,7 +54,7 @@ public sealed class SqlFilterHandler : IPipelineNodeHandler
     public NodeDescriptor Descriptor { get; } = new("sql-filter", "Data", "Filter (SQL)",
         "Keep only rows matching a SQL condition, e.g. pressure > 3000 AND zone = 'north'.",
         PortKind.Table, PortKind.Table,
-        [P("where", "WHERE condition", NodeParameterType.Text, required: true)]);
+        new SqlFilterParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -72,8 +71,7 @@ public sealed class GroupByHandler : IPipelineNodeHandler
         "Aggregate rows: pick group-by columns and aggregate expressions "
         + "(e.g. AVG(pressure) AS avg_p, MAX(vibration) AS max_v).",
         PortKind.Table, PortKind.Table,
-        [P("groupBy", "Group-by columns", NodeParameterType.Columns, required: true),
-         P("aggregations", "Aggregates, e.g. AVG(pressure) AS avg_p", NodeParameterType.Text, required: true)]);
+        new GroupByParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -93,7 +91,7 @@ public sealed class SortHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("sort", "Data", "Sort",
         "Order rows by columns, e.g. pressure DESC, well_id.", PortKind.Table, PortKind.Table,
-        [P("orderBy", "ORDER BY, e.g. pressure DESC", NodeParameterType.Text, required: true)]);
+        new SortParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -116,7 +114,7 @@ public sealed class SortHandler : IPipelineNodeHandler
 public sealed class DistinctHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("distinct", "Data", "Deduplicate",
-        "Remove duplicate rows (SELECT DISTINCT).", PortKind.Table, PortKind.Table, []);
+        "Remove duplicate rows (SELECT DISTINCT).", PortKind.Table, PortKind.Table, new DistinctParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
         => Duck.Run(ctx, node, input, this, $"SELECT DISTINCT * FROM {DuckDbSession.Quote(WorkingTable)}", replay: false);
@@ -127,9 +125,7 @@ public sealed class JoinDatasetHandler : IPipelineNodeHandler
     public NodeDescriptor Descriptor { get; } = new("join-dataset", "Data", "Join another dataset",
         "Bring in columns from a second dataset by matching a shared key column (a left join).",
         PortKind.Table, PortKind.Table,
-        [P("datasetId", "Dataset to join", NodeParameterType.Dataset, required: true),
-         P("on", "Key column (in both)", NodeParameterType.Text, required: true),
-         P("columns", "Columns to bring (blank = all)", NodeParameterType.Columns)]);
+        new JoinDatasetParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -164,7 +160,7 @@ public sealed class UnionDatasetHandler : IPipelineNodeHandler
     public NodeDescriptor Descriptor { get; } = new("union-dataset", "Data", "Append another dataset",
         "Add the rows of a second dataset to the current data (columns aligned by name; missing ones become null).",
         PortKind.Table, PortKind.Table,
-        [P("datasetId", "Dataset to append", NodeParameterType.Dataset, required: true)]);
+        new UnionDatasetParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {

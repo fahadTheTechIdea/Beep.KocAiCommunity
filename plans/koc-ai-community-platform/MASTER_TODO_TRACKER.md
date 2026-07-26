@@ -380,6 +380,18 @@ KOC blueprint theme. No DB schema change anywhere.
 
 ## Node property panel completion (Studio designer UX)
 
+39b. 🟢 **Unified parameter contract DONE (2026-07-26)** — replaced per-descriptor patching with **one
+    typed `NodeParameter` class** the property panel binds to identically for every node (get/set through the
+    same path, no per-field special-casing). Real type system — `Text/Number/Integer/Date/Boolean/Select/
+    Columns/Column/Dataset` — each rendered with the right editor (numeric field with min/max, date picker,
+    switch, lookup dropdown, column/dataset pickers). **Lookups carry objects** (`LookupOption{Value,Label,
+    AppliesTo}`): the `algorithm` param hands the panel the trainer list from a single source of truth
+    (`MlAlgorithms.All`) tagged by task, and the old `WorkflowDesigner.razor` `p.Name == "algorithm"` hack is
+    gone — task filtering is now one generic `AppliesTo` rule. Contract flows end-to-end
+    (`NodeParameter`→`NodeParameterDto`/`LookupOptionDto`→panel); server-side validation enforces the same
+    types/ranges/lookup membership. Numeric params gained bounds (folds 2–10, clusters 2–20, bins 2–255,
+    testFraction/fraction 0–1, …) + help text. Build + 192 unit + 3 node-endpoint integration tests green.
+
 39. 🟢 **Phase 21a DONE (2026-07-26)** — expose **every** settable parameter of **every** node in the
     designer's property panel, with defaults shown on click. Spec: `21_NODE_PROPERTY_PANEL.md`;
     documentation is one file per node under `node-properties/` (37 files). **Root cause:** the inspector is

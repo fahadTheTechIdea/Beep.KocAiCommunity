@@ -40,6 +40,69 @@ public class NodePropertyDriftTests
             "property panel can't render them and every user is locked to the hardcoded default");
     }
 
+    // The general guard: for EVERY node handler, every literal Config key it reads must be a declared
+    // descriptor parameter — so the property panel can render it and get/set it. Parses each handler file
+    // class-by-class, maps each class to its node kind, and diffs the keys it reads against the keys it
+    // declares. This is the whole-catalog version of the model-node check above: no node can read a setting
+    // it doesn't expose.
+    [Fact]
+    public void Every_handler_declares_every_config_key_it_reads()
+    {
+        string[] handlerFiles =
+            ["MlModelHandlers.cs", "MlTransformHandlers.cs", "MlPrepareHandlers.cs", "DuckNodeHandlers.cs"];
+        var modelOpsKeys = ConfigKeysReadBy("MlModelOps.cs"); // train/cross-validate delegate here
+        var problems = new List<string>();
+        var kindsChecked = 0;
+
+        foreach (var file in handlerFiles)
+        {
+            var text = File.ReadAllText(MlNodesSourcePath(file));
+
+            // Split the file into per-handler class blocks.
+            var classes = Regex.Matches(text, @"class\s+\w+Handler\b");
+            for (var i = 0; i < classes.Count; i++)
+            {
+                var start = classes[i].Index;
+                var end = i + 1 < classes.Count ? classes[i + 1].Index : text.Length;
+                var block = text[start..end];
+
+                // The descriptor's kind is the first `new("kind", …)` / `new NodeDescriptor("kind", …)`.
+                var kindMatch = Regex.Match(block, @"new(?:\s+NodeDescriptor)?\(""([\w-]+)""");
+                if (!kindMatch.Success)
+                {
+                    continue;
+                }
+
+                var kind = kindMatch.Groups[1].Value;
+                var reads = new HashSet<string>(StringComparer.Ordinal);
+                foreach (Match m in Regex.Matches(block, @"(?:Cfg|HpInt|HpFloat)\(node,\s*""(\w+)"""))
+                {
+                    reads.Add(m.Groups[1].Value);
+                }
+
+                if (kind is "train" or "cross-validate")
+                {
+                    reads.UnionWith(modelOpsKeys);
+                }
+
+                var descriptor = Registry.Find(kind);
+                descriptor.Should().NotBeNull($"handler for '{kind}' should be registered");
+                kindsChecked++;
+
+                var declared = descriptor!.Parameters.Select(p => p.Name).ToHashSet(StringComparer.Ordinal);
+                var hidden = reads.Where(k => !declared.Contains(k)).OrderBy(k => k, StringComparer.Ordinal).ToList();
+                if (hidden.Count > 0)
+                {
+                    problems.Add($"'{kind}' reads undeclared config key(s): {string.Join(", ", hidden)}");
+                }
+            }
+        }
+
+        kindsChecked.Should().BeGreaterThan(20, "the parser should have found the handler classes");
+        problems.Should().BeEmpty(
+            "every config key a node reads must be a declared parameter so the panel can render and get/set it");
+    }
+
     // Extract the node Config keys the executor reads: Cfg/HpInt/HpFloat(node, "key"), plus Algo(node) which
     // internally reads Cfg(node, "algorithm").
     private static HashSet<string> ConfigKeysReadBy(string sourceFile)

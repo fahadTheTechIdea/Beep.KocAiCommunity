@@ -2,7 +2,6 @@ using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Microsoft.ML;
 using Microsoft.ML.Data;
-using static Beep.KocAiCommunity.ML.Nodes.NodeParam;
 using static Beep.KocAiCommunity.ML.Nodes.PipelineContext;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
@@ -13,7 +12,7 @@ public sealed class RenameColumnHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("rename-column", "Prepare", "Rename column",
         "Give a feature a clearer name (e.g. WHP → wellhead_pressure).", PortKind.Table, PortKind.Table,
-        [P("from", "From column", NodeParameterType.Text, required: true), P("to", "New name", NodeParameterType.Text, required: true)]);
+        new RenameColumnParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -39,7 +38,7 @@ public sealed class ConvertNumericHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("convert-numeric", "Prepare", "Cast to number",
         "Convert text/typed columns to numbers so they can be used as features.", PortKind.Table, PortKind.Table,
-        [P("columns", "Columns (blank = all text)", NodeParameterType.Columns)]);
+        new ConvertNumericParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
@@ -55,9 +54,7 @@ public sealed class ComputeColumnHandler : IPipelineNodeHandler
     public NodeDescriptor Descriptor { get; } = new("compute-column", "Prepare", "Compute column",
         "Create a new column from a formula, e.g. gor = gas / (oil + 1). Params bind to the input columns in order.",
         PortKind.Table, PortKind.Table,
-        [P("output", "New column name", NodeParameterType.Text, required: true),
-         P("inputs", "Input columns", NodeParameterType.Columns, required: true),
-         P("expression", "Formula, e.g. (gas, oil) => gas / (oil + 1)", NodeParameterType.Text, required: true)]);
+        new ComputeColumnParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -96,7 +93,7 @@ public sealed class CombineColumnsHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("combine-columns", "Prepare", "Merge columns",
         "Combine several numeric columns into one feature vector.", PortKind.Table, PortKind.Table,
-        [P("columns", "Columns (blank = all numeric)", NodeParameterType.Columns)]);
+        new CombineColumnsParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
@@ -115,7 +112,7 @@ public sealed class CombineColumnsHandler : IPipelineNodeHandler
 public sealed class LpNormalizeHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("lp-normalize", "Prepare", "Lp-normalize",
-        "Scale each row's feature vector to unit norm — good for magnitude-invariant signals.", PortKind.Table, PortKind.Table, []);
+        "Scale each row's feature vector to unit norm — good for magnitude-invariant signals.", PortKind.Table, PortKind.Table, new LpNormalizeParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         VectorNormalize(ctx, node, input, "__LpIn", "LpNorm", (o, i) => ctx.Ml.Transforms.NormalizeLpNorm(o, i), "Lp-normalized feature vector");
@@ -140,7 +137,7 @@ public sealed class LpNormalizeHandler : IPipelineNodeHandler
 public sealed class GlobalContrastHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("global-contrast", "Prepare", "Global contrast",
-        "Centre and scale each row's features (global contrast normalization).", PortKind.Table, PortKind.Table, []);
+        "Centre and scale each row's features (global contrast normalization).", PortKind.Table, PortKind.Table, new GlobalContrastParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         LpNormalizeHandler.VectorNormalize(ctx, node, input, "__GcnIn", "Gcn", (o, i) => ctx.Ml.Transforms.NormalizeGlobalContrast(o, i), "global-contrast normalized");
@@ -150,7 +147,7 @@ public sealed class TakeRowsHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("take-rows", "Shape", "Take first N",
         "Keep only the first N rows (quick experiments on big data).", PortKind.Table, PortKind.Table,
-        [P("count", "Rows to keep", NodeParameterType.Number, def: "1000")]);
+        new TakeRowsParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -179,7 +176,7 @@ public sealed class TakeRowsHandler : IPipelineNodeHandler
 public sealed class ShuffleHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("shuffle", "Shape", "Shuffle rows",
-        "Randomly reorder the rows (deterministic seed).", PortKind.Table, PortKind.Table, []);
+        "Randomly reorder the rows (deterministic seed).", PortKind.Table, PortKind.Table, new ShuffleParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -193,7 +190,7 @@ public sealed class SampleHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("sample", "Shape", "Sample rows",
         "Take a random fraction of the rows.", PortKind.Table, PortKind.Table,
-        [P("fraction", "Fraction to keep", NodeParameterType.Number, def: "0.5")]);
+        new SampleParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -214,7 +211,7 @@ public sealed class FilterRowsHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("filter-rows", "Shape", "Filter rows",
         "Keep rows where a numeric column falls in a range.", PortKind.Table, PortKind.Table,
-        [P("column", "Column", NodeParameterType.Text, required: true), P("min", "Keep ≥ min", NodeParameterType.Number), P("max", "Keep < max", NodeParameterType.Number)]);
+        new FilterRowsParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {

@@ -59,17 +59,59 @@ public sealed class PluginNodeRegistry : INodeRegistry
                 continue;
             }
 
-            if (p.Type == NodeParameterType.Number && !double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
+            switch (p.Type)
             {
-                errors.Add($"'{p.DisplayName}' must be a number.");
-            }
+                case NodeParameterType.Number:
+                    if (double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
+                    {
+                        AddRangeError(errors, p, num);
+                    }
+                    else
+                    {
+                        errors.Add($"'{p.DisplayName}' must be a number.");
+                    }
 
-            if (p.Type == NodeParameterType.Select && p.Options is { Count: > 0 } && !p.Options.Contains(raw))
-            {
-                errors.Add($"'{p.DisplayName}' must be one of: {string.Join(", ", p.Options)}.");
+                    break;
+
+                case NodeParameterType.Integer:
+                    if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var whole))
+                    {
+                        AddRangeError(errors, p, whole);
+                    }
+                    else
+                    {
+                        errors.Add($"'{p.DisplayName}' must be a whole number.");
+                    }
+
+                    break;
+
+                case NodeParameterType.Date when !DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out _):
+                    errors.Add($"'{p.DisplayName}' must be a date.");
+                    break;
+
+                case NodeParameterType.Boolean when !bool.TryParse(raw, out _):
+                    errors.Add($"'{p.DisplayName}' must be true or false.");
+                    break;
+
+                case NodeParameterType.Select when p.Options is { Count: > 0 } && !p.Options.Any(o => o.Value == raw):
+                    errors.Add($"'{p.DisplayName}' must be one of: {string.Join(", ", p.Options.Select(o => o.Value))}.");
+                    break;
             }
         }
 
         return new ParameterValidation(errors.Count == 0, errors);
+    }
+
+    private static void AddRangeError(List<string> errors, NodeParameter p, double value)
+    {
+        if (p.Min is { } min && value < min)
+        {
+            errors.Add($"'{p.DisplayName}' must be ≥ {min}.");
+        }
+
+        if (p.Max is { } max && value > max)
+        {
+            errors.Add($"'{p.DisplayName}' must be ≤ {max}.");
+        }
     }
 }

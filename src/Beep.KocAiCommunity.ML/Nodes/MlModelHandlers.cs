@@ -1,7 +1,6 @@
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Microsoft.ML;
-using static Beep.KocAiCommunity.ML.Nodes.NodeParam;
 using static Beep.KocAiCommunity.ML.Nodes.PipelineContext;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
@@ -13,7 +12,7 @@ public sealed class DatasetHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("dataset", "Source", "Dataset",
         "The input rows flowing into the pipeline (e.g. well headers, sensor readings).",
-        PortKind.None, PortKind.Table, []);
+        PortKind.None, PortKind.Table, new DatasetParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         new(new NodeExecutionResult(node.Id, node.Kind, "done", $"{input.RowCount} rows · {ctx.FeatureNames(input).Count()} columns"), input);
@@ -23,7 +22,7 @@ public sealed class SplitHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("split", "Split", "Train/test split",
         "Hold out a fraction of rows for honest evaluation. Place before the model.", PortKind.Table, PortKind.Table,
-        [P("testFraction", "Test fraction", NodeParameterType.Number, def: "0.25")]);
+        new SplitParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -53,11 +52,7 @@ public sealed class TrainHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("train", "Model", "Train model",
         "Fit a model on the training features (ESP failure, production rate, …).", PortKind.Table, PortKind.Model,
-        [P("algorithm", "Algorithm", NodeParameterType.Select, def: "sdca", options: ["sdca", "lbfgs", "fasttree", "fastforest", "perceptron", "naivebayes"]),
-         P("trees", "Trees (fasttree/fastforest)", NodeParameterType.Number, def: "100"),
-         P("leaves", "Leaves per tree (fasttree/fastforest)", NodeParameterType.Number, def: "20"),
-         P("learningRate", "Learning rate (fasttree)", NodeParameterType.Number, def: "0.2"),
-         P("l2", "L2 regularization (sdca/lbfgs; blank = trainer default)", NodeParameterType.Number)]);
+        new TrainParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -83,7 +78,7 @@ public sealed class ClusterHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("cluster", "Model", "Cluster (k-means)",
         "Unsupervised grouping — no label needed (e.g. well-log facies).", PortKind.Table, PortKind.Model,
-        [P("clusters", "Clusters", NodeParameterType.Number, def: "3")]);
+        new ClusterParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -113,12 +108,7 @@ public sealed class CrossValidateHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("cross-validate", "Model", "Cross-validate",
         "K-fold validation for a more honest metric.", PortKind.Table, PortKind.Metrics,
-        [P("folds", "Folds", NodeParameterType.Number, def: "5"),
-         P("algorithm", "Algorithm", NodeParameterType.Select, def: "sdca", options: ["sdca", "lbfgs", "fasttree", "fastforest", "perceptron", "naivebayes"]),
-         P("trees", "Trees (fasttree/fastforest)", NodeParameterType.Number, def: "100"),
-         P("leaves", "Leaves per tree (fasttree/fastforest)", NodeParameterType.Number, def: "20"),
-         P("learningRate", "Learning rate (fasttree)", NodeParameterType.Number, def: "0.2"),
-         P("l2", "L2 regularization (sdca/lbfgs; blank = trainer default)", NodeParameterType.Number)]);
+        new CrossValidateParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -166,7 +156,7 @@ public sealed class CrossValidateHandler : IPipelineNodeHandler
 public sealed class ScoreHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("score", "Evaluate", "Score",
-        "Apply the trained model to the held-out set.", PortKind.Model, PortKind.Table, []);
+        "Apply the trained model to the held-out set.", PortKind.Model, PortKind.Table, new ScoreParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -185,7 +175,7 @@ public sealed class ScoreHandler : IPipelineNodeHandler
 public sealed class EvaluateHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("evaluate", "Evaluate", "Evaluate",
-        "Compute metrics on the held-out set.", PortKind.Table, PortKind.Metrics, []);
+        "Compute metrics on the held-out set.", PortKind.Table, PortKind.Metrics, new EvaluateParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {

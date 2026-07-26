@@ -3,7 +3,6 @@ using Beep.KocAiCommunity.Contracts.Workflow;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Microsoft.ML.Transforms;
-using static Beep.KocAiCommunity.ML.Nodes.NodeParam;
 using static Beep.KocAiCommunity.ML.Nodes.PipelineContext;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
@@ -15,7 +14,7 @@ public sealed class SelectColumnsHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("select-columns", "Transform", "Select columns",
         "Keep only the chosen feature columns; drop the rest.", PortKind.Table, PortKind.Table,
-        [P("columns", "Columns to keep", NodeParameterType.Columns, required: true)]);
+        new SelectColumnsParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -41,7 +40,7 @@ public sealed class DropColumnsHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("drop-columns", "Transform", "Drop columns",
         "Remove the listed columns (ids, noise).", PortKind.Table, PortKind.Table,
-        [P("columns", "Columns to drop", NodeParameterType.Columns, required: true)]);
+        new DropColumnsParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -60,7 +59,7 @@ public sealed class DropColumnsHandler : IPipelineNodeHandler
 public sealed class StandardizeHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("standardize", "Transform", "Standardize (z-score)",
-        "Rescale numeric features to mean 0, variance 1.", PortKind.Table, PortKind.Table, []);
+        "Rescale numeric features to mean 0, variance 1.", PortKind.Table, PortKind.Table, new StandardizeParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
@@ -73,7 +72,7 @@ public sealed class StandardizeHandler : IPipelineNodeHandler
 public sealed class NormalizeHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("normalize", "Transform", "Normalize (min-max)",
-        "Scale numeric features to 0–1.", PortKind.Table, PortKind.Table, []);
+        "Scale numeric features to 0–1.", PortKind.Table, PortKind.Table, new NormalizeParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         Scale(ctx, node, input, (cols) => ctx.Ml.Transforms.NormalizeMinMax(cols), "min-max normalized");
@@ -90,7 +89,7 @@ public sealed class NormalizeHandler : IPipelineNodeHandler
 public sealed class LogNormalizeHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("log-normalize", "Transform", "Log normalize",
-        "Log-transform then scale — good for skewed rates.", PortKind.Table, PortKind.Table, []);
+        "Log-transform then scale — good for skewed rates.", PortKind.Table, PortKind.Table, new LogNormalizeParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         NormalizeHandler.Scale(ctx, node, input, cols => ctx.Ml.Transforms.NormalizeLogMeanVariance(cols), "log mean-variance");
@@ -99,7 +98,7 @@ public sealed class LogNormalizeHandler : IPipelineNodeHandler
 public sealed class RobustScaleHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("robust-scale", "Transform", "Robust scale",
-        "Scale by median and IQR — tolerant of outliers.", PortKind.Table, PortKind.Table, []);
+        "Scale by median and IQR — tolerant of outliers.", PortKind.Table, PortKind.Table, new RobustScaleParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         NormalizeHandler.Scale(ctx, node, input, cols => ctx.Ml.Transforms.NormalizeRobustScaling(cols), "robust-scaled (median/IQR)");
@@ -109,7 +108,7 @@ public sealed class BinningHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("binning", "Transform", "Bin values",
         "Quantile-bin numeric features into buckets.", PortKind.Table, PortKind.Table,
-        [P("bins", "Max bins", NodeParameterType.Number, def: "10")]);
+        new BinningParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -122,7 +121,7 @@ public sealed class ReplaceMissingHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("replace-missing", "Transform", "Replace missing",
         "Impute missing numeric values (common in PI sensor gaps).", PortKind.Table, PortKind.Table,
-        [P("mode", "Replace with", NodeParameterType.Select, def: "mean", options: ["mean", "min", "max"])]);
+        new ReplaceMissingParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
@@ -146,7 +145,7 @@ public sealed class ReplaceMissingHandler : IPipelineNodeHandler
 public sealed class OneHotHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("one-hot", "Transform", "One-hot encode",
-        "Turn categorical columns into indicator columns.", PortKind.Table, PortKind.Table, []);
+        "Turn categorical columns into indicator columns.", PortKind.Table, PortKind.Table, new OneHotParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
@@ -159,7 +158,7 @@ public sealed class OneHotHandler : IPipelineNodeHandler
 public sealed class HashEncodeHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("hash-encode", "Transform", "Hash encode",
-        "Hash high-cardinality categoricals (e.g. well ids) into a fixed width.", PortKind.Table, PortKind.Table, []);
+        "Hash high-cardinality categoricals (e.g. well ids) into a fixed width.", PortKind.Table, PortKind.Table, new HashEncodeParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
@@ -172,7 +171,7 @@ public sealed class HashEncodeHandler : IPipelineNodeHandler
 public sealed class FeaturizeTextHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("featurize-text", "Transform", "Featurize text",
-        "Turn free-text (e.g. HSE reports) into numeric vectors.", PortKind.Table, PortKind.Table, []);
+        "Turn free-text (e.g. HSE reports) into numeric vectors.", PortKind.Table, PortKind.Table, new FeaturizeTextParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
@@ -198,7 +197,7 @@ public sealed class PcaHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("pca", "Transform", "PCA",
         "Reduce features to N principal components.", PortKind.Table, PortKind.Table,
-        [P("rank", "Components", NodeParameterType.Number, def: "2")]);
+        new PcaParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
@@ -221,7 +220,7 @@ public sealed class FeatureSelectionHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("feature-selection", "Transform", "Feature selection",
         "Drop near-constant features.", PortKind.Table, PortKind.Table,
-        [P("count", "Min non-default count", NodeParameterType.Number, def: "1")]);
+        new FeatureSelectionParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>

@@ -72,6 +72,6 @@ public class NodeCatalogTests
         declared.Should().Contain(new[] { "algorithm", "trees", "leaves", "learningRate", "l2" });
 
         var algorithm = Registry.Find(kind)!.Parameters.Single(p => p.Name == "algorithm");
-        algorithm.Options.Should().BeEquivalentTo(new[] { "sdca", "lbfgs", "fasttree", "fastforest", "perceptron", "naivebayes" });
+        algorithm.Options!.Select(o => o.Value).Should().BeEquivalentTo(new[] { "sdca", "lbfgs", "fasttree", "fastforest", "perceptron", "naivebayes" });
     }
 }

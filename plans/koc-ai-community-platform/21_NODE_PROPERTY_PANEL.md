@@ -1,7 +1,16 @@
 # Phase 21 — Complete node property panel (every parameter, every node)
 
 **Date:** 2026-07-26
-**Status:** 🟢 Phase 21a DONE — model-node hyperparameters declared + anti-drift guard shipped; 21b/21c pending.
+**Status:** 🟢 Phase 21a + unified parameter contract DONE — one typed `NodeParameter` class drives get/set for every node's panel (text / number / integer / date / boolean / lookup / columns / column / dataset); lookups carry their option list as objects; model hyperparameters exposed; anti-drift guard shipped. 21b/21c pending.
+
+## Unified parameter contract (the real fix)
+
+Patching individual descriptors was treating the symptom. The root fix is **one contract the panel binds to identically for every node**:
+
+- **One class, `NodeParameter`** (`Application/ML/NodeCatalog.cs`) carries everything the editor needs: `Name`, `DisplayName`, value `Type`, `Required`, `Default`, lookup `Options` (as objects), numeric `Min`/`Max`, and `Help`. The panel reads/writes the selected node's config through this single contract — `CfgGet`/`CfgSet` + typed helpers — with **no per-node or per-field special-casing**.
+- **A real type system** — `NodeParameterType { Text, Number, Integer, Date, Boolean, Select, Columns, Column, Dataset }`. The panel renders each type with the right editor (text box, numeric field with min/max, date picker, switch, lookup dropdown, column/dataset pickers). Dates and booleans are supported by the contract even though no node uses them yet — future nodes get them for free.
+- **Lookups carry objects, not bare strings** — `LookupOption(Value, Label, AppliesTo)`. The `algorithm` parameter hands the panel the trainer list from a single source of truth (`MlAlgorithms.All`), each option tagged with the tasks it supports. The old `WorkflowDesigner.razor` hack (`p.Name == "algorithm" ? AlgorithmsForTask() : …`) is gone — task filtering is now one generic rule driven by `AppliesTo`, usable by any future lookup.
+- **The contract flows end-to-end** — `NodeParameter` → `NodeParameterDto`/`LookupOptionDto` (API + Local desktop mapping) → the panel. Validation (`PluginNodeRegistry`) enforces the same types + ranges + lookup membership server-side.
 **Scope:** the Studio designer property panel — expose **every** settable parameter of **every** node, with sensible defaults shown on click.
 
 ---
