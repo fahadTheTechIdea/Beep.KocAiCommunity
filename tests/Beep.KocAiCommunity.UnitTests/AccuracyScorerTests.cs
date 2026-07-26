@@ -63,6 +63,18 @@ public class AccuracyScorerTests
     }
 
     [Fact]
-    public async Task Empty_answer_key_scores_zero() =>
-        (await Scorer.ScoreAsync(Csv("id,prediction\n1,a\n"), Csv("id,label\n"))).Should().Be(0d);
+    public async Task Empty_answer_key_is_rejected_not_silently_scored() =>
+        await Scorer.Invoking(s => s.ScoreAsync(Csv("id,prediction\n1,a\n"), Csv("id,label\n")))
+            .Should().ThrowAsync<InvalidOperationException>();
+
+    [Fact]
+    public async Task Boolean_folding_does_not_collide_coded_multiclass_classes()
+    {
+        // A 3-class key whose classes include boolean-like tokens (1 / yes / no). Folding is OFF (not a
+        // binary key), so "1" and "yes" stay distinct — a "1" prediction must NOT match a "yes" label.
+        var score = await Scorer.ScoreAsync(
+            Csv("id,prediction\n1,1\n2,1\n3,no\n"),
+            Csv("id,label\n1,1\n2,yes\n3,no\n"));
+        score.Should().BeApproximately(2d / 3d, 1e-9); // row 2: predicted "1" vs label "yes" → wrong
+    }
 }

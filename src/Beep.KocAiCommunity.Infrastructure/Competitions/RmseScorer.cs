@@ -45,7 +45,14 @@ public sealed class RmseScorer : IScoringPlugin
             sumSquared += error * error;
         }
 
-        return counted == 0 ? 0d : Math.Sqrt(sumSquared / counted);
+        if (counted == 0)
+        {
+            // Consistent with accuracy: a key with no scorable rows is a corrupted key, not a perfect
+            // (0.0) score for everyone. It's validated non-empty at upload, so fail loudly here.
+            throw new InvalidOperationException("The answer key has no scorable rows; it may be empty or malformed.");
+        }
+
+        return Math.Sqrt(sumSquared / counted);
     }
 
     private static bool TryNumber(string raw, out double value)

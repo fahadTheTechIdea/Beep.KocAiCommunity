@@ -18,16 +18,19 @@ public sealed class AccuracyScorer : IScoringPlugin
     {
         var predRows = await CompetitionCsv.ReadAsync(predictions, idColumn, ct);
         var actual = await CompetitionCsv.ReadAsync(answerKey, idColumn, ct);
-        if (actual.Count == 0)
-        {
-            return 0d;
-        }
 
         var preds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var (id, value) in predRows)
         {
             preds[id] = value; // last row wins for a duplicated prediction id
         }
+
+        // Fold the boolean conventions (true/1/yes ≡, false/0/no ≡) ONLY for a genuinely binary key —
+        // at most two distinct labels, both boolean tokens. A multiclass key whose classes merely include
+        // a boolean-like token (e.g. "1"/"yes"/"no") is then compared literally, so two distinct classes
+        // never collide into one and a wrong prediction can't score as correct.
+        var distinct = actual.Select(a => a.Value.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var binary = distinct.Count <= 2 && distinct.All(IsBooleanToken);
 
         var correct = 0;
         var counted = 0;
@@ -40,17 +43,28 @@ public sealed class AccuracyScorer : IScoringPlugin
             }
 
             counted++;
-            if (preds.TryGetValue(id, out var predicted) && LabelsMatch(predicted, expected))
+            if (preds.TryGetValue(id, out var predicted) && LabelsMatch(predicted, expected, binary))
             {
                 correct++;
             }
         }
 
-        return counted == 0 ? 0d : (double)correct / counted;
+        if (counted == 0)
+        {
+            // The key is validated non-empty at upload, so no scorable rows means a corrupted key — fail
+            // loudly rather than silently score every submission 0 (accuracy) / perfect (rmse).
+            throw new InvalidOperationException("The answer key has no scorable rows; it may be empty or malformed.");
+        }
+
+        return (double)correct / counted;
     }
 
-    private static bool LabelsMatch(string a, string b)
-        => string.Equals(Canonical(a), Canonical(b), StringComparison.OrdinalIgnoreCase);
+    private static bool LabelsMatch(string a, string b, bool binary)
+        => binary
+            ? string.Equals(Canonical(a), Canonical(b), StringComparison.Ordinal)
+            : string.Equals(a.Trim(), b.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsBooleanToken(string value) => Canonical(value) is "\x01true" or "\x01false";
 
     // Fold the common boolean conventions together; any other token compares as itself. The \x01 sentinel
     // keeps a canonical boolean from colliding with a class literally named "true"/"false".

@@ -51,4 +51,10 @@ public class RmseScorerTests
         var score = await new RmseScorer().ScoreAsync(Csv("well_id,value\nW1,10\n"), Csv("well_id,oil_rate\nW1,10\n"), idColumn: "well_id");
         score.Should().Be(0d);
     }
+
+    [Fact]
+    public async Task Empty_answer_key_is_rejected_not_scored_perfect() =>
+        // Parity with accuracy: a degenerate key must fail loudly, not return 0.0 (a perfect RMSE).
+        await new RmseScorer().Invoking(s => s.ScoreAsync(Csv("id,value\n1,10\n"), Csv("id,oil_rate\n")))
+            .Should().ThrowAsync<InvalidOperationException>();
 }
