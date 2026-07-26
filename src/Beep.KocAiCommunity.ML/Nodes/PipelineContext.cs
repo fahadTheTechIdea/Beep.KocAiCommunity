@@ -109,15 +109,9 @@ public sealed class PipelineContext : IDisposable
         return path;
     }
 
-    /// <summary>
-    /// The column roles for a table — the first-class X (features) / y (label) / id / fold split, resolved
-    /// from this run's label and id and the table's columns. The single source of truth for "what is a
-    /// feature": every node that needs the feature set goes through here.
-    /// </summary>
-    public ColumnRoles Roles(PipelineTable table) => ColumnRoles.Resolve(LabelColumn, IdColumn, table.Columns);
-
     /// <summary>Candidate feature column names in a table (everything but label, id, and the fold marker).</summary>
-    public IEnumerable<string> FeatureNames(PipelineTable table) => Roles(table).Features;
+    public IEnumerable<string> FeatureNames(PipelineTable table)
+        => table.Columns.Where(c => c != LabelColumn && c != IdColumn && c != FoldColumn);
 
     // ---- Shared helpers (moved from the monolithic executor) ----
 
