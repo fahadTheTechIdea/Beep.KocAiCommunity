@@ -195,14 +195,15 @@ public static class CompetitionEndpoints
                 return Results.NotFound();
             }
 
-            // The concealed final board is hidden until the reveal time.
+            // The concealed final board (ranked on the hidden private holdout) is hidden until the reveal
+            // time; the live board (the public holdout) is always visible during the competition.
             if (string.Equals(board, "final", StringComparison.OrdinalIgnoreCase)
                 && competition.RevealUtc is { } reveal && reveal > DateTime.UtcNow)
             {
                 return Results.StatusCode(StatusCodes.Status403Forbidden);
             }
 
-            var entries = await svc.GetLeaderboardNamedAsync(id, ct);
+            var entries = await svc.GetLeaderboardNamedAsync(id, board ?? "live", ct);
             return Results.Ok(entries.Select(e => new LeaderboardEntryDto(e.Rank, e.UserId, e.DisplayName, e.Score)).ToList());
         })
         .WithName("Leaderboard")

@@ -145,14 +145,16 @@ public sealed class CompetitionService(
 
         foreach (var submission in submissions)
         {
-            await using var predStream = await artifacts.OpenReadAsync(submission.PredictionArtifactId, ct);
-            using var keyView = new MemoryStream(keyBytes);
-            submission.Score = await scorer.ScoreAsync(predStream, keyView, competition.IdColumn, ct);
+            var predBytes = await ReadArtifactBytesAsync(submission.PredictionArtifactId, ct);
+            var (publicScore, privateScore) = await ScorePublicPrivateAsync(competition, predBytes, keyBytes, ct);
+            submission.Score = publicScore;
+            submission.PrivateScore = privateScore;
         }
 
         await db.SaveChangesAsync(ct);
 
-        // Rebuild each user's best entry from the rescored submissions (tie-break: earliest submission).
+        // Rebuild each user's best entry from the rescored submissions (best PUBLIC score, tie-break:
+        // earliest submission), carrying that submission's private score for the final board.
         var bestPerUser = submissions
             .Where(s => s.Score.HasValue)
             .GroupBy(s => s.SubmitterUserId, StringComparer.Ordinal)
@@ -167,6 +169,7 @@ public sealed class CompetitionService(
             if (entries.TryGetValue(best.SubmitterUserId, out var entry))
             {
                 entry.Score = best.Score!.Value;
+                entry.PrivateScore = best.PrivateScore ?? 0;
                 entry.BestSubmissionId = best.Id;
             }
             else
@@ -177,6 +180,7 @@ public sealed class CompetitionService(
                     SubmitterUserId = best.SubmitterUserId,
                     BestSubmissionId = best.Id,
                     Score = best.Score!.Value,
+                    PrivateScore = best.PrivateScore ?? 0,
                     CreatedUtc = DateTime.UtcNow,
                 });
             }
@@ -474,12 +478,9 @@ public sealed class CompetitionService(
         var predictionArtifact = await artifacts.SaveAsync(
             predictions, $"competitions/{competition.Id}/submissions/{userId}/{fileName}", "text/csv", KocDataClassification.Internal, ct);
 
-        double score;
-        await using (var predStream = await artifacts.OpenReadAsync(predictionArtifact.Id, ct))
-        await using (var keyStream = await artifacts.OpenReadAsync(competition.AnswerKeyArtifactId!.Value, ct))
-        {
-            score = await scorers.Resolve(competition.ScorerCode).ScoreAsync(predStream, keyStream, competition.IdColumn, ct);
-        }
+        var predBytes = await ReadArtifactBytesAsync(predictionArtifact.Id, ct);
+        var keyBytes = await ReadArtifactBytesAsync(competition.AnswerKeyArtifactId!.Value, ct);
+        var (score, privateScore) = await ScorePublicPrivateAsync(competition, predBytes, keyBytes, ct);
 
         var submission = new Submission
         {
@@ -488,14 +489,15 @@ public sealed class CompetitionService(
             PredictionArtifactId = predictionArtifact.Id,
             SubmittedUtc = DateTime.UtcNow,
             Status = "scored",
-            Score = score,
+            Score = score,               // public — shown live
+            PrivateScore = privateScore, // hidden holdout — the final standings
             Notes = notes,
             CreatedUtc = DateTime.UtcNow,
         };
         db.Set<Submission>().Add(submission);
         await db.SaveChangesAsync(ct);
 
-        await UpdateLeaderboardAsync(competition, userId, submission, score, ct);
+        await UpdateLeaderboardAsync(competition, userId, submission, score, privateScore, ct);
 
         await notifications.NotifyAsync(userId, "submission-scored",
             $"Submission scored: {score:0.###}",
@@ -507,21 +509,105 @@ public sealed class CompetitionService(
         return submission;
     }
 
+    // Scores a prediction against the public (live leaderboard) and private (concealed-final) holdout
+    // subsets of the answer key. The split is deterministic (a stable hash of each id, halved), so a
+    // participant can't reverse-engineer the private set from the live board, and the final standings on
+    // the hidden half only settle at the reveal — the Kaggle-style public/private leaderboard.
+    private async Task<(double Public, double Private)> ScorePublicPrivateAsync(Competition competition, byte[] predBytes, byte[] keyBytes, CancellationToken ct)
+    {
+        var scorer = scorers.Resolve(competition.ScorerCode);
+        var keyRows = await CompetitionCsv.ReadAsync(new MemoryStream(keyBytes), competition.IdColumn, ct);
+        var (publicKey, privateKey) = PartitionAnswerKey(competition.IdColumn, keyRows);
+        var publicScore = await scorer.ScoreAsync(new MemoryStream(predBytes), new MemoryStream(publicKey), competition.IdColumn, ct);
+        var privateScore = await scorer.ScoreAsync(new MemoryStream(predBytes), new MemoryStream(privateKey), competition.IdColumn, ct);
+        return (publicScore, privateScore);
+    }
+
+    private async Task<byte[]> ReadArtifactBytesAsync(Guid artifactId, CancellationToken ct)
+    {
+        await using var stream = await artifacts.OpenReadAsync(artifactId, ct);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, ct);
+        return ms.ToArray();
+    }
+
+    // Deterministic ~50/50 holdout: order the key rows by a stable hash of the id and split at the
+    // midpoint. Stable for a fixed key; both subsets are non-empty whenever the key has ≥2 rows. A key too
+    // small to hold out scores against the whole key on both boards.
+    private static (byte[] Public, byte[] Private) PartitionAnswerKey(string idColumn, IReadOnlyList<(string Id, string Value)> keyRows)
+    {
+        if (keyRows.Count < 2)
+        {
+            var all = WriteKeyCsv(idColumn, keyRows);
+            return (all, all);
+        }
+
+        var ordered = keyRows.OrderBy(r => StableHash(r.Id)).ThenBy(r => r.Id, StringComparer.Ordinal).ToList();
+        var mid = ordered.Count / 2;
+        return (WriteKeyCsv(idColumn, ordered.Take(mid)), WriteKeyCsv(idColumn, ordered.Skip(mid)));
+    }
+
+    private static byte[] WriteKeyCsv(string idColumn, IEnumerable<(string Id, string Value)> rows)
+    {
+        var sb = new StringBuilder();
+        sb.Append(KocCsv.WriteRow([idColumn, "value"])).Append('\n');
+        foreach (var (id, value) in rows)
+        {
+            sb.Append(KocCsv.WriteRow([id, value])).Append('\n');
+        }
+
+        return Encoding.UTF8.GetBytes(sb.ToString());
+    }
+
+    // FNV-1a — a small, process-stable string hash (unlike string.GetHashCode, which is randomised).
+    private static uint StableHash(string value)
+    {
+        unchecked
+        {
+            var hash = 2166136261u;
+            foreach (var c in value)
+            {
+                hash = (hash ^ c) * 16777619u;
+            }
+
+            return hash;
+        }
+    }
+
     public async Task<IReadOnlyList<LeaderboardEntry>> GetLeaderboardAsync(Guid competitionId, CancellationToken ct = default) =>
         await db.Set<LeaderboardEntry>().AsNoTracking()
             .Where(e => e.CompetitionId == competitionId)
             .OrderBy(e => e.Rank)
             .ToListAsync(ct);
 
-    public async Task<IReadOnlyList<NamedLeaderboardEntry>> GetLeaderboardNamedAsync(Guid competitionId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<NamedLeaderboardEntry>> GetLeaderboardNamedAsync(Guid competitionId, string board, CancellationToken ct = default)
     {
-        var entries = await GetLeaderboardAsync(competitionId, ct);
+        var entries = await db.Set<LeaderboardEntry>().AsNoTracking()
+            .Where(e => e.CompetitionId == competitionId)
+            .ToListAsync(ct);
         var ids = entries.Select(e => e.SubmitterUserId).Distinct().ToList();
         var names = await db.Set<Domain.Engagement.UserProfile>().AsNoTracking()
             .Where(p => ids.Contains(p.UserId))
             .ToDictionaryAsync(p => p.UserId, p => p.DisplayName, ct);
-        return entries
-            .Select(e => new NamedLeaderboardEntry(e.Rank, e.SubmitterUserId, names.GetValueOrDefault(e.SubmitterUserId, e.SubmitterUserId), e.Score))
+        string Name(string u) => names.GetValueOrDefault(u, u);
+
+        if (string.Equals(board, "final", StringComparison.OrdinalIgnoreCase))
+        {
+            // Concealed final board: rank by the hidden private-holdout score (the caller has already
+            // verified the reveal time has passed).
+            var scorerCode = await db.Set<Competition>().AsNoTracking()
+                .Where(c => c.Id == competitionId).Select(c => c.ScorerCode).FirstOrDefaultAsync(ct) ?? "accuracy";
+            var higherIsBetter = scorers.Resolve(scorerCode).HigherIsBetter;
+            var ordered = (higherIsBetter ? entries.OrderByDescending(e => e.PrivateScore) : entries.OrderBy(e => e.PrivateScore))
+                .ThenBy(e => e.CreatedUtc)
+                .ThenBy(e => e.SubmitterUserId, StringComparer.Ordinal)
+                .ToList();
+            return ordered.Select((e, i) => new NamedLeaderboardEntry(i + 1, e.SubmitterUserId, Name(e.SubmitterUserId), e.PrivateScore)).ToList();
+        }
+
+        // Live board: the stored public score and rank.
+        return entries.OrderBy(e => e.Rank)
+            .Select(e => new NamedLeaderboardEntry(e.Rank, e.SubmitterUserId, Name(e.SubmitterUserId), e.Score))
             .ToList();
     }
 
@@ -583,13 +669,15 @@ public sealed class CompetitionService(
         return artifactId is null ? null : await artifacts.OpenReadAsync(artifactId.Value, ct);
     }
 
-    private async Task UpdateLeaderboardAsync(Competition competition, string userId, Submission submission, double score, CancellationToken ct)
+    private async Task UpdateLeaderboardAsync(Competition competition, string userId, Submission submission, double score, double privateScore, CancellationToken ct)
     {
         var higherIsBetter = scorers.Resolve(competition.ScorerCode).HigherIsBetter;
 
         var entry = await db.Set<LeaderboardEntry>()
             .FirstOrDefaultAsync(e => e.CompetitionId == competition.Id && e.SubmitterUserId == userId, ct);
 
+        // The live board tracks the best PUBLIC score; the private score of that same submission is carried
+        // so the concealed final board can rank on the hidden holdout at reveal time.
         if (entry is null)
         {
             db.Set<LeaderboardEntry>().Add(new LeaderboardEntry
@@ -598,12 +686,14 @@ public sealed class CompetitionService(
                 SubmitterUserId = userId,
                 BestSubmissionId = submission.Id,
                 Score = score,
+                PrivateScore = privateScore,
                 CreatedUtc = DateTime.UtcNow,
             });
         }
         else if ((higherIsBetter && score > entry.Score) || (!higherIsBetter && score < entry.Score))
         {
             entry.Score = score;
+            entry.PrivateScore = privateScore;
             entry.BestSubmissionId = submission.Id;
         }
 

@@ -64,21 +64,23 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var creator = _factory.CreateClientAs("comp-creator", "Employee");
         var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
 
-        // Hidden answer key: 1→A, 2→B, 3→A
-        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,B\n3,A")))
+        // Hidden answer key — every id labelled A, so any public/private holdout subset scores identically
+        // (the scoring split is deterministic per id, so a mixed key would make the public score depend on
+        // which ids landed in the public half; an all-A key keeps this test about ranking, not the split).
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A\n5,A\n6,A")))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        // Competitor A: perfect (3/3).
+        // Competitor A: perfect on every id → 1.0 on any subset.
         var a = _factory.CreateClientAs("comp-a", "Employee");
-        var resultA = (await (await a.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,B\n3,A")))
+        var resultA = (await (await a.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A\n5,A\n6,A")))
             .Content.ReadFromJsonAsync<SubmissionResultDto>())!;
         resultA.Score.Should().Be(1.0);
 
-        // Competitor B: 2/3.
+        // Competitor B: wrong on every id → 0.0 on any subset.
         var b = _factory.CreateClientAs("comp-b", "Employee");
-        var resultB = (await (await b.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,A\n3,A")))
+        var resultB = (await (await b.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,B\n2,B\n3,B\n4,B\n5,B\n6,B")))
             .Content.ReadFromJsonAsync<SubmissionResultDto>())!;
-        resultB.Score.Should().BeApproximately(2d / 3d, 1e-9);
+        resultB.Score.Should().Be(0.0);
 
         var leaderboard = (await a.GetFromJsonAsync<List<LeaderboardEntryDto>>($"/api/v1/competitions/{competitionId}/leaderboard?board=live"))!;
         leaderboard.Should().HaveCount(2);
@@ -357,29 +359,29 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var creator = _factory.CreateClientAs("rekey-creator", "Employee");
         var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
 
-        // Key K1: 1→A, 2→B, 3→A.
-        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,B\n3,A")))
+        // Key K1: every id is A (all-A keeps the assertion independent of the public/private split).
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A")))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        // X is perfect under K1 (A,B,A); Y is perfect under the *future* K2 (A,A,B) → only 1/3 under K1.
+        // X is perfect under K1 (all A); Y is perfect under the *future* K2 (all B) → wrong under K1.
         var x = _factory.CreateClientAs("rekey-x", "Employee");
-        (await (await x.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,B\n3,A")))
+        (await (await x.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A")))
             .Content.ReadFromJsonAsync<SubmissionResultDto>())!.Score.Should().Be(1.0);
         var y = _factory.CreateClientAs("rekey-y", "Employee");
-        await y.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,A\n3,B"));
+        await y.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,B\n2,B\n3,B\n4,B"));
 
         // Under K1, X leads.
         var before = (await x.GetFromJsonAsync<List<LeaderboardEntryDto>>($"/api/v1/competitions/{competitionId}/leaderboard?board=live"))!;
         before[0].UserId.Should().Be("rekey-x");
 
-        // Creator swaps in K2 (A,A,B) — now Y is perfect and X is 1/3. Existing submissions must be rescored.
-        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,B")))
+        // Creator swaps in K2 (all B) — now Y is perfect and X is wrong. Existing submissions must be rescored.
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,B\n2,B\n3,B\n4,B")))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var after = (await x.GetFromJsonAsync<List<LeaderboardEntryDto>>($"/api/v1/competitions/{competitionId}/leaderboard?board=live"))!;
         after[0].UserId.Should().Be("rekey-y", "the board must reflect the new key, not a mix");
         after[0].Score.Should().Be(1.0);
-        after.Single(e => e.UserId == "rekey-x").Score.Should().BeApproximately(1d / 3d, 1e-9);
+        after.Single(e => e.UserId == "rekey-x").Score.Should().Be(0.0);
     }
 
     [Fact]
@@ -396,6 +398,33 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         // The results are final — the key can no longer be changed.
         (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,B")))
             .StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Final_board_reveals_the_private_holdout_after_the_reveal_time()
+    {
+        // Reveal time already passed → the concealed final board (ranked on the hidden private holdout) is
+        // served alongside the live public board. (The future-reveal 403 gate is covered separately.)
+        var creator = _factory.CreateClientAs("holdout-creator", "Employee");
+        var competitionId = await CreateCompetition(creator, revealUtc: DateTime.UtcNow.AddMinutes(-5), quota: 5);
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A\n5,A\n6,A")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var top = _factory.CreateClientAs("holdout-top", "Employee");
+        await top.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A\n5,A\n6,A")); // perfect
+        var bottom = _factory.CreateClientAs("holdout-bottom", "Employee");
+        await bottom.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,B\n2,B\n3,B\n4,B\n5,B\n6,B")); // wrong
+
+        var live = (await top.GetFromJsonAsync<List<LeaderboardEntryDto>>($"/api/v1/competitions/{competitionId}/leaderboard?board=live"))!;
+        live[0].UserId.Should().Be("holdout-top");
+        live[0].Score.Should().Be(1.0);
+
+        var finalResponse = await top.GetAsync($"/api/v1/competitions/{competitionId}/leaderboard?board=final");
+        finalResponse.StatusCode.Should().Be(HttpStatusCode.OK); // reveal has passed
+        var final = (await finalResponse.Content.ReadFromJsonAsync<List<LeaderboardEntryDto>>())!;
+        final[0].UserId.Should().Be("holdout-top");
+        final[0].Score.Should().Be(1.0); // perfect on the private half too
+        final.Single(e => e.UserId == "holdout-bottom").Score.Should().Be(0.0);
     }
 
     private static async Task<Guid> CreateCompetition(HttpClient client, DateTime? revealUtc, int quota)

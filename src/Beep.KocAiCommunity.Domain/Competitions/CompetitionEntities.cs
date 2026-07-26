@@ -37,16 +37,22 @@ public class Submission : AuditableEntity
     public Guid PredictionArtifactId { get; set; }
     public DateTime SubmittedUtc { get; set; }
     public string Status { get; set; } = "scored";       // pending, scored, failed
-    public double? Score { get; set; }
+    public double? Score { get; set; }                   // public score — the live leaderboard (Kaggle-style)
+    public double? PrivateScore { get; set; }            // private/hidden holdout score — the final standings
     public string? Notes { get; set; }
 }
 
-/// <summary>A participant's best score and current rank on a competition's leaderboard.</summary>
+/// <summary>
+/// A participant's best score and current rank on a competition's leaderboard. <see cref="Score"/>/
+/// <see cref="Rank"/> are the public (live) standings — the best public-scoring submission. The private
+/// score of that same submission is carried in <see cref="PrivateScore"/> for the concealed final board.
+/// </summary>
 public class LeaderboardEntry : AuditableEntity
 {
     public Guid CompetitionId { get; set; }
     public string SubmitterUserId { get; set; } = default!;
     public Guid? BestSubmissionId { get; set; }
     public double Score { get; set; }
+    public double PrivateScore { get; set; }
     public int Rank { get; set; }
 }

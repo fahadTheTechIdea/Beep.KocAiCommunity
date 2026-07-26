@@ -80,7 +80,7 @@ public interface ICompetitionService
     Task<IReadOnlyList<LeaderboardEntry>> GetLeaderboardAsync(Guid competitionId, CancellationToken ct = default);
 
     /// <summary>Leaderboard with each entrant's community display name resolved (falls back to the id).</summary>
-    Task<IReadOnlyList<NamedLeaderboardEntry>> GetLeaderboardNamedAsync(Guid competitionId, CancellationToken ct = default);
+    Task<IReadOnlyList<NamedLeaderboardEntry>> GetLeaderboardNamedAsync(Guid competitionId, string board, CancellationToken ct = default);
     Task<IReadOnlyList<Submission>> GetMySubmissionsAsync(string userId, Guid competitionId, CancellationToken ct = default);
 
     /// <summary>

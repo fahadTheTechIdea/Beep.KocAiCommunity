@@ -652,10 +652,14 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.Property<DateTime?>("LastModifiedUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<double>("PrivateScore")
+                        .HasColumnType("float");
+
                     b.Property<int>("Rank")
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
                         .HasColumnType("varbinary(max)");
 
                     b.Property<double>("Score")
@@ -705,6 +709,9 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
 
                     b.Property<Guid>("PredictionArtifactId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<double?>("PrivateScore")
+                        .HasColumnType("float");
 
                     b.Property<byte[]>("RowVersion")
                         .HasColumnType("varbinary(max)");
