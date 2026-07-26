@@ -346,6 +346,23 @@ KOC blueprint theme. No DB schema change anywhere.
     (design): the two execution engines (`workflow.run`/`/studio/workflows/run` run AutoML, not the
     graph), schema-carrying `PipelineTable`, RMSE-as-headline for regression.
 
+## End-to-end pipeline & scoring audit (item 37 follow-on)
+
+38. 🟡 **IN PROGRESS (2026-07-26)** — full audit of every node → workflow → executor → scoring path
+    (`20_PIPELINE_AND_SCORING_AUDIT.md`). Confirmed two execution engines run the same
+    `WorkflowDefinition` and disagree (competition scoring + `/studio/workflows/execute` run the real
+    graph; `run`/`workflow.run`/`experiment.train`/`model.train` substitute AutoML and ignore the
+    graph). **Shipped:** phase E (`151b3aa`) — id/label pinned to text across both crossings so
+    numeric/zero-padded ids survive (was: `00123`→`123` collapsing the answer-key join = T2), DateTime
+    CSV handling (H3), union-after-split fold fix (T4), and the last three naive-CSV sites routed
+    through `KocCsv` (`AutoMlPredictionPool`/`AutoMlTrainer` drift baseline/`CsvProfiler` = M5/M6/M7);
+    L10 (`82025c2`) — FastTree/FastForest pinned to one thread for reproducible training. **Open:** H2
+    (schema-carrying `PipelineTable`, root-cause fix — patch ready, awaiting decision), T3 (compiler
+    branch guard for the linear executor), S1–S5 (concealed-final board is cosmetic; answer-key swap
+    doesn't rescore; accuracy boolean-folding collides for coded multiclass; accuracy/RMSE edge-case
+    divergence; quota/leaderboard concurrency), T1 (route run/train through the node graph). Plus an
+    assurance layer: a golden pipeline/competition correctness suite gated in CI.
+
 ## Global definition of done
 
 ```bash

@@ -1,0 +1,116 @@
+# Phase 20 — Pipeline & Scoring End-to-End Audit + Remediation
+
+**Date:** 2026-07-26
+**Scope:** every node → workflow → executor → scoring path — how data moves, whether it
+follows standards, and whether scoring is consistent and correct.
+**Status:** 🟡 IN PROGRESS — audit complete; contained fixes shipped; larger items sequenced below.
+
+This document is the durable record of the audit. It supersedes the scattered "remaining
+follow-ups" note in tracker item 37 and defines the remediation program (tracker item 38).
+
+---
+
+## How data moves (the two data planes)
+
+```
+AUTHORING            EXECUTION                                      SCORING
+WorkflowDefinition ─┬─► PluginNodeExecutor (graph)  ─► id,prediction CSV ─► IScoringPlugin ─► LeaderboardEntry
+ (compiler+guards)  └─► AutoMlTrainer   (AutoML)     ─► model.zip + metrics   (accuracy / rmse)
+```
+
+- **Uniform contract:** every node speaks `PipelineTable` (physically a header CSV). DuckDB and
+  ML.NET nodes read/write the same CSV, so they interleave freely.
+- **Two engines run the SAME `WorkflowDefinition`:** `IPipelineExecutor`/`PluginNodeExecutor` runs
+  the real graph; `IMlTrainer`/`AutoMlTrainer` runs AutoML and ignores the graph. Competition
+  scoring and `/studio/workflows/execute` use the graph; **`/studio/workflows/run`, `workflow.run`,
+  `experiment.train`, `model.train` all substitute AutoML** (`WorkflowService.RunAsync:24` compiles
+  the graph only to validate, then trains AutoML with a hardcoded `BinaryClassification`).
+
+---
+
+## Findings (ranked)
+
+### Tier 1 — silent wrong results
+- **T1 — two engines, graph ignored on run/train.** A participant "runs" their published workflow,
+  sees AutoML metrics, submits, and the leaderboard score comes from the *graph* — a different
+  computation. `WorkflowVersion.DefinitionJson` is read only for `Status`. *(design change; open)*
+- **T2 — numeric id corruption across the typeless-CSV crossing.** `PipelineTable` carried names but
+  no types; every load re-inferred, so a zero-padded/large id round-tripped `00123 → 123` and broke
+  the id-aligned answer-key join → score collapses to ~0. *(FIXED, phase E — id pinned to text on
+  both crossings; root-cause fix H2 pending, see below)*
+- **T3 — branching graphs mis-thread.** The executor threads one `table` in topo order; the compiler
+  never rejects fan-in/fan-out, so a diamond/branch feeds the wrong upstream table into a node.
+  *(open — compiler guard)*
+- **T4 — union-after-split silently dropped rows.** Appended rows had `NULL __fold` and were filtered
+  out of both train and test. *(FIXED, phase E — appended rows get `__fold = 0`)*
+
+### Tier 2 — scoring integrity
+- **S1 — "concealed final" board is cosmetic.** `CompetitionEndpoints.cs:190` returns the same live
+  data for every `board` value; only literal `board=final` is gated by `RevealUtc`. No public/private
+  holdout exists — scorers score the whole key, so live == final. *(open)*
+- **S2 — answer-key swap doesn't rescore, no lifecycle guard.** `SetAnswerKeyAsync` replaces the key at
+  any status but leaves frozen `Submission`/`LeaderboardEntry` scores. *(open)*
+- **S3 — accuracy boolean folding collides for coded multiclass.** `t/f/y/n/1/0` fold together, so a
+  multiclass class literally named `T`/`F`/`Y`/`N` can match a wrong prediction. *(open — scope folding
+  to binary tasks)*
+- **S4 — accuracy vs RMSE diverge on edge cases.** RMSE returns `0.0` (best) on a degenerate key while
+  accuracy's `0.0` is worst; RMSE self-skips a phantom header row while accuracy counts it; `CompetitionCsv`
+  reads id/value by position while validation reads by header name. *(open — unify)*
+- **S5 — quota + leaderboard concurrency-unsafe.** TOCTOU on the daily-quota count; `RowVersion` exists
+  but isn't configured as a concurrency token. *(open)*
+
+### Tier 3 — standards / hygiene (mostly FIXED)
+- **M5/M6/M7 — three naive-CSV sites** (`AutoMlPredictionPool`, `AutoMlTrainer.ComputeFeatureStats`,
+  `CsvProfiler`) bypassed the `KocCsv` mandate. *(FIXED, phase E — all route through `KocCsv`)*
+- **H3 — DateTime column crashed `MlCsv`.** *(FIXED, phase E — ISO-8601 branch)*
+- **L10 — FastTree/FastForest non-deterministic** (multi-threaded FP reductions). *(FIXED — pinned
+  `NumberOfThreads = 1` via `.Options`)*
+- **H2 — typeless `PipelineTable`** is the root cause of T2 and precision/date drift. *(PATCH READY,
+  see below)*
+- **Minor (open/low):** provenance hash is order-sensitive (`WorkflowSerializer`); `__fold` name
+  collision unguarded; compiler "needs a model node" check is case-sensitive for `cluster`.
+
+### What was already solid
+`KocCsv` RFC-4180 codec; id↔prediction positional alignment + count guard; `FeaturizationGuard` graph
+BFS; `__fold` dropped-marker leakage guard; deterministic leaderboard tie-break + `HigherIsBetter`;
+temp-file cleanup on success and exception (no leaks).
+
+---
+
+## Remediation status
+
+| Item | Status | Commit |
+|---|---|---|
+| Phase C — predict id-alignment + fold-leakage guard | ✅ | `896506e` |
+| Phase D — determinism + node validation + label-token echo | ✅ | `ddd3dd4` |
+| Phase E — id/type text-pinning (T2/H3/T4) + RFC-4180 (M5/M6/M7) | ✅ | `151b3aa` |
+| L10 — FastTree/FastForest thread-pinning | ✅ | `82025c2` |
+| **H2 — schema-carrying `PipelineTable`** (root-cause of T2) | ⏳ PATCH READY | `scratchpad/h2-schema-carrying.patch` |
+| **T3 — compiler branch guard** | ⬜ open | — |
+| **S1–S5 — scoring integrity** | ⬜ open | — |
+| **T1 — engine unification** | ⬜ open | — |
+
+**H2 patch note:** a background remediation agent authored a coherent schema-carrying `PipelineTable`
+(`PipelineColumnType` enum; `Types` carried across both crossings; DuckDB `read_csv_auto(types=…)` +
+`ColumnTypes`; `MlCsv.DescribeColumns`). It was set aside (not committed) because it was unrequested,
+unvalidated, and arrived via an uncontrolled process. It is the *proper* fix that would let the phase-E
+text-pinning band-aid be removed. Requires a full test pass before adoption.
+
+---
+
+## How to prove correctness (assurance layer)
+
+Add a **pipeline/competition correctness suite**, gated in CI alongside the global DoD:
+- **Golden end-to-end fixtures:** zero-padded ids, large-magnitude ids, quoted comma/newline fields,
+  `1/0` vs `true/false` labels, dates → assert the submission joins 1:1 to the key and scores as expected.
+- **Round-trip invariant:** a no-op transform pipeline reproduces the id column byte-for-byte.
+- **Engine-equivalence (post-T1):** the same workflow via "run" and via "submit" must agree.
+- **Linearity property (until T3):** any compiler-valid graph the executor accepts is actually linear.
+- **Determinism:** re-running any seeded pipeline yields identical metrics (L10 test is the first).
+
+---
+
+## Recommended order
+
+`H2 (decision) → T3 → S1–S5 → T1`. T3 is a contained compiler guard; S1–S5 are several small scoring
+fixes; T1 is the largest (design change to route run/train through the graph).
