@@ -98,9 +98,18 @@ public sealed class SortHandler : IPipelineNodeHandler
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
         var orderBy = Cfg(node, "orderBy");
-        return string.IsNullOrWhiteSpace(orderBy)
-            ? Duck.Skip(node, "no ORDER BY provided", input)
-            : Duck.Run(ctx, node, input, this, $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} ORDER BY {orderBy}", replay: false);
+        if (string.IsNullOrWhiteSpace(orderBy))
+        {
+            return Duck.Skip(node, "no ORDER BY provided", input);
+        }
+
+        // Append every column as a trailing tie-break so the sort is a total order: rows with equal
+        // user keys still come out in one fixed, reproducible sequence rather than DuckDB's arbitrary
+        // (and potentially run-varying) tie order. Redundant keys are harmless.
+        var tieBreak = input.Columns.Count == 0
+            ? string.Empty
+            : ", " + string.Join(", ", input.Columns.Select(DuckDbSession.Quote));
+        return Duck.Run(ctx, node, input, this, $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} ORDER BY {orderBy}{tieBreak}", replay: false);
     }
 }
 

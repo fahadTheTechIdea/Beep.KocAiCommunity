@@ -17,6 +17,12 @@ public sealed class DuckDbSession : IDisposable
     {
         _connection = new DuckDBConnection("DataSource=:memory:");
         _connection.Open();
+
+        // Determinism: a single worker thread with insertion order preserved makes every operation —
+        // exports, aggregations, and ORDER BY tie-breaking — reproducible run-to-run. Pipeline data is
+        // small, so serial execution costs nothing and buys a stable, replayable engine.
+        Execute("SET threads TO 1;");
+        Execute("SET preserve_insertion_order TO true;");
     }
 
     /// <summary>Runs a non-query statement (CREATE/COPY/INSERT/DROP …).</summary>

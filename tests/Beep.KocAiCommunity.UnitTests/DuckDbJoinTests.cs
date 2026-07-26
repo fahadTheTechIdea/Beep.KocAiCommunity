@@ -59,6 +59,31 @@ public class DuckDbJoinTests
     }
 
     [Fact]
+    public async Task Join_with_an_unresolvable_dataset_fails_loudly()
+    {
+        // The referenced dataset id isn't attached to the run. The join must fail the run rather than
+        // silently skip and train on the primary alone (a wrong, quietly-degraded result).
+        var def = new WorkflowDefinition
+        {
+            Name = "missing-join",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "j", Kind = "join-dataset", Config = new Dictionary<string, string> { ["datasetId"] = Guid.NewGuid().ToString(), ["on"] = "key" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+            ],
+            Edges = [new("d", "j"), new("j", "sp"), new("sp", "tr")],
+        };
+
+        var primary = "key,x1,label\nk0,0,false\nk1,1,true\n";
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, Csv(primary), 5);
+
+        result.Success.Should().BeFalse();
+        result.Nodes.Single(n => n.Kind == "join-dataset").Status.Should().Be("failed");
+    }
+
+    [Fact]
     public async Task Union_dataset_appends_rows_from_a_second_dataset()
     {
         var second = Guid.NewGuid();

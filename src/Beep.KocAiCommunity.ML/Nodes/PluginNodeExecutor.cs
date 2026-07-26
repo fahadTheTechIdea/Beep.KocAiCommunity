@@ -85,7 +85,9 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             NodeResult result;
             try
             {
-                result = HandlerFor(node).Execute(ctx, node, table);
+                var handler = HandlerFor(node);
+                ValidateNodeInputs(handler.Descriptor, node, table, ctx);
+                result = handler.Execute(ctx, node, table);
             }
             catch (Exception ex)
             {
@@ -127,7 +129,9 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         foreach (var nodeId in order)
         {
             var node = byId[nodeId];
-            var result = HandlerFor(node).Execute(ctx, node, table);
+            var handler = HandlerFor(node);
+            ValidateNodeInputs(handler.Descriptor, node, table, ctx);
+            var result = handler.Execute(ctx, node, table);
             if (result.Output is not null)
             {
                 table = result.Output;
@@ -161,7 +165,13 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         // the id column or the counts diverge, fail loudly rather than silently mis-pair with Math.Min.
         var ids = MlModelOps.ReadColumn(evalTable.CsvPath, idColumn);
         var scored = ctx.Model.Transform(evalTable.LoadIntoMl(ctx.Ml, idColumn));
-        var predictions = MlModelOps.ReadPredictions(scored, task);
+
+        // For binary tasks, echo the training label's own token convention (1/0, yes/no, …) so the
+        // submission matches the competition's answer key rather than a hardcoded true/false.
+        var binaryTokens = task == MlTaskType.BinaryClassification
+            ? MlModelOps.BinaryLabelTokens(trainPath, labelColumn)
+            : null;
+        var predictions = MlModelOps.ReadPredictions(scored, task, binaryTokens);
 
         if (ids.Count != predictions.Count)
         {
@@ -181,6 +191,63 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
 
     private IPipelineNodeHandler HandlerFor(WorkflowNode node)
         => registry.Handler(node.Kind) ?? throw new InvalidOperationException($"No handler for node kind '{node.Kind}'.");
+
+    /// <summary>
+    /// Fails a node loudly when its runtime-scoped parameters don't resolve — a <c>Columns</c> value that
+    /// names a column not in the table it operates on, or a <c>Dataset</c> value that can't be loaded.
+    /// These slip past the static (publish-time) validator, which can't see the flowing data, and would
+    /// otherwise be silently dropped (wrong result) or silently skipped. Blank values are left to the
+    /// handler's own "blank = all / no-op" semantics.
+    /// </summary>
+    private static void ValidateNodeInputs(NodeDescriptor descriptor, WorkflowNode node, PipelineTable table, PipelineContext ctx)
+    {
+        foreach (var p in descriptor.Parameters)
+        {
+            var raw = PipelineContext.Cfg(node, p.Name);
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                continue;
+            }
+
+            if (p.Type == NodeParameterType.Dataset)
+            {
+                if (!Guid.TryParse(raw, out var id) || ctx.SecondaryTable(id) is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Node '{node.Kind}': the dataset selected for '{p.DisplayName}' could not be loaded. "
+                        + "Attach the dataset to the run, or clear the selection.");
+                }
+
+                continue;
+            }
+
+            if (p.Type == NodeParameterType.Columns)
+            {
+                var scope = ColumnScope(descriptor.Kind, p.Name, node, table, ctx);
+                var missing = PipelineContext.SplitList(raw).Where(c => !scope.Contains(c)).ToList();
+                if (missing.Count > 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Node '{node.Kind}': column(s) not found for '{p.DisplayName}': {string.Join(", ", missing)}. "
+                        + $"Available columns: {string.Join(", ", scope)}.");
+                }
+            }
+        }
+    }
+
+    /// <summary>The columns a <c>Columns</c> parameter is checked against — normally the input table, but
+    /// the join node's column picker names columns of the <em>joined</em> dataset, so it resolves there.</summary>
+    private static IReadOnlyCollection<string> ColumnScope(string kind, string paramName, WorkflowNode node, PipelineTable table, PipelineContext ctx)
+    {
+        if (kind == "join-dataset" && paramName == "columns"
+            && Guid.TryParse(PipelineContext.Cfg(node, "datasetId"), out var id)
+            && ctx.SecondaryTable(id) is { } joined)
+        {
+            return [.. ctx.Duck.Columns(joined)];
+        }
+
+        return [.. table.Columns];
+    }
 
     private static async Task<IReadOnlyDictionary<Guid, byte[]>> ReadSecondaryAsync(IReadOnlyDictionary<Guid, Stream>? secondary, CancellationToken ct)
     {

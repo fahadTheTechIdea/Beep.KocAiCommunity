@@ -92,6 +92,46 @@ public class DuckDbPipelineTests
     }
 
     [Fact]
+    public void Sort_breaks_ties_deterministically_into_a_total_order()
+    {
+        // Many rows share the primary sort key 'k' but differ on 'v'. Without a total-order tie-break the
+        // engine could emit tied rows in an arbitrary (run-varying) sequence; the sort node appends every
+        // column so the output is one fixed order — verified stable across two independent sessions.
+        var inPath = Path.Combine(Path.GetTempPath(), $"sort-in-{Guid.NewGuid():N}.csv");
+        var rows = Enumerable.Range(0, 200).Select(i => $"{i % 3},{199 - i}");
+        File.WriteAllText(inPath, "k,v\n" + string.Join("\n", rows) + "\n");
+        try
+        {
+            var first = RunSort(inPath, "k");
+            var second = RunSort(inPath, "k");
+
+            first.Should().Equal(second, "the sort must be reproducible run-to-run");
+            // Total order: ascending by k, then (tie-break) ascending by v.
+            first.Should().Equal(first.OrderBy(r => r.K).ThenBy(r => r.V).ToList());
+        }
+        finally
+        {
+            File.Delete(inPath);
+        }
+    }
+
+    private static List<(int K, int V)> RunSort(string inPath, string orderBy)
+    {
+        using var ctx = new PipelineContext
+        {
+            Ml = new Microsoft.ML.MLContext(seed: 1),
+            Task = MlTaskType.BinaryClassification,
+            Mode = PipelineMode.Execute,
+            LabelColumn = "label",
+        };
+        var node = new WorkflowNode { Id = "s", Kind = "sort", Config = new Dictionary<string, string> { ["orderBy"] = orderBy } };
+        var result = new SortHandler().Execute(ctx, node, PipelineTable.FromCsvFile(inPath));
+
+        return File.ReadAllLines(result.Output!.CsvPath).Skip(1).Where(l => l.Length > 0)
+            .Select(l => l.Split(',')).Select(p => (int.Parse(p[0]), int.Parse(p[1]))).ToList();
+    }
+
+    [Fact]
     public async Task DuckDb_group_by_and_sort_chain()
     {
         // A DuckDB-only ETL chain: aggregate per zone, then sort — proves multi-node SQL flow.

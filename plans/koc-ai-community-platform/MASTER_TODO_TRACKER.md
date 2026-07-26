@@ -328,15 +328,21 @@ KOC blueprint theme. No DB schema change anywhere.
 
 ## Pipeline & scoring correctness (audit remediation)
 
-37. ~~CSV codec + scoring correctness~~ ✅ IN PROGRESS (2026-07-23) — end-to-end audit of nodes →
+37. ~~CSV codec + scoring correctness~~ ✅ DONE (2026-07-26) — end-to-end audit of nodes →
     executor → scoring. Fixed: shared RFC-4180 `KocCsv` codec (Application/Common) replacing naive
     `Split(',')`; id-aligned robust scorers with boolean-convention tolerance (fixes the latent binary
     `1/0` zero-score bug incl. Titanic); `TaskType`↔`ScorerCode` guard; answer-key validation on upload;
     deterministic leaderboard tie-break; scorer/CSV property-test battery. Data flow: predict
     id↔prediction alignment now reads ids from the same replayed table (no `Math.Min` shear, fails loud
     on mismatch); `__fold` leakage guard — a split then a column-dropping SQL node fails loudly instead
-    of silently training on test rows. **Remaining follow-ups:** DuckDB `ORDER BY` determinism, node
-    parameter validation (Columns/Dataset), binary emission of non-boolean training tokens. Deferred
+    of silently training on test rows. **Phase D (2026-07-26, lower-severity follow-ups):** DuckDB engine
+    made deterministic (`SET threads TO 1` + `preserve_insertion_order`) and the `sort` node appends every
+    column as a total-order tie-break, so `ORDER BY` ties are reproducible run-to-run; runtime node
+    validation (`PluginNodeExecutor.ValidateNodeInputs`) fails a node loudly when a `Columns` param names a
+    column absent from the table it operates on (join's column picker resolves against the joined dataset)
+    or a `Dataset` param can't be loaded — instead of silently dropping/skipping; binary submissions now
+    echo the training label's own token convention (`1/0`, `yes/no`) via `MlModelOps.BinaryLabelTokens`
+    rather than a hardcoded `true/false`. 4 new unit tests (161 unit + 110 integration green). Deferred
     (design): the two execution engines (`workflow.run`/`/studio/workflows/run` run AutoML, not the
     graph), schema-carrying `PipelineTable`, RMSE-as-headline for regression.
 

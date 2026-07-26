@@ -76,7 +76,7 @@ internal static class MlModelOps
         };
     }
 
-    public static List<string> ReadPredictions(IDataView scored, MlTaskType task)
+    public static List<string> ReadPredictions(IDataView scored, MlTaskType task, (string True, string False)? binaryTokens = null)
     {
         var list = new List<string>();
         if (task == MlTaskType.Regression)
@@ -105,6 +105,7 @@ internal static class MlModelOps
         }
         else
         {
+            var (t, f) = binaryTokens ?? ("true", "false");
             var col = scored.Schema["PredictedLabel"];
             using var cursor = scored.GetRowCursor([col]);
             var getter = cursor.GetGetter<bool>(col);
@@ -112,10 +113,44 @@ internal static class MlModelOps
             while (cursor.MoveNext())
             {
                 getter(ref value);
-                list.Add(value ? "true" : "false");
+                list.Add(value ? t : f);
             }
         }
         return list;
+    }
+
+    /// <summary>
+    /// The exact tokens the training label used for the true/false classes (e.g. <c>1</c>/<c>0</c> or
+    /// <c>Yes</c>/<c>No</c>), so a binary submission echoes the competition's own convention instead of a
+    /// hardcoded <c>true</c>/<c>false</c>. Returns null when the labels aren't a recognisable boolean pair
+    /// (both classes not present, or non-standard tokens) — callers then fall back to <c>true</c>/<c>false</c>.
+    /// </summary>
+    public static (string True, string False)? BinaryLabelTokens(string trainingCsvPath, string labelColumn)
+    {
+        string? trueToken = null;
+        string? falseToken = null;
+        foreach (var raw in ReadColumn(trainingCsvPath, labelColumn))
+        {
+            var token = raw.Trim();
+            switch (token.ToLowerInvariant())
+            {
+                case "true" or "1" or "yes" or "y" or "t":
+                    trueToken ??= token;
+                    break;
+                case "false" or "0" or "no" or "n" or "f":
+                    falseToken ??= token;
+                    break;
+                default:
+                    return null; // a class token outside the boolean families — don't guess a convention
+            }
+
+            if (trueToken is not null && falseToken is not null)
+            {
+                break;
+            }
+        }
+
+        return trueToken is not null && falseToken is not null ? (trueToken, falseToken) : null;
     }
 
     public static List<string> ReadColumn(string path, string columnName)

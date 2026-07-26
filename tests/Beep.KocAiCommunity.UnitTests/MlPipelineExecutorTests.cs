@@ -218,6 +218,76 @@ public class MlPipelineExecutorTests
     }
 
     [Fact]
+    public async Task Naming_a_missing_column_fails_loudly_instead_of_silently_dropping_it()
+    {
+        // select-columns names a column that isn't in the data — a typo. It must fail the run rather than
+        // silently drop the unknown name and carry on with a wrong column set.
+        var def = new WorkflowDefinition
+        {
+            Name = "typo",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "sc", Kind = "select-columns", Config = new Dictionary<string, string> { ["columns"] = "x1,presure" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+            ],
+            Edges = [new("d", "sc"), new("sc", "sp"), new("sp", "tr")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 20; i++)
+        {
+            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+
+        result.Success.Should().BeFalse();
+        var failed = result.Nodes.Single(n => n.Kind == "select-columns");
+        failed.Status.Should().Be("failed");
+        failed.Detail.Should().Contain("presure");
+    }
+
+    [Fact]
+    public async Task Binary_predictions_echo_the_training_labels_token_convention()
+    {
+        // The training label uses 1/0 (a Titanic-style key), so the submission must come back as 1/0 —
+        // not a hardcoded true/false.
+        var def = new WorkflowDefinition
+        {
+            Name = "submission-1-0",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "nz", Kind = "normalize" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "nz"), new("nz", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var train = new StringBuilder("id,x1,x2,label\n");
+        for (var i = 0; i < 60; i++)
+        {
+            train.Append($"tr{i}a,{7 + (i % 3)},{7 + ((i / 3) % 3)},1\n");
+            train.Append($"tr{i}b,{i % 3},{(i / 3) % 3},0\n");
+        }
+        using var trainCsv = new MemoryStream(Encoding.UTF8.GetBytes(train.ToString()));
+        var eval = "id,x1,x2\ne1,9,9\ne2,0,0\n";
+        using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval));
+
+        var csv = await NewExecutor().PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, trainCsv, evalCsv);
+
+        var lines = csv.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines[1].Should().Be("e1,1");
+        lines[2].Should().Be("e2,0");
+    }
+
+    [Fact]
     public async Task Executes_and_evaluates_a_multiclass_model()
     {
         var def = new WorkflowDefinition
