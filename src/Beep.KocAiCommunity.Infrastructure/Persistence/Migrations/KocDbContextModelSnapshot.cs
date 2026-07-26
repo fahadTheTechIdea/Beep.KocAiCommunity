@@ -563,6 +563,9 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("LabelColumn")
                         .IsRequired()
                         .HasColumnType("TEXT");

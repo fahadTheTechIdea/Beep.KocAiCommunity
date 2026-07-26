@@ -412,6 +412,25 @@ public sealed class CompetitionService(
     public Task<Competition?> GetAsync(Guid competitionId, CancellationToken ct = default) =>
         db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.Id == competitionId, ct);
 
+    public async Task SetFeaturedAsync(Guid competitionId, CancellationToken ct = default)
+    {
+        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
+            ?? throw new CompetitionException("Competition not found.");
+
+        // Exactly one hero at a time: clear the flag on whatever was featured, set it on this one.
+        var previouslyFeatured = await db.Set<Competition>().Where(c => c.IsFeatured && c.Id != competitionId).ToListAsync(ct);
+        foreach (var other in previouslyFeatured)
+        {
+            other.IsFeatured = false;
+        }
+
+        competition.IsFeatured = true;
+        await db.SaveChangesAsync(ct);
+    }
+
+    public Task<Competition?> GetFeaturedAsync(CancellationToken ct = default) =>
+        db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.IsFeatured, ct);
+
     public async Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, CancellationToken ct = default)
     {
         var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)

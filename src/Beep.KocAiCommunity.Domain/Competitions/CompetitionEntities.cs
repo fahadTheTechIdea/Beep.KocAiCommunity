@@ -27,6 +27,7 @@ public class Competition : AuditableEntity
     public string IdColumn { get; set; } = "id";
     public string TaskType { get; set; } = "BinaryClassification";
     public Guid? RecommendedTrackId { get; set; }          // learn ↔ compete tie-in
+    public bool IsFeatured { get; set; }                   // pinned as THE landing-page hero (one at a time; admin-set)
 }
 
 /// <summary>One scored attempt by a participant.</summary>

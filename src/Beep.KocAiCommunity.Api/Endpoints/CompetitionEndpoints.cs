@@ -155,6 +155,22 @@ public static class CompetitionEndpoints
         .WithName("SetCompetitionStatus")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
+        // Pin one competition as the landing-page hero (platform admin only, one at a time).
+        group.MapPost("/competitions/{id:guid}/feature", async (Guid id, ICompetitionService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.SetFeaturedAsync(id, ct);
+                return Results.NoContent();
+            }
+            catch (CompetitionException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("SetFeaturedCompetition")
+        .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
+
         group.MapPost("/competitions/{id:guid}/reveal", async (Guid id, SetRevealRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
         {
             try
@@ -236,6 +252,7 @@ public static class CompetitionEndpoints
             c.SubmissionQuotaPerDay,
             metric,
             scorer.HigherIsBetter,
-            c.CreatedUtc);
+            c.CreatedUtc,
+            c.IsFeatured);
     }
 }

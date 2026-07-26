@@ -40,7 +40,7 @@ public static class CompetitionSeeder
             + "knowledge needed. From a passenger's details (class, sex, age, fare, family aboard), predict "
             + "who survived. Build a pipeline in the Studio, submit it, and see your accuracy on a hidden test "
             + "set. A great way to *see the idea* behind the whole platform.",
-            "accuracy", "survived", "BinaryClassification", BuildTitanic(), starterTrack));
+            "accuracy", "survived", "BinaryClassification", BuildTitanic(), starterTrack, IsFeatured: true));
 
         await MaybeAddAsync(db, artifacts, stamp, ct, new DemoSpec(
             WellIntegrityTitle,
@@ -78,7 +78,7 @@ public static class CompetitionSeeder
 
     private sealed record DemoSpec(
         string Title, string Description, string Scorer, string LabelColumn, string TaskType,
-        (string Training, string Evaluation, string AnswerKey) Data, Guid? RecommendedTrackId = null);
+        (string Training, string Evaluation, string AnswerKey) Data, Guid? RecommendedTrackId = null, bool IsFeatured = false);
 
     private static async Task MaybeAddAsync(KocDbContext db, IArtifactService artifacts, DateTime stamp, CancellationToken ct, DemoSpec spec)
     {
@@ -108,6 +108,7 @@ public static class CompetitionSeeder
             IdColumn = "id",
             TaskType = spec.TaskType,
             RecommendedTrackId = spec.RecommendedTrackId,
+            IsFeatured = spec.IsFeatured,
             CreatedByUserId = "dev-lead",
             CreatedUtc = stamp,
         });

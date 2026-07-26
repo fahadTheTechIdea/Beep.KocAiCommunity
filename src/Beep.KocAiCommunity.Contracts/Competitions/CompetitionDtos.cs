@@ -30,7 +30,8 @@ public sealed record CompetitionDto(
     int QuotaPerDay = 0,
     string MetricName = "",
     bool HigherIsBetter = true,
-    DateTime? CreatedUtc = null);
+    DateTime? CreatedUtc = null,
+    bool IsFeatured = false);
 
 public sealed record SetStatusRequest(string Status);
 

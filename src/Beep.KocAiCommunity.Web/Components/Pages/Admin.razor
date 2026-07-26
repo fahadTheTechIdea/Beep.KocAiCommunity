@@ -1,5 +1,6 @@
 @page "/admin"
 @using Beep.KocAiCommunity.Contracts.Admin
+@using Beep.KocAiCommunity.Contracts.Competitions
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Ui.Shared.Components
@@ -152,6 +153,42 @@ else
             }
         </MudTabPanel>
 
+        <MudTabPanel Text="Featured" Icon="@Icons.Material.Filled.Star" OnClick="EnsureFeatured">
+            <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:70ch;">
+                Pin one competition as the <b>landing-page hero</b> — the big "Featured competition" card
+                every user sees on Home, with its countdown, live podium, and <i>Enter the arena</i> button.
+                Exactly one is featured at a time.
+            </MudText>
+
+            @if (_competitions is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else if (_competitions.Count == 0)
+            {
+                <MudText Typo="Typo.body2">No competitions yet.</MudText>
+            }
+            else
+            {
+                <BlueprintCard Class="pa-4">
+                    <div class="d-flex align-center gap-3 flex-wrap">
+                        <MudSelect T="Guid?" Label="Featured competition" Value="_featuredId" ValueChanged="@(v => _featuredId = v)" Style="min-width:340px;">
+                            @foreach (var c in _competitions)
+                            {
+                                <MudSelectItem T="Guid?" Value="@((Guid?)c.Id)">@(c.IsFeatured ? "★ " : "")@c.Title</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Star"
+                                   Disabled="@(_featuredBusy || _featuredId is null)" OnClick="SetFeatured">Make featured</MudButton>
+                    </div>
+                    @if (_featuredBusy)
+                    {
+                        <MudProgressLinear Indeterminate="true" Class="mt-3" />
+                    }
+                </BlueprintCard>
+            }
+        </MudTabPanel>
+
         <MudTabPanel Text="RBAC / Users" Icon="@Icons.Material.Filled.ManageAccounts" OnClick="EnsureRbac">
             <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:80ch;">
                 Manage who can <b>create competitions</b> and at what level, and each user's org identity
@@ -272,6 +309,10 @@ else
     private DemoDataStatusDto? _demo;
     private bool _demoBusy;
 
+    private IReadOnlyList<CompetitionDto>? _competitions;
+    private Guid? _featuredId;
+    private bool _featuredBusy;
+
     private IReadOnlyList<AdminUserDto>? _users;
     private IReadOnlyList<OrgUnitCodeDto>? _orgUnits;
     private readonly Dictionary<string, string?> _emailDrafts = new();
@@ -287,6 +328,48 @@ else
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
         {
             _forbidden = true;
+        }
+    }
+
+    private async Task EnsureFeatured()
+    {
+        if (_competitions is not null)
+        {
+            return;
+        }
+
+        try
+        {
+            _competitions = await Api.GetCompetitionsAsync();
+            _featuredId = _competitions.FirstOrDefault(c => c.IsFeatured)?.Id;
+        }
+        catch
+        {
+            _competitions = [];
+        }
+    }
+
+    private async Task SetFeatured()
+    {
+        if (_featuredId is not { } id)
+        {
+            return;
+        }
+
+        _featuredBusy = true;
+        try
+        {
+            await Api.SetCompetitionFeaturedAsync(id);
+            _competitions = await Api.GetCompetitionsAsync(); // refresh the ★ marker
+            Snackbar.Add("Featured competition updated — it's now the Home hero.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't set featured: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _featuredBusy = false;
         }
     }
 

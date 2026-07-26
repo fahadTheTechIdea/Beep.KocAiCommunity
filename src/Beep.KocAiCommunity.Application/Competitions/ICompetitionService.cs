@@ -50,6 +50,12 @@ public interface ICompetitionService
     /// <summary>Moves a competition through its lifecycle (draft → active → concluded). Creator only.</summary>
     Task SetStatusAsync(string userId, Guid competitionId, string status, CancellationToken ct = default);
 
+    /// <summary>Pins one competition as THE landing-page hero (clears the flag on any other). Platform admin only.</summary>
+    Task SetFeaturedAsync(Guid competitionId, CancellationToken ct = default);
+
+    /// <summary>The currently featured competition (the admin-pinned landing-page hero), or null.</summary>
+    Task<Competition?> GetFeaturedAsync(CancellationToken ct = default);
+
     /// <summary>Sets (or clears) the reveal time that unlocks the final leaderboard. Creator only.</summary>
     Task SetRevealAsync(string userId, Guid competitionId, DateTime? revealUtc, CancellationToken ct = default);
 

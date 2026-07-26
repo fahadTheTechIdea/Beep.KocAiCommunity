@@ -427,6 +427,32 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         final.Single(e => e.UserId == "holdout-bottom").Score.Should().Be(0.0);
     }
 
+    [Fact]
+    public async Task Platform_admin_pins_the_featured_competition_and_only_one_stays_featured()
+    {
+        var admin = _factory.CreateClientAs("feat-admin", competitionCreator: false, "Employee", "PlatformAdmin");
+        var a = await CreateCompetition(admin, revealUtc: null, quota: 5);
+        var b = await CreateCompetition(admin, revealUtc: null, quota: 5);
+
+        (await admin.PostAsync($"/api/v1/competitions/{a}/feature", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await admin.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{a}"))!.IsFeatured.Should().BeTrue();
+
+        // Featuring b makes it the hero and clears a — exactly one at a time.
+        (await admin.PostAsync($"/api/v1/competitions/{b}/feature", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await admin.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{b}"))!.IsFeatured.Should().BeTrue();
+        (await admin.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{a}"))!.IsFeatured.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task A_non_admin_cannot_set_the_featured_competition()
+    {
+        var admin = _factory.CreateClientAs("feat-admin2", competitionCreator: false, "Employee", "PlatformAdmin");
+        var id = await CreateCompetition(admin, revealUtc: null, quota: 5);
+
+        var other = _factory.CreateClientAs("feat-noadmin", "Employee");
+        (await other.PostAsync($"/api/v1/competitions/{id}/feature", null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
     private static async Task<Guid> CreateCompetition(HttpClient client, DateTime? revealUtc, int quota)
     {
         var response = await client.PostAsJsonAsync("/api/v1/competitions",

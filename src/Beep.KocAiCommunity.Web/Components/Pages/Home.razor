@@ -356,8 +356,13 @@
     private IReadOnlyList<XpLeaderboardRowDto>? _xpBoard;
     private IReadOnlyList<LeaderboardEntryDto>? _featuredBoard;
 
-    /// <summary>The hero competition: the active one whose reveal is nearest (undated last, then newest).</summary>
-    private CompetitionDto? Featured => _activeCompetitions is { Count: > 0 } ? _activeCompetitions[0] : null;
+    /// <summary>
+    /// The hero competition: the admin-pinned featured one if set, otherwise the active competition whose
+    /// reveal is nearest (undated last, then newest).
+    /// </summary>
+    private CompetitionDto? Featured =>
+        _activeCompetitions?.FirstOrDefault(c => c.IsFeatured)
+        ?? (_activeCompetitions is { Count: > 0 } ? _activeCompetitions[0] : null);
 
     private async Task LoadAsync()
     {
