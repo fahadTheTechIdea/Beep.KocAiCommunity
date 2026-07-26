@@ -87,4 +87,33 @@ public class KocDbContext(DbContextOptions<KocDbContext> options)
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(KocDbContext).Assembly);
     }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        StampConcurrencyTokens();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        StampConcurrencyTokens();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    /// <summary>
+    /// Writes a fresh <see cref="Domain.Common.AuditableEntity.RowVersion"/> on every insert/update. This
+    /// turns the plain byte[] column into a working optimistic-concurrency token for <b>both</b> providers
+    /// (SQLite has no native rowversion), so an entity configured with <c>IsConcurrencyToken()</c> — e.g.
+    /// <see cref="LeaderboardEntry"/> — detects a lost update as a conflict instead of silently overwriting.
+    /// </summary>
+    private void StampConcurrencyTokens()
+    {
+        foreach (var entry in ChangeTracker.Entries<Domain.Common.AuditableEntity>())
+        {
+            if (entry.State is EntityState.Added or EntityState.Modified)
+            {
+                entry.Entity.RowVersion = Guid.NewGuid().ToByteArray();
+            }
+        }
+    }
 }

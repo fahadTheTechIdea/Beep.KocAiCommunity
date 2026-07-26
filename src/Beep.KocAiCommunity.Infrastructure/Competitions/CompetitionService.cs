@@ -613,20 +613,38 @@ public sealed class CompetitionService(
 
     // Recompute ranks (1 = best) for a competition's leaderboard. Ties break deterministically by earliest
     // entry, then user id, so equal scores always rank the same way regardless of database fetch order.
+    // The rank rewrite touches every entry, so two submissions to the same competition can race; the
+    // RowVersion concurrency token turns a lost update into a DbUpdateConcurrencyException, which we
+    // resolve by reloading the current scores and recomputing (bounded retry).
     private async Task RecomputeRanksAsync(Guid competitionId, bool higherIsBetter, CancellationToken ct)
     {
-        var entries = await db.Set<LeaderboardEntry>().Where(e => e.CompetitionId == competitionId).ToListAsync(ct);
-        var byScore = higherIsBetter
-            ? entries.OrderByDescending(e => e.Score)
-            : entries.OrderBy(e => e.Score);
-        var ordered = byScore
-            .ThenBy(e => e.CreatedUtc)
-            .ThenBy(e => e.SubmitterUserId, StringComparer.Ordinal)
-            .ToList();
-
-        for (var i = 0; i < ordered.Count; i++)
+        const int maxAttempts = 4;
+        for (var attempt = 1; ; attempt++)
         {
-            ordered[i].Rank = i + 1;
+            var entries = await db.Set<LeaderboardEntry>().Where(e => e.CompetitionId == competitionId).ToListAsync(ct);
+            var ordered = (higherIsBetter ? entries.OrderByDescending(e => e.Score) : entries.OrderBy(e => e.Score))
+                .ThenBy(e => e.CreatedUtc)
+                .ThenBy(e => e.SubmitterUserId, StringComparer.Ordinal)
+                .ToList();
+
+            for (var i = 0; i < ordered.Count; i++)
+            {
+                ordered[i].Rank = i + 1;
+            }
+
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                break;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < maxAttempts)
+            {
+                // A concurrent submission renumbered the board first; drop our stale reads and recompute.
+                foreach (var e in entries)
+                {
+                    await db.Entry(e).ReloadAsync(ct);
+                }
+            }
         }
 
         // Relayed to the competition's SignalR group so open leaderboards refresh live.

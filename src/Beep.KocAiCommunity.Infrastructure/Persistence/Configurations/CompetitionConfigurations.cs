@@ -40,6 +40,10 @@ public sealed class LeaderboardEntryConfiguration : IEntityTypeConfiguration<Lea
         b.Property(x => x.SubmitterUserId).HasMaxLength(450).IsRequired();
         b.HasIndex(x => new { x.CompetitionId, x.SubmitterUserId }).IsUnique();
         b.HasIndex(x => new { x.CompetitionId, x.Rank });
+        // Optimistic-concurrency token: the rank recompute reads every entry and rewrites ranks, so two
+        // submissions to the same competition can race. The token makes a lost update surface as a
+        // DbUpdateConcurrencyException (retried in UpdateLeaderboardAsync) rather than silently overwriting.
+        b.Property(x => x.RowVersion).IsConcurrencyToken();
         b.HasOne<Competition>().WithMany().HasForeignKey(x => x.CompetitionId).OnDelete(DeleteBehavior.Cascade);
     }
 }
