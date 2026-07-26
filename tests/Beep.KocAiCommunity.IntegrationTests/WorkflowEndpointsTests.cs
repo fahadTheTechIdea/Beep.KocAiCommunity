@@ -31,11 +31,19 @@ public class WorkflowEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
     {
         var client = _factory.CreateClientAs("wf-runner", "Employee");
 
+        // The run executes the actual node graph (T1) — including the user's chosen FastTree trainer and a
+        // real evaluate — not a substituted AutoML model, so the recorded algorithm reflects the graph.
         var def = new WorkflowDefinition
         {
             Name = "ESP failure workflow",
-            Nodes = [new() { Id = "src", Kind = "dataset" }, new() { Id = "tr", Kind = "train" }],
-            Edges = [new("src", "tr")],
+            Nodes =
+            [
+                new() { Id = "src", Kind = "dataset" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["algorithm"] = "fasttree" } },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("src", "sp"), new("sp", "tr"), new("tr", "ev")],
         };
 
         var sb = new StringBuilder("x1,x2,label\n");
@@ -53,12 +61,13 @@ public class WorkflowEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
         csv.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
         form.Add(csv, "file", "data.csv");
 
-        var response = await client.PostAsync("/api/v1/studio/workflows/run?labelColumn=label", form);
+        var response = await client.PostAsync("/api/v1/studio/workflows/run?labelColumn=label&task=BinaryClassification", form);
         response.EnsureSuccessStatusCode();
 
         var run = (await response.Content.ReadFromJsonAsync<ModelRunDto>())!;
         run.DatasetName.Should().Be("ESP failure workflow");
-        run.PrimaryValue.Should().BeInRange(0.0, 1.0);
+        run.Algorithm.Should().Contain("FastTree", "the run must execute the graph's trainer, not AutoML");
+        run.PrimaryValue.Should().BeGreaterThan(0.5); // a real evaluate metric on separable data
         run.RowCount.Should().Be(120);
     }
 }

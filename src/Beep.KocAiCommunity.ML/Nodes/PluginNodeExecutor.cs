@@ -79,6 +79,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         };
 
         var table = PipelineTable.FromCsvFile(path);
+        var rowCount = table.RowCount; // the dataset's row count, recorded on the run
         foreach (var nodeId in order)
         {
             var node = byId[nodeId];
@@ -92,13 +93,13 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             catch (Exception ex)
             {
                 ctx.Results.Add(new NodeExecutionResult(nodeId, node.Kind, "failed", ex.Message));
-                return new PipelineExecutionResult(false, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results);
+                return new PipelineExecutionResult(false, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results, rowCount);
             }
 
             ctx.Results.Add(result.Status);
             if (result.Status.Status == "failed")
             {
-                return new PipelineExecutionResult(false, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results);
+                return new PipelineExecutionResult(false, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results, rowCount);
             }
 
             if (result.Output is not null)
@@ -107,7 +108,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             }
         }
 
-        return new PipelineExecutionResult(true, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results);
+        return new PipelineExecutionResult(true, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results, rowCount);
     }
 
     private string Predict(WorkflowDefinition definition, IReadOnlyList<string> order, string labelColumn, string idColumn, MlTaskType task, string trainPath, string evalPath, IReadOnlyDictionary<Guid, byte[]> secondary)

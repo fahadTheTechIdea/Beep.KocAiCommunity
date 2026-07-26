@@ -7,11 +7,13 @@ using Beep.KocAiCommunity.Workflow;
 
 namespace Beep.KocAiCommunity.Infrastructure.Workflow;
 
-public sealed class WorkflowService(KocDbContext db, IMlTrainer trainer) : IWorkflowService
+public sealed class WorkflowService(KocDbContext db, IPipelineExecutor executor) : IWorkflowService
 {
     public WorkflowValidationResult Validate(WorkflowDefinition definition) => WorkflowCompiler.Compile(definition);
 
-    public async Task<ModelRun> RunAsync(string userId, WorkflowDefinition definition, string labelColumn, Stream csv, int maxSeconds, CancellationToken ct = default)
+    public async Task<ModelRun> RunAsync(
+        string userId, WorkflowDefinition definition, string labelColumn, MlTaskType task, Stream csv, int maxSeconds,
+        IReadOnlyDictionary<Guid, Stream>? secondaryDatasets = null, CancellationToken ct = default)
     {
         var compiled = WorkflowCompiler.Compile(definition);
         if (!compiled.IsValid)
@@ -19,20 +21,28 @@ public sealed class WorkflowService(KocDbContext db, IMlTrainer trainer) : IWork
             throw new WorkflowException(string.Join(" ", compiled.Errors));
         }
 
-        // Execute in topological order. The train node performs the AutoML training (binary by
-        // default); other node kinds (dataset/split/evaluate) pass the data through in this runtime.
-        var result = await trainer.TrainAsync(MlTaskType.BinaryClassification, csv, labelColumn, maxSeconds, ct);
+        // Execute the actual node graph — the same engine a competition submission scores against — so a
+        // "run" reflects the pipeline the user built (its transforms, chosen trainer, and task), not a
+        // substituted AutoML model on the raw CSV.
+        var result = await executor.ExecuteAsync(definition, labelColumn, task, csv, maxSeconds, secondaryDatasets, ct);
+        if (!result.Success)
+        {
+            var failed = result.Nodes.FirstOrDefault(n => n.Status == "failed");
+            throw new WorkflowException(failed is null
+                ? "The pipeline did not complete successfully."
+                : $"Node '{failed.Kind}' failed: {failed.Detail}");
+        }
 
         var run = new ModelRun
         {
             DatasetName = string.IsNullOrWhiteSpace(definition.Name) ? "Workflow run" : definition.Name,
             LabelColumn = labelColumn,
-            Task = result.Task,
-            Algorithm = result.Algorithm,
-            PrimaryMetric = result.PrimaryMetric,
+            Task = task.ToString(),
+            Algorithm = result.Algorithm ?? "(pipeline)",
+            PrimaryMetric = result.PrimaryMetric ?? string.Empty,
             PrimaryValue = result.PrimaryValue,
-            SecondaryMetric = result.SecondaryMetric,
-            SecondaryValue = result.SecondaryValue,
+            SecondaryMetric = string.Empty, // the graph reports a single headline metric
+            SecondaryValue = 0,
             RowCount = result.RowCount,
             RunByUserId = userId,
             CompletedUtc = DateTime.UtcNow,

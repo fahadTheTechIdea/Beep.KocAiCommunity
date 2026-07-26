@@ -34,4 +34,5 @@ public sealed record PipelineExecutionResult(
     string? Algorithm,
     string? PrimaryMetric,
     double PrimaryValue,
-    IReadOnlyList<NodeExecutionResult> Nodes);
+    IReadOnlyList<NodeExecutionResult> Nodes,
+    long RowCount = 0);

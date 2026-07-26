@@ -80,14 +80,21 @@ public static class StudioEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee)
         .DisableAntiforgery();
 
-        // Run a workflow: validates the graph, then trains via AutoML on the uploaded CSV.
-        group.MapPost("/studio/workflows/run", async (IFormFile file, [FromForm] string definition, string labelColumn, IKocCurrentUser me, IWorkflowService workflow, CancellationToken ct) =>
+        // Run a workflow: validates the graph, then executes it node by node (the same engine a
+        // competition submission is scored against) and records the run's headline metric.
+        group.MapPost("/studio/workflows/run", async (IFormFile file, [FromForm] string definition, string labelColumn, string? task, IKocCurrentUser me, IWorkflowService workflow, IDatasetService datasets, IArtifactService artifacts, CancellationToken ct) =>
         {
+            if (!Enum.TryParse<MlTaskType>(task, ignoreCase: true, out var taskType))
+            {
+                taskType = MlTaskType.BinaryClassification;
+            }
+
             try
             {
                 var def = JsonSerializer.Deserialize<WorkflowDefinition>(definition, JsonOptions) ?? new WorkflowDefinition();
+                var secondary = await ResolveSecondaryDatasetsAsync(me, datasets, artifacts, def, ct);
                 await using var stream = file.OpenReadStream();
-                var run = await workflow.RunAsync(me.UserId!, def, labelColumn, stream, maxSeconds: 8, ct: ct);
+                var run = await workflow.RunAsync(me.UserId!, def, labelColumn, taskType, stream, maxSeconds: 8, secondaryDatasets: secondary, ct: ct);
                 return Results.Ok(ToDto(run));
             }
             catch (WorkflowException ex)
