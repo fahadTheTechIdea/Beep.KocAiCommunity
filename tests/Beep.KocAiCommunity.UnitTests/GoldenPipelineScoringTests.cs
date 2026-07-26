@@ -101,6 +101,115 @@ public class GoldenPipelineScoringTests
     }
 
     [Fact]
+    public async Task Titanic_feature_engineering_pipeline_submits_and_scores()
+    {
+        // A real Titanic feature-engineering pipeline — derive family_size (compute-column), add
+        // fare_per_person (SQL), bin age/fare, one-hot sex/embarked, normalize — then split/train/evaluate.
+        // This is exactly what /submit-pipeline runs server-side, so it proves those nodes work end-to-end
+        // for a competition submission: the engineered features replay onto the eval set and a valid
+        // id,prediction (1/0) submission comes out, one row per eval id.
+        var def = new WorkflowDefinition
+        {
+            Name = "titanic-fe",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "fam", Kind = "compute-column", Config = new Dictionary<string, string> { ["output"] = "family_size", ["inputs"] = "sibsp,parch", ["expression"] = "(a, b) => a + b" } },
+                new() { Id = "fpp", Kind = "sql", Config = new Dictionary<string, string> { ["sql"] = "SELECT *, fare / (family_size + 1) AS fare_per_person FROM working" } },
+                new() { Id = "bin", Kind = "binning", Config = new Dictionary<string, string> { ["bins"] = "5" } },
+                new() { Id = "oh", Kind = "one-hot" },
+                new() { Id = "nz", Kind = "normalize" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["algorithm"] = "fasttree" } },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges =
+            [
+                new("d", "fam"), new("fam", "fpp"), new("fpp", "bin"), new("bin", "oh"),
+                new("oh", "nz"), new("nz", "sp"), new("sp", "tr"), new("tr", "ev"),
+            ],
+        };
+
+        // Titanic-shaped training data with the real columns; clear signal: female OR 1st class survives.
+        var train = new StringBuilder("id,pclass,sex,age,sibsp,parch,fare,embarked,survived\n");
+        for (var i = 0; i < 120; i++)
+        {
+            var female = i % 2 == 0;
+            var pclass = (i % 3) + 1;
+            var embarked = new[] { "S", "C", "Q" }[i % 3];
+            var survived = female || pclass == 1 ? 1 : 0;
+            train.Append($"t{i},{pclass},{(female ? "female" : "male")},{20 + (i % 50)},{i % 3},{i % 2},{10 + (i % 90)},{embarked},{survived}\n");
+        }
+
+        // Evaluation set — id + the same features, no label.
+        const string eval = "id,pclass,sex,age,sibsp,parch,fare,embarked\n"
+            + "007,1,female,30,0,0,80,S\n"   // female + 1st → survives
+            + "013,3,male,40,0,0,10,S\n";    // male + 3rd → not
+
+        var submission = await NewExecutor().PredictAsync(def, "survived", "id", MlTaskType.BinaryClassification, Csv(train.ToString()), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines.Should().HaveCount(3); // header + one row per eval id
+        lines[1].Should().Be("007,1", "the engineered features replay onto the eval set, ids survive, and 1/0 is echoed");
+        lines[2].Should().Be("013,0");
+    }
+
+    [Theory]
+    [InlineData("pca")]
+    [InlineData("feature-selection")]
+    [InlineData("featurize-text")]
+    [InlineData("binning")]
+    public async Task Titanic_transform_node_runs_end_to_end_in_a_submission(string transform)
+    {
+        // Each of these transforms is a column-shaping step that must replay onto the eval set at predict.
+        // Build a minimal Titanic pipeline around each one and run it through PredictAsync (the submit path);
+        // assert a valid, id-aligned 1/0 submission comes out — proof the node works in a real submission.
+        Dictionary<string, string>? cfg = transform switch
+        {
+            "pca" => new() { ["rank"] = "2" },
+            "feature-selection" => new() { ["count"] = "1" },
+            "binning" => new() { ["bins"] = "5" },
+            _ => null, // featurize-text takes no config
+        };
+
+        var def = new WorkflowDefinition
+        {
+            Name = transform,
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "fe", Kind = transform, Config = cfg },
+                new() { Id = "oh", Kind = "one-hot" }, // no-op after featurize-text (it consumed the text cols)
+                new() { Id = "nz", Kind = "normalize" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["algorithm"] = "fasttree" } },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "fe"), new("fe", "oh"), new("oh", "nz"), new("nz", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var train = new StringBuilder("id,pclass,sex,age,sibsp,parch,fare,embarked,survived\n");
+        for (var i = 0; i < 120; i++)
+        {
+            var female = i % 2 == 0;
+            var pclass = (i % 3) + 1;
+            var embarked = new[] { "S", "C", "Q" }[i % 3];
+            train.Append($"t{i},{pclass},{(female ? "female" : "male")},{20 + (i % 50)},{i % 3},{i % 2},{10 + (i % 90)},{embarked},{(female || pclass == 1 ? 1 : 0)}\n");
+        }
+
+        const string eval = "id,pclass,sex,age,sibsp,parch,fare,embarked\ne1,1,female,30,0,0,80,S\ne2,3,male,40,0,0,10,S\n";
+
+        var submission = await NewExecutor().PredictAsync(def, "survived", "id", MlTaskType.BinaryClassification, Csv(train.ToString()), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines.Should().HaveCount(3, $"'{transform}' must yield one prediction per eval id");
+        lines.Skip(1).Select(l => l.Split(',')[0]).Should().BeEquivalentTo(["e1", "e2"], "the ids survive the transform + replay");
+        lines.Skip(1).Should().OnlyContain(l => l.EndsWith(",1") || l.EndsWith(",0"), "valid binary predictions in the label's own tokens");
+    }
+
+    [Fact]
     public async Task Regression_ids_survive_and_score_with_low_rmse()
     {
         // A linear regression target with ids; a good model + intact ids → the submission joins the key and
