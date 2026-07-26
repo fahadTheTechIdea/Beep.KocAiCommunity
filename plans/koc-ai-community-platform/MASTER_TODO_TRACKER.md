@@ -378,6 +378,25 @@ KOC blueprint theme. No DB schema change anywhere.
     quota-TOCTOU residual (atomic per-user/day counter + migration) and the golden correctness suite. See
     `20_PIPELINE_AND_SCORING_AUDIT.md` for the full ledger.
 
+## Node property panel completion (Studio designer UX)
+
+39. 🟢 **Phase 21a DONE (2026-07-26)** — expose **every** settable parameter of **every** node in the
+    designer's property panel, with defaults shown on click. Spec: `21_NODE_PROPERTY_PANEL.md`;
+    documentation is one file per node under `node-properties/` (37 files). **Root cause:** the inspector is
+    descriptor-driven (`WorkflowDesigner.razor:104-140`) and complete for *declared* params, but the model
+    nodes read hyperparameters the descriptor never declared — **descriptor↔executor drift** — so they were
+    **hidden**: `train` exposed only `algorithm` while the executor reads
+    `trees`(100)/`leaves`(20)/`learningRate`(0.2)/`l2` (`MlModelOps.cs:54-57`), `cross-validate` exposed only
+    `folds`, and the `algorithm` list omitted `perceptron`/`naivebayes`. Hidden ⇒ locked to hardcoded
+    defaults ⇒ no differentiation — a defect, not a design choice. **Fixed (descriptor completeness, no
+    executor/`.razor` change):** declared the four hyperparameters + `algorithm` on `train`/`cross-validate`
+    and extended the algorithm options (`MlModelHandlers.cs`) → the inspector renders them automatically,
+    pre-filled with defaults; per-node docs updated. **Anti-drift guard shipped** (`NodePropertyDriftTests`):
+    scans `MlModelOps` for every `Config` read and fails if any key isn't a declared descriptor parameter, so
+    a hidden knob can't reappear; `NodeCatalogTests` asserts the full model-node parameter set. Unit suite 192
+    green. **Pending:** Phase 21b (`VisibleWhen` for algorithm-conditional hyperparameters), 21c (help
+    tooltips + range hints + reset-to-defaults).
+
 ## Global definition of done
 
 ```bash

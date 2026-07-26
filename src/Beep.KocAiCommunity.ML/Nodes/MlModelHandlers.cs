@@ -53,7 +53,11 @@ public sealed class TrainHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("train", "Model", "Train model",
         "Fit a model on the training features (ESP failure, production rate, …).", PortKind.Table, PortKind.Model,
-        [P("algorithm", "Algorithm", NodeParameterType.Select, def: "sdca", options: ["sdca", "lbfgs", "fasttree", "fastforest"])]);
+        [P("algorithm", "Algorithm", NodeParameterType.Select, def: "sdca", options: ["sdca", "lbfgs", "fasttree", "fastforest", "perceptron", "naivebayes"]),
+         P("trees", "Trees (fasttree/fastforest)", NodeParameterType.Number, def: "100"),
+         P("leaves", "Leaves per tree (fasttree/fastforest)", NodeParameterType.Number, def: "20"),
+         P("learningRate", "Learning rate (fasttree)", NodeParameterType.Number, def: "0.2"),
+         P("l2", "L2 regularization (sdca/lbfgs; blank = trainer default)", NodeParameterType.Number)]);
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -109,7 +113,12 @@ public sealed class CrossValidateHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("cross-validate", "Model", "Cross-validate",
         "K-fold validation for a more honest metric.", PortKind.Table, PortKind.Metrics,
-        [P("folds", "Folds", NodeParameterType.Number, def: "5")]);
+        [P("folds", "Folds", NodeParameterType.Number, def: "5"),
+         P("algorithm", "Algorithm", NodeParameterType.Select, def: "sdca", options: ["sdca", "lbfgs", "fasttree", "fastforest", "perceptron", "naivebayes"]),
+         P("trees", "Trees (fasttree/fastforest)", NodeParameterType.Number, def: "100"),
+         P("leaves", "Leaves per tree (fasttree/fastforest)", NodeParameterType.Number, def: "20"),
+         P("learningRate", "Learning rate (fasttree)", NodeParameterType.Number, def: "0.2"),
+         P("l2", "L2 regularization (sdca/lbfgs; blank = trainer default)", NodeParameterType.Number)]);
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {

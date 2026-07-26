@@ -60,4 +60,18 @@ public class NodeCatalogTests
         MlTaskCatalog.Find("binary")!.Supported.Should().BeTrue();
         MlTaskCatalog.Find("anomaly")!.Supported.Should().BeFalse();
     }
+
+    [Theory]
+    [InlineData("train")]
+    [InlineData("cross-validate")]
+    public void Model_nodes_expose_the_full_hyperparameter_set(string kind)
+    {
+        // The property panel is descriptor-driven, so the model nodes must declare every knob the executor
+        // reads — algorithm + the four hyperparameters — or they're invisible and locked to defaults.
+        var declared = Registry.Find(kind)!.Parameters.Select(p => p.Name);
+        declared.Should().Contain(new[] { "algorithm", "trees", "leaves", "learningRate", "l2" });
+
+        var algorithm = Registry.Find(kind)!.Parameters.Single(p => p.Name == "algorithm");
+        algorithm.Options.Should().BeEquivalentTo(new[] { "sdca", "lbfgs", "fasttree", "fastforest", "perceptron", "naivebayes" });
+    }
 }
