@@ -3,6 +3,7 @@ using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Microsoft.ML;
+using Microsoft.ML.Trainers.FastTree;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
 
@@ -59,8 +60,28 @@ internal static class MlModelOps
         {
             return algo switch
             {
-                "fasttree" => (ml.Regression.Trainers.FastTree(label, features, numberOfLeaves: leaves, numberOfTrees: trees, minimumExampleCountPerLeaf: minLeaf, learningRate: learningRate), "FastTreeRegression"),
-                "fastforest" => (ml.Regression.Trainers.FastForest(label, features, numberOfLeaves: leaves, numberOfTrees: trees, minimumExampleCountPerLeaf: minLeaf), "FastForestRegression"),
+                // NumberOfThreads = 1: the FastTree/FastForest native builders are otherwise multi-threaded
+                // and their floating-point reductions vary run-to-run; pinning one thread makes the fitted
+                // tree reproducible (the rest of the engine is already seeded).
+                "fasttree" => (ml.Regression.Trainers.FastTree(new FastTreeRegressionTrainer.Options
+                {
+                    LabelColumnName = label,
+                    FeatureColumnName = features,
+                    NumberOfLeaves = leaves,
+                    NumberOfTrees = trees,
+                    MinimumExampleCountPerLeaf = minLeaf,
+                    LearningRate = learningRate,
+                    NumberOfThreads = 1,
+                }), "FastTreeRegression"),
+                "fastforest" => (ml.Regression.Trainers.FastForest(new FastForestRegressionTrainer.Options
+                {
+                    LabelColumnName = label,
+                    FeatureColumnName = features,
+                    NumberOfLeaves = leaves,
+                    NumberOfTrees = trees,
+                    MinimumExampleCountPerLeaf = minLeaf,
+                    NumberOfThreads = 1,
+                }), "FastForestRegression"),
                 "lbfgs" => (ml.Regression.Trainers.LbfgsPoissonRegression(label, features, l2Regularization: l2 ?? 1f), "LbfgsPoissonRegression"),
                 _ => (ml.Regression.Trainers.Sdca(labelColumnName: label, featureColumnName: features, l2Regularization: l2), "SdcaRegression"),
             };
@@ -68,8 +89,25 @@ internal static class MlModelOps
 
         return algo switch
         {
-            "fasttree" => (ml.BinaryClassification.Trainers.FastTree(label, features, numberOfLeaves: leaves, numberOfTrees: trees, minimumExampleCountPerLeaf: minLeaf, learningRate: learningRate), "FastTreeBinary"),
-            "fastforest" => (ml.BinaryClassification.Trainers.FastForest(label, features, numberOfLeaves: leaves, numberOfTrees: trees, minimumExampleCountPerLeaf: minLeaf), "FastForestBinary"),
+            "fasttree" => (ml.BinaryClassification.Trainers.FastTree(new FastTreeBinaryTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                NumberOfLeaves = leaves,
+                NumberOfTrees = trees,
+                MinimumExampleCountPerLeaf = minLeaf,
+                LearningRate = learningRate,
+                NumberOfThreads = 1,
+            }), "FastTreeBinary"),
+            "fastforest" => (ml.BinaryClassification.Trainers.FastForest(new FastForestBinaryTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                NumberOfLeaves = leaves,
+                NumberOfTrees = trees,
+                MinimumExampleCountPerLeaf = minLeaf,
+                NumberOfThreads = 1,
+            }), "FastForestBinary"),
             "lbfgs" => (ml.BinaryClassification.Trainers.LbfgsLogisticRegression(label, features, l2Regularization: l2 ?? 1f), "LbfgsLogisticRegression"),
             "perceptron" => (ml.BinaryClassification.Trainers.AveragedPerceptron(label, features), "AveragedPerceptron"),
             _ => (ml.BinaryClassification.Trainers.SdcaLogisticRegression(labelColumnName: label, featureColumnName: features, l2Regularization: l2), "SdcaLogisticRegression"),

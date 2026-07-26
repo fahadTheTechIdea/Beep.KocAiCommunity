@@ -638,6 +638,45 @@ public class MlPipelineExecutorTests
         result.PrimaryValue.Should().BeGreaterThan(0.8);
     }
 
+    [Fact]
+    public async Task FastTree_training_is_reproducible_run_to_run()
+    {
+        // FastTree's native builder is multi-threaded and its floating-point reductions vary run-to-run;
+        // pinning NumberOfThreads = 1 (plus the fixed seed) must make the fitted model — and therefore the
+        // reported metric — identical across two independent runs of the same pipeline.
+        var def = new WorkflowDefinition
+        {
+            Name = "determinism",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["algorithm"] = "fasttree" } },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        static string Data()
+        {
+            var sb = new StringBuilder("x1,x2,x3,label\n");
+            for (var i = 0; i < 120; i++)
+            {
+                sb.Append($"{7 + (i % 5)},{6 + ((i / 5) % 4)},{5 + (i % 3)},true\n");
+                sb.Append($"{i % 5},{(i / 5) % 4},{i % 3},false\n");
+            }
+            return sb.ToString();
+        }
+
+        var first = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, new MemoryStream(Encoding.UTF8.GetBytes(Data())), 10);
+        var second = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, new MemoryStream(Encoding.UTF8.GetBytes(Data())), 10);
+
+        first.Success.Should().BeTrue();
+        second.Success.Should().BeTrue();
+        first.Nodes.Single(n => n.Kind == "train").Detail.Should().Contain("FastTree");
+        second.PrimaryValue.Should().Be(first.PrimaryValue, "one pinned thread + fixed seed must be bit-for-bit reproducible");
+    }
+
     // Three separable clusters → classes a/b/c.
     private static string MulticlassCsv(bool withId)
     {
