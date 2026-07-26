@@ -85,10 +85,15 @@ temp-file cleanup on success and exception (no leaks).
 | Phase D — determinism + node validation + label-token echo | ✅ | `ddd3dd4` |
 | Phase E — id/type text-pinning (T2/H3/T4) + RFC-4180 (M5/M6/M7) | ✅ | `151b3aa` |
 | L10 — FastTree/FastForest thread-pinning | ✅ | `82025c2` |
-| **H2 — schema-carrying `PipelineTable`** (root-cause of T2) | ⏳ PATCH READY | `scratchpad/h2-schema-carrying.patch` |
-| **T3 — compiler branch guard** | ⬜ open | — |
-| **S1–S5 — scoring integrity** | ⬜ open | — |
-| **T1 — engine unification** | ⬜ open | — |
+| H2 — schema-carrying `PipelineTable` (root-cause of T2) | ✅ | `4b0d9f5` |
+| T3 — compiler branch guard (reject fan-in/fan-out) | ✅ | `c167586` |
+| S3 — boolean-folding scoped to binary keys | ✅ | `e0c705c` |
+| S4 — accuracy/RMSE parity (name-based id, degenerate-key reject) | ✅ | `e0c705c` |
+| **S2 — answer-key rescore + lifecycle guard** | ⬜ open (no migration) | — |
+| **S5 — quota/leaderboard concurrency token** | ⬜ open (needs migration) | — |
+| **S1 — public/private holdout** | ⬜ open (schema + migration + scoring + endpoint) | — |
+| **T1 — engine unification** | ⬜ open (largest) | — |
+| ColumnRoles refactor (X/y/id/fold typed roles) | ⏸ PARKED — unrequested, agent-authored | `scratchpad/columnroles-*.bak` + `.patch` |
 
 **H2 patch note:** a background remediation agent authored a coherent schema-carrying `PipelineTable`
 (`PipelineColumnType` enum; `Types` carried across both crossings; DuckDB `read_csv_auto(types=…)` +
