@@ -31,6 +31,25 @@ public class AutoMlTrainerTests
     }
 
     [Fact]
+    public async Task Id_column_is_not_used_as_a_feature()
+    {
+        // 'id' perfectly (and threshold-learnably) encodes the label; the real features are constant, so
+        // they carry no signal. If AutoML trained on the id it would score ~perfect — but the id is a row
+        // key, not a feature, so it's excluded and accuracy must stay at chance.
+        var sb = new StringBuilder("id,x1,x2,label\n");
+        for (var i = 0; i < 120; i++)
+        {
+            var label = i % 2 == 0;
+            var id = label ? 10000 + i : i; // id > 5000 ⟺ true — a clean threshold leak, and unique per row
+            sb.Append($"{id},1,1,{(label ? "true" : "false")}\n");
+        }
+
+        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.BinaryClassification, Csv(sb.ToString()), "label", 5);
+
+        result.PrimaryValue.Should().BeLessThan(0.7, "the id must be excluded, leaving only signal-free features");
+    }
+
+    [Fact]
     public async Task Regression_reports_r_squared()
     {
         // y = 2*x1 + x2 (perfectly linear).

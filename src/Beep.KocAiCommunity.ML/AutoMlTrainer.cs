@@ -73,10 +73,17 @@ public sealed class AutoMlTrainer : IMlTrainer
         try { File.Delete(path); } catch (IOException) { /* best effort */ }
     }
 
+    // The platform's conventional row-key column. AutoML has no id role (it treats every non-label column
+    // as a feature), so — unlike the node-graph executor, which excludes the id via FeatureNames — it would
+    // otherwise train on a sequential/target-correlated identifier and leak. Keep this aligned with the
+    // platform default (Competition.IdColumn, PipelineContext id handling) which is likewise "id".
+    private const string IdColumnName = "id";
+
     private static TrainRun TrainCore(MlTaskType task, string path, string labelColumn, int maxSeconds, IProgress<TrialReport> trials)
     {
         var ml = new MLContext(seed: 1);
         var columns = ml.Auto().InferColumns(path, labelColumnName: labelColumn, groupColumns: false);
+        IgnoreColumn(columns.ColumnInformation, IdColumnName);
         var loader = ml.Data.CreateTextLoader(columns.TextLoaderOptions);
         var data = loader.Load(path);
         var split = ml.Data.TrainTestSplit(data, testFraction: 0.25, seed: 1);
@@ -89,6 +96,19 @@ public sealed class AutoMlTrainer : IMlTrainer
             MlTaskType.MulticlassClassification => Multiclass(ml, columns, split, seconds, labelColumn, rowCount, trials),
             _ => Binary(ml, columns, split, seconds, labelColumn, rowCount, trials),
         };
+    }
+
+    // Drops a column from AutoML's inferred feature set so it is neither featurized nor scored. No-op when
+    // the column isn't a feature (the dataset has no such column, or it's the label).
+    private static void IgnoreColumn(ColumnInformation info, string name)
+    {
+        var wasFeature = info.NumericColumnNames.Remove(name)
+            | info.CategoricalColumnNames.Remove(name)
+            | info.TextColumnNames.Remove(name);
+        if (wasFeature)
+        {
+            info.IgnoredColumnNames.Add(name);
+        }
     }
 
     // A trial-progress bridge: forwards each AutoML RunDetail to the caller's non-blocking reporter.
@@ -224,7 +244,11 @@ public sealed class AutoMlTrainer : IMlTrainer
         var features = new Dictionary<string, FeatureStat>();
         for (var i = 0; i < names.Length; i++)
         {
-            if (string.Equals(names[i], labelColumn, StringComparison.OrdinalIgnoreCase) || count[i] == 0)
+            // Exclude the label and the row-key id (never features) from the drift baseline, matching the
+            // columns AutoML actually trains on.
+            if (string.Equals(names[i], labelColumn, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(names[i], IdColumnName, StringComparison.OrdinalIgnoreCase)
+                || count[i] == 0)
             {
                 continue; // skip the label and non-numeric columns
             }
