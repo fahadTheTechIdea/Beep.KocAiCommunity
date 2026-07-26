@@ -54,12 +54,30 @@ public sealed record PipelineTable(string CsvPath, IReadOnlyList<string> Columns
     /// <summary>Loads this table into a DuckDB table of the given name.</summary>
     public void LoadIntoDuck(DuckDbSession duck, string tableName) => duck.LoadCsv(CsvPath, tableName);
 
-    /// <summary>Loads this table into an ML.NET <see cref="IDataView"/>, designating the label if present.</summary>
-    public IDataView LoadIntoMl(MLContext ml, string labelColumn)
+    /// <summary>
+    /// Loads this table into an ML.NET <see cref="IDataView"/>, designating the label if present.
+    /// <paramref name="forceTextColumn"/> pins a named column to <see cref="DataKind.String"/> instead of
+    /// letting the type sniffer re-infer it — used for the id column at predict time, so a numeric-looking
+    /// or zero-padded id (e.g. <c>00123</c>) is never silently retyped to a number and re-serialized as
+    /// <c>123</c>, which would break the id-aligned join against the answer key.
+    /// </summary>
+    public IDataView LoadIntoMl(MLContext ml, string labelColumn, string? forceTextColumn = null)
     {
         var inferLabel = Columns.Contains(labelColumn) ? labelColumn : Columns.FirstOrDefault() ?? labelColumn;
         var columns = ml.Auto().InferColumns(CsvPath, labelColumnName: inferLabel, groupColumns: false);
-        return ml.Data.CreateTextLoader(columns.TextLoaderOptions).Load(CsvPath);
+        var options = columns.TextLoaderOptions;
+        if (!string.IsNullOrEmpty(forceTextColumn))
+        {
+            foreach (var col in options.Columns)
+            {
+                if (string.Equals(col.Name, forceTextColumn, StringComparison.Ordinal))
+                {
+                    col.DataKind = DataKind.String;
+                }
+            }
+        }
+
+        return ml.Data.CreateTextLoader(options).Load(CsvPath);
     }
 
     public bool HasColumn(string name) => Columns.Contains(name);

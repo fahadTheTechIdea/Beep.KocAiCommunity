@@ -1,4 +1,5 @@
 using System.Data;
+using Beep.KocAiCommunity.Application.Common;
 using DuckDB.NET.Data;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
@@ -13,8 +14,17 @@ public sealed class DuckDbSession : IDisposable
 {
     private readonly DuckDBConnection _connection;
 
-    public DuckDbSession()
+    // Columns (e.g. the id column) that must be read as text rather than have their type re-sniffed —
+    // keeps a zero-padded or numeric-looking id like "00123" from becoming the integer 123 on load and
+    // then being re-serialized without the leading zeros, which would break id-aligned scoring.
+    private readonly HashSet<string> _textColumns;
+
+    public DuckDbSession(IEnumerable<string>? textColumns = null)
     {
+        _textColumns = textColumns is null
+            ? new HashSet<string>(StringComparer.Ordinal)
+            : new HashSet<string>(textColumns, StringComparer.Ordinal);
+
         _connection = new DuckDBConnection("DataSource=:memory:");
         _connection.Open();
 
@@ -41,9 +51,45 @@ public sealed class DuckDbSession : IDisposable
         return cmd.ExecuteScalar();
     }
 
-    /// <summary>Loads a CSV file into a table, inferring types (header required).</summary>
+    /// <summary>Loads a CSV file into a table, inferring types (header required). Any configured
+    /// text columns that are actually present in the file are pinned to VARCHAR instead of sniffed.</summary>
     public void LoadCsv(string csvPath, string tableName)
-        => Execute($"CREATE OR REPLACE TABLE {Quote(tableName)} AS SELECT * FROM read_csv_auto({Literal(csvPath)}, header = true);");
+        => Execute($"CREATE OR REPLACE TABLE {Quote(tableName)} AS SELECT * FROM read_csv_auto({Literal(csvPath)}, header = true{TypesClause(csvPath)});");
+
+    // Builds the read_csv_auto `types` override for the configured text columns that appear in this file
+    // (an override for an absent column would error, so the header is checked first). Empty when none apply.
+    private string TypesClause(string csvPath)
+    {
+        if (_textColumns.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        string[]? header = null;
+        try
+        {
+            using var reader = new StreamReader(csvPath);
+            foreach (var record in KocCsv.ParseRecords(reader))
+            {
+                header = record;
+                break;
+            }
+        }
+        catch
+        {
+            return string.Empty;
+        }
+
+        if (header is null)
+        {
+            return string.Empty;
+        }
+
+        var forced = header.Select(h => h.Trim()).Where(h => _textColumns.Contains(h)).Distinct(StringComparer.Ordinal).ToList();
+        return forced.Count == 0
+            ? string.Empty
+            : $", types = {{{string.Join(", ", forced.Select(c => $"{Literal(c)}: 'VARCHAR'"))}}}";
+    }
 
     /// <summary>Materializes a table (or the result of a query) to a header CSV file.</summary>
     public void ExportCsv(string tableName, string csvPath)

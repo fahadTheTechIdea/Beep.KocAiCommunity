@@ -91,6 +91,9 @@ internal static class MlCsv
             if (itemType == NumberDataViewType.Int64) { return new ScalarWriter<long>(cursor.GetGetter<long>(col), v => v.ToString(CultureInfo.InvariantCulture)) { Headers = headers }; }
             if (itemType == NumberDataViewType.UInt32) { return new ScalarWriter<uint>(cursor.GetGetter<uint>(col), v => v.ToString(CultureInfo.InvariantCulture)) { Headers = headers }; }
             if (itemType == BooleanDataViewType.Instance) { return new ScalarWriter<bool>(cursor.GetGetter<bool>(col), v => v ? "true" : "false") { Headers = headers }; }
+            // A DateTime column (the sniffer can infer one) has no text getter; format it round-trippably
+            // (ISO-8601) instead of asking for a ReadOnlyMemory<char> getter it can't provide (which throws).
+            if (itemType == DateTimeDataViewType.Instance) { return new ScalarWriter<DateTime>(cursor.GetGetter<DateTime>(col), v => v.ToString("O", CultureInfo.InvariantCulture)) { Headers = headers }; }
             return new ScalarWriter<ReadOnlyMemory<char>>(cursor.GetGetter<ReadOnlyMemory<char>>(col), v => v.ToString()) { Headers = headers };
         }
     }

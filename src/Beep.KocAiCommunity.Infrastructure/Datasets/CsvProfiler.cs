@@ -1,4 +1,5 @@
 using System.Globalization;
+using Beep.KocAiCommunity.Application.Common;
 
 namespace Beep.KocAiCommunity.Infrastructure.Datasets;
 
@@ -11,8 +12,8 @@ public sealed record CsvProfileResult(long TotalRows, long SampledRows, IReadOnl
 
 /// <summary>
 /// Streams a CSV and infers a schema + summary statistics from the first <c>sampleLimit</c> rows.
-/// Deterministic (fixed sample, first-N) so a profile is reproducible. Simple comma splitting — quoted
-/// fields with embedded commas are not handled (documented limitation).
+/// Deterministic (fixed sample, first-N) so a profile is reproducible. Uses the shared RFC-4180 codec,
+/// so quoted fields with embedded commas/quotes/newlines are parsed correctly (not mis-split).
 /// </summary>
 public static class CsvProfiler
 {
@@ -21,13 +22,13 @@ public static class CsvProfiler
     public static CsvProfileResult Profile(Stream csv, int sampleLimit = DefaultSampleLimit)
     {
         using var reader = new StreamReader(csv);
-        var header = reader.ReadLine();
-        if (header is null)
+        using var records = KocCsv.ParseRecords(reader).GetEnumerator();
+        if (!records.MoveNext())
         {
             return new CsvProfileResult(0, 0, []);
         }
 
-        var names = header.Split(',');
+        var names = records.Current;
         var n = names.Length;
         var nulls = new long[n];
         var distinct = new HashSet<string>[n];
@@ -50,13 +51,9 @@ public static class CsvProfiler
 
         long total = 0;
         long sampled = 0;
-        string? line;
-        while ((line = reader.ReadLine()) is not null)
+        while (records.MoveNext())
         {
-            if (line.Length == 0)
-            {
-                continue;
-            }
+            var cells = records.Current;
 
             total++;
             if (sampled >= sampleLimit)
@@ -65,7 +62,6 @@ public static class CsvProfiler
             }
 
             sampled++;
-            var cells = line.Split(',');
             for (var i = 0; i < n; i++)
             {
                 var cell = i < cells.Length ? cells[i].Trim() : string.Empty;

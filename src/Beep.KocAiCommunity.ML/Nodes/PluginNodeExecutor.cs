@@ -154,7 +154,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         {
             evalTable = step switch
             {
-                TransformReplay(var transformer) => PipelineTable.FromMlView(transformer.Transform(evalTable.LoadIntoMl(ctx.Ml, idColumn)), ctx.TempFiles),
+                TransformReplay(var transformer) => PipelineTable.FromMlView(transformer.Transform(evalTable.LoadIntoMl(ctx.Ml, idColumn, forceTextColumn: idColumn)), ctx.TempFiles),
                 DataReplay(var dnode, var handler) => handler.Execute(ctx, dnode, evalTable).Output ?? evalTable,
                 _ => evalTable,
             };
@@ -164,7 +164,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         // prediction stay row-aligned even when a replayed step changed the eval rows. If a step dropped
         // the id column or the counts diverge, fail loudly rather than silently mis-pair with Math.Min.
         var ids = MlModelOps.ReadColumn(evalTable.CsvPath, idColumn);
-        var scored = ctx.Model.Transform(evalTable.LoadIntoMl(ctx.Ml, idColumn));
+        var scored = ctx.Model.Transform(evalTable.LoadIntoMl(ctx.Ml, idColumn, forceTextColumn: idColumn));
 
         // For binary tasks, echo the training label's own token convention (1/0, yes/no, …) so the
         // submission matches the competition's answer key rather than a hardcoded true/false.

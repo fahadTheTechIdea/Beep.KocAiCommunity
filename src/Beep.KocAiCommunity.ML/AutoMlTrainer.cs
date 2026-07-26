@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.ML;
 using Microsoft.ML;
 using Microsoft.ML.AutoML;
@@ -80,7 +81,7 @@ public sealed class AutoMlTrainer : IMlTrainer
         var data = loader.Load(path);
         var split = ml.Data.TrainTestSplit(data, testFraction: 0.25, seed: 1);
         var seconds = (uint)Math.Max(1, maxSeconds);
-        var rowCount = File.ReadLines(path).Skip(1).LongCount();
+        var rowCount = CountDataRows(path);
 
         return task switch
         {
@@ -153,44 +154,59 @@ public sealed class AutoMlTrainer : IMlTrainer
         return new TrainRun(tr, result.BestRun.Model, split.TrainSet.Schema);
     }
 
+    // Counts data records (header excluded) with the RFC-4180 codec, so a field with an embedded newline
+    // counts as one row rather than inflating the total the way physical-line counting would.
+    private static long CountDataRows(string path)
+    {
+        using var reader = new StreamReader(path);
+        long rows = 0;
+        var first = true;
+        foreach (var _ in KocCsv.ParseRecords(reader))
+        {
+            if (first) { first = false; continue; }
+            rows++;
+        }
+
+        return rows;
+    }
+
     /// <summary>
     /// Computes count/mean/min/max for every numeric feature column (label excluded) from the raw
-    /// CSV. Used as the drift baseline. Non-numeric columns are skipped.
+    /// CSV using the RFC-4180 codec (so quoted/comma-bearing fields don't shift the columns and
+    /// misattribute the stats). Used as the drift baseline. Non-numeric columns are skipped.
     /// </summary>
     private static string ComputeFeatureStats(string path, string labelColumn)
     {
         using var reader = new StreamReader(path);
-        var header = reader.ReadLine();
-        if (header is null)
-        {
-            return JsonSerializer.Serialize(new FeatureStatsDoc(0, new Dictionary<string, FeatureStat>()));
-        }
-
-        var names = header.Split(',');
-        var count = new long[names.Length];
-        var sum = new double[names.Length];
-        var min = new double[names.Length];
-        var max = new double[names.Length];
-        for (var i = 0; i < names.Length; i++)
-        {
-            min[i] = double.PositiveInfinity;
-            max[i] = double.NegativeInfinity;
-        }
-
+        string[]? names = null;
+        long[] count = [];
+        double[] sum = [];
+        double[] min = [];
+        double[] max = [];
         long rows = 0;
-        string? line;
-        while ((line = reader.ReadLine()) is not null)
+
+        foreach (var record in KocCsv.ParseRecords(reader))
         {
-            if (line.Length == 0)
+            if (names is null)
             {
+                names = record;
+                count = new long[names.Length];
+                sum = new double[names.Length];
+                min = new double[names.Length];
+                max = new double[names.Length];
+                for (var i = 0; i < names.Length; i++)
+                {
+                    min[i] = double.PositiveInfinity;
+                    max[i] = double.NegativeInfinity;
+                }
+
                 continue;
             }
 
             rows++;
-            var cells = line.Split(',');
-            for (var i = 0; i < names.Length && i < cells.Length; i++)
+            for (var i = 0; i < names.Length && i < record.Length; i++)
             {
-                if (double.TryParse(cells[i], NumberStyles.Any, CultureInfo.InvariantCulture, out var v))
+                if (double.TryParse(record[i], NumberStyles.Any, CultureInfo.InvariantCulture, out var v))
                 {
                     count[i]++;
                     sum[i] += v;
@@ -198,6 +214,11 @@ public sealed class AutoMlTrainer : IMlTrainer
                     if (v > max[i]) { max[i] = v; }
                 }
             }
+        }
+
+        if (names is null)
+        {
+            return JsonSerializer.Serialize(new FeatureStatsDoc(0, new Dictionary<string, FeatureStat>()));
         }
 
         var features = new Dictionary<string, FeatureStat>();

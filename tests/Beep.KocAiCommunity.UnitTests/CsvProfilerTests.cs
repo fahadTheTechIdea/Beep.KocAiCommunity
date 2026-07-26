@@ -37,6 +37,27 @@ public class CsvProfilerTests
     }
 
     [Fact]
+    public void Quoted_fields_with_embedded_commas_do_not_shift_the_columns()
+    {
+        // The 'note' value holds a comma inside quotes; a naive split would spill it into 'age' and
+        // misattribute every following column. The RFC-4180 codec keeps the record two fields wide.
+        const string csv = "note,age\n" +
+                           "\"high pressure, vibration\",30\n" +
+                           "\"steady, nominal\",40\n";
+
+        var result = CsvProfiler.Profile(Csv(csv));
+
+        result.TotalRows.Should().Be(2);
+        result.Columns.Should().HaveCount(2);
+
+        var age = result.Columns.Single(c => c.Name == "age");
+        age.DataType.Should().Be("integer");
+        age.Min.Should().Be(30);
+        age.Max.Should().Be(40);
+        result.Columns.Single(c => c.Name == "note").DataType.Should().Be("string");
+    }
+
+    [Fact]
     public void Profile_is_reproducible()
     {
         const string csv = "x,y\n1,10\n2,20\n3,30\n";

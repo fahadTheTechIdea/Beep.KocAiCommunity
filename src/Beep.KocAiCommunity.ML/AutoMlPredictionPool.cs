@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Text;
+using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.ML;
 using Microsoft.ML;
 using Microsoft.ML.Data;
@@ -73,7 +73,9 @@ public sealed class AutoMlPredictionPool : IPredictionPool
                 loaderColumns[i] = new TextLoader.Column(columns[i].Name, ToDataKind(columns[i].Type), i);
             }
 
-            var loader = _ml.Data.CreateTextLoader(loaderColumns, hasHeader: true, separatorChar: ',');
+            // allowQuoting matches the RFC-4180 CSV the writer now emits, so a value containing a comma,
+            // quote, or newline round-trips intact instead of being split into the wrong columns.
+            var loader = _ml.Data.CreateTextLoader(loaderColumns, separatorChar: ',', hasHeader: true, allowQuoting: true);
             var scored = cached.Model.Transform(loader.Load(tempPath));
             return Extract(scored, rows.Count);
         }
@@ -85,41 +87,32 @@ public sealed class AutoMlPredictionPool : IPredictionPool
 
     private static void WriteCsv(string path, List<DataViewSchema.Column> columns, string labelColumn, IReadOnlyList<IReadOnlyDictionary<string, string>> rows)
     {
-        var sb = new StringBuilder();
-        sb.AppendJoin(',', columns.Select(c => c.Name)).Append('\n');
+        using var sw = new StreamWriter(path);
+        sw.WriteLine(KocCsv.WriteRow(columns.Select(c => c.Name)));
+
+        var fields = new string[columns.Count];
         foreach (var row in rows)
         {
             for (var i = 0; i < columns.Count; i++)
             {
-                if (i > 0)
-                {
-                    sb.Append(',');
-                }
-
                 var name = columns[i].Name;
                 if (string.Equals(name, labelColumn, StringComparison.OrdinalIgnoreCase))
                 {
-                    sb.Append(Placeholder(columns[i].Type)); // label is unknown at inference time
+                    fields[i] = Placeholder(columns[i].Type); // label is unknown at inference time
                 }
                 else if (row.TryGetValue(name, out var value) && !string.IsNullOrEmpty(value))
                 {
-                    sb.Append(Sanitize(value));
+                    fields[i] = value; // KocCsv.WriteRow quotes commas/quotes/newlines per RFC-4180
                 }
                 else
                 {
-                    sb.Append(Placeholder(columns[i].Type));
+                    fields[i] = Placeholder(columns[i].Type);
                 }
             }
 
-            sb.Append('\n');
+            sw.WriteLine(KocCsv.WriteRow(fields));
         }
-
-        File.WriteAllText(path, sb.ToString());
     }
-
-    // Values are user-supplied; keep the CSV single-column-safe by stripping separators/newlines.
-    private static string Sanitize(string value) =>
-        value.Replace(',', ' ').Replace('\n', ' ').Replace('\r', ' ');
 
     private static string Placeholder(DataViewType type) =>
         type.RawType == typeof(ReadOnlyMemory<char>) || type.RawType == typeof(string) ? string.Empty : "0";

@@ -62,7 +62,10 @@ public sealed class PipelineContext : IDisposable
     public const string WorkingTable = "working";
 
     private DuckDbSession? _duck;
-    public DuckDbSession Duck => _duck ??= new DuckDbSession();
+
+    // The id column (when known, i.e. at predict time) is pinned to text in DuckDB so a numeric-looking
+    // id survives the SQL crossing intact and stays joinable to the answer key.
+    public DuckDbSession Duck => _duck ??= new DuckDbSession(IdColumn is null ? null : [IdColumn]);
 
     public ITransformer? Model { get; set; }
     public string? Algorithm { get; set; }

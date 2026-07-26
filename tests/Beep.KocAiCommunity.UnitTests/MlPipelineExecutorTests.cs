@@ -251,6 +251,84 @@ public class MlPipelineExecutorTests
     }
 
     [Fact]
+    public async Task Predict_preserves_zero_padded_numeric_ids_across_the_transform_crossing()
+    {
+        // A normalize node records a TransformReplay, so the eval table round-trips through the ML.NET
+        // crossing at predict time. The id "007" must come back as "007" — not retyped to the number 7 —
+        // or it would no longer join to the competition answer key.
+        var def = new WorkflowDefinition
+        {
+            Name = "id-preserve",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "nz", Kind = "normalize" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "nz"), new("nz", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var train = new StringBuilder("id,x1,x2,label\n");
+        for (var i = 0; i < 60; i++)
+        {
+            train.Append($"tr{i}a,{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
+            train.Append($"tr{i}b,{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var trainCsv = new MemoryStream(Encoding.UTF8.GetBytes(train.ToString()));
+
+        // Zero-padded, all-numeric ids — the exact shape a naive type sniffer collapses to 7 / 13.
+        var eval = "id,x1,x2\n007,9,9\n013,0,0\n";
+        using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval));
+
+        var csv = await NewExecutor().PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, trainCsv, evalCsv);
+
+        var lines = csv.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines[1].Should().Be("007,true");
+        lines[2].Should().Be("013,false");
+    }
+
+    [Fact]
+    public async Task Predict_preserves_zero_padded_numeric_ids_across_the_duckdb_crossing()
+    {
+        // A SQL node replays on the eval set (a DuckDB DataReplay), so the id round-trips through the
+        // DuckDB CSV crossing. The id column is pinned to text there too, so "007" is not collapsed to 7.
+        var def = new WorkflowDefinition
+        {
+            Name = "id-preserve-duck",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "q", Kind = "sql", Config = new Dictionary<string, string> { ["sql"] = "SELECT *, x1 + x2 AS total FROM working" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "q"), new("q", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var train = new StringBuilder("id,x1,x2,label\n");
+        for (var i = 0; i < 60; i++)
+        {
+            train.Append($"tr{i}a,{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
+            train.Append($"tr{i}b,{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var trainCsv = new MemoryStream(Encoding.UTF8.GetBytes(train.ToString()));
+
+        var eval = "id,x1,x2\n007,9,9\n013,0,0\n";
+        using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval));
+
+        var csv = await NewExecutor().PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, trainCsv, evalCsv);
+
+        var lines = csv.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines[1].Should().Be("007,true");
+        lines[2].Should().Be("013,false");
+    }
+
+    [Fact]
     public async Task Binary_predictions_echo_the_training_labels_token_convention()
     {
         // The training label uses 1/0 (a Titanic-style key), so the submission must come back as 1/0 —

@@ -176,6 +176,15 @@ public sealed class UnionDatasetHandler : IPipelineNodeHandler
         input.LoadIntoDuck(ctx.Duck, WorkingTable);
         ctx.Duck.ReplaceTable(WorkingTable,
             $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} UNION ALL BY NAME SELECT * FROM {DuckDbSession.Quote(otherTable)}");
+
+        // If a split already tagged rows, the appended dataset has no fold marker, so BY NAME leaves those
+        // rows NULL — and the fold views filter NULL out of BOTH train and test, silently discarding every
+        // appended row. Assign them to the train fold (0) so they are used, never dropped without a trace.
+        if (ctx.Duck.Columns(WorkingTable).Any(c => c == FoldColumn))
+        {
+            ctx.Duck.Execute($"UPDATE {DuckDbSession.Quote(WorkingTable)} SET {DuckDbSession.Quote(FoldColumn)} = 0 WHERE {DuckDbSession.Quote(FoldColumn)} IS NULL;");
+        }
+
         return Duck.Done(ctx, node, this, replay: false);
     }
 }
