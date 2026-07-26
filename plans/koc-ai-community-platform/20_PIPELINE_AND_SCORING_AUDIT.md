@@ -89,11 +89,13 @@ temp-file cleanup on success and exception (no leaks).
 | T3 — compiler branch guard (reject fan-in/fan-out) | ✅ | `c167586` |
 | S3 — boolean-folding scoped to binary keys | ✅ | `e0c705c` |
 | S4 — accuracy/RMSE parity (name-based id, degenerate-key reject) | ✅ | `e0c705c` |
-| **S2 — answer-key rescore + lifecycle guard** | ⬜ open (no migration) | — |
-| **S5 — quota/leaderboard concurrency token** | ⬜ open (needs migration) | — |
-| **S1 — public/private holdout** | ⬜ open (schema + migration + scoring + endpoint) | — |
-| **T1 — engine unification** | ⬜ open (largest) | — |
-| ColumnRoles refactor (X/y/id/fold typed roles) | ⏸ PARKED — unrequested, agent-authored | `scratchpad/columnroles-*.bak` + `.patch` |
+| S2 — answer-key rescore + concluded-key lock | ✅ | `6a7d788` |
+| Fan-out join duplicate-id guard (ratified) | ✅ | `0eff2e5` |
+| S5 — leaderboard optimistic-concurrency token + retry | ✅ | `6f68df2` |
+| **S1 — public/private holdout** | ⬜ open (schema + dual-provider migration + scoring + endpoint) | — |
+| **T1 — engine unification** | ⬜ open (largest — route run/train through the graph) | — |
+| S5 residual — quota TOCTOU | ⬜ open (needs an atomic per-user/day counter + migration) | — |
+| ColumnRoles refactor (X/y/id/fold typed roles) | ⏸ DISCARDED (reverted `39f5026`) — parked | `scratchpad/columnroles-*` |
 
 **H2 patch note:** a background remediation agent authored a coherent schema-carrying `PipelineTable`
 (`PipelineColumnType` enum; `Types` carried across both crossings; DuckDB `read_csv_auto(types=…)` +
