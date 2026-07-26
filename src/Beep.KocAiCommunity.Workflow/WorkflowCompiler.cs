@@ -45,6 +45,29 @@ public static class WorkflowCompiler
             }
         }
 
+        // The executor threads ONE table linearly through the topological order, so a valid graph must be
+        // a single chain: no node may take input from two producers (fan-in) or feed two consumers
+        // (fan-out) — either would silently mis-thread the wrong table into a node. A join/union node's
+        // second dataset arrives via a side channel (its datasetId parameter), not a graph edge, so those
+        // still have in-degree 1 and are unaffected.
+        var links = definition.Edges
+            .Where(e => nodeIds.Contains(e.FromNodeId) && nodeIds.Contains(e.ToNodeId))
+            .Select(e => (e.FromNodeId, e.ToNodeId))
+            .Distinct()
+            .ToList();
+
+        foreach (var group in links.GroupBy(l => l.ToNodeId).Where(g => g.Count() > 1).OrderBy(g => g.Key, StringComparer.Ordinal))
+        {
+            errors.Add($"Node '{group.Key}' has {group.Count()} inputs — a pipeline must be a single chain (no branches). "
+                + "Remove the extra connection, or join a second dataset with a 'join-dataset'/'union-dataset' node.");
+        }
+
+        foreach (var group in links.GroupBy(l => l.FromNodeId).Where(g => g.Count() > 1).OrderBy(g => g.Key, StringComparer.Ordinal))
+        {
+            errors.Add($"Node '{group.Key}' feeds {group.Count()} nodes — a pipeline must be a single chain (no branches). "
+                + "Keep one path from the dataset to the model.");
+        }
+
         if (!definition.Nodes.Any(n => string.Equals(n.Kind, "dataset", StringComparison.OrdinalIgnoreCase)))
         {
             errors.Add("A workflow needs a dataset source node.");
