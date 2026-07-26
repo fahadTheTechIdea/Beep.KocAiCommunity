@@ -57,8 +57,9 @@ public sealed class TrainHandler : IPipelineNodeHandler
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
-        var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
-        var features = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+        var roles = ctx.Roles(input);                       // X = roles.Features, y = roles.Label
+        var full = input.LoadIntoMl(ctx.Ml, roles.Label);
+        var features = roles.NumericFeatures(full.Schema);  // the numeric slice of X
         if (features.Length == 0)
         {
             if (ctx.Mode == PipelineMode.Predict)
@@ -69,7 +70,7 @@ public sealed class TrainHandler : IPipelineNodeHandler
             return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "failed", "no usable feature columns"), input);
         }
 
-        (ctx.Model, ctx.Algorithm, ctx.LabelMap) = MlModelOps.FitModel(ctx.Ml, ctx.Task, node, ctx.LabelColumn, ctx.FoldTrainView(full), features);
+        (ctx.Model, ctx.Algorithm, ctx.LabelMap) = MlModelOps.FitModel(ctx.Ml, ctx.Task, node, roles.Label, ctx.FoldTrainView(full), features);
         return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "done", $"{ctx.Algorithm} · {features.Length} features"), input);
     }
 }
@@ -88,7 +89,7 @@ public sealed class ClusterHandler : IPipelineNodeHandler
         }
 
         var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
-        var features = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+        var features = ctx.Roles(input).NumericFeatures(full.Schema); // X (numeric); clustering ignores y
         if (features.Length == 0)
         {
             return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "no numeric features"), input);
@@ -118,32 +119,33 @@ public sealed class CrossValidateHandler : IPipelineNodeHandler
         }
 
         var ml = ctx.Ml;
-        var full = input.LoadIntoMl(ml, ctx.LabelColumn);
+        var roles = ctx.Roles(input);                       // X = roles.Features, y = roles.Label
+        var full = input.LoadIntoMl(ml, roles.Label);
         var trainView = ctx.FoldTrainView(full);
-        var features = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+        var features = roles.NumericFeatures(full.Schema);
         var folds = Math.Clamp((int)ReadDouble(Cfg(node, "folds"), 5), 2, 10);
 
         NodeExecutionResult status;
         if (ctx.Task == MlTaskType.MulticlassClassification)
         {
             var (mcTrainer, mcName) = MlModelOps.MulticlassTrainer(ml, node);
-            var mcEst = ml.Transforms.Conversion.MapValueToKey("Label", ctx.LabelColumn)
+            var mcEst = ml.Transforms.Conversion.MapValueToKey("Label", roles.Label)
                 .Append(ml.Transforms.Concatenate("Features", features)).Append(mcTrainer);
             var cv = ml.MulticlassClassification.CrossValidate(trainView, mcEst, numberOfFolds: folds, labelColumnName: "Label");
             status = new NodeExecutionResult(node.Id, node.Kind, "done", $"{folds}-fold {mcName} · mean micro-acc {cv.Average(r => r.Metrics.MicroAccuracy):0.###}");
         }
         else
         {
-            var (trainer, name) = MlModelOps.Trainer(ml, ctx.Task, node, ctx.LabelColumn);
+            var (trainer, name) = MlModelOps.Trainer(ml, ctx.Task, node, roles.Label);
             var est = ml.Transforms.Concatenate("Features", features).Append(trainer);
             if (ctx.Task == MlTaskType.Regression)
             {
-                var cv = ml.Regression.CrossValidate(trainView, est, numberOfFolds: folds, labelColumnName: ctx.LabelColumn);
+                var cv = ml.Regression.CrossValidate(trainView, est, numberOfFolds: folds, labelColumnName: roles.Label);
                 status = new NodeExecutionResult(node.Id, node.Kind, "done", $"{folds}-fold {name} · mean R² {cv.Average(r => r.Metrics.RSquared):0.###}");
             }
             else
             {
-                var cv = ml.BinaryClassification.CrossValidateNonCalibrated(trainView, est, numberOfFolds: folds, labelColumnName: ctx.LabelColumn);
+                var cv = ml.BinaryClassification.CrossValidateNonCalibrated(trainView, est, numberOfFolds: folds, labelColumnName: roles.Label);
                 status = new NodeExecutionResult(node.Id, node.Kind, "done", $"{folds}-fold {name} · mean accuracy {cv.Average(r => r.Metrics.Accuracy):0.###}");
             }
         }
