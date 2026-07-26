@@ -90,6 +90,13 @@ public sealed class CompetitionService(
             throw new CompetitionException("Only the competition creator can set the answer key.");
         }
 
+        // A concluded competition's results are final — its key is locked so standings can't be rewritten
+        // after podium Barrels/badges have been awarded.
+        if (competition.Status == "concluded")
+        {
+            throw new CompetitionException("A concluded competition's answer key is locked; its results are final.");
+        }
+
         // Buffer once so we can validate and then store the same bytes.
         using var buffer = new MemoryStream();
         await answerKey.CopyToAsync(buffer, ct);
@@ -102,6 +109,81 @@ public sealed class CompetitionService(
 
         competition.AnswerKeyArtifactId = artifact.Id;
         await db.SaveChangesAsync(ct);
+
+        // Every existing score was computed against the OLD key and is now stale. Rescore all submissions
+        // against the new key and rebuild the leaderboard, so the board never mixes results from two keys.
+        await RescoreAllAsync(competition, ct);
+    }
+
+    // Rescores every submission for a competition against its current answer key and rebuilds the
+    // leaderboard (best entry per user + ranks). Used when the key changes after submissions exist.
+    private async Task RescoreAllAsync(Competition competition, CancellationToken ct)
+    {
+        if (competition.AnswerKeyArtifactId is null)
+        {
+            return;
+        }
+
+        var submissions = await db.Set<Submission>()
+            .Where(s => s.CompetitionId == competition.Id)
+            .ToListAsync(ct);
+        if (submissions.Count == 0)
+        {
+            return;
+        }
+
+        var scorer = scorers.Resolve(competition.ScorerCode);
+
+        // Buffer the key once; each submission scores against a fresh view of the same bytes.
+        byte[] keyBytes;
+        await using (var keyStream = await artifacts.OpenReadAsync(competition.AnswerKeyArtifactId.Value, ct))
+        using (var ms = new MemoryStream())
+        {
+            await keyStream.CopyToAsync(ms, ct);
+            keyBytes = ms.ToArray();
+        }
+
+        foreach (var submission in submissions)
+        {
+            await using var predStream = await artifacts.OpenReadAsync(submission.PredictionArtifactId, ct);
+            using var keyView = new MemoryStream(keyBytes);
+            submission.Score = await scorer.ScoreAsync(predStream, keyView, competition.IdColumn, ct);
+        }
+
+        await db.SaveChangesAsync(ct);
+
+        // Rebuild each user's best entry from the rescored submissions (tie-break: earliest submission).
+        var bestPerUser = submissions
+            .Where(s => s.Score.HasValue)
+            .GroupBy(s => s.SubmitterUserId, StringComparer.Ordinal)
+            .Select(g => (scorer.HigherIsBetter ? g.OrderByDescending(s => s.Score!.Value) : g.OrderBy(s => s.Score!.Value))
+                .ThenBy(s => s.SubmittedUtc).First());
+
+        var entries = (await db.Set<LeaderboardEntry>().Where(e => e.CompetitionId == competition.Id).ToListAsync(ct))
+            .ToDictionary(e => e.SubmitterUserId, StringComparer.Ordinal);
+
+        foreach (var best in bestPerUser)
+        {
+            if (entries.TryGetValue(best.SubmitterUserId, out var entry))
+            {
+                entry.Score = best.Score!.Value;
+                entry.BestSubmissionId = best.Id;
+            }
+            else
+            {
+                db.Set<LeaderboardEntry>().Add(new LeaderboardEntry
+                {
+                    CompetitionId = competition.Id,
+                    SubmitterUserId = best.SubmitterUserId,
+                    BestSubmissionId = best.Id,
+                    Score = best.Score!.Value,
+                    CreatedUtc = DateTime.UtcNow,
+                });
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
+        await RecomputeRanksAsync(competition.Id, scorer.HigherIsBetter, ct);
     }
 
     // An invalid answer key silently zeroes or corrupts every submission's score, so it is rejected at
@@ -526,10 +608,14 @@ public sealed class CompetitionService(
         }
 
         await db.SaveChangesAsync(ct);
+        await RecomputeRanksAsync(competition.Id, higherIsBetter, ct);
+    }
 
-        // Recompute ranks (1 = best). Ties break deterministically by earliest entry, then user id,
-        // so equal scores always rank the same way regardless of database fetch order.
-        var entries = await db.Set<LeaderboardEntry>().Where(e => e.CompetitionId == competition.Id).ToListAsync(ct);
+    // Recompute ranks (1 = best) for a competition's leaderboard. Ties break deterministically by earliest
+    // entry, then user id, so equal scores always rank the same way regardless of database fetch order.
+    private async Task RecomputeRanksAsync(Guid competitionId, bool higherIsBetter, CancellationToken ct)
+    {
+        var entries = await db.Set<LeaderboardEntry>().Where(e => e.CompetitionId == competitionId).ToListAsync(ct);
         var byScore = higherIsBetter
             ? entries.OrderByDescending(e => e.Score)
             : entries.OrderBy(e => e.Score);
@@ -544,7 +630,7 @@ public sealed class CompetitionService(
         }
 
         // Relayed to the competition's SignalR group so open leaderboards refresh live.
-        await outbox.EnqueueAsync(new LeaderboardUpdatedEvent(competition.Id), ct);
+        await outbox.EnqueueAsync(new LeaderboardUpdatedEvent(competitionId), ct);
         await db.SaveChangesAsync(ct);
     }
 }

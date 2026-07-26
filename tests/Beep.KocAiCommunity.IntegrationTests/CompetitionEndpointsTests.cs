@@ -351,6 +351,53 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task Replacing_the_answer_key_rescores_submissions_and_rebuilds_the_leaderboard()
+    {
+        var creator = _factory.CreateClientAs("rekey-creator", "Employee");
+        var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
+
+        // Key K1: 1→A, 2→B, 3→A.
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,B\n3,A")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // X is perfect under K1 (A,B,A); Y is perfect under the *future* K2 (A,A,B) → only 1/3 under K1.
+        var x = _factory.CreateClientAs("rekey-x", "Employee");
+        (await (await x.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,B\n3,A")))
+            .Content.ReadFromJsonAsync<SubmissionResultDto>())!.Score.Should().Be(1.0);
+        var y = _factory.CreateClientAs("rekey-y", "Employee");
+        await y.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,A\n3,B"));
+
+        // Under K1, X leads.
+        var before = (await x.GetFromJsonAsync<List<LeaderboardEntryDto>>($"/api/v1/competitions/{competitionId}/leaderboard?board=live"))!;
+        before[0].UserId.Should().Be("rekey-x");
+
+        // Creator swaps in K2 (A,A,B) — now Y is perfect and X is 1/3. Existing submissions must be rescored.
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,B")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var after = (await x.GetFromJsonAsync<List<LeaderboardEntryDto>>($"/api/v1/competitions/{competitionId}/leaderboard?board=live"))!;
+        after[0].UserId.Should().Be("rekey-y", "the board must reflect the new key, not a mix");
+        after[0].Score.Should().Be(1.0);
+        after.Single(e => e.UserId == "rekey-x").Score.Should().BeApproximately(1d / 3d, 1e-9);
+    }
+
+    [Fact]
+    public async Task A_concluded_competitions_answer_key_is_locked()
+    {
+        var creator = _factory.CreateClientAs("lock-creator", "Employee");
+        var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("concluded")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // The results are final — the key can no longer be changed.
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,B")))
+            .StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     private static async Task<Guid> CreateCompetition(HttpClient client, DateTime? revealUtc, int quota)
     {
         var response = await client.PostAsJsonAsync("/api/v1/competitions",
