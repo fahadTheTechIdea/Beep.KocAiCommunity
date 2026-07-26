@@ -113,6 +113,24 @@ public sealed class PipelineContext : IDisposable
     public IEnumerable<string> FeatureNames(PipelineTable table)
         => table.Columns.Where(c => c != LabelColumn && c != IdColumn && c != FoldColumn);
 
+    /// <summary>
+    /// Fails loudly when a supervised node's label column is missing — an earlier node (drop-columns, a
+    /// SQL SELECT that omits it, group-by, or renaming the label itself) removed or renamed it. Without
+    /// this the loader would silently fall back to the first column as the label (<see cref="PipelineTable.LoadIntoMl"/>),
+    /// training on the wrong column and reporting a meaningless metric. Mirrors the <c>__fold</c> leakage
+    /// guard; unsupervised nodes (cluster) never call it, so a label-less pipeline is unaffected.
+    /// </summary>
+    public void RequireLabel(WorkflowNode node, PipelineTable input)
+    {
+        if (!input.HasColumn(LabelColumn))
+        {
+            throw new InvalidOperationException(
+                $"Node '{node.Kind}' needs the label column '{LabelColumn}', but it is no longer in the data. "
+                + "A node before it (drop-columns, a SQL SELECT that omits the label, group-by, or renaming "
+                + "the label) removed or renamed it. Keep the label column through to the model.");
+        }
+    }
+
     // ---- Shared helpers (moved from the monolithic executor) ----
 
     public static string? Cfg(WorkflowNode node, string key)

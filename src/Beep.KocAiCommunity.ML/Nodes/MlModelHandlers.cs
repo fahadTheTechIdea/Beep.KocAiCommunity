@@ -57,6 +57,7 @@ public sealed class TrainHandler : IPipelineNodeHandler
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
+        ctx.RequireLabel(node, input);
         var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
         var features = NumericFeatures(full.Schema, ctx.FeatureNames(input));
         if (features.Length == 0)
@@ -117,6 +118,7 @@ public sealed class CrossValidateHandler : IPipelineNodeHandler
             return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "not used for prediction"), input);
         }
 
+        ctx.RequireLabel(node, input);
         var ml = ctx.Ml;
         var full = input.LoadIntoMl(ml, ctx.LabelColumn);
         var trainView = ctx.FoldTrainView(full);
@@ -183,6 +185,7 @@ public sealed class EvaluateHandler : IPipelineNodeHandler
             return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", ctx.Model is null ? "no trained model upstream" : "handled by the prediction step"), input);
         }
 
+        ctx.RequireLabel(node, input);
         var ml = ctx.Ml;
         var full = input.LoadIntoMl(ml, ctx.LabelColumn);
         var testView = ctx.FoldTestView(full);

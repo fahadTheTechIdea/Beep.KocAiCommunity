@@ -173,6 +173,15 @@ public sealed class UnionDatasetHandler : IPipelineNodeHandler
             return Duck.Skip(node, "no dataset selected (or it could not be loaded)", input);
         }
 
+        // If the current data is labelled, the appended dataset must carry the same label — otherwise
+        // UNION ALL BY NAME gives its rows a NULL label and they'd train as a phantom class. Fail loudly.
+        if (input.HasColumn(ctx.LabelColumn) && !ctx.Duck.Columns(otherTable).Contains(ctx.LabelColumn))
+        {
+            return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "failed",
+                $"the appended dataset has no '{ctx.LabelColumn}' column, so its rows would train with a null "
+                + "label. Add the label column to that dataset, or don't append it."), input);
+        }
+
         input.LoadIntoDuck(ctx.Duck, WorkingTable);
         ctx.Duck.ReplaceTable(WorkingTable,
             $"SELECT * FROM {DuckDbSession.Quote(WorkingTable)} UNION ALL BY NAME SELECT * FROM {DuckDbSession.Quote(otherTable)}");

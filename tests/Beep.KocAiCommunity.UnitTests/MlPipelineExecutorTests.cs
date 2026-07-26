@@ -677,6 +677,142 @@ public class MlPipelineExecutorTests
         second.PrimaryValue.Should().Be(first.PrimaryValue, "one pinned thread + fixed seed must be bit-for-bit reproducible");
     }
 
+    [Fact]
+    public async Task Dropping_the_label_before_train_fails_loudly()
+    {
+        // A drop-columns node removes the label. Training must fail with a clear message rather than
+        // silently fall back to the first column as the label and report a meaningless metric.
+        var def = new WorkflowDefinition
+        {
+            Name = "no-label",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "dc", Kind = "drop-columns", Config = new Dictionary<string, string> { ["columns"] = "label" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+            ],
+            Edges = [new("d", "dc"), new("dc", "sp"), new("sp", "tr")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 20; i++)
+        {
+            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+
+        result.Success.Should().BeFalse();
+        var train = result.Nodes.Single(n => n.Kind == "train");
+        train.Status.Should().Be("failed");
+        train.Detail.Should().Contain("label");
+    }
+
+    [Fact]
+    public async Task Dropping_the_id_before_prediction_fails_loudly()
+    {
+        // A replayed drop-columns removes the id, so at predict the eval set has no id column. Prediction
+        // must fail loudly (predictions can't be aligned to the answer key) rather than emit column 0 as a
+        // bogus id with a matching row count.
+        var def = new WorkflowDefinition
+        {
+            Name = "drop-id",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "dc", Kind = "drop-columns", Config = new Dictionary<string, string> { ["columns"] = "id" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "dc"), new("dc", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var train = new StringBuilder("id,x1,x2,label\n");
+        for (var i = 0; i < 60; i++)
+        {
+            train.Append($"tr{i}a,{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
+            train.Append($"tr{i}b,{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var trainCsv = new MemoryStream(Encoding.UTF8.GetBytes(train.ToString()));
+        var eval = "id,x1,x2\ne1,9,9\ne2,0,0\n";
+        using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval));
+
+        await NewExecutor()
+            .Invoking(x => x.PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, trainCsv, evalCsv))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*id*");
+    }
+
+    [Fact]
+    public async Task Building_a_feature_from_the_label_is_rejected_as_leakage()
+    {
+        // compute-column takes an explicit input list (not filtered through FeatureNames), so using the
+        // label as an input would encode the target into a feature. That must fail loudly, not train on it.
+        var def = new WorkflowDefinition
+        {
+            Name = "leaky-feature",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "cc", Kind = "compute-column", Config = new Dictionary<string, string> { ["output"] = "cheat", ["inputs"] = "x1,label", ["expression"] = "(a, b) => a + b" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+            ],
+            Edges = [new("d", "cc"), new("cc", "sp"), new("sp", "tr")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 20; i++)
+        {
+            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},1\n{i % 3},{(i / 3) % 3},0\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+
+        result.Success.Should().BeFalse();
+        var cc = result.Nodes.Single(n => n.Kind == "compute-column");
+        cc.Status.Should().Be("failed");
+        cc.Detail.Should().Contain("leakage");
+    }
+
+    [Fact]
+    public async Task Take_rows_after_split_is_rejected_it_would_drop_the_test_fold()
+    {
+        // split lays out train rows then test rows; take-rows(N) after it would keep only train rows,
+        // leaving evaluate with no held-out set. Must fail loudly.
+        var def = new WorkflowDefinition
+        {
+            Name = "sample-after-split",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tk", Kind = "take-rows", Config = new Dictionary<string, string> { ["count"] = "10" } },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "sp"), new("sp", "tk"), new("tk", "tr"), new("tr", "ev")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 40; i++)
+        {
+            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n{i % 3},{(i / 3) % 3},false\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+
+        result.Success.Should().BeFalse();
+        var tk = result.Nodes.Single(n => n.Kind == "take-rows");
+        tk.Status.Should().Be("failed");
+        tk.Detail.Should().Contain("split");
+    }
+
     // Three separable clusters → classes a/b/c.
     private static string MulticlassCsv(bool withId)
     {

@@ -59,12 +59,27 @@ public sealed class ComputeColumnHandler : IPipelineNodeHandler
          P("inputs", "Input columns", NodeParameterType.Columns, required: true),
          P("expression", "Formula, e.g. (gas, oil) => gas / (oil + 1)", NodeParameterType.Text, required: true)]);
 
-    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
-        ctx.FitTransform(node, input, _ =>
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
+    {
+        // Building a feature FROM the label (or id) is target leakage: unlike auto feature-selection,
+        // this node takes an explicit input list that isn't filtered through FeatureNames, so it could
+        // otherwise encode the target into a feature (and it would then break at predict, where the eval
+        // set has no label). Reject it loudly. Also the derived column would itself be replayed on the
+        // label-less eval set, so it simply cannot depend on the label.
+        var requested = SplitList(Cfg(node, "inputs"));
+        var leaky = requested.Where(c => c == ctx.LabelColumn || (ctx.IdColumn is not null && c == ctx.IdColumn)).ToList();
+        if (leaky.Count > 0)
+        {
+            return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "failed",
+                $"'{string.Join(", ", leaky)}' is the label/id column — deriving a feature from the target is data leakage. "
+                + "Use feature columns only."), input);
+        }
+
+        return ctx.FitTransform(node, input, _ =>
         {
             var output = Cfg(node, "output");
             var expression = Cfg(node, "expression");
-            var inputs = SplitList(Cfg(node, "inputs")).Where(input.HasColumn).ToArray();
+            var inputs = requested.Where(input.HasColumn).ToArray();
             if (string.IsNullOrWhiteSpace(output) || string.IsNullOrWhiteSpace(expression) || inputs.Length == 0)
             {
                 return (null, "");
@@ -74,6 +89,7 @@ public sealed class ComputeColumnHandler : IPipelineNodeHandler
                 .Append(ctx.Ml.Transforms.Expression(output, expression, inputs));
             return (est, $"{output} = {expression}  [{string.Join(", ", inputs)}]");
         }, "'output', 'inputs' and 'expression' are required");
+    }
 }
 
 public sealed class CombineColumnsHandler : IPipelineNodeHandler
@@ -138,11 +154,26 @@ public sealed class TakeRowsHandler : IPipelineNodeHandler
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
+        if (RowSampleAfterSplit(ctx, node) is { } rejected)
+        {
+            return rejected;
+        }
+
         var n = Math.Max(1, (int)ReadDouble(Cfg(node, "count"), 1000));
         var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
         var output = PipelineTable.FromMlView(ctx.Ml.Data.TakeRows(full, n), ctx.TempFiles);
         return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "done", $"kept first {output.RowCount} of {input.RowCount}"), output);
     }
+
+    // 'split' writes all train rows then all test rows into one table, so a count/position-based row op
+    // after it can silently drop an entire fold — take-rows(N ≤ trainCount) yields only train rows, leaving
+    // 'evaluate' with no held-out set. Reject it: such sampling belongs before the split.
+    internal static NodeResult? RowSampleAfterSplit(PipelineContext ctx, WorkflowNode node)
+        => ctx.HasSplit
+            ? new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "failed",
+                "row sampling after 'split' would drop rows from the held-out test set (split lays out train "
+                + "rows then test rows). Place take-rows/sample before the split."), null)
+            : null;
 }
 
 public sealed class ShuffleHandler : IPipelineNodeHandler
@@ -166,6 +197,11 @@ public sealed class SampleHandler : IPipelineNodeHandler
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
+        if (TakeRowsHandler.RowSampleAfterSplit(ctx, node) is { } rejected)
+        {
+            return rejected;
+        }
+
         var fraction = ReadDouble(Cfg(node, "fraction"), 0.5);
         var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
         var take = Math.Max(1, (long)(input.RowCount * fraction));
@@ -186,6 +222,14 @@ public sealed class FilterRowsHandler : IPipelineNodeHandler
         if (string.IsNullOrWhiteSpace(column))
         {
             return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "no column configured"), input);
+        }
+
+        // 'column' is a free-text param, so the executor's Columns validation doesn't cover it — check it
+        // here so a typo fails with a clear message instead of a raw ML.NET "column not found" exception.
+        if (!input.HasColumn(column))
+        {
+            return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "failed",
+                $"column '{column}' not found — check the name."), input);
         }
 
         var min = ReadDouble(Cfg(node, "min"), double.NegativeInfinity);

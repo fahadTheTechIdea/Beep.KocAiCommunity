@@ -160,9 +160,19 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             };
         }
 
+        // The id column must survive the pipeline: ReadColumn falls back to column 0 when the named id is
+        // absent, so a replayed step that dropped or renamed the id would silently emit the wrong ids with
+        // a matching row count (slipping past the count guard below). Fail loudly instead.
+        if (!evalTable.HasColumn(idColumn))
+        {
+            throw new InvalidOperationException(
+                $"The id column '{idColumn}' is no longer in the evaluation data after the pipeline ran. A "
+                + "replayed column step (drop-columns, a SQL SELECT that omits the id, or renaming it) removed "
+                + "it, so predictions can't be aligned to the answer key. Keep the id column through the pipeline.");
+        }
+
         // Read the ids from the SAME (possibly replayed) table that produces the predictions, so id and
-        // prediction stay row-aligned even when a replayed step changed the eval rows. If a step dropped
-        // the id column or the counts diverge, fail loudly rather than silently mis-pair with Math.Min.
+        // prediction stay row-aligned even when a replayed step changed the eval rows.
         var ids = MlModelOps.ReadColumn(evalTable.CsvPath, idColumn);
         var scored = ctx.Model.Transform(evalTable.LoadIntoMl(ctx.Ml, idColumn, forceTextColumn: idColumn));
 

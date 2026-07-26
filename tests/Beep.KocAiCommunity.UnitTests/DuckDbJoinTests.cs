@@ -157,4 +157,33 @@ public class DuckDbJoinTests
         // 4 primary rows + 80 appended (40 × 2) = 84.
         result.Nodes.Single(n => n.Kind == "union-dataset").Detail.Should().Contain("84 rows");
     }
+
+    [Fact]
+    public async Task Union_with_a_dataset_missing_the_label_fails_loudly()
+    {
+        // The appended dataset has no label column, so UNION ALL BY NAME would give its rows a null label
+        // and train them as a phantom class. Must fail loudly rather than silently pollute training.
+        var second = Guid.NewGuid();
+        const string primary = "x1,x2,label\n9,9,true\n0,0,false\n8,8,true\n1,1,false\n";
+        const string extra = "x1,x2\n7,7\n2,2\n"; // no label column
+
+        var def = new WorkflowDefinition
+        {
+            Name = "union-no-label",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "u", Kind = "union-dataset", Config = new Dictionary<string, string> { ["datasetId"] = second.ToString() } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+            ],
+            Edges = [new("d", "u"), new("u", "sp"), new("sp", "tr")],
+        };
+
+        var secondaryMap = new Dictionary<Guid, Stream> { [second] = Csv(extra) };
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, Csv(primary), 5, secondaryMap);
+
+        result.Success.Should().BeFalse();
+        result.Nodes.Single(n => n.Kind == "union-dataset").Status.Should().Be("failed");
+    }
 }
