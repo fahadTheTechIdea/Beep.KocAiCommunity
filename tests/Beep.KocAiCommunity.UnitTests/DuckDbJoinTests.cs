@@ -84,6 +84,47 @@ public class DuckDbJoinTests
     }
 
     [Fact]
+    public async Task A_fan_out_join_that_duplicates_evaluation_ids_fails_loudly_at_predict()
+    {
+        // The merged dataset has DUPLICATE keys, so a left join multiplies rows — every evaluation id then
+        // appears more than once in the submission. Row-count alignment still holds, so that guard passes;
+        // this must be caught separately, because the scorers align by id and would keep only the last
+        // prediction per id (a silently wrong score). The run must fail with a clear message instead.
+        var second = Guid.NewGuid();
+        var train = new StringBuilder("id,key,x1,label\n");
+        for (var i = 0; i < 60; i++)
+        {
+            train.Append($"tr{i},{(i % 2 == 0 ? "k0" : "k1")},{i % 2},{(i % 2 == 0 ? "true" : "false")}\n");
+        }
+
+        // Two rows per key → any joined row fans out 2x.
+        var secondary = "key,signal\nk0,9\nk0,8\nk1,0\nk1,1\n";
+        var eval = "id,key,x1\ne1,k0,0\ne2,k1,0\n";
+
+        var def = new WorkflowDefinition
+        {
+            Name = "fan-out-join",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "j", Kind = "join-dataset", Config = new Dictionary<string, string> { ["datasetId"] = second.ToString(), ["on"] = "key" } },
+                new() { Id = "drop", Kind = "drop-columns", Config = new Dictionary<string, string> { ["columns"] = "key" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "j"), new("j", "drop"), new("drop", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var secondaryMap = new Dictionary<Guid, Stream> { [second] = Csv(secondary) };
+
+        await FluentActions
+            .Awaiting(() => NewExecutor().PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, Csv(train.ToString()), Csv(eval), secondaryMap))
+            .Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*duplicate ids*");
+    }
+
+    [Fact]
     public async Task Union_dataset_appends_rows_from_a_second_dataset()
     {
         var second = Guid.NewGuid();

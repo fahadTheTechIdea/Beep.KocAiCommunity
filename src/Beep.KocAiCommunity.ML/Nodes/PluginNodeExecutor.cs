@@ -180,6 +180,24 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
                 + "A row-changing step (e.g. a filtering SQL node) must preserve the id column so predictions stay aligned.");
         }
 
+        // A fan-out join (a merged dataset with duplicate keys) multiplies evaluation rows, so the same id
+        // appears more than once. Counts still match, so the alignment guard above passes — but the scorers
+        // align by id and would silently keep only the last prediction per id. Fail loudly instead: the
+        // submission must carry exactly one prediction per evaluation id.
+        var duplicateIds = ids
+            .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .Take(5)
+            .ToList();
+        if (duplicateIds.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "The submission has duplicate ids, so a merge/join multiplied evaluation rows: "
+                + string.Join(", ", duplicateIds)
+                + ". Join on a unique key (or de-duplicate the merged dataset) so each id yields exactly one prediction.");
+        }
+
         var sb = new StringBuilder("id,prediction\n");
         for (var i = 0; i < ids.Count; i++)
         {
