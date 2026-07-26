@@ -92,10 +92,24 @@ temp-file cleanup on success and exception (no leaks).
 | S2 — answer-key rescore + concluded-key lock | ✅ | `6a7d788` |
 | Fan-out join duplicate-id guard (ratified) | ✅ | `0eff2e5` |
 | S5 — leaderboard optimistic-concurrency token + retry | ✅ | `6f68df2` |
+| Data-class contract guards (label/id integrity, target leakage, fold integrity, union label, filter typo) | ✅ | `af6fe5f` |
+| AutoML must not train on the id as a feature | ✅ | `5f53118` |
+| T1 path A — interactive run executes the node graph (was AutoML) | ✅ | `21be420` |
+| **T1 path B — durable `workflow.run` job** | ⏸ BLOCKED (see note) — stays on AutoML | — |
 | **S1 — public/private holdout** | ⬜ open (schema + dual-provider migration + scoring + endpoint) | — |
-| **T1 — engine unification** | ⬜ open (largest — route run/train through the graph) | — |
 | S5 residual — quota TOCTOU | ⬜ open (needs an atomic per-user/day counter + migration) | — |
 | ColumnRoles refactor (X/y/id/fold typed roles) | ⏸ DISCARDED (reverted `39f5026`) — parked | `scratchpad/columnroles-*` |
+
+**T1 path B blocker:** the `workflow.run` job produces a *registerable, inference-ready* model
+(`CapturedModel` = a self-contained ML.NET `.zip` → `ModelRunRecorder` → inference pool). The node graph
+cannot produce one: its `ctx.Model` is only the `train` node's fitted pipeline, while preprocessing is
+applied as separate replay steps — and some of those are **DuckDB SQL**, which cannot be serialized into
+an ML.NET `.zip`. So any graph using a DuckDB node can't be frozen into a single servable artifact.
+Path B therefore stays on AutoML (which does produce a servable model); T1's user-facing goal — the
+*interactive* run matching the graph (and competition-submit) — is delivered at path A. The proper
+long-term fix is to **serve inference by re-running the graph's `PredictAsync`** (store the definition as
+the "model", no `.zip`), which is a rework of the whole inference path (`AutoMlPredictionPool` /
+`IInferenceService` / registry), tracked as future work — not a job-handler swap.
 
 **H2 patch note:** a background remediation agent authored a coherent schema-carrying `PipelineTable`
 (`PipelineColumnType` enum; `Types` carried across both crossings; DuckDB `read_csv_auto(types=…)` +

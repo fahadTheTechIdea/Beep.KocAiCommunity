@@ -362,6 +362,18 @@ KOC blueprint theme. No DB schema change anywhere.
     doesn't rescore; accuracy boolean-folding collides for coded multiclass; accuracy/RMSE edge-case
     divergence; quota/leaderboard concurrency), T1 (route run/train through the node graph). Plus an
     assurance layer: a golden pipeline/competition correctness suite gated in CI.
+    **Shipped since (2026-07-26 cont.):** H2 (`4b0d9f5`, schema-carrying `PipelineTable`); T3 (`c167586`);
+    S3/S4 (`e0c705c`); S2 (`6a7d788`, answer-key rescore + concluded-key lock); fan-out-join duplicate-id
+    guard (`0eff2e5`); S5 (`6f68df2`, leaderboard optimistic-concurrency token + retry); the data-class
+    contract guards (`af6fe5f` — label/id integrity, target-leakage on compute-column, fold integrity on
+    take-rows/sample-after-split, union label-missing, filter-rows typo); AutoML no-longer-trains-on-id
+    (`5f53118`); **T1 path A** (`21be420` — interactive `/studio/workflows/run` executes the node graph,
+    not AutoML). **T1 path B BLOCKED** — the durable `workflow.run` job produces a registerable ML.NET
+    `.zip` model, which the graph can't yield (its preprocessing includes non-serializable DuckDB SQL
+    steps); it stays on AutoML. Proper fix = serve inference by re-running the graph (`PredictAsync`), a
+    rework of the inference path, tracked as future work. **Still open:** S1 (public/private holdout —
+    schema + dual-provider migration), S5 quota-TOCTOU residual (atomic per-user/day counter + migration),
+    and the golden correctness suite. See `20_PIPELINE_AND_SCORING_AUDIT.md` for the full ledger.
 
 ## Global definition of done
 
