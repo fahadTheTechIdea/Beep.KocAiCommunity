@@ -51,16 +51,18 @@ public sealed class DuckDbSession : IDisposable
         return cmd.ExecuteScalar();
     }
 
-    /// <summary>Loads a CSV file into a table, inferring types (header required). Any configured
-    /// text columns that are actually present in the file are pinned to VARCHAR instead of sniffed.</summary>
-    public void LoadCsv(string csvPath, string tableName)
-        => Execute($"CREATE OR REPLACE TABLE {Quote(tableName)} AS SELECT * FROM read_csv_auto({Literal(csvPath)}, header = true{TypesClause(csvPath)});");
+    /// <summary>Loads a CSV file into a table (header required). Applies the carried per-column schema
+    /// (<paramref name="columnTypes"/>, parallel to the CSV header) so types are preserved rather than
+    /// re-sniffed; any configured text column present in the file is additionally pinned to VARCHAR.</summary>
+    public void LoadCsv(string csvPath, string tableName, IReadOnlyList<PipelineColumnType>? columnTypes = null)
+        => Execute($"CREATE OR REPLACE TABLE {Quote(tableName)} AS SELECT * FROM read_csv_auto({Literal(csvPath)}, header = true{TypesClause(csvPath, columnTypes)});");
 
-    // Builds the read_csv_auto `types` override for the configured text columns that appear in this file
-    // (an override for an absent column would error, so the header is checked first). Empty when none apply.
-    private string TypesClause(string csvPath)
+    // Builds the read_csv_auto `types` override from the carried schema plus the configured text-column
+    // pins, keyed by the file's actual header (an override for an absent column would error, so the header
+    // is checked first). DateTime is left to auto-detection. Empty when nothing applies.
+    private string TypesClause(string csvPath, IReadOnlyList<PipelineColumnType>? columnTypes)
     {
-        if (_textColumns.Count == 0)
+        if (_textColumns.Count == 0 && columnTypes is null)
         {
             return string.Empty;
         }
@@ -85,11 +87,41 @@ public sealed class DuckDbSession : IDisposable
             return string.Empty;
         }
 
-        var forced = header.Select(h => h.Trim()).Where(h => _textColumns.Contains(h)).Distinct(StringComparer.Ordinal).ToList();
-        return forced.Count == 0
+        var trimmed = header.Select(h => h.Trim()).ToArray();
+        var overrides = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        if (columnTypes is not null && columnTypes.Count == trimmed.Length)
+        {
+            for (var i = 0; i < trimmed.Length; i++)
+            {
+                if (DuckType(columnTypes[i]) is { } duckType)
+                {
+                    overrides[trimmed[i]] = duckType;
+                }
+            }
+        }
+
+        // Text pins win — the id column must be VARCHAR regardless of what the schema captured.
+        foreach (var name in trimmed.Where(_textColumns.Contains))
+        {
+            overrides[name] = "VARCHAR";
+        }
+
+        return overrides.Count == 0
             ? string.Empty
-            : $", types = {{{string.Join(", ", forced.Select(c => $"{Literal(c)}: 'VARCHAR'"))}}}";
+            : $", types = {{{string.Join(", ", overrides.Select(kv => $"{Literal(kv.Key)}: {Literal(kv.Value)}"))}}}";
     }
+
+    // Canonical column type -> DuckDB type. DateTime returns null (left to auto-detection to avoid a
+    // parse mismatch on an unexpected timestamp format).
+    private static string? DuckType(PipelineColumnType type) => type switch
+    {
+        PipelineColumnType.Integer => "BIGINT",
+        PipelineColumnType.Real => "DOUBLE",
+        PipelineColumnType.Boolean => "BOOLEAN",
+        PipelineColumnType.Text => "VARCHAR",
+        _ => null,
+    };
 
     /// <summary>Materializes a table (or the result of a query) to a header CSV file.</summary>
     public void ExportCsv(string tableName, string csvPath)
@@ -127,6 +159,31 @@ public sealed class DuckDbSession : IDisposable
         cmd.CommandText = $"SELECT * FROM {Quote(tableName)} LIMIT 0;";
         using var reader = cmd.ExecuteReader(CommandBehavior.SchemaOnly);
         return [.. Enumerable.Range(0, reader.FieldCount).Select(reader.GetName)];
+    }
+
+    /// <summary>The ordered, engine-neutral column types of a table (parallel to <see cref="Columns"/>).</summary>
+    public IReadOnlyList<PipelineColumnType> ColumnTypes(string tableName)
+    {
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = $"SELECT * FROM {Quote(tableName)} LIMIT 0;";
+        using var reader = cmd.ExecuteReader(CommandBehavior.SchemaOnly);
+        return [.. Enumerable.Range(0, reader.FieldCount).Select(i => Canonical(reader.GetFieldType(i)))];
+    }
+
+    // Maps the CLR type DuckDB reports for a column to the engine-neutral canonical type.
+    private static PipelineColumnType Canonical(Type clr)
+    {
+        if (clr == typeof(bool)) { return PipelineColumnType.Boolean; }
+        if (clr == typeof(DateTime) || clr == typeof(DateTimeOffset)) { return PipelineColumnType.DateTime; }
+        if (clr == typeof(float) || clr == typeof(double) || clr == typeof(decimal)) { return PipelineColumnType.Real; }
+        if (clr == typeof(sbyte) || clr == typeof(byte) || clr == typeof(short) || clr == typeof(ushort)
+            || clr == typeof(int) || clr == typeof(uint) || clr == typeof(long) || clr == typeof(ulong)
+            || clr == typeof(System.Numerics.BigInteger))
+        {
+            return PipelineColumnType.Integer;
+        }
+
+        return PipelineColumnType.Text;
     }
 
     /// <summary>Quotes an identifier (table/column) for safe interpolation.</summary>

@@ -63,6 +63,45 @@ internal static class MlCsv
         }
     }
 
+    /// <summary>
+    /// The engine-neutral column types this writer would emit for a view — mirrors <see cref="ColumnWriter.Create"/>
+    /// exactly (a fixed-size vector&lt;float&gt; expands to one <see cref="PipelineColumnType.Real"/> per slot), so
+    /// a table produced by <c>FromMlView</c> can carry its schema instead of having it re-inferred on the next load.
+    /// </summary>
+    public static IReadOnlyList<PipelineColumnType> DescribeColumns(IDataView view)
+    {
+        var result = new List<PipelineColumnType>();
+        foreach (var col in view.Schema.Where(c => !c.IsHidden))
+        {
+            var type = col.Type;
+            var itemType = (type as VectorDataViewType)?.ItemType ?? type;
+            var vectorSize = (type as VectorDataViewType)?.Size ?? 0;
+
+            if (vectorSize > 0 && itemType == NumberDataViewType.Single)
+            {
+                for (var i = 0; i < vectorSize; i++)
+                {
+                    result.Add(PipelineColumnType.Real);
+                }
+
+                continue;
+            }
+
+            result.Add(Canonical(itemType));
+        }
+
+        return result;
+    }
+
+    private static PipelineColumnType Canonical(DataViewType itemType)
+    {
+        if (itemType == NumberDataViewType.Single || itemType == NumberDataViewType.Double) { return PipelineColumnType.Real; }
+        if (itemType == NumberDataViewType.Int32 || itemType == NumberDataViewType.Int64 || itemType == NumberDataViewType.UInt32) { return PipelineColumnType.Integer; }
+        if (itemType == BooleanDataViewType.Instance) { return PipelineColumnType.Boolean; }
+        if (itemType == DateTimeDataViewType.Instance) { return PipelineColumnType.DateTime; }
+        return PipelineColumnType.Text;
+    }
+
     private static string Escape(string value) => KocCsv.QuoteField(value);
 
     private abstract class ColumnWriter
