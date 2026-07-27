@@ -141,23 +141,73 @@
     position: relative;
     color: #fff;
     background:
-        linear-gradient(120deg, var(--koc-accent-900) 0%, var(--koc-accent-700) 70%, var(--koc-accent-500) 100%);
+        linear-gradient(120deg, var(--koc-accent-900) 0%, var(--koc-accent-700) 42%, var(--koc-accent-500) 74%, #1f9be0 100%);
+    background-size: 220% 220%;
+    animation: koc-arena-gradient 14s ease infinite;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .16);
+    box-shadow: 0 14px 44px -14px rgba(11, 46, 76, .7), inset 0 0 0 1px rgba(90, 180, 255, .18);
 }
 
+/* Blueprint grid overlay */
 .koc-arena-banner::before {
     content: "";
     position: absolute; inset: 0;
     background-image:
-        linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
+        linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
     background-size: 22px 22px;
     pointer-events: none;
 }
 
-.koc-arena-banner > * { position: relative; }
-.koc-arena-banner .koc-eyebrow { color: #cfe4f5; }
-.koc-arena-banner .koc-stat-value { color: #fff; }
+/* Diagonal light sweep that glides across the banner */
+.koc-arena-banner::after {
+    content: "";
+    position: absolute; top: 0; bottom: 0; left: -60%; width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .18) 50%, transparent);
+    transform: skewX(-18deg);
+    animation: koc-arena-shine 6.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.koc-arena-banner > * { position: relative; z-index: 1; }
+
+/* "⚔ Featured competition" → a glowing pill */
+.koc-arena-banner .koc-eyebrow {
+    display: inline-block; color: #eaf4ff;
+    background: rgba(255, 255, 255, .12);
+    padding: 3px 12px; border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .28);
+    animation: koc-arena-eyebrow 2.4s ease-in-out infinite;
+}
+.koc-arena-banner .koc-stat-value { color: #fff; text-shadow: 0 0 14px rgba(120, 200, 255, .55); }
+.koc-arena-banner .koc-heading { text-shadow: 0 2px 20px rgba(90, 180, 255, .5); }
+
+/* The primary call to action gently pulses so it draws the eye */
+.koc-arena-cta { animation: koc-arena-cta 2.6s ease-in-out infinite; }
+
+@keyframes koc-arena-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes koc-arena-shine {
+    0% { left: -60%; }
+    55%, 100% { left: 130%; }
+}
+@keyframes koc-arena-eyebrow {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,255,255,0); }
+    50% { box-shadow: 0 0 18px rgba(255,255,255,.4); }
+}
+@keyframes koc-arena-cta {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,255,255,0); transform: translateY(0); }
+    50% { box-shadow: 0 8px 26px -6px rgba(120,200,255,.8); transform: translateY(-1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .koc-arena-banner, .koc-arena-banner .koc-eyebrow, .koc-arena-cta { animation: none; }
+    .koc-arena-banner::after { display: none; }
+}
 
 /* Countdown: big unit boxes ("03" DAYS · "12" HRS …) */
 .koc-countdown { display: inline-flex; gap: 10px; align-items: stretch; }
