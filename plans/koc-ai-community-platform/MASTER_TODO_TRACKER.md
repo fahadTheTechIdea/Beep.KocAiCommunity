@@ -464,6 +464,15 @@ KOC blueprint theme. No DB schema change anywhere.
     (do first); 23b node-driven target/id/task; 23c submit passes secondaries; 23d Execute/Predict feature-set
     parity; 23e client-side graph validation; 23f submit robustness (quota race, time budget, id coverage).
     Also logged pre-existing gaps: quota race, no `PredictAsync` time budget, tiny-key holdout degradation.
+    **23a + 23b DONE (2026-07-27):** `IPipelineExecutor` label/id/task are now optional overrides — the
+    executor resolves them from the Train node (`ResolveLabel/ResolveId/ResolveTask` read `targetColumn`/
+    `idColumn`/`task`), so a saved `WorkflowDefinition` drives itself end to end; a competition still passes its
+    own values to stay authoritative. `WorkflowDatasetScanner` now scans only join/union nodes (not the primary
+    `dataset` node) + a `PrimaryDatasetId` helper; `ValidateNodeInputs` skips the primary dataset node's
+    `datasetId` — no double-load / latent throw. Tests: `Graph_is_the_source_of_truth_when_no_overrides_are_passed`
+    (PredictAsync with all-null overrides reads target/id/task from the graph) + `WorkflowDatasetScannerTests`.
+    UnitTests 217, IntegrationTests 115 green. Pending: 23c submit secondaries, 23d feature parity, 23e client
+    validation, 23f robustness.
 
 ## Global definition of done
 

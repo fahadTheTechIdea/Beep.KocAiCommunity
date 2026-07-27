@@ -1,7 +1,7 @@
 # Phase 23 — Whole-pipeline revision: one source of truth, node-driven execution
 
 **Date:** 2026-07-27
-**Status:** 🟡 PLAN — full end-to-end re-read complete (designer → definition → endpoints → executor → context → nodes → scoring). This document is the revision plan; implementation is phased below.
+**Status:** 🟢 23a + 23b DONE — the node graph is now the single source of truth for the control facts (the executor reads target/id/task from the Train node; a passed value is an override; the primary Dataset node no longer collides with the secondary scanner). 23c–f pending. Full end-to-end re-read below.
 **Why:** Phase 22 moved the data source onto the **Dataset** node (`datasetId`) and the target/id/task onto the **Train** node. The audit confirms the **server never reads those node fields** — label/id/task/data still enter through method parameters — so the graph and the run parameters are now two independent stores of the same facts, kept in sync only by the designer's `EffectiveLabel()`/`EffectiveTask()` helpers. That's the exact "field shown but not honoured" defect we fixed for hyperparameters, re-created at the pipeline level. This phase makes **the node graph the single source of truth.**
 
 ---

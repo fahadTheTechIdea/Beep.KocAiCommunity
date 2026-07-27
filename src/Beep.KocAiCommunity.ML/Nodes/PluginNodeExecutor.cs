@@ -16,7 +16,7 @@ namespace Beep.KocAiCommunity.ML.Nodes;
 /// </summary>
 public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineExecutor
 {
-    public async Task<PipelineExecutionResult> ExecuteAsync(WorkflowDefinition definition, string labelColumn, MlTaskType task, Stream csv, int maxSeconds, IReadOnlyDictionary<Guid, Stream>? secondaryDatasets = null, CancellationToken ct = default)
+    public async Task<PipelineExecutionResult> ExecuteAsync(WorkflowDefinition definition, string? labelColumn, MlTaskType? task, Stream csv, int maxSeconds, IReadOnlyDictionary<Guid, Stream>? secondaryDatasets = null, CancellationToken ct = default)
     {
         var compiled = WorkflowCompiler.Compile(definition);
         if (!compiled.IsValid)
@@ -25,11 +25,13 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
                 [new NodeExecutionResult("", "compile", "failed", string.Join(" ", compiled.Errors))]);
         }
 
+        var label = ResolveLabel(definition, labelColumn);
+        var resolvedTask = ResolveTask(definition, task);
         var secondary = await ReadSecondaryAsync(secondaryDatasets, ct);
         var path = await SpillAsync(csv, ct);
         try
         {
-            return await Task.Run(() => Run(definition, compiled.Order, labelColumn, task, path, secondary), ct);
+            return await Task.Run(() => Run(definition, compiled.Order, label, resolvedTask, path, secondary), ct);
         }
         finally
         {
@@ -37,7 +39,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         }
     }
 
-    public async Task<string> PredictAsync(WorkflowDefinition definition, string labelColumn, string idColumn, MlTaskType task, Stream trainingCsv, Stream evaluationCsv, IReadOnlyDictionary<Guid, Stream>? secondaryDatasets = null, CancellationToken ct = default)
+    public async Task<string> PredictAsync(WorkflowDefinition definition, string? labelColumn, string? idColumn, MlTaskType? task, Stream trainingCsv, Stream evaluationCsv, IReadOnlyDictionary<Guid, Stream>? secondaryDatasets = null, CancellationToken ct = default)
     {
         var compiled = WorkflowCompiler.Compile(definition);
         if (!compiled.IsValid)
@@ -45,12 +47,15 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             throw new InvalidOperationException($"Pipeline is not valid: {string.Join(" ", compiled.Errors)}");
         }
 
+        var label = ResolveLabel(definition, labelColumn);
+        var id = ResolveId(definition, idColumn);
+        var resolvedTask = ResolveTask(definition, task);
         var secondary = await ReadSecondaryAsync(secondaryDatasets, ct);
         var trainPath = await SpillAsync(trainingCsv, ct);
         var evalPath = await SpillAsync(evaluationCsv, ct);
         try
         {
-            return await Task.Run(() => Predict(definition, compiled.Order, labelColumn, idColumn, task, trainPath, evalPath, secondary), ct);
+            return await Task.Run(() => Predict(definition, compiled.Order, label, id, resolvedTask, trainPath, evalPath, secondary), ct);
         }
         finally
         {
@@ -58,6 +63,22 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             Cleanup(evalPath);
         }
     }
+
+    // The graph is the single source of truth for the control facts: label/id/task default to what the Train
+    // node declares (targetColumn/idColumn/task), so a saved WorkflowDefinition drives itself end to end. An
+    // explicit argument (e.g. a competition's authoritative values) overrides.
+    internal static string ResolveLabel(WorkflowDefinition definition, string? overrideValue) =>
+        !string.IsNullOrWhiteSpace(overrideValue) ? overrideValue : TrainCfg(definition, "targetColumn") ?? "label";
+
+    internal static string ResolveId(WorkflowDefinition definition, string? overrideValue) =>
+        !string.IsNullOrWhiteSpace(overrideValue) ? overrideValue : TrainCfg(definition, "idColumn") ?? "id";
+
+    internal static MlTaskType ResolveTask(WorkflowDefinition definition, MlTaskType? overrideValue) =>
+        overrideValue ?? (Enum.TryParse<MlTaskType>(TrainCfg(definition, "task"), out var t) ? t : MlTaskType.BinaryClassification);
+
+    private static string? TrainCfg(WorkflowDefinition definition, string key) =>
+        definition.Nodes.FirstOrDefault(n => string.Equals(n.Kind, "train", StringComparison.OrdinalIgnoreCase))?.Config is { } c
+        && c.TryGetValue(key, out var v) && !string.IsNullOrWhiteSpace(v) ? v : null;
 
     private PipelineExecutionResult Run(WorkflowDefinition definition, IReadOnlyList<string> order, string labelColumn, MlTaskType task, string path, IReadOnlyDictionary<Guid, byte[]> secondary)
     {
@@ -240,6 +261,13 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
 
             if (p.Type == NodeParameterType.Dataset)
             {
+                // The primary 'dataset' source node's datasetId is the main input (opened as the training
+                // stream by the caller), not a secondary to resolve here — skip it.
+                if (string.Equals(descriptor.Kind, "dataset", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (!Guid.TryParse(raw, out var id) || ctx.SecondaryTable(id) is null)
                 {
                     throw new InvalidOperationException(

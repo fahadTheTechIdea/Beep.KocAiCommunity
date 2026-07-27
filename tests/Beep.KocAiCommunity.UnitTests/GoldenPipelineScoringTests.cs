@@ -139,6 +139,35 @@ public class GoldenPipelineScoringTests
     private static readonly string[] Grades = ["A", "B", "C"];
 
     [Fact]
+    public async Task Graph_is_the_source_of_truth_when_no_overrides_are_passed()
+    {
+        // The Train node declares target/id/task; PredictAsync is called with NO overrides (all null) so the
+        // executor must read them from the graph. Proves a saved definition drives itself end to end — the
+        // control facts flow from the graph through the one context to every node, not via side parameters.
+        var def = new WorkflowDefinition
+        {
+            Name = "graph-driven",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["targetColumn"] = "label", ["idColumn"] = "id", ["task"] = "BinaryClassification", ["algorithm"] = "fasttree" } },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+        var eval = "id,x1,x2\ne1,9,9\ne2,0,0\n";
+
+        var submission = await NewExecutor().PredictAsync(def, null, null, null, Csv(TrainCsv("1", "0")), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines.Should().HaveCount(3, "graph-declared id column drives the submission");
+        lines[1].Should().Be("e1,1");
+        lines[2].Should().Be("e2,0");
+    }
+
+    [Fact]
     public async Task Configured_transform_options_run_end_to_end()
     {
         // Exercises the new transform properties: one-hot outputKind=binary, hash-encode bits, and a scaler
