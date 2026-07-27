@@ -56,7 +56,8 @@ public interface IKocApiClient
     /// <summary>Pin one competition as the landing-page hero (platform admin only).</summary>
     Task SetCompetitionFeaturedAsync(Guid competitionId, CancellationToken ct = default);
     Task SetCompetitionPrizesAsync(Guid competitionId, SetPrizesRequest request, CancellationToken ct = default);
-    Task UploadCompetitionHeroImageAsync(Guid competitionId, Stream image, string fileName, string contentType, CancellationToken ct = default);
+    /// <summary>Persist the web-relative path of a competition's hero image (the file is served from the web app's wwwroot).</summary>
+    Task SetCompetitionHeroImagePathAsync(Guid competitionId, string? path, CancellationToken ct = default);
     /// <summary>Final standings; null when still concealed until the reveal time.</summary>
     Task<IReadOnlyList<LeaderboardEntryDto>?> GetFinalLeaderboardAsync(Guid competitionId, CancellationToken ct = default);
 
@@ -334,13 +335,9 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         }
     }
 
-    public async Task UploadCompetitionHeroImageAsync(Guid competitionId, Stream image, string fileName, string contentType, CancellationToken ct = default)
+    public async Task SetCompetitionHeroImagePathAsync(Guid competitionId, string? path, CancellationToken ct = default)
     {
-        using var content = new MultipartFormDataContent();
-        var file = new StreamContent(image);
-        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
-        content.Add(file, "file", fileName);
-        var response = await http.PostAsync($"/api/v1/competitions/{competitionId}/hero-image", content, ct);
+        var response = await http.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/hero-image", new SetHeroImagePathRequest(path), ct);
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException(await response.Content.ReadAsStringAsync(ct));

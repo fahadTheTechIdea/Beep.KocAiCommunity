@@ -383,8 +383,8 @@
 
     // When the competition has an uploaded hero image, use it as the banner background under a dark gradient
     // that keeps the white text readable.
-    private static string? HeroStyle(CompetitionDto c) => c.HasHeroImage
-        ? $"background-image: linear-gradient(120deg, rgba(11,46,76,.86), rgba(11,46,76,.5)), url('/api/v1/competitions/{c.Id}/hero-image'); background-size: cover; background-position: center;"
+    private static string? HeroStyle(CompetitionDto c) => c.HeroImagePath is { } heroPath
+        ? $"background-image: linear-gradient(120deg, rgba(11,46,76,.62), rgba(11,46,76,.28)), url('{heroPath}'); background-size: cover; background-position: center;"
         : null;
 
     private async Task LoadAsync()

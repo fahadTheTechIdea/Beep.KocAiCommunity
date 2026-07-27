@@ -449,7 +449,7 @@ public sealed class CompetitionService(
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task SetHeroImageAsync(string userId, bool isPlatformAdmin, Guid competitionId, Stream image, string contentType, CancellationToken ct = default)
+    public async Task SetHeroImagePathAsync(string userId, bool isPlatformAdmin, Guid competitionId, string? path, CancellationToken ct = default)
     {
         var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
             ?? throw new CompetitionException("Competition not found.");
@@ -458,30 +458,8 @@ public sealed class CompetitionService(
             throw new CompetitionException("Only the competition creator or a platform admin can set the hero image.");
         }
 
-        if (!contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new CompetitionException("The hero image must be an image file (PNG, JPG, …).");
-        }
-
-        var artifact = await artifacts.SaveAsync(
-            image, $"competitions/{competition.Id}/hero-image", contentType, KocDataClassification.Internal, ct);
-        competition.HeroImageArtifactId = artifact.Id;
+        competition.HeroImagePath = string.IsNullOrWhiteSpace(path) ? null : path.Trim();
         await db.SaveChangesAsync(ct);
-    }
-
-    public async Task<(Stream Content, string ContentType)?> GetHeroImageAsync(Guid competitionId, CancellationToken ct = default)
-    {
-        var artifactId = await db.Set<Competition>().AsNoTracking()
-            .Where(c => c.Id == competitionId).Select(c => c.HeroImageArtifactId).FirstOrDefaultAsync(ct);
-        if (artifactId is not { } id)
-        {
-            return null;
-        }
-
-        var contentType = await db.Set<ArtifactReference>().AsNoTracking()
-            .Where(a => a.Id == id).Select(a => a.ContentType).FirstOrDefaultAsync(ct) ?? "application/octet-stream";
-        var stream = await artifacts.OpenReadAsync(id, ct);
-        return (stream, contentType);
     }
 
     public async Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, CancellationToken ct = default)

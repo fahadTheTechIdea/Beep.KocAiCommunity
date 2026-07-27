@@ -35,7 +35,12 @@ public sealed record CompetitionDto(
     string? FirstPrize = null,
     string? SecondPrize = null,
     string? ThirdPrize = null,
-    bool HasHeroImage = false);
+    bool HasHeroImage = false,
+    // Web-relative path of the hero image (served from the web app's wwwroot), or null.
+    string? HeroImagePath = null);
+
+/// <summary>Set (or clear, with null) the web-relative path of a competition's hero image.</summary>
+public sealed record SetHeroImagePathRequest(string? Path);
 
 public sealed record SetStatusRequest(string Status);
 

@@ -3,6 +3,7 @@
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
+@inject Beep.KocAiCommunity.Web.Services.HeroImageStorage HeroImages
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -407,14 +408,8 @@
             {
                 try
                 {
-                    using var ms = new MemoryStream();
-                    await using (var s = _heroImage.OpenReadStream(maxAllowedSize: 8 * 1024 * 1024))
-                    {
-                        await s.CopyToAsync(ms);
-                    }
-
-                    ms.Position = 0;
-                    await Api.UploadCompetitionHeroImageAsync(dto.Id, ms, _heroImage.Name, _heroImage.ContentType);
+                    var path = await HeroImages.SaveAsync(dto.Id, _heroImage);
+                    await Api.SetCompetitionHeroImagePathAsync(dto.Id, path);
                 }
                 catch (Exception imgEx)
                 {

@@ -55,7 +55,7 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient remote) : IKocApi
     public virtual Task SetCompetitionStatusAsync(Guid competitionId, string status, CancellationToken ct = default) => remote.SetCompetitionStatusAsync(competitionId, status, ct);
     public virtual Task SetCompetitionFeaturedAsync(Guid competitionId, CancellationToken ct = default) => remote.SetCompetitionFeaturedAsync(competitionId, ct);
     public virtual Task SetCompetitionPrizesAsync(Guid competitionId, SetPrizesRequest request, CancellationToken ct = default) => remote.SetCompetitionPrizesAsync(competitionId, request, ct);
-    public virtual Task UploadCompetitionHeroImageAsync(Guid competitionId, Stream image, string fileName, string contentType, CancellationToken ct = default) => remote.UploadCompetitionHeroImageAsync(competitionId, image, fileName, contentType, ct);
+    public virtual Task SetCompetitionHeroImagePathAsync(Guid competitionId, string? path, CancellationToken ct = default) => remote.SetCompetitionHeroImagePathAsync(competitionId, path, ct);
     public virtual Task SetCompetitionRevealAsync(Guid competitionId, DateTime? revealUtc, CancellationToken ct = default) => remote.SetCompetitionRevealAsync(competitionId, revealUtc, ct);
     public virtual Task<IReadOnlyList<LeaderboardEntryDto>?> GetFinalLeaderboardAsync(Guid competitionId, CancellationToken ct = default) => remote.GetFinalLeaderboardAsync(competitionId, ct);
     public virtual Task<SupervisionRollupDto?> GetSupervisionRollupAsync(CancellationToken ct = default) => remote.GetSupervisionRollupAsync(ct);

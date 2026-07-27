@@ -187,13 +187,13 @@ public static class CompetitionEndpoints
         .WithName("SetCompetitionPrizes")
         .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
 
-        // Upload the competition's hero image (host only).
-        group.MapPost("/competitions/{id:guid}/hero-image", async (Guid id, IFormFile file, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        // Store the web-relative path of the competition's hero image (creator or platform admin). The
+        // image file itself is written to the web app's wwwroot by the caller; here we only persist the path.
+        group.MapPost("/competitions/{id:guid}/hero-image", async (Guid id, SetHeroImagePathRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
         {
             try
             {
-                await using var stream = file.OpenReadStream();
-                await svc.SetHeroImageAsync(me.UserId!, me.IsInRole(KocRoles.PlatformAdmin), id, stream, file.ContentType, ct);
+                await svc.SetHeroImagePathAsync(me.UserId!, me.IsInRole(KocRoles.PlatformAdmin), id, req.Path, ct);
                 return Results.NoContent();
             }
             catch (CompetitionException ex)
@@ -202,16 +202,6 @@ public static class CompetitionEndpoints
             }
         })
         .WithName("SetCompetitionHeroImage")
-        .RequireAuthorization(KocPolicies.RequireEmployee)
-        .DisableAntiforgery();
-
-        // Serve the hero image (visible to any signed-in employee).
-        group.MapGet("/competitions/{id:guid}/hero-image", async (Guid id, ICompetitionService svc, CancellationToken ct) =>
-        {
-            var image = await svc.GetHeroImageAsync(id, ct);
-            return image is { } img ? Results.File(img.Content, img.ContentType) : Results.NotFound();
-        })
-        .WithName("GetCompetitionHeroImage")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapPost("/competitions/{id:guid}/reveal", async (Guid id, SetRevealRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
@@ -300,6 +290,7 @@ public static class CompetitionEndpoints
             c.FirstPrize,
             c.SecondPrize,
             c.ThirdPrize,
-            c.HeroImageArtifactId is not null);
+            c.HeroImagePath is not null,
+            c.HeroImagePath);
     }
 }

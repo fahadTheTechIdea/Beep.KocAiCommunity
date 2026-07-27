@@ -7,6 +7,7 @@
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @implements IAsyncDisposable
 @inject IKocApiClient Api
+@inject Beep.KocAiCommunity.Web.Services.HeroImageStorage HeroImages
 @inject DevIdentity Identity
 @inject RealtimeOptions Realtime
 @inject ISnackbar Snackbar
@@ -310,9 +311,9 @@ else
                     <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">A banner for this competition — and the landing-page hero if it's featured. PNG or JPG (max 5 MB).</MudText>
                     <div class="d-flex align-center gap-3 flex-wrap">
                         <InputFile OnChange="OnHeroImageSelected" accept="image/*" />
-                        @if (_competition.HasHeroImage)
+                        @if (_competition.HeroImagePath is { } heroPath)
                         {
-                            <img src="@($"/api/v1/competitions/{Id}/hero-image?v={_heroVersion}")" alt="hero image" style="height:56px;border-radius:6px;border:1px solid var(--koc-border);" />
+                            <img src="@($"{heroPath}?v={_heroVersion}")" alt="hero image" style="height:56px;border-radius:6px;border:1px solid var(--koc-border);" />
                             <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">image set</MudChip>
                         }
                     </div>
@@ -658,8 +659,8 @@ else
     {
         try
         {
-            using var ms = await ReadAsync(e.File);
-            await Api.UploadCompetitionHeroImageAsync(Id, ms, e.File.Name, e.File.ContentType);
+            var path = await HeroImages.SaveAsync(Id, e.File);
+            await Api.SetCompetitionHeroImagePathAsync(Id, path);
             _heroVersion++; // bust the browser cache so the new image shows immediately
             Snackbar.Add("Hero image uploaded.", Severity.Success);
             await ReloadCompetitionAsync();
@@ -674,8 +675,8 @@ else
 
     // When the competition has an uploaded hero image, paint it behind the arena banner under a dark
     // gradient that keeps the white heading/stats readable. _heroVersion busts the cache after a re-upload.
-    private string? BannerStyle() => _competition?.HasHeroImage == true
-        ? $"background-image: linear-gradient(120deg, rgba(11,46,76,.90), rgba(11,46,76,.55)), url('/api/v1/competitions/{Id}/hero-image?v={_heroVersion}'); background-size: cover; background-position: center;"
+    private string? BannerStyle() => _competition?.HeroImagePath is { } heroPath
+        ? $"background-image: linear-gradient(120deg, rgba(11,46,76,.64), rgba(11,46,76,.30)), url('{heroPath}?v={_heroVersion}'); background-size: cover; background-position: center;"
         : null;
 
     private static string DataUri(string csv) =>

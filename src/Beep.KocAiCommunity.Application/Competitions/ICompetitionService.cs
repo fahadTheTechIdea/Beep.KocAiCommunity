@@ -56,11 +56,12 @@ public interface ICompetitionService
     /// <summary>Set (or clear, with blanks) the 1st/2nd/3rd podium prizes shown for a competition.</summary>
     Task SetPrizesAsync(Guid competitionId, string? first, string? second, string? third, CancellationToken ct = default);
 
-    /// <summary>Upload the competition's hero image (the creator, or a platform admin). Replaces any existing image.</summary>
-    Task SetHeroImageAsync(string userId, bool isPlatformAdmin, Guid competitionId, Stream image, string contentType, CancellationToken ct = default);
-
-    /// <summary>Read the competition's hero image bytes + content type, or null if none is set.</summary>
-    Task<(Stream Content, string ContentType)?> GetHeroImageAsync(Guid competitionId, CancellationToken ct = default);
+    /// <summary>
+    /// Store the web-relative path of the competition's hero image (the creator, or a platform admin).
+    /// The image file itself is written to the web app's wwwroot; only the path is persisted here.
+    /// Pass null/blank to clear it.
+    /// </summary>
+    Task SetHeroImagePathAsync(string userId, bool isPlatformAdmin, Guid competitionId, string? path, CancellationToken ct = default);
 
     /// <summary>The currently featured competition (the admin-pinned landing-page hero), or null.</summary>
     Task<Competition?> GetFeaturedAsync(CancellationToken ct = default);

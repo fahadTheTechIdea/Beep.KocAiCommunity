@@ -564,8 +564,8 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.Property<string>("FirstPrize")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("HeroImageArtifactId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("HeroImagePath")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IdColumn")
                         .IsRequired()

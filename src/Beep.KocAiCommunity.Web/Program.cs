@@ -39,6 +39,9 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddMudServices();
 
+// Writes competition hero images into wwwroot so they are served as ordinary static files.
+builder.Services.AddScoped<Beep.KocAiCommunity.Web.Services.HeroImageStorage>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -51,6 +54,10 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+// Serve runtime-written static files (e.g. uploaded competition hero images under wwwroot/uploads).
+// MapStaticAssets only serves build-time assets, so this handles files added while the app runs.
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

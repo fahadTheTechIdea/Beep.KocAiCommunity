@@ -5,6 +5,7 @@
 @using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
+@inject Beep.KocAiCommunity.Web.Services.HeroImageStorage HeroImages
 @inject ISnackbar Snackbar
 
 <PageTitle>Admin · @KocBrand.ProductName</PageTitle>
@@ -219,9 +220,9 @@ else
                         </MudText>
                         <div class="d-flex align-center gap-3 flex-wrap">
                             <InputFile OnChange="OnAdminHeroImage" accept="image/*" />
-                            @if (_competitions.FirstOrDefault(x => x.Id == _prizeCompId)?.HasHeroImage == true)
+                            @if (_competitions.FirstOrDefault(x => x.Id == _prizeCompId)?.HeroImagePath is { } adminHeroPath)
                             {
-                                <img src="@($"/api/v1/competitions/{_prizeCompId}/hero-image?v={_heroVersion}")" alt="hero image" style="height:52px;border-radius:6px;border:1px solid var(--koc-border);" />
+                                <img src="@($"{adminHeroPath}?v={_heroVersion}")" alt="hero image" style="height:52px;border-radius:6px;border:1px solid var(--koc-border);" />
                                 <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">image set</MudChip>
                             }
                         </div>
@@ -463,16 +464,10 @@ else
 
         try
         {
-            using var ms = new MemoryStream();
-            await using (var s = e.File.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024))
-            {
-                await s.CopyToAsync(ms);
-            }
-
-            ms.Position = 0;
-            await Api.UploadCompetitionHeroImageAsync(id, ms, e.File.Name, e.File.ContentType);
+            var path = await HeroImages.SaveAsync(id, e.File);
+            await Api.SetCompetitionHeroImagePathAsync(id, path);
             _heroVersion++;
-            _competitions = await Api.GetCompetitionsAsync(); // refresh HasHeroImage
+            _competitions = await Api.GetCompetitionsAsync(); // refresh HeroImagePath
             Snackbar.Add("Hero image uploaded.", Severity.Success);
         }
         catch (Exception ex)

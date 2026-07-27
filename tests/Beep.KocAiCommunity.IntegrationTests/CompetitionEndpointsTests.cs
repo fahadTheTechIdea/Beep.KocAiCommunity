@@ -170,27 +170,18 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
-    public async Task Host_can_upload_a_hero_image_and_it_is_served()
+    public async Task Host_can_set_the_hero_image_path()
     {
         var host = _factory.CreateClientAs("hero-host", "Employee");
         var competitionId = await CreateCompetition(host, revealUtc: null, quota: 5);
 
-        var png = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3, 4 };
-        var form = new MultipartFormDataContent();
-        var file = new ByteArrayContent(png);
-        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-        form.Add(file, "file", "hero.png");
-
-        (await host.PostAsync($"/api/v1/competitions/{competitionId}/hero-image", form))
+        var path = $"/uploads/competitions/{competitionId}.png";
+        (await host.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/hero-image", new SetHeroImagePathRequest(path)))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var dto = (await host.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!;
         dto.HasHeroImage.Should().BeTrue();
-
-        var served = await host.GetAsync($"/api/v1/competitions/{competitionId}/hero-image");
-        served.StatusCode.Should().Be(HttpStatusCode.OK);
-        served.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
-        (await served.Content.ReadAsByteArrayAsync()).Should().Equal(png);
+        dto.HeroImagePath.Should().Be(path);
     }
 
     [Fact]
@@ -200,29 +191,23 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
 
         var admin = _factory.CreateClientAs("hero-admin", "Employee", "PlatformAdmin");
-        var form = new MultipartFormDataContent();
-        var file = new ByteArrayContent([0x89, 0x50, 0x4E, 0x47, 9, 9, 9]);
-        file.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-        form.Add(file, "file", "hero.jpg");
-
-        (await admin.PostAsync($"/api/v1/competitions/{competitionId}/hero-image", form))
+        var path = $"/uploads/competitions/{competitionId}.jpg";
+        (await admin.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/hero-image", new SetHeroImagePathRequest(path)))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await admin.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!
-            .HasHeroImage.Should().BeTrue();
+
+        var dto = (await admin.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!;
+        dto.HeroImagePath.Should().Be(path);
     }
 
     [Fact]
-    public async Task Hero_image_upload_rejects_non_images()
+    public async Task A_non_creator_non_admin_cannot_set_the_hero_image()
     {
-        var host = _factory.CreateClientAs("hero-host2", "Employee");
-        var competitionId = await CreateCompetition(host, revealUtc: null, quota: 5);
+        var creator = _factory.CreateClientAs("hero-owner", "Employee");
+        var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
 
-        var form = new MultipartFormDataContent();
-        var file = new ByteArrayContent(Encoding.UTF8.GetBytes("not,an,image"));
-        file.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
-        form.Add(file, "file", "data.csv");
-
-        (await host.PostAsync($"/api/v1/competitions/{competitionId}/hero-image", form))
+        var stranger = _factory.CreateClientAs("hero-stranger", "Employee");
+        (await stranger.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/hero-image",
+            new SetHeroImagePathRequest("/uploads/competitions/x.png")))
             .StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 

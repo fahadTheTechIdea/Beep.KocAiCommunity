@@ -35,8 +35,9 @@ public class Competition : AuditableEntity
     public string? SecondPrize { get; set; }
     public string? ThirdPrize { get; set; }
 
-    // Optional hero image (uploaded by the host) shown as the competition's banner background.
-    public Guid? HeroImageArtifactId { get; set; }
+    // Optional hero image shown as the competition's banner background. The image file is served as a
+    // static asset from the web app's wwwroot; this is just its web-relative path (e.g. "/uploads/competitions/{id}.png").
+    public string? HeroImagePath { get; set; }
 }
 
 /// <summary>One scored attempt by a participant.</summary>
