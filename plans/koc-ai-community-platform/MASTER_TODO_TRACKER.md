@@ -483,9 +483,12 @@ KOC blueprint theme. No DB schema change anywhere.
     **23g id-coverage DONE (2026-07-27):** `ScoreAndRecordAsync` rejects any submission missing a prediction
     for an answer-key id (`EnsureFullCoverageAsync`) — guards the direct-upload path; the pipeline path always
     has full coverage. Integration test `Submission_missing_predictions_for_some_ids_is_rejected`.
-    **Still deferred — quota-race atomicity:** needs a serializable count+reserve transaction or a
-    unique-constraint migration (interacts with EF's retrying execution strategy across SQLite/SQL Server);
-    left as its own careful change rather than rushed.
+    **Quota-race atomicity DONE (2026-07-27):** the daily-quota count + submission insert now run inside a
+    serializable transaction in `ScoreAndRecordAsync`, so two concurrent submits can't both slip past the cap.
+    No migration required (no retrying execution strategy is configured, so a user-initiated transaction is
+    safe). Competition integration suite green (20). **Phase 23 complete** — the pipeline is one uniform
+    contract, graph-driven, with submit correctness (secondaries, coverage, quota) and robustness (time
+    budget) all closed.
 
 ## Global definition of done
 

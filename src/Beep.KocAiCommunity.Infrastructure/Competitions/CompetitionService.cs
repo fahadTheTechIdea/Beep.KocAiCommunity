@@ -565,8 +565,24 @@ public sealed class CompetitionService(
             Notes = notes,
             CreatedUtc = DateTime.UtcNow,
         };
-        db.Set<Submission>().Add(submission);
-        await db.SaveChangesAsync(ct);
+        // Atomically re-check the daily quota and insert, so two concurrent submits can't both slip past the
+        // cap (the upfront EnsureSubmittableAsync check races with a concurrent insert). Serializable isolation
+        // makes the count-then-insert a single unit; no retrying execution strategy is configured, so a
+        // user-initiated transaction is safe here.
+        await using (var tx = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, ct))
+        {
+            var sinceUtc = DateTime.UtcNow.Date;
+            var todayCount = await db.Set<Submission>()
+                .CountAsync(s => s.CompetitionId == competition.Id && s.SubmitterUserId == userId && s.SubmittedUtc >= sinceUtc, ct);
+            if (todayCount >= competition.SubmissionQuotaPerDay)
+            {
+                throw new CompetitionException($"Daily submission quota ({competition.SubmissionQuotaPerDay}) reached.");
+            }
+
+            db.Set<Submission>().Add(submission);
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+        }
 
         await UpdateLeaderboardAsync(competition, userId, submission, score, privateScore, ct);
 
