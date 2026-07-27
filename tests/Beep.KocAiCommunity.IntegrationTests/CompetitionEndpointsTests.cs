@@ -130,6 +130,22 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
+    public async Task Submission_missing_predictions_for_some_ids_is_rejected()
+    {
+        var creator = _factory.CreateClientAs("comp-cover", "Employee");
+        var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Predictions cover only 1 of the 3 answer-key ids → must be rejected, not silently scored on a subset.
+        var competitor = _factory.CreateClientAs("comp-cover-a", "Employee");
+        var response = await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("missing predictions");
+    }
+
+    [Fact]
     public async Task Pipeline_submission_trains_scores_and_ranks()
     {
         var creator = _factory.CreateClientAs("pipe-creator", "Employee");

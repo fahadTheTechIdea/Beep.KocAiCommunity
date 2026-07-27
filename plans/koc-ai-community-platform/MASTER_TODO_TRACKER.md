@@ -479,8 +479,13 @@ KOC blueprint theme. No DB schema change anywhere.
     client-side `GraphIssues()` check (has Dataset node, has model, single chain, dataset picked) and gates the
     Run/Submit buttons with inline guidance. 23f — the executor checks the cancellation token at each node
     boundary and competition submit enforces a 120s budget (runaway pipelines fail fast). Full gate green:
-    build -warnaserror 0/0, UnitTests 217, IntegrationTests 115, ComponentTests 35. **Deferred (migration/
-    lower priority):** quota-race atomicity, direct-upload id-coverage.
+    build -warnaserror 0/0, UnitTests 217, IntegrationTests 115, ComponentTests 35.
+    **23g id-coverage DONE (2026-07-27):** `ScoreAndRecordAsync` rejects any submission missing a prediction
+    for an answer-key id (`EnsureFullCoverageAsync`) — guards the direct-upload path; the pipeline path always
+    has full coverage. Integration test `Submission_missing_predictions_for_some_ids_is_rejected`.
+    **Still deferred — quota-race atomicity:** needs a serializable count+reserve transaction or a
+    unique-constraint migration (interacts with EF's retrying execution strategy across SQLite/SQL Server);
+    left as its own careful change rather than rushed.
 
 ## Global definition of done
 

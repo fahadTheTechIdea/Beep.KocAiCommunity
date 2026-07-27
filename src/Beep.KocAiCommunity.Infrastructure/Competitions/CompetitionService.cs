@@ -550,6 +550,7 @@ public sealed class CompetitionService(
 
         var predBytes = await ReadArtifactBytesAsync(predictionArtifact.Id, ct);
         var keyBytes = await ReadArtifactBytesAsync(competition.AnswerKeyArtifactId!.Value, ct);
+        await EnsureFullCoverageAsync(competition, predBytes, keyBytes, ct);
         var (score, privateScore) = await ScorePublicPrivateAsync(competition, predBytes, keyBytes, ct);
 
         var submission = new Submission
@@ -577,6 +578,22 @@ public sealed class CompetitionService(
         // Barrels for a scored submission (idempotent per submission; a first-ever submission earns a bonus + badge).
         await AwardSafelyAsync(userId, XpSources.SubmissionScored, "submission", submission.Id, ct);
         return submission;
+    }
+
+    // Every answer-key id must have a prediction, or the score would silently reflect only a subset. The
+    // pipeline path always emits one prediction per eval id; this guards the direct-upload path, where a user
+    // could upload a partial file.
+    private static async Task EnsureFullCoverageAsync(Competition competition, byte[] predBytes, byte[] keyBytes, CancellationToken ct)
+    {
+        var predIds = (await CompetitionCsv.ReadAsync(new MemoryStream(predBytes), competition.IdColumn, ct))
+            .Select(r => r.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var keyRows = await CompetitionCsv.ReadAsync(new MemoryStream(keyBytes), competition.IdColumn, ct);
+        var missing = keyRows.Count(r => !predIds.Contains(r.Id));
+        if (missing > 0)
+        {
+            throw new CompetitionException(
+                $"Your submission is missing predictions for {missing} of {keyRows.Count} rows. Provide a prediction for every id.");
+        }
     }
 
     // Scores a prediction against the public (live leaderboard) and private (concealed-final) holdout
