@@ -561,6 +561,9 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.Property<Guid?>("EvaluationArtifactId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("FirstPrize")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("IdColumn")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -595,6 +598,9 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("SecondPrize")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -605,6 +611,9 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
 
                     b.Property<string>("TaskType")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ThirdPrize")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")

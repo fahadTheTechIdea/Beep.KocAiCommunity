@@ -28,6 +28,12 @@ public class Competition : AuditableEntity
     public string TaskType { get; set; } = "BinaryClassification";
     public Guid? RecommendedTrackId { get; set; }          // learn ↔ compete tie-in
     public bool IsFeatured { get; set; }                   // pinned as THE landing-page hero (one at a time; admin-set)
+
+    // Admin-set podium prizes (free text, e.g. "1,000 Barrels + Gusher trophy"). Optional; when unset the
+    // arena falls back to the standard barrel rewards.
+    public string? FirstPrize { get; set; }
+    public string? SecondPrize { get; set; }
+    public string? ThirdPrize { get; set; }
 }
 
 /// <summary>One scored attempt by a participant.</summary>

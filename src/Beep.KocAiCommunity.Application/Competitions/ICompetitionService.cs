@@ -53,6 +53,9 @@ public interface ICompetitionService
     /// <summary>Pins one competition as THE landing-page hero (clears the flag on any other). Platform admin only.</summary>
     Task SetFeaturedAsync(Guid competitionId, CancellationToken ct = default);
 
+    /// <summary>Set (or clear, with blanks) the 1st/2nd/3rd podium prizes shown for a competition.</summary>
+    Task SetPrizesAsync(Guid competitionId, string? first, string? second, string? third, CancellationToken ct = default);
+
     /// <summary>The currently featured competition (the admin-pinned landing-page hero), or null.</summary>
     Task<Competition?> GetFeaturedAsync(CancellationToken ct = default);
 

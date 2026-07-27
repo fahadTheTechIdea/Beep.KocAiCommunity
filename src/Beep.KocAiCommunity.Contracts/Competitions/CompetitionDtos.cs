@@ -31,9 +31,15 @@ public sealed record CompetitionDto(
     string MetricName = "",
     bool HigherIsBetter = true,
     DateTime? CreatedUtc = null,
-    bool IsFeatured = false);
+    bool IsFeatured = false,
+    string? FirstPrize = null,
+    string? SecondPrize = null,
+    string? ThirdPrize = null);
 
 public sealed record SetStatusRequest(string Status);
+
+/// <summary>Admin-set podium prizes (free text; blank clears).</summary>
+public sealed record SetPrizesRequest(string? FirstPrize, string? SecondPrize, string? ThirdPrize);
 
 public sealed record SetRevealRequest(DateTime? RevealUtc);
 

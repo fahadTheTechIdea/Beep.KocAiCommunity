@@ -171,6 +171,22 @@ public static class CompetitionEndpoints
         .WithName("SetFeaturedCompetition")
         .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
 
+        // Set the 1st/2nd/3rd podium prizes for a competition (platform admin).
+        group.MapPost("/competitions/{id:guid}/prizes", async (Guid id, SetPrizesRequest req, ICompetitionService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.SetPrizesAsync(id, req.FirstPrize, req.SecondPrize, req.ThirdPrize, ct);
+                return Results.NoContent();
+            }
+            catch (CompetitionException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("SetCompetitionPrizes")
+        .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
+
         group.MapPost("/competitions/{id:guid}/reveal", async (Guid id, SetRevealRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
         {
             try
@@ -253,6 +269,9 @@ public static class CompetitionEndpoints
             metric,
             scorer.HigherIsBetter,
             c.CreatedUtc,
-            c.IsFeatured);
+            c.IsFeatured,
+            c.FirstPrize,
+            c.SecondPrize,
+            c.ThirdPrize);
     }
 }

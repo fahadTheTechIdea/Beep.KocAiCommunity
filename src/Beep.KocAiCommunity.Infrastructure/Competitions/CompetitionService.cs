@@ -436,6 +436,18 @@ public sealed class CompetitionService(
     public Task<Competition?> GetFeaturedAsync(CancellationToken ct = default) =>
         db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.IsFeatured, ct);
 
+    public async Task SetPrizesAsync(Guid competitionId, string? first, string? second, string? third, CancellationToken ct = default)
+    {
+        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
+            ?? throw new CompetitionException("Competition not found.");
+
+        // Blank → null (clears the prize).
+        competition.FirstPrize = string.IsNullOrWhiteSpace(first) ? null : first.Trim();
+        competition.SecondPrize = string.IsNullOrWhiteSpace(second) ? null : second.Trim();
+        competition.ThirdPrize = string.IsNullOrWhiteSpace(third) ? null : third.Trim();
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, CancellationToken ct = default)
     {
         var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)

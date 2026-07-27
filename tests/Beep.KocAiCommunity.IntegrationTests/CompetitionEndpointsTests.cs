@@ -146,6 +146,30 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
+    public async Task Admin_can_set_podium_prizes()
+    {
+        var admin = _factory.CreateClientAs("prize-admin", "Employee", "PlatformAdmin");
+        var competitionId = await CreateCompetition(admin, revealUtc: null, quota: 5);
+
+        (await admin.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/prizes",
+            new SetPrizesRequest("1,000 Barrels + Gusher trophy", "500 Barrels", "250 Barrels")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var dto = (await admin.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!;
+        dto.FirstPrize.Should().Be("1,000 Barrels + Gusher trophy");
+        dto.SecondPrize.Should().Be("500 Barrels");
+        dto.ThirdPrize.Should().Be("250 Barrels");
+
+        // Blank clears a prize.
+        (await admin.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/prizes",
+            new SetPrizesRequest("1,000 Barrels", "", null)))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var cleared = (await admin.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!;
+        cleared.SecondPrize.Should().BeNull();
+        cleared.ThirdPrize.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Pipeline_submission_trains_scores_and_ranks()
     {
         var creator = _factory.CreateClientAs("pipe-creator", "Employee");

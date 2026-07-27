@@ -28,6 +28,23 @@
                     <div><span class="koc-stat-value" style="font-size:24px;">@featured.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">submissions</MudText></div>
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);">@CompetitionDisplay.MetricLabel(featured)</MudChip>
                 </div>
+                @if (!string.IsNullOrWhiteSpace(featured.FirstPrize) || !string.IsNullOrWhiteSpace(featured.SecondPrize) || !string.IsNullOrWhiteSpace(featured.ThirdPrize))
+                {
+                    <div class="d-flex gap-2 flex-wrap mb-2">
+                        @if (!string.IsNullOrWhiteSpace(featured.FirstPrize))
+                        {
+                            <MudChip T="string" Size="Size.Small" Style="background:rgba(255,215,0,.2);color:#fff;border:1px solid rgba(255,215,0,.55);">🥇 @featured.FirstPrize</MudChip>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(featured.SecondPrize))
+                        {
+                            <MudChip T="string" Size="Size.Small" Style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.4);">🥈 @featured.SecondPrize</MudChip>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(featured.ThirdPrize))
+                        {
+                            <MudChip T="string" Size="Size.Small" Style="background:rgba(205,127,50,.24);color:#fff;border:1px solid rgba(205,127,50,.55);">🥉 @featured.ThirdPrize</MudChip>
+                        }
+                    </div>
+                }
                 <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.85;">
                     🥇 Winner takes the <b>Gusher</b> badge · top 3 earn <b>@CompetitionRewards.PodiumBarrels bbl</b> + <b>On the Podium</b> · every scored entry @CompetitionRewards.ScoredSubmissionBarrels bbl
                 </MudText>

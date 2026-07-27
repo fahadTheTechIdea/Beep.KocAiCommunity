@@ -55,6 +55,7 @@ public interface IKocApiClient
     Task SetCompetitionRevealAsync(Guid competitionId, DateTime? revealUtc, CancellationToken ct = default);
     /// <summary>Pin one competition as the landing-page hero (platform admin only).</summary>
     Task SetCompetitionFeaturedAsync(Guid competitionId, CancellationToken ct = default);
+    Task SetCompetitionPrizesAsync(Guid competitionId, SetPrizesRequest request, CancellationToken ct = default);
     /// <summary>Final standings; null when still concealed until the reveal time.</summary>
     Task<IReadOnlyList<LeaderboardEntryDto>?> GetFinalLeaderboardAsync(Guid competitionId, CancellationToken ct = default);
 
@@ -317,6 +318,15 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
     public async Task SetCompetitionFeaturedAsync(Guid competitionId, CancellationToken ct = default)
     {
         var response = await http.PostAsync($"/api/v1/competitions/{competitionId}/feature", content: null, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await response.Content.ReadAsStringAsync(ct));
+        }
+    }
+
+    public async Task SetCompetitionPrizesAsync(Guid competitionId, SetPrizesRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/prizes", request, ct);
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException(await response.Content.ReadAsStringAsync(ct));

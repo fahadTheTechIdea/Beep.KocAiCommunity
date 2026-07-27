@@ -186,6 +186,34 @@ else
                         <MudProgressLinear Indeterminate="true" Class="mt-3" />
                     }
                 </BlueprintCard>
+
+                <BlueprintCard Class="pa-4 mt-4">
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">🏆 Podium prizes</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:70ch;opacity:.8;">
+                        Set the 1st / 2nd / 3rd prizes shown on a competition (free text, e.g.
+                        <i>"1,000 Barrels + Gusher trophy"</i>). Leave a field blank to fall back to the standard barrel rewards.
+                    </MudText>
+                    <MudSelect T="Guid?" Label="Competition" Value="_prizeCompId" ValueChanged="OnPrizeCompChanged" Class="mb-3" Style="min-width:340px;">
+                        @foreach (var c in _competitions)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)c.Id)">@c.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @if (_prizeCompId is not null)
+                    {
+                        <div class="d-flex gap-3 flex-wrap mb-3">
+                            <MudTextField @bind-Value="_prize1" Label="🥇 1st place" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;" />
+                            <MudTextField @bind-Value="_prize2" Label="🥈 2nd place" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;" />
+                            <MudTextField @bind-Value="_prize3" Label="🥉 3rd place" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;" />
+                        </div>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EmojiEvents"
+                                   Disabled="_prizesBusy" OnClick="SavePrizes">Save prizes</MudButton>
+                        @if (_prizesBusy)
+                        {
+                            <MudProgressLinear Indeterminate="true" Class="mt-3" />
+                        }
+                    }
+                </BlueprintCard>
             }
         </MudTabPanel>
 
@@ -313,6 +341,12 @@ else
     private Guid? _featuredId;
     private bool _featuredBusy;
 
+    private Guid? _prizeCompId;
+    private string? _prize1;
+    private string? _prize2;
+    private string? _prize3;
+    private bool _prizesBusy;
+
     private IReadOnlyList<AdminUserDto>? _users;
     private IReadOnlyList<OrgUnitCodeDto>? _orgUnits;
     private readonly Dictionary<string, string?> _emailDrafts = new();
@@ -370,6 +404,39 @@ else
         finally
         {
             _featuredBusy = false;
+        }
+    }
+
+    private void OnPrizeCompChanged(Guid? id)
+    {
+        _prizeCompId = id;
+        var c = _competitions?.FirstOrDefault(x => x.Id == id);
+        _prize1 = c?.FirstPrize;
+        _prize2 = c?.SecondPrize;
+        _prize3 = c?.ThirdPrize;
+    }
+
+    private async Task SavePrizes()
+    {
+        if (_prizeCompId is not { } id)
+        {
+            return;
+        }
+
+        _prizesBusy = true;
+        try
+        {
+            await Api.SetCompetitionPrizesAsync(id, new SetPrizesRequest(_prize1, _prize2, _prize3));
+            _competitions = await Api.GetCompetitionsAsync(); // refresh cached prizes
+            Snackbar.Add("Podium prizes saved.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't save prizes: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _prizesBusy = false;
         }
     }
 
