@@ -149,6 +149,16 @@
     box-shadow: 0 14px 44px -14px rgba(11, 46, 76, .7), inset 0 0 0 1px rgba(90, 180, 255, .18);
 }
 
+/* When a competition supplies its own hero photo, hold it still and cover the banner
+   (the inline background-image carries the dark gradient + photo); the panning gradient
+   animation would otherwise drift the image around. */
+.koc-arena-banner.koc-has-photo {
+    animation: none;
+    background-size: cover;
+    background-position: center;
+}
+.koc-arena-banner.koc-has-photo::before { opacity: .45; }
+
 /* Blueprint grid overlay */
 .koc-arena-banner::before {
     content: "";

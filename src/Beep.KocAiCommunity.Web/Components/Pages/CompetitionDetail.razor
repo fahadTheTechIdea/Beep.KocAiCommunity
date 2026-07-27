@@ -29,7 +29,7 @@ else if (_competition is null)
 else
 {
     <!-- Arena banner -->
-    <BlueprintCard Class="koc-arena-banner pa-6 mb-4">
+    <BlueprintCard Class="@($"koc-arena-banner pa-6 mb-4{(_competition.HasHeroImage ? " koc-has-photo" : "")}")" Style="@BannerStyle()">
         <MudLink Href="/compete" Style="color:#cfe4f5;font-size:13px;">← All competitions</MudLink>
         <div class="d-flex justify-space-between align-end flex-wrap gap-4 mt-2">
             <div style="min-width:280px;max-width:62ch;">
@@ -671,6 +671,12 @@ else
     }
 
     // ---- Helpers ----
+
+    // When the competition has an uploaded hero image, paint it behind the arena banner under a dark
+    // gradient that keeps the white heading/stats readable. _heroVersion busts the cache after a re-upload.
+    private string? BannerStyle() => _competition?.HasHeroImage == true
+        ? $"background-image: linear-gradient(120deg, rgba(11,46,76,.90), rgba(11,46,76,.55)), url('/api/v1/competitions/{Id}/hero-image?v={_heroVersion}'); background-size: cover; background-position: center;"
+        : null;
 
     private static string DataUri(string csv) =>
         $"data:text/csv;charset=utf-8;base64,{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(csv))}";

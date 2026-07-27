@@ -15,7 +15,7 @@
 @if (!Identity.IsGuest && Featured is { } featured)
 {
     <!-- The arena leads: the featured competition with a live countdown and podium. -->
-    <BlueprintCard Class="koc-arena-banner pa-6 mb-6" Style="@HeroStyle(featured)">
+    <BlueprintCard Class="@($"koc-arena-banner pa-6 mb-6{(featured.HasHeroImage ? " koc-has-photo" : "")}")" Style="@HeroStyle(featured)">
         <div class="d-flex justify-space-between flex-wrap gap-5">
             <div style="min-width:280px;max-width:60ch;">
                 <span class="koc-eyebrow">⚔ Featured competition</span>
