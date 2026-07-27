@@ -193,7 +193,7 @@ public static class CompetitionEndpoints
             try
             {
                 await using var stream = file.OpenReadStream();
-                await svc.SetHeroImageAsync(me.UserId!, id, stream, file.ContentType, ct);
+                await svc.SetHeroImageAsync(me.UserId!, me.IsInRole(KocRoles.PlatformAdmin), id, stream, file.ContentType, ct);
                 return Results.NoContent();
             }
             catch (CompetitionException ex)

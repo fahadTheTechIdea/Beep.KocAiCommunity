@@ -306,6 +306,19 @@ else
 
                     <MudDivider Class="my-4" />
 
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Hero image</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">A banner for this competition — and the landing-page hero if it's featured. PNG or JPG (max 5 MB).</MudText>
+                    <div class="d-flex align-center gap-3 flex-wrap">
+                        <InputFile OnChange="OnHeroImageSelected" accept="image/*" />
+                        @if (_competition.HasHeroImage)
+                        {
+                            <img src="@($"/api/v1/competitions/{Id}/hero-image?v={_heroVersion}")" alt="hero image" style="height:56px;border-radius:6px;border:1px solid var(--koc-border);" />
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">image set</MudChip>
+                        }
+                    </div>
+
+                    <MudDivider Class="my-4" />
+
                     <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Timeline</MudText>
                     <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">Until the reveal, the final private standings stay concealed so no one games the last day.</MudText>
                     <div class="d-flex gap-2 align-center flex-wrap">
@@ -377,6 +390,7 @@ else
     private string _dsTask = "BinaryClassification";
     private MemoryStream? _dsTraining;
     private MemoryStream? _dsEval;
+    private int _heroVersion = 1;
     private DateTime? _revealDate;
 
     private string? _maxScope;
@@ -632,6 +646,22 @@ else
             using var ms = await ReadAsync(e.File);
             await Api.SetAnswerKeyAsync(Id, ms, e.File.Name);
             Snackbar.Add("Answer key set.", Severity.Success);
+            await ReloadCompetitionAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnHeroImageSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var ms = await ReadAsync(e.File);
+            await Api.UploadCompetitionHeroImageAsync(Id, ms, e.File.Name, e.File.ContentType);
+            _heroVersion++; // bust the browser cache so the new image shows immediately
+            Snackbar.Add("Hero image uploaded.", Severity.Success);
             await ReloadCompetitionAsync();
         }
         catch (Exception ex)

@@ -212,6 +212,19 @@ else
                         {
                             <MudProgressLinear Indeterminate="true" Class="mt-3" />
                         }
+
+                        <MudText Typo="Typo.subtitle2" Class="koc-heading mt-4 mb-1">🖼️ Hero image</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2" Style="max-width:70ch;opacity:.8;">
+                            Upload a banner image for this competition — it becomes the landing-page hero when featured. PNG or JPG (max 5 MB).
+                        </MudText>
+                        <div class="d-flex align-center gap-3 flex-wrap">
+                            <InputFile OnChange="OnAdminHeroImage" accept="image/*" />
+                            @if (_competitions.FirstOrDefault(x => x.Id == _prizeCompId)?.HasHeroImage == true)
+                            {
+                                <img src="@($"/api/v1/competitions/{_prizeCompId}/hero-image?v={_heroVersion}")" alt="hero image" style="height:52px;border-radius:6px;border:1px solid var(--koc-border);" />
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">image set</MudChip>
+                            }
+                        </div>
                     }
                 </BlueprintCard>
             }
@@ -346,6 +359,7 @@ else
     private string? _prize2;
     private string? _prize3;
     private bool _prizesBusy;
+    private int _heroVersion = 1;
 
     private IReadOnlyList<AdminUserDto>? _users;
     private IReadOnlyList<OrgUnitCodeDto>? _orgUnits;
@@ -437,6 +451,33 @@ else
         finally
         {
             _prizesBusy = false;
+        }
+    }
+
+    private async Task OnAdminHeroImage(InputFileChangeEventArgs e)
+    {
+        if (_prizeCompId is not { } id)
+        {
+            return;
+        }
+
+        try
+        {
+            using var ms = new MemoryStream();
+            await using (var s = e.File.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024))
+            {
+                await s.CopyToAsync(ms);
+            }
+
+            ms.Position = 0;
+            await Api.UploadCompetitionHeroImageAsync(id, ms, e.File.Name, e.File.ContentType);
+            _heroVersion++;
+            _competitions = await Api.GetCompetitionsAsync(); // refresh HasHeroImage
+            Snackbar.Add("Hero image uploaded.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't upload image: {ex.Message}", Severity.Error);
         }
     }
 

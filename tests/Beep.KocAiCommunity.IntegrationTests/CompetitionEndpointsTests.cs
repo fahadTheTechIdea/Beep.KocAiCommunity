@@ -194,6 +194,24 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
+    public async Task Platform_admin_can_set_hero_image_for_a_competition_they_did_not_create()
+    {
+        var creator = _factory.CreateClientAs("hero-creator", "Employee");
+        var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
+
+        var admin = _factory.CreateClientAs("hero-admin", "Employee", "PlatformAdmin");
+        var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent([0x89, 0x50, 0x4E, 0x47, 9, 9, 9]);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+        form.Add(file, "file", "hero.jpg");
+
+        (await admin.PostAsync($"/api/v1/competitions/{competitionId}/hero-image", form))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await admin.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!
+            .HasHeroImage.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Hero_image_upload_rejects_non_images()
     {
         var host = _factory.CreateClientAs("hero-host2", "Employee");

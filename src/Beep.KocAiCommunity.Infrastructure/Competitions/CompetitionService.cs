@@ -449,13 +449,13 @@ public sealed class CompetitionService(
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task SetHeroImageAsync(string userId, Guid competitionId, Stream image, string contentType, CancellationToken ct = default)
+    public async Task SetHeroImageAsync(string userId, bool isPlatformAdmin, Guid competitionId, Stream image, string contentType, CancellationToken ct = default)
     {
         var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
             ?? throw new CompetitionException("Competition not found.");
-        if (competition.CreatedByUserId != userId)
+        if (competition.CreatedByUserId != userId && !isPlatformAdmin)
         {
-            throw new CompetitionException("Only the competition creator can set the hero image.");
+            throw new CompetitionException("Only the competition creator or a platform admin can set the hero image.");
         }
 
         if (!contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
