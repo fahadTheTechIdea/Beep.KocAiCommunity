@@ -452,6 +452,19 @@ KOC blueprint theme. No DB schema change anywhere.
     a Run button + a one-off CSV upload. Canonical workflow = Dataset → Split → Train → Evaluate (data node +
     train + final). UnitTests 215, ComponentTests 35 green.
 
+42. 🟡 **PLAN — whole-pipeline revision (2026-07-27)** — spec `23_PIPELINE_REVISION.md`. Full end-to-end
+    re-read (designer → definition → endpoints → executor → context → nodes → scoring) found a **source-of-truth
+    conflict**: Phase 22 put data/target/id/task onto the Dataset & Train nodes, but the **server ignores node
+    Config** — label/id/task/data still enter as method params, reconciled only by the designer's
+    `EffectiveLabel/EffectiveTask`. So a saved definition alone doesn't drive execution, `idColumn` on Train is
+    decorative, and the new Dataset-node `datasetId` collides with the secondary-dataset scanner (double-load /
+    latent throw) and isn't passed on competition submit (join/union pipelines can't be submitted). **Decision:**
+    make the node graph the single source of truth (executor reads target/id/task from Train, datasetId from
+    Dataset; competition still overrides at submit). Phases: 23a fix Dataset-node scanner/validate regression
+    (do first); 23b node-driven target/id/task; 23c submit passes secondaries; 23d Execute/Predict feature-set
+    parity; 23e client-side graph validation; 23f submit robustness (quota race, time budget, id coverage).
+    Also logged pre-existing gaps: quota race, no `PredictAsync` time budget, tiny-key holdout degradation.
+
 ## Global definition of done
 
 ```bash
