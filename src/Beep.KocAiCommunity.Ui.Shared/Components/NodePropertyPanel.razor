@@ -13,6 +13,21 @@
 }
 else
 {
+    @* Friendly visual builders for the SQL nodes — they generate into the raw text field shown below,
+       which stays editable as an advanced fallback. Column-aware, so they need known columns. *@
+    @if (AvailableColumns.Count > 0 && Descriptor.Kind == "group-by")
+    {
+        <AggregateBuilder AvailableColumns="AvailableColumns" OnGenerated="@(sql => Set("aggregations", sql))" />
+    }
+    else if (AvailableColumns.Count > 0 && Descriptor.Kind == "sort")
+    {
+        <SortKeyBuilder AvailableColumns="AvailableColumns" OnGenerated="@(sql => Set("orderBy", sql))" />
+    }
+    else if (AvailableColumns.Count > 0 && Descriptor.Kind == "sql-filter")
+    {
+        <SqlConditionBuilder AvailableColumns="AvailableColumns" OnGenerated="@(sql => Set("where", sql))" />
+    }
+
     @foreach (var p in Descriptor.Parameters.Where(Visible))
     {
         <div @key="p.Name">

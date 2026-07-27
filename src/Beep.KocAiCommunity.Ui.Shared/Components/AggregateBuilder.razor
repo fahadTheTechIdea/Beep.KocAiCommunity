@@ -1,0 +1,74 @@
+@* Friendly builder for the group-by node's `aggregations` SQL. Each row is function + column + output name;
+   the component generates a comma-separated aggregate list (e.g. AVG("pressure") AS avg_pressure) and reports
+   it via OnGenerated. The raw text field remains as an advanced fallback. *@
+
+<MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.75;">Aggregates</MudText>
+@foreach (var row in _rows)
+{
+    <div class="d-flex gap-1 mb-1 align-center" @key="row.Id">
+        <MudSelect T="string" Value="row.Func" ValueChanged="@(v => { row.Func = v; return Regenerate(); })" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="width:110px;" Label="Function">
+            @foreach (var f in _functions)
+            {
+                <MudSelectItem Value="@f">@f</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="string" Value="row.Column" ValueChanged="@(v => { row.Column = v; return Regenerate(); })" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="flex:1;" Label="Column">
+            @foreach (var c in AvailableColumns)
+            {
+                <MudSelectItem Value="@c">@c</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField T="string" Value="row.Output" ValueChanged="@(v => { row.Output = v; return Regenerate(); })" Margin="Margin.Dense" Variant="Variant.Outlined" Style="width:120px;" Label="Name (opt)" />
+        <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline" Size="Size.Small" Color="Color.Error" OnClick="@(() => Remove(row))" aria-label="Remove aggregate" />
+    </div>
+}
+<MudButton StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Variant="Variant.Text" OnClick="Add" Class="mb-2">Add aggregate</MudButton>
+
+@code {
+    [Parameter] public IReadOnlyList<string> AvailableColumns { get; set; } = [];
+    [Parameter] public EventCallback<string> OnGenerated { get; set; }
+
+    private static readonly string[] _functions = ["COUNT", "SUM", "AVG", "MIN", "MAX", "MEDIAN", "STDDEV"];
+    private readonly List<Row> _rows = [new()];
+    private int _seq;
+
+    private sealed class Row
+    {
+        public int Id { get; init; }
+        public string Func { get; set; } = "AVG";
+        public string Column { get; set; } = "";
+        public string Output { get; set; } = "";
+    }
+
+    protected override void OnInitialized() => _rows[0] = new Row { Id = _seq++ };
+
+    private async Task Add()
+    {
+        _rows.Add(new Row { Id = _seq++ });
+        await Regenerate();
+    }
+
+    private async Task Remove(Row row)
+    {
+        _rows.Remove(row);
+        if (_rows.Count == 0)
+        {
+            _rows.Add(new Row { Id = _seq++ });
+        }
+
+        await Regenerate();
+    }
+
+    // Rebuild the aggregations string from the complete rows and report it.
+    private async Task Regenerate()
+    {
+        var parts = _rows
+            .Where(r => !string.IsNullOrWhiteSpace(r.Column))
+            .Select(r =>
+            {
+                var name = string.IsNullOrWhiteSpace(r.Output) ? $"{r.Func.ToLowerInvariant()}_{r.Column}" : r.Output.Trim();
+                return $"{r.Func}(\"{r.Column}\") AS \"{name}\"";
+            });
+        await OnGenerated.InvokeAsync(string.Join(", ", parts));
+    }
+}

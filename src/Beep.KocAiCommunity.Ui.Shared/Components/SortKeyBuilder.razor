@@ -1,0 +1,64 @@
+@* Friendly builder for the sort node's `orderBy` SQL. Each row is a column + direction; the component
+   generates a comma-separated ORDER BY list (e.g. "pressure" DESC, "well_id" ASC) and reports it via
+   OnGenerated. The raw text field remains as an advanced fallback. *@
+
+<MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.75;">Sort keys</MudText>
+@foreach (var row in _rows)
+{
+    <div class="d-flex gap-1 mb-1 align-center" @key="row.Id">
+        <MudSelect T="string" Value="row.Column" ValueChanged="@(v => { row.Column = v; return Regenerate(); })" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="flex:1;" Label="Column">
+            @foreach (var c in AvailableColumns)
+            {
+                <MudSelectItem Value="@c">@c</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="string" Value="row.Direction" ValueChanged="@(v => { row.Direction = v; return Regenerate(); })" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="width:130px;" Label="Order">
+            <MudSelectItem Value="@("ASC")">Ascending</MudSelectItem>
+            <MudSelectItem Value="@("DESC")">Descending</MudSelectItem>
+        </MudSelect>
+        <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline" Size="Size.Small" Color="Color.Error" OnClick="@(() => Remove(row))" aria-label="Remove sort key" />
+    </div>
+}
+<MudButton StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Variant="Variant.Text" OnClick="Add" Class="mb-2">Add sort key</MudButton>
+
+@code {
+    [Parameter] public IReadOnlyList<string> AvailableColumns { get; set; } = [];
+    [Parameter] public EventCallback<string> OnGenerated { get; set; }
+
+    private readonly List<Row> _rows = [];
+    private int _seq;
+
+    private sealed class Row
+    {
+        public int Id { get; init; }
+        public string Column { get; set; } = "";
+        public string Direction { get; set; } = "ASC";
+    }
+
+    protected override void OnInitialized() => _rows.Add(new Row { Id = _seq++ });
+
+    private async Task Add()
+    {
+        _rows.Add(new Row { Id = _seq++ });
+        await Regenerate();
+    }
+
+    private async Task Remove(Row row)
+    {
+        _rows.Remove(row);
+        if (_rows.Count == 0)
+        {
+            _rows.Add(new Row { Id = _seq++ });
+        }
+
+        await Regenerate();
+    }
+
+    private async Task Regenerate()
+    {
+        var parts = _rows
+            .Where(r => !string.IsNullOrWhiteSpace(r.Column))
+            .Select(r => $"\"{r.Column}\" {r.Direction}");
+        await OnGenerated.InvokeAsync(string.Join(", ", parts));
+    }
+}

@@ -409,7 +409,7 @@ KOC blueprint theme. No DB schema change anywhere.
     green. **Pending:** Phase 21b (`VisibleWhen` for algorithm-conditional hyperparameters), 21c (help
     tooltips + range hints + reset-to-defaults).
 
-40. 🟢 **22a–d DONE, 22e partial (2026-07-27)** — spec `22_NODE_REVISION_AND_ALGORITHMS.md`.
+40. 🟢 **22a–e DONE (2026-07-27)** — spec `22_NODE_REVISION_AND_ALGORITHMS.md`.
     **22d:** scalers (standardize/normalize/log-normalize/robust-scale/binning) + replace-missing gained an
     optional `columns` selector (blank = all numeric); `hash-encode` exposes `bits` (1–30); `one-hot` exposes
     `outputKind` (indicator/bag/key/binary) + a column selector; all honored by the executor
@@ -417,6 +417,11 @@ KOC blueprint theme. No DB schema change anywhere.
     (left/inner/right/full) and its key `on` is now a column picker. Proven via a configured-transforms golden
     test. UnitTests 215, ComponentTests 34 green. **Remaining:** visual builders (group-by aggregate builder,
     sort-key builder, sql-filter condition builder) — custom editors the descriptor panel can't express.
+    **22e visual builders DONE:** `AggregateBuilder` (group-by function+column+name rows), `SortKeyBuilder`
+    (column+direction rows), `SqlConditionBuilder` (column+operator+value rows, AND-joined) render in the panel
+    for their node kind when columns are known, generate the SQL into the existing `aggregations`/`orderBy`/
+    `where` config keys (executor unchanged), and keep the raw text field as an advanced fallback. Panel
+    ComponentTests assert each builder appears for its kind and not others (35 total).
     **22b:** Train node now exposes `targetColumn`/`idColumn`/`task` (real column pickers + task select);
     competition mode pre-fills them from the competition and renders them **locked** (LockedKeys), free mode
     sources the run's label/task from the node. **22c:** `VisibleWhen` shows only the selected algorithm's

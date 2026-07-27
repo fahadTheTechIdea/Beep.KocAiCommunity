@@ -23,6 +23,9 @@ public class NodePropertyPanelTests : TestContext
     private static NodeDescriptorDto Descriptor(params NodeParameterDto[] p)
         => new("k", "Cat", "Node", "desc", "Table", "Table", p);
 
+    private static NodeDescriptorDto DescriptorOfKind(string kind, params NodeParameterDto[] p)
+        => new(kind, "Data", "Node", "desc", "Table", "Table", p);
+
     private IRenderedComponent<NodePropertyPanel> Render(
         NodeDescriptorDto? descriptor, IDictionary<string, string> config,
         string task = "BinaryClassification", IReadOnlyList<DatasetDto>? datasets = null, Action? onChanged = null,
@@ -161,6 +164,31 @@ public class NodePropertyPanelTests : TestContext
 
         var locked = Render(Descriptor(algo), new Dictionary<string, string>(), lockedKeys: ["algorithm"]);
         locked.FindComponents<MudSelect<string>>().Should().Contain(s => s.Instance.ReadOnly);
+    }
+
+    [Fact]
+    public void Sql_nodes_get_a_visual_builder_when_columns_are_known()
+    {
+        var cols = new[] { "pressure", "zone" };
+
+        var groupBy = Render(DescriptorOfKind("group-by", Param("groupBy", "Columns"), Param("aggregations", "Text")), new Dictionary<string, string>());
+        groupBy.SetParametersAndRender(ps => ps.Add(x => x.AvailableColumns, cols));
+        groupBy.FindComponents<AggregateBuilder>().Should().NotBeEmpty("group-by gets an aggregate builder");
+
+        var sort = Render(DescriptorOfKind("sort", Param("orderBy", "Text")), new Dictionary<string, string>());
+        sort.SetParametersAndRender(ps => ps.Add(x => x.AvailableColumns, cols));
+        sort.FindComponents<SortKeyBuilder>().Should().NotBeEmpty("sort gets a sort-key builder");
+
+        var filter = Render(DescriptorOfKind("sql-filter", Param("where", "Text")), new Dictionary<string, string>());
+        filter.SetParametersAndRender(ps => ps.Add(x => x.AvailableColumns, cols));
+        filter.FindComponents<SqlConditionBuilder>().Should().NotBeEmpty("sql-filter gets a condition builder");
+
+        // A non-SQL node gets none of the builders.
+        var binning = Render(DescriptorOfKind("binning", Param("bins", "Integer")), new Dictionary<string, string>());
+        binning.SetParametersAndRender(ps => ps.Add(x => x.AvailableColumns, cols));
+        binning.FindComponents<AggregateBuilder>().Should().BeEmpty();
+        binning.FindComponents<SortKeyBuilder>().Should().BeEmpty();
+        binning.FindComponents<SqlConditionBuilder>().Should().BeEmpty();
     }
 
     [Fact]
