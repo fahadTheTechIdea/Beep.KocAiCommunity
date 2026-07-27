@@ -16,7 +16,7 @@ public class NodeParametersTests
         // train and binning are different nodes → different field sets and types.
         var train = new TrainParameters();
         train.Describe().Select(p => p.Name).Should().Equal(
-            "algorithm", "trees", "leaves", "minLeaf", "learningRate", "iterations", "l1", "l2", "maxIterations", "historySize");
+            "targetColumn", "idColumn", "task", "algorithm", "trees", "leaves", "minLeaf", "learningRate", "iterations", "l1", "l2", "maxIterations", "historySize");
         train.Algorithm.Type.Should().Be(NodeParameterType.Select);
         train.Algorithm.Options!.Select(o => o.Value).Should().Contain("fasttree");
         train.Trees.Type.Should().Be(NodeParameterType.Integer);

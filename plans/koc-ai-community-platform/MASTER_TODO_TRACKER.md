@@ -409,7 +409,14 @@ KOC blueprint theme. No DB schema change anywhere.
     green. **Pending:** Phase 21b (`VisibleWhen` for algorithm-conditional hyperparameters), 21c (help
     tooltips + range hints + reset-to-defaults).
 
-40. 🟡 **Full node revision + friendly panels (2026-07-27)** — spec `22_NODE_REVISION_AND_ALGORITHMS.md`.
+40. 🟢 **22a–c DONE, 22d/e pending (2026-07-27)** — spec `22_NODE_REVISION_AND_ALGORITHMS.md`.
+    **22b:** Train node now exposes `targetColumn`/`idColumn`/`task` (real column pickers + task select);
+    competition mode pre-fills them from the competition and renders them **locked** (LockedKeys), free mode
+    sources the run's label/task from the node. **22c:** `VisibleWhen` shows only the selected algorithm's
+    hyperparameters; added `minLeaf` + Options-based SDCA/LBFGS/perceptron knobs (l1/maxIterations/historySize/
+    iterations); new real trainers GAM, SGD-calibrated, Online-GD, One-vs-all-FastTree — each proven to train
+    via GoldenPipelineScoringTests theories (binary 7, regression 6, multiclass 4). UnitTests 214, ComponentTests
+    34 green; anti-drift guard holds. **Remaining 22d/e below.**
     Re-read **every** handler's actual `Execute` from source (not descriptors) and rewrote all **37** per-node
     docs under `node-properties/` with exact defaults/clamps, column-awareness, gaps, and (for `train`/
     `cross-validate`) the full **per-algorithm** trainer/hyperparameter breakdown. **Shipped (build-verified,

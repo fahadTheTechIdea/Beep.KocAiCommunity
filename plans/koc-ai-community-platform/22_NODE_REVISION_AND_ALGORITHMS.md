@@ -1,7 +1,7 @@
 # Phase 22 — Full node revision: friendly property panels, column pickers, per-algorithm hyperparameters
 
 **Date:** 2026-07-27
-**Status:** 🟡 IN PROGRESS — every node re-read from source and documented (37 per-node docs); panel column pickers + dropdown-label display shipped (build-verified); train ML-properties + per-algorithm hyperparameters + node friendliness gaps planned below.
+**Status:** 🟢 22a/22b/22c DONE — every node documented (37 docs); column pickers + friendly dropdowns shipped; Train exposes target/id/task (competition pre-fills & locks, free mode editable); per-algorithm hyperparameters + new trainers (GAM/SGD/OGD/One-vs-all) shipped and proven to train. 22d/22e (transform + DuckDB friendliness) pending.
 **Goal:** make the Studio designer usable by **non-IT people** — every node exposes **all** its real properties, with the right control for each (column pickers, dropdowns that show friendly labels, numeric fields with ranges), and the Train node exposes **per-algorithm** hyperparameters. Competition runs pre-fill the fixed columns; free runs let the user set everything.
 
 This plan is the result of reading **every** handler's actual `Execute` code (not the descriptors) — see the per-node docs in [`node-properties/`](node-properties/), one file per node (all 37), each with: what it does, its real parameters (exact defaults/clamps from code), column-awareness, gaps, and notes.

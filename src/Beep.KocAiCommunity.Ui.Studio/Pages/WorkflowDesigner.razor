@@ -101,7 +101,7 @@ else
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">@def.Description</MudText>
                 }
 
-                <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" AvailableColumns="_columns" Task="_task" OnChanged="StateHasChanged" />
+                <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" AvailableColumns="_columns" Task="_task" LockedKeys="@(_selected.Kind == "train" ? _lockedKeys : [])" OnChanged="StateHasChanged" />
             }
         </BlueprintCard>
     </div>
@@ -215,6 +215,8 @@ else
 
     private Guid? _registryCompetitionId;
     private string? _registryCompetitionTitle;
+    private CompetitionDto? _competition;
+    private IReadOnlyList<string> _lockedKeys = [];
 
     // Registry-edit mode: the designer is editing a versioned workflow from /workflows.
     [Parameter] public Guid? WorkflowId { get; set; }
@@ -364,9 +366,10 @@ else
         _registryVersion = latest?.VersionNumber ?? 1;
         _registryStatus = latest?.Status ?? "draft";
         _registryCompetitionId = detail.CompetitionId;
-        _registryCompetitionTitle = detail.CompetitionId is { } cid
-            ? (await Api.GetCompetitionsAsync()).FirstOrDefault(c => c.Id == cid)?.Title
+        _competition = detail.CompetitionId is { } cid
+            ? (await Api.GetCompetitionsAsync()).FirstOrDefault(c => c.Id == cid)
             : null;
+        _registryCompetitionTitle = _competition?.Title;
 
         var json = "{}";
         if (latest is not null)
@@ -376,7 +379,31 @@ else
         }
 
         LoadDefinition(json);
+        ApplyCompetitionDefaults();
         StateHasChanged();
+    }
+
+    // In a competition the target/id/task are fixed by the host — pre-fill them on the Train node and lock
+    // them so the user can't change what the server will enforce anyway. In free mode they stay editable.
+    private void ApplyCompetitionDefaults()
+    {
+        if (_competition is not { } c)
+        {
+            _lockedKeys = [];
+            return;
+        }
+
+        foreach (var node in _diagram.Nodes.OfType<MlNode>().Where(n => n.Kind == "train"))
+        {
+            node.Config["targetColumn"] = c.LabelColumn;
+            node.Config["task"] = string.IsNullOrWhiteSpace(c.TaskType) ? "BinaryClassification" : c.TaskType;
+            if (!string.IsNullOrWhiteSpace(c.IdColumn))
+            {
+                node.Config["idColumn"] = c.IdColumn;
+            }
+        }
+
+        _lockedKeys = ["targetColumn", "idColumn", "task"];
     }
 
     private async Task SaveRegistryDraft()
@@ -570,6 +597,16 @@ else
         InvokeAsync(StateHasChanged);
     }
 
+    // The run's label/task come from the Train node when the user set them there (free mode); otherwise the
+    // "Run pipeline" box values. In a competition the server enforces its own regardless.
+    private string? TrainCfg(string key) =>
+        _diagram.Nodes.OfType<MlNode>().FirstOrDefault(n => n.Kind == "train") is { } t
+        && t.Config.TryGetValue(key, out var v) && !string.IsNullOrWhiteSpace(v) ? v : null;
+
+    private string EffectiveLabel() => TrainCfg("targetColumn") ?? _labelColumn;
+
+    private string EffectiveTask() => TrainCfg("task") ?? _task;
+
     private bool MatchesSearch(NodeDescriptorDto n) =>
         string.IsNullOrWhiteSpace(_search)
         || n.DisplayName.Contains(_search, StringComparison.OrdinalIgnoreCase)
@@ -597,7 +634,7 @@ else
             }
             ms.Position = 0;
 
-            ApplyResult(await Api.ExecuteWorkflowAsync(BuildDefinition(), ms, e.File.Name, _labelColumn, _task));
+            ApplyResult(await Api.ExecuteWorkflowAsync(BuildDefinition(), ms, e.File.Name, EffectiveLabel(), EffectiveTask()));
         }
         catch (Exception ex)
         {
@@ -626,7 +663,7 @@ else
 
         try
         {
-            var (result, error) = await Api.ExecuteWorkflowFromDatasetAsync(BuildDefinition(), id, _labelColumn, _task);
+            var (result, error) = await Api.ExecuteWorkflowFromDatasetAsync(BuildDefinition(), id, EffectiveLabel(), EffectiveTask());
             if (error is not null)
             {
                 Snackbar.Add(error, Severity.Warning);

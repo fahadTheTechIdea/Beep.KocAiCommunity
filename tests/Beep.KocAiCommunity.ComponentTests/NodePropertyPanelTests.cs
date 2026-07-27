@@ -25,7 +25,8 @@ public class NodePropertyPanelTests : TestContext
 
     private IRenderedComponent<NodePropertyPanel> Render(
         NodeDescriptorDto? descriptor, IDictionary<string, string> config,
-        string task = "BinaryClassification", IReadOnlyList<DatasetDto>? datasets = null, Action? onChanged = null)
+        string task = "BinaryClassification", IReadOnlyList<DatasetDto>? datasets = null, Action? onChanged = null,
+        IReadOnlyList<string>? lockedKeys = null)
     {
         Services.AddMudServices();
         JSInterop.Mode = JSRuntimeMode.Loose;
@@ -34,6 +35,7 @@ public class NodePropertyPanelTests : TestContext
             .Add(x => x.Config, config)
             .Add(x => x.Task, task)
             .Add(x => x.Datasets, datasets ?? [])
+            .Add(x => x.LockedKeys, lockedKeys ?? [])
             .Add(x => x.OnChanged, Microsoft.AspNetCore.Components.EventCallback.Factory.Create(this, onChanged ?? (() => { }))));
     }
 
@@ -130,6 +132,35 @@ public class NodePropertyPanelTests : TestContext
         // No known columns → a text field, no select picker.
         cut.FindComponents<MudSelect<string>>().Should().BeEmpty();
         cut.FindComponents<MudTextField<string>>().Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Algorithm_options_follow_the_nodes_own_task_field()
+    {
+        // The Train node carries its own `task`; the algorithm dropdown must filter by it (not the fallback).
+        var task = Param("task", "Select", def: "BinaryClassification", options:
+            [new("BinaryClassification", "Binary", null), new("Regression", "Reg", null)]);
+        var algo = Param("algorithm", "Select", def: "sdca", options:
+            [new("sdca", "SDCA", ["BinaryClassification", "Regression"]), new("perceptron", "Perceptron", ["BinaryClassification"])]);
+
+        // Fallback Task is Binary, but the node's own task is Regression → perceptron (binary-only) must vanish.
+        var cut = Render(Descriptor(task, algo), new Dictionary<string, string> { ["task"] = "Regression" }, task: "BinaryClassification");
+
+        var values = cut.FindComponents<MudSelectItem<string>>().Select(i => i.Instance.Value).ToList();
+        values.Should().Contain("sdca");
+        values.Should().NotContain("perceptron");
+    }
+
+    [Fact]
+    public void Locked_keys_render_the_field_read_only()
+    {
+        var algo = Param("algorithm", "Select", def: "sdca", options: [new("sdca", "SDCA", null)]);
+
+        var unlocked = Render(Descriptor(algo), new Dictionary<string, string>());
+        unlocked.FindComponents<MudSelect<string>>().Should().NotContain(s => s.Instance.ReadOnly);
+
+        var locked = Render(Descriptor(algo), new Dictionary<string, string>(), lockedKeys: ["algorithm"]);
+        locked.FindComponents<MudSelect<string>>().Should().Contain(s => s.Instance.ReadOnly);
     }
 
     [Fact]
