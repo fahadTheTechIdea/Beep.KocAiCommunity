@@ -228,10 +228,13 @@ public sealed class UnionDatasetParameters : NodeParameters
 // Each still gets its own class (one class per node), so the panel shows "no options" and any future setting
 // for that node has an obvious, named home.
 
-/// <summary>The pipeline's data source — its dataset is supplied by the run/competition, not a node field.</summary>
+/// <summary>The pipeline's data source. In free mode the user picks the training dataset here; in a
+/// competition the data is fixed by the host and this is left empty (the server injects it).</summary>
 public sealed class DatasetParameters : NodeParameters
 {
-    protected override IReadOnlyList<ParamField> Declare() => [];
+    public DatasetParam DatasetId { get; } = new("datasetId", "Training dataset", help: "The rows this pipeline runs on.");
+
+    protected override IReadOnlyList<ParamField> Declare() => [DatasetId];
 }
 
 public sealed class ScoreParameters : NodeParameters

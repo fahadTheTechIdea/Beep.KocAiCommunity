@@ -444,6 +444,14 @@ KOC blueprint theme. No DB schema change anywhere.
     options, replace-missing Median); 22e Data/DuckDB builders (join-type + key picker, group-by aggregate
     builder, sort keys, condition builder). Anti-drift guard must stay green as new keys are added.
 
+41. 🟢 **Designer page revision — dataset-as-node + de-duped run box (2026-07-27)**. The **Dataset node** now
+    carries the training-dataset picker (`datasetId`): in free mode the user selects the data here and the
+    whole pipeline's column pickers light up from its schema (defaults to the first dataset); in competition
+    mode it's left empty (the host injects the data). The "Run pipeline" box lost its redundant dataset / label
+    / task controls — data now comes from the Dataset node, target/task from the Train node (22b) — and is just
+    a Run button + a one-off CSV upload. Canonical workflow = Dataset → Split → Train → Evaluate (data node +
+    train + final). UnitTests 215, ComponentTests 35 green.
+
 ## Global definition of done
 
 ```bash

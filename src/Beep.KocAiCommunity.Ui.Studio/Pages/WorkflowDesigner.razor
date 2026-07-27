@@ -101,7 +101,7 @@ else
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">@def.Description</MudText>
                 }
 
-                <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" AvailableColumns="_columns" Task="_task" LockedKeys="@(_selected.Kind == "train" ? _lockedKeys : [])" OnChanged="StateHasChanged" />
+                <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" AvailableColumns="_columns" Task="_task" LockedKeys="@(_selected.Kind == "train" ? _lockedKeys : [])" OnChanged="OnNodeChanged" />
             }
         </BlueprintCard>
     </div>
@@ -109,37 +109,20 @@ else
     <MudGrid Spacing="6" Class="mt-2">
         <MudItem xs="12" md="5">
             <BlueprintCard Class="pa-5">
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Run pipeline</MudText>
-                <MudTextField @bind-Value="_labelColumn" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
-                <MudSelect @bind-Value="_task" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
-                    <MudSelectItem Value="@("BinaryClassification")">Binary classification</MudSelectItem>
-                    <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
-                    <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
-                </MudSelect>
-                <div class="d-flex gap-1 mb-2">
-                    <MudButton Size="Size.Small" Variant="@(_runMode == "dataset" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick='@(() => _runMode = "dataset")'>Use a dataset</MudButton>
-                    <MudButton Size="Size.Small" Variant="@(_runMode == "upload" ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick='@(() => _runMode = "upload")'>Upload CSV</MudButton>
-                </div>
-                @if (_runMode == "dataset")
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Run pipeline</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3" Style="opacity:.8;max-width:60ch;">
+                    Runs your graph on the <b>Dataset</b> node's data, using the target column and task set on the
+                    <b>Train</b> node. Pick those on the nodes, not here.
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                           Disabled="@(_running || DatasetNodeId() is null)" OnClick="RunFromDataset">Run pipeline</MudButton>
+                @if (DatasetNodeId() is null)
                 {
-                    <MudSelect T="Guid?" Value="_selectedDatasetId" ValueChanged="OnDatasetChanged" Label="Dataset" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
-                        @foreach (var d in _fileDatasets)
-                        {
-                            <MudSelectItem T="Guid?" Value="@d.Id">@d.Name · @d.Classification</MudSelectItem>
-                        }
-                    </MudSelect>
-                    @if (_fileDatasets.Count == 0)
-                    {
-                        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">No datasets with a file are visible to you — add one under <b>Datasets</b>, or switch to Upload CSV.</MudText>
-                    }
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
-                               Disabled="@(_running || _selectedDatasetId is null)" OnClick="RunFromDataset">Run pipeline</MudButton>
+                    <MudText Typo="Typo.caption" Class="d-block mt-2" Style="opacity:.7;">Select a training dataset on the <b>Dataset</b> node to run (or upload a one-off CSV below).</MudText>
                 }
-                else
-                {
-                    <MudText Typo="Typo.caption" Class="d-block mb-1">Upload a dataset CSV and run it node by node.</MudText>
-                    <InputFile OnChange="OnRun" accept=".csv" />
-                }
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.8;">Or run a one-off CSV:</MudText>
+                <InputFile OnChange="OnRun" accept=".csv" />
                 @if (_running)
                 {
                     <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mt-2" />
@@ -227,14 +210,13 @@ else
     private string _registryStatus = "draft";
     private bool _registryBusy;
 
-    private string _labelColumn = "label";
-    private string _task = "BinaryClassification";
+    // Fallbacks only — the run reads the target/task from the Train node (see EffectiveLabel/EffectiveTask).
+    private readonly string _labelColumn = "label";
+    private readonly string _task = "BinaryClassification";
     private bool _running;
     private PipelineExecutionResult? _result;
 
-    private string _runMode = "dataset";
     private IReadOnlyList<DatasetDto> _fileDatasets = [];
-    private Guid? _selectedDatasetId;
     private IReadOnlyList<string> _columns = [];
 
     // The node palette + property schema are served by the backend registry (GET /api/v1/ml/nodes),
@@ -285,25 +267,22 @@ else
         try
         {
             _fileDatasets = (await Api.GetDatasetsAsync()).Where(d => d.HasFile).ToList();
-            _selectedDatasetId = _fileDatasets.FirstOrDefault()?.Id;
         }
         catch
         {
             _fileDatasets = [];
         }
-
-        if (_fileDatasets.Count == 0)
-        {
-            _runMode = "upload";
-        }
-
-        await LoadColumns();
     }
 
-    // Load the selected dataset's column names so Column/Columns fields become pickers instead of text boxes.
+    // The Dataset node's selected dataset id (the pipeline's data source), or null if none/unset.
+    private Guid? DatasetNodeId() =>
+        _diagram.Nodes.OfType<MlNode>().FirstOrDefault(n => n.Kind == "dataset") is { } d
+        && d.Config.TryGetValue("datasetId", out var v) && Guid.TryParse(v, out var id) ? id : null;
+
+    // Load the Dataset node's column names so Column/Columns fields become pickers instead of text boxes.
     private async Task LoadColumns()
     {
-        if (_selectedDatasetId is not { } id)
+        if (DatasetNodeId() is not { } id)
         {
             _columns = [];
             return;
@@ -322,10 +301,11 @@ else
         }
     }
 
-    private async Task OnDatasetChanged(Guid? id)
+    // After any node-config edit, refresh the column list (the Dataset node may have changed) and re-render.
+    private async Task OnNodeChanged()
     {
-        _selectedDatasetId = id;
         await LoadColumns();
+        StateHasChanged();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -380,7 +360,27 @@ else
 
         LoadDefinition(json);
         ApplyCompetitionDefaults();
+        SeedDatasetNodeDefault();
+        await LoadColumns();
         StateHasChanged();
+    }
+
+    // Free mode convenience: if the Dataset node has no dataset yet, default it to the user's first dataset so
+    // the graph is runnable and column pickers light up. In a competition the data is the host's — leave empty.
+    private void SeedDatasetNodeDefault()
+    {
+        if (_competition is not null || _fileDatasets.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var node in _diagram.Nodes.OfType<MlNode>().Where(n => n.Kind == "dataset"))
+        {
+            if (!node.Config.TryGetValue("datasetId", out var v) || string.IsNullOrWhiteSpace(v))
+            {
+                node.Config["datasetId"] = _fileDatasets[0].Id.ToString();
+            }
+        }
     }
 
     // In a competition the target/id/task are fixed by the host — pre-fill them on the Train node and lock
@@ -648,7 +648,7 @@ else
 
     private async Task RunFromDataset()
     {
-        if (_selectedDatasetId is not { } id)
+        if (DatasetNodeId() is not { } id)
         {
             return;
         }

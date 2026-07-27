@@ -9,15 +9,15 @@ The pipeline's data entry point — surfaces the loaded table and its row/column
 3. Feature count is derived from `FeatureNames` = all columns **except** `LabelColumn`, `IdColumn`, and the internal `__fold` column.
 
 ## Parameters today
-| key | UI control | type | default | range / clamp | required | column-aware |
-|---|---|---|---|---|---|---|
-| — | None — acts on all flowing columns. | | | | | |
+| key | UI control | type | default | required | column-aware |
+|---|---|---|---|---|---|
+| `datasetId` | Dataset picker (of the caller's file datasets) | GUID | — | no (free mode) | Selecting it drives the whole pipeline's column pickers |
 
-## Gaps / plan (to be complete & friendly for non-IT users)
-- FREE mode: this is where the user should **pick the dataset** — add a dataset/file picker (Select or upload) so a non-IT user chooses their data here.
-- COMPETITION mode: the dataset is **fixed by the competition** — the picker should be pre-filled and locked (read-only).
-- Consider a lightweight column/schema preview so users can confirm the right data loaded before wiring downstream nodes.
+## How it works
+- **FREE mode:** the user picks the **training dataset** on this node. The designer reads it, runs the graph on it, and loads its schema so every downstream `Column`/`Columns` field becomes a real picker. Defaults to the user's first dataset for convenience.
+- **COMPETITION mode:** the data is fixed by the host, so this is left empty — the server injects the competition's training set. (The executor's dataset node is a passthrough; `datasetId` is a designer-level selector, not read by the handler.)
+- The old "Run pipeline" box no longer has its own dataset/label/task pickers — data comes from this node, target/task from the **Train** node.
 
 ## Notes
-- Pure passthrough — introduces no ordering or leakage concerns of its own.
+- Pure passthrough at execution — introduces no ordering or leakage concerns of its own.
 - `__fold` is internal bookkeeping and is deliberately excluded from the reported feature count.
