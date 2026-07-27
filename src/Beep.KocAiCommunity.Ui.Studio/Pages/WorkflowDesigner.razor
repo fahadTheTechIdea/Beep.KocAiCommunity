@@ -233,6 +233,8 @@ else
     private int _registryVersion = 1;
     private string _registryStatus = "draft";
     private bool _registryBusy;
+    private bool _loaded;                       // true once the graph has finished loading (gates auto-save)
+    private CancellationTokenSource? _autoSaveCts;
 
     // Fallbacks only — the run reads the target/task from the Train node (see EffectiveLabel/EffectiveTask).
     private readonly string _labelColumn = "label";
@@ -257,7 +259,12 @@ else
     {
         _diagram = new BlazorDiagram();
         _diagram.SelectionChanged += OnSelectionChanged;
+        // Persist when the user connects or removes links (drawn directly on the canvas, not via Connect()).
+        _diagram.Links.Added += OnLinkChanged;
+        _diagram.Links.Removed += OnLinkChanged;
     }
+
+    private void OnLinkChanged(Blazor.Diagrams.Core.Models.Base.BaseLinkModel _) => ScheduleAutoSave();
 
     protected override async Task OnInitializedAsync()
     {
@@ -373,11 +380,13 @@ else
         }
     }
 
-    // After any node-config edit, refresh the column list (the Dataset node may have changed) and re-render.
+    // After any node-config edit, refresh the column list (the Dataset node may have changed), re-render, and
+    // persist — so picking a dataset / target / task is remembered without a manual save.
     private async Task OnNodeChanged()
     {
         await LoadColumns();
         StateHasChanged();
+        ScheduleAutoSave();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -396,7 +405,14 @@ else
         }
     }
 
-    public void Dispose() => _diagram.SelectionChanged -= OnSelectionChanged;
+    public void Dispose()
+    {
+        _diagram.SelectionChanged -= OnSelectionChanged;
+        _diagram.Links.Added -= OnLinkChanged;
+        _diagram.Links.Removed -= OnLinkChanged;
+        _autoSaveCts?.Cancel();
+        _autoSaveCts?.Dispose();
+    }
 
     // ---- Registry workflow (versioned) ----
 
@@ -434,7 +450,66 @@ else
         ApplyCompetitionDefaults();
         SeedDatasetNodeDefault();
         await LoadColumns();
+        _loaded = true;
         StateHasChanged();
+    }
+
+    // Auto-save: persist the graph shortly after any edit so the workflow always remembers what the user built
+    // (dataset, target, task, structure) without a manual "Save draft". Debounced so rapid edits collapse to
+    // one save. Gated on _loaded so the initial load/seed doesn't write.
+    private void ScheduleAutoSave()
+    {
+        if (!_loaded || _loadedWorkflowId is null)
+        {
+            return;
+        }
+
+        _autoSaveCts?.Cancel();
+        _autoSaveCts?.Dispose();
+        _autoSaveCts = new CancellationTokenSource();
+        var token = _autoSaveCts.Token;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(900, token);
+                await InvokeAsync(async () =>
+                {
+                    if (!token.IsCancellationRequested)
+                    {
+                        await AutoSaveDraftAsync();
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // superseded by a newer edit
+            }
+        });
+    }
+
+    private async Task AutoSaveDraftAsync()
+    {
+        if (_loadedWorkflowId is not { } id || _registryBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            var json = JsonSerializer.Serialize(BuildDefinition(), _json);
+            var (version, error) = await Api.SaveWorkflowDraftAsync(id, new SaveDraftRequest(json, null));
+            if (error is null && version is not null)
+            {
+                _registryVersion = version.VersionNumber;
+                _registryStatus = version.Status;
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Silent — an explicit Save surfaces errors; a transient auto-save failure shouldn't nag.
+        }
     }
 
     // Free mode convenience: if the Dataset node has no dataset yet, default it to the user's first dataset so
@@ -648,6 +723,7 @@ else
         node.AddPort(PortAlignment.Left);
         node.AddPort(PortAlignment.Right);
         _diagram.Nodes.Add(node);
+        ScheduleAutoSave(); // no-op during initial load (gated on _loaded); persists user-added nodes
         return node;
     }
 
@@ -660,6 +736,7 @@ else
         {
             _diagram.Nodes.Remove(_selected);
             _selected = null;
+            ScheduleAutoSave();
         }
     }
 

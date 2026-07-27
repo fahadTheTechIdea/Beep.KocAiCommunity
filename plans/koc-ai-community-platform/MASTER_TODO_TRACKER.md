@@ -490,6 +490,17 @@ KOC blueprint theme. No DB schema change anywhere.
     contract, graph-driven, with submit correctness (secondaries, coverage, quota) and robustness (time
     budget) all closed.
 
+43. 🟢 **Workflow auto-saves its dataset & graph (2026-07-27)** — the persistence layer was already correct
+    (`WorkflowSerializerConfigTests` proves node config — Dataset `datasetId`, Train `targetColumn`/`task` —
+    round-trips canonicalize→parse), but the designer only wrote the stored definition on an explicit
+    "Save draft"/"Publish", so picking a dataset then running/submitting/leaving lost it. Added **debounced
+    auto-save** (`ScheduleAutoSave`/`AutoSaveDraftAsync`, ~900ms) triggered by node-config edits
+    (`OnNodeChanged`), node add (`PlaceNode`), delete (`DeleteSelected`), and link add/remove
+    (`_diagram.Links.Added/Removed`) — gated on `_loaded` so the initial load/seed doesn't write, silent on
+    failure, CTS disposed. The workflow now remembers its dataset/target/task/structure without a manual save.
+    Ui.Studio builds 0/0; UnitTests 218 green. (Full `slnx -warnaserror` copy step was blocked by the running
+    Web app holding the DLL — a lock, not a code error.)
+
 ## Global definition of done
 
 ```bash
