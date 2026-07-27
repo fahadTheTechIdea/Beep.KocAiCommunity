@@ -59,6 +59,14 @@
                             <MudText Typo="Typo.caption" Style="opacity:.6;">@_description.Length characters</MudText>
                         </div>
 
+                        <MudText Typo="Typo.body2" Class="mb-1"><b>Hero image</b> <span style="opacity:.6;">(optional)</span></MudText>
+                        <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;">A banner shown on the competition — and, if it's featured, on the landing-page hero. PNG or JPG.</MudText>
+                        <InputFile OnChange="OnHeroImagePicked" accept="image/*" />
+                        @if (_heroImageName is not null)
+                        {
+                            <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.Image" Class="mt-1">@_heroImageName</MudChip>
+                        }
+
                         <MudSelect T="string" Value="_scope" ValueChanged="OnScopeChanged" Label="Who can compete" Variant="Variant.Outlined" Margin="Margin.Dense"
                                    HelperText="Only people in this scope see and enter the competition. Levels above your access are hidden.">
                             @if (Allowed("Company"))
@@ -258,6 +266,8 @@
     private sealed record HelpContent(string Title, string[] Tips);
 
     private int _step;
+    private Microsoft.AspNetCore.Components.Forms.IBrowserFile? _heroImage;
+    private string? _heroImageName;
     private string _title = "";
     private string _description = "";
     private string _scope = "Company";
@@ -376,6 +386,12 @@
 
     private void Cancel() => Dialog.Cancel();
 
+    private void OnHeroImagePicked(InputFileChangeEventArgs e)
+    {
+        _heroImage = e.File;
+        _heroImageName = e.File?.Name;
+    }
+
     private async Task Submit()
     {
         _busy = true;
@@ -384,6 +400,28 @@
             var reveal = _revealDate is { } d ? DateTime.SpecifyKind(d.Date.AddHours(12), DateTimeKind.Utc) : (DateTime?)null;
             var dto = await Api.CreateCompetitionAsync(new CreateCompetitionRequest(
                 _title.Trim(), _description.Trim(), _scope, null, reveal, _quota, CurrentTask.Scorer));
+
+            // Upload the hero image to the freshly-created competition (best effort — the competition still
+            // gets created even if the image fails).
+            if (dto is not null && _heroImage is not null)
+            {
+                try
+                {
+                    using var ms = new MemoryStream();
+                    await using (var s = _heroImage.OpenReadStream(maxAllowedSize: 8 * 1024 * 1024))
+                    {
+                        await s.CopyToAsync(ms);
+                    }
+
+                    ms.Position = 0;
+                    await Api.UploadCompetitionHeroImageAsync(dto.Id, ms, _heroImage.Name, _heroImage.ContentType);
+                }
+                catch (Exception imgEx)
+                {
+                    Snackbar.Add($"Competition created, but the image upload failed: {imgEx.Message}", Severity.Warning);
+                }
+            }
+
             Snackbar.Add("Draft created — attach data in the Host tab, then activate.", Severity.Success);
             Dialog.Close(DialogResult.Ok(dto?.Id));
         }

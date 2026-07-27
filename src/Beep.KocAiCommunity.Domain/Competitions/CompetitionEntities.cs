@@ -34,6 +34,9 @@ public class Competition : AuditableEntity
     public string? FirstPrize { get; set; }
     public string? SecondPrize { get; set; }
     public string? ThirdPrize { get; set; }
+
+    // Optional hero image (uploaded by the host) shown as the competition's banner background.
+    public Guid? HeroImageArtifactId { get; set; }
 }
 
 /// <summary>One scored attempt by a participant.</summary>

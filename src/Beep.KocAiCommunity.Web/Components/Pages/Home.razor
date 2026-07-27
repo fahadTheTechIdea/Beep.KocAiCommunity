@@ -15,7 +15,7 @@
 @if (!Identity.IsGuest && Featured is { } featured)
 {
     <!-- The arena leads: the featured competition with a live countdown and podium. -->
-    <BlueprintCard Class="koc-arena-banner pa-6 mb-6">
+    <BlueprintCard Class="koc-arena-banner pa-6 mb-6" Style="@HeroStyle(featured)">
         <div class="d-flex justify-space-between flex-wrap gap-5">
             <div style="min-width:280px;max-width:60ch;">
                 <span class="koc-eyebrow">⚔ Featured competition</span>
@@ -380,6 +380,12 @@
     private CompetitionDto? Featured =>
         _activeCompetitions?.FirstOrDefault(c => c.IsFeatured)
         ?? (_activeCompetitions is { Count: > 0 } ? _activeCompetitions[0] : null);
+
+    // When the competition has an uploaded hero image, use it as the banner background under a dark gradient
+    // that keeps the white text readable.
+    private static string? HeroStyle(CompetitionDto c) => c.HasHeroImage
+        ? $"background-image: linear-gradient(120deg, rgba(11,46,76,.86), rgba(11,46,76,.5)), url('/api/v1/competitions/{c.Id}/hero-image'); background-size: cover; background-position: center;"
+        : null;
 
     private async Task LoadAsync()
     {

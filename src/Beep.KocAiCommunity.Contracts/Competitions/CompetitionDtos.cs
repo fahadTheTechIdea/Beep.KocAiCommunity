@@ -34,7 +34,8 @@ public sealed record CompetitionDto(
     bool IsFeatured = false,
     string? FirstPrize = null,
     string? SecondPrize = null,
-    string? ThirdPrize = null);
+    string? ThirdPrize = null,
+    bool HasHeroImage = false);
 
 public sealed record SetStatusRequest(string Status);
 

@@ -187,6 +187,33 @@ public static class CompetitionEndpoints
         .WithName("SetCompetitionPrizes")
         .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
 
+        // Upload the competition's hero image (host only).
+        group.MapPost("/competitions/{id:guid}/hero-image", async (Guid id, IFormFile file, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await using var stream = file.OpenReadStream();
+                await svc.SetHeroImageAsync(me.UserId!, id, stream, file.ContentType, ct);
+                return Results.NoContent();
+            }
+            catch (CompetitionException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("SetCompetitionHeroImage")
+        .RequireAuthorization(KocPolicies.RequireEmployee)
+        .DisableAntiforgery();
+
+        // Serve the hero image (visible to any signed-in employee).
+        group.MapGet("/competitions/{id:guid}/hero-image", async (Guid id, ICompetitionService svc, CancellationToken ct) =>
+        {
+            var image = await svc.GetHeroImageAsync(id, ct);
+            return image is { } img ? Results.File(img.Content, img.ContentType) : Results.NotFound();
+        })
+        .WithName("GetCompetitionHeroImage")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
         group.MapPost("/competitions/{id:guid}/reveal", async (Guid id, SetRevealRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
         {
             try
@@ -272,6 +299,7 @@ public static class CompetitionEndpoints
             c.IsFeatured,
             c.FirstPrize,
             c.SecondPrize,
-            c.ThirdPrize);
+            c.ThirdPrize,
+            c.HeroImageArtifactId is not null);
     }
 }

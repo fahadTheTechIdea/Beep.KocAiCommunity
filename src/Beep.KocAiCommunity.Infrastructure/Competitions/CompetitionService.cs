@@ -15,6 +15,7 @@ using Beep.KocAiCommunity.Domain.Authorization;
 using Beep.KocAiCommunity.Domain.Common;
 using Beep.KocAiCommunity.Domain.Competitions;
 using Beep.KocAiCommunity.Domain.Organization;
+using Beep.KocAiCommunity.Domain.Storage;
 using Beep.KocAiCommunity.Infrastructure.Engagement;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -446,6 +447,41 @@ public sealed class CompetitionService(
         competition.SecondPrize = string.IsNullOrWhiteSpace(second) ? null : second.Trim();
         competition.ThirdPrize = string.IsNullOrWhiteSpace(third) ? null : third.Trim();
         await db.SaveChangesAsync(ct);
+    }
+
+    public async Task SetHeroImageAsync(string userId, Guid competitionId, Stream image, string contentType, CancellationToken ct = default)
+    {
+        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
+            ?? throw new CompetitionException("Competition not found.");
+        if (competition.CreatedByUserId != userId)
+        {
+            throw new CompetitionException("Only the competition creator can set the hero image.");
+        }
+
+        if (!contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new CompetitionException("The hero image must be an image file (PNG, JPG, …).");
+        }
+
+        var artifact = await artifacts.SaveAsync(
+            image, $"competitions/{competition.Id}/hero-image", contentType, KocDataClassification.Internal, ct);
+        competition.HeroImageArtifactId = artifact.Id;
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<(Stream Content, string ContentType)?> GetHeroImageAsync(Guid competitionId, CancellationToken ct = default)
+    {
+        var artifactId = await db.Set<Competition>().AsNoTracking()
+            .Where(c => c.Id == competitionId).Select(c => c.HeroImageArtifactId).FirstOrDefaultAsync(ct);
+        if (artifactId is not { } id)
+        {
+            return null;
+        }
+
+        var contentType = await db.Set<ArtifactReference>().AsNoTracking()
+            .Where(a => a.Id == id).Select(a => a.ContentType).FirstOrDefaultAsync(ct) ?? "application/octet-stream";
+        var stream = await artifacts.OpenReadAsync(id, ct);
+        return (stream, contentType);
     }
 
     public async Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, CancellationToken ct = default)
