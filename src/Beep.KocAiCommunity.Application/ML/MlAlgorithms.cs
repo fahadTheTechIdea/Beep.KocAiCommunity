@@ -20,7 +20,11 @@ public static class MlAlgorithms
         new("lbfgs", "L-BFGS (linear)", [Binary, Multiclass, Regression]),
         new("fasttree", "FastTree (boosted trees)", [Binary, Regression]),
         new("fastforest", "FastForest (bagged trees)", [Binary, Regression]),
+        new("gam", "GAM (interpretable)", [Binary, Regression]),
         new("perceptron", "Averaged Perceptron", [Binary]),
+        new("sgd", "SGD (calibrated)", [Binary]),
+        new("ogd", "Online gradient descent", [Regression]),
         new("naivebayes", "Naive Bayes", [Multiclass]),
+        new("ova-fasttree", "One-vs-all (FastTree)", [Multiclass]),
     ];
 }

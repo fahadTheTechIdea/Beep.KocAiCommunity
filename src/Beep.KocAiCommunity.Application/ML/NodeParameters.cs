@@ -41,11 +41,15 @@ public abstract class ParamField
     /// <summary>The current raw value (as persisted in the node's string config). Null/blank means unset.</summary>
     public string? Value { get; set; }
 
+    /// <summary>Optional conditional visibility — the field shows only when a sibling field has a given value
+    /// (set via object initializer, e.g. <c>new IntParam(...) { VisibleWhen = new("algorithm", ["fasttree"]) }</c>).</summary>
+    public VisibleWhen? VisibleWhen { get; init; }
+
     /// <summary>The value if set, else the default.</summary>
     public string? Effective => string.IsNullOrWhiteSpace(Value) ? Default : Value;
 
     /// <summary>Project this field to the wire/catalog parameter shape the panel and API consume.</summary>
-    public NodeParameter ToDescriptor() => new(Name, DisplayName, Type, Required, Default, Options, Min, Max, Help);
+    public NodeParameter ToDescriptor() => new(Name, DisplayName, Type, Required, Default, Options, Min, Max, Help, VisibleWhen);
 
     internal static string? Num(double? v) => v?.ToString(CultureInfo.InvariantCulture);
 }

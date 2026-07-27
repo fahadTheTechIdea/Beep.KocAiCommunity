@@ -62,6 +62,111 @@ public class GoldenPipelineScoringTests
         return await scorer.ScoreAsync(Csv(submission), Csv(answerKey), "id");
     }
 
+    // dataset → normalize → split → train(algorithm) → evaluate. Normalizing features first is standard
+    // practice and is what a gradient-based trainer (SGD/OGD) needs to converge — exactly how a user builds it.
+    private static WorkflowDefinition AlgoPipeline(string algorithm) => new()
+    {
+        Name = algorithm,
+        Nodes =
+        [
+            new() { Id = "d", Kind = "dataset" },
+            new() { Id = "nz", Kind = "normalize" },
+            new() { Id = "sp", Kind = "split" },
+            new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["algorithm"] = algorithm } },
+            new() { Id = "ev", Kind = "evaluate" },
+        ],
+        Edges = [new("d", "nz"), new("nz", "sp"), new("sp", "tr"), new("tr", "ev")],
+    };
+
+    [Theory]
+    [InlineData("sdca")]
+    [InlineData("lbfgs")]
+    [InlineData("fasttree")]
+    [InlineData("fastforest")]
+    [InlineData("gam")]
+    [InlineData("perceptron")]
+    [InlineData("sgd")]
+    public async Task Every_binary_algorithm_trains_and_classifies_separable_data(string algorithm)
+    {
+        // Trivially separable (high features → 1, low → 0). Every real trainer must fit and get both right;
+        // a fake/broken algorithm arm would throw or mis-predict. Proves each MlModelOps arm works at runtime.
+        var eval = "id,x1,x2\ne1,9,9\ne2,0,0\n";
+
+        var submission = await NewExecutor().PredictAsync(
+            AlgoPipeline(algorithm), "label", "id", MlTaskType.BinaryClassification, Csv(TrainCsv("1", "0")), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines.Should().HaveCount(3, $"'{algorithm}' must yield one prediction per eval id");
+        lines[1].Should().Be("e1,1", $"'{algorithm}' should classify the clearly-positive row");
+        lines[2].Should().Be("e2,0", $"'{algorithm}' should classify the clearly-negative row");
+    }
+
+    [Theory]
+    [InlineData("sdca")]
+    [InlineData("lbfgs")]
+    [InlineData("fasttree")]
+    [InlineData("fastforest")]
+    [InlineData("gam")]
+    [InlineData("ogd")]
+    public async Task Every_regression_algorithm_trains_and_predicts(string algorithm)
+    {
+        // A clean linear target; every regression arm must fit and produce a numeric, id-aligned submission.
+        var train = new StringBuilder("id,choke,tubing,oil_rate\n");
+        for (var i = 0; i < 120; i++)
+        {
+            var choke = 1 + (i % 8);
+            var tubing = 20 + (i % 25);
+            train.Append($"r{i},{choke},{tubing},{(40 * choke) + (6 * tubing)}\n");
+        }
+
+        var eval = "id,choke,tubing\n0042,3,30\n0007,5,25\n";
+
+        var submission = await NewExecutor().PredictAsync(
+            AlgoPipeline(algorithm), "oil_rate", "id", MlTaskType.Regression, Csv(train.ToString()), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines.Should().HaveCount(3, $"'{algorithm}' must yield one prediction per eval id");
+        lines.Skip(1).Select(l => l.Split(',')[0]).Should().BeEquivalentTo(["0042", "0007"], "ids survive");
+        lines.Skip(1).Select(l => l.Split(',')[1]).Should().OnlyContain(v => IsNumeric(v),
+            $"'{algorithm}' emits numeric predictions");
+    }
+
+    private static bool IsNumeric(string s) =>
+        float.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out _);
+
+    private static readonly string[] Grades = ["A", "B", "C"];
+
+    [Theory]
+    [InlineData("sdca")]
+    [InlineData("lbfgs")]
+    [InlineData("naivebayes")]
+    [InlineData("ova-fasttree")]
+    public async Task Every_multiclass_algorithm_trains_and_predicts(string algorithm)
+    {
+        // Three well-separated classes by x1 band. Every multiclass arm must fit and emit a valid class token.
+        var train = new StringBuilder("id,x1,x2,grade\n");
+        for (var i = 0; i < 90; i++)
+        {
+            var band = i % 3;
+            var x1 = band == 0 ? 1 + (i % 2) : band == 1 ? 20 + (i % 2) : 40 + (i % 2);
+            var grade = band == 0 ? "A" : band == 1 ? "B" : "C";
+            train.Append($"m{i},{x1},{i % 5},{grade}\n");
+        }
+
+        var eval = "id,x1,x2\ne1,1,0\ne2,20,0\ne3,40,0\n";
+
+        var submission = await NewExecutor().PredictAsync(
+            AlgoPipeline(algorithm), "grade", "id", MlTaskType.MulticlassClassification, Csv(train.ToString()), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines.Should().HaveCount(4, $"'{algorithm}' must yield one prediction per eval id");
+        lines.Skip(1).Select(l => l.Split(',')[1]).Should().OnlyContain(v => Grades.Contains(v),
+            $"'{algorithm}' emits a valid class label");
+    }
+
     [Fact]
     public async Task Zero_padded_ids_survive_the_whole_path_and_score_perfectly()
     {

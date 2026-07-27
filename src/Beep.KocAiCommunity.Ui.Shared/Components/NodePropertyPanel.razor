@@ -13,7 +13,7 @@
 }
 else
 {
-    @foreach (var p in Descriptor.Parameters)
+    @foreach (var p in Descriptor.Parameters.Where(Visible))
     {
         <div @key="p.Name">
             @switch (p.Type)
@@ -121,6 +121,21 @@ else
 
     /// <summary>Raised after any field changes, so the host can persist / re-render.</summary>
     [Parameter] public EventCallback OnChanged { get; set; }
+
+    // A field with a VisibleWhen shows only when its sibling parameter currently holds a matching value
+    // (using the sibling's current config value, or its declared default when unset).
+    private bool Visible(NodeParameterDto p)
+    {
+        if (p.VisibleWhen is not { } vw)
+        {
+            return true;
+        }
+
+        var current = Config.TryGetValue(vw.Param, out var v) && !string.IsNullOrEmpty(v)
+            ? v
+            : Descriptor?.Parameters.FirstOrDefault(x => x.Name == vw.Param)?.Default;
+        return current is not null && vw.Values.Contains(current);
+    }
 
     private string Get(string key) => Config.TryGetValue(key, out var v) ? v : string.Empty;
 

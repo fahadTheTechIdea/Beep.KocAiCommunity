@@ -50,5 +50,6 @@ public static class MlNodeEndpoints
     private static NodeParameterDto ToDto(NodeParameter p) =>
         new(p.Name, p.DisplayName, p.Type.ToString(), p.Required, p.Default,
             p.Options is null ? null : [.. p.Options.Select(o => new LookupOptionDto(o.Value, o.Label, o.AppliesTo))],
-            p.Min, p.Max, p.Help);
+            p.Min, p.Max, p.Help,
+            p.VisibleWhen is null ? null : new VisibleWhenDto(p.VisibleWhen.Param, p.VisibleWhen.Values));
 }

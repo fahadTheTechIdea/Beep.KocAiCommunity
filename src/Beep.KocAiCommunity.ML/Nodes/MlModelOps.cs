@@ -3,6 +3,7 @@ using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Microsoft.ML;
+using Microsoft.ML.Trainers;
 using Microsoft.ML.Trainers.FastTree;
 
 namespace Beep.KocAiCommunity.ML.Nodes;
@@ -33,28 +34,64 @@ internal static class MlModelOps
         return (p.Fit(train), n, null);
     }
 
+    // Optional hyperparameters read from the node config. HpInt/HpFloat treat 0/blank as "unset".
+    private static int MinLeaf(WorkflowNode node) => PipelineContext.HpInt(node, "minLeaf", 10);
+    private static int? IntOrNull(WorkflowNode node, string key) =>
+        int.TryParse(PipelineContext.Cfg(node, key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) && v > 0 ? v : null;
+
     public static (IEstimator<ITransformer> Trainer, string Name) MulticlassTrainer(MLContext ml, WorkflowNode node)
     {
         const string label = "Label";
         const string features = "Features";
+        var l1 = PipelineContext.HpFloat(node, "l1");
         var l2 = PipelineContext.HpFloat(node, "l2");
+        var maxIter = IntOrNull(node, "maxIterations");
         return PipelineContext.Algo(node) switch
         {
-            "lbfgs" => (ml.MulticlassClassification.Trainers.LbfgsMaximumEntropy(label, features, l2Regularization: l2 ?? 1f), "LbfgsMaximumEntropy"),
+            "lbfgs" => (ml.MulticlassClassification.Trainers.LbfgsMaximumEntropy(new LbfgsMaximumEntropyMulticlassTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                L1Regularization = l1 ?? 1f,
+                L2Regularization = l2 ?? 1f,
+                HistorySize = PipelineContext.HpInt(node, "historySize", 20),
+            }), "LbfgsMaximumEntropy"),
             "naivebayes" => (ml.MulticlassClassification.Trainers.NaiveBayes(label, features), "NaiveBayes"),
-            _ => (ml.MulticlassClassification.Trainers.SdcaMaximumEntropy(labelColumnName: label, featureColumnName: features, l2Regularization: l2), "SdcaMaximumEntropy"),
+            // One-vs-all lets a binary tree learner power multiclass (FastTree isn't natively multiclass).
+            "ova-fasttree" => (ml.MulticlassClassification.Trainers.OneVersusAll(
+                ml.BinaryClassification.Trainers.FastTree(new FastTreeBinaryTrainer.Options
+                {
+                    LabelColumnName = label,
+                    FeatureColumnName = features,
+                    NumberOfLeaves = PipelineContext.HpInt(node, "leaves", 20),
+                    NumberOfTrees = PipelineContext.HpInt(node, "trees", 100),
+                    MinimumExampleCountPerLeaf = MinLeaf(node),
+                    LearningRate = PipelineContext.ReadDouble(PipelineContext.Cfg(node, "learningRate"), 0.2),
+                    NumberOfThreads = 1,
+                }), labelColumnName: label), "OneVersusAllFastTree"),
+            _ => (ml.MulticlassClassification.Trainers.SdcaMaximumEntropy(new SdcaMaximumEntropyMulticlassTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                L1Regularization = l1,
+                L2Regularization = l2,
+                MaximumNumberOfIterations = maxIter,
+            }), "SdcaMaximumEntropy"),
         };
     }
 
     public static (IEstimator<ITransformer> Trainer, string Name) Trainer(MLContext ml, MlTaskType task, WorkflowNode node, string label)
     {
         const string features = "Features";
-        const int minLeaf = 10;
         var algo = PipelineContext.Algo(node);
         var trees = PipelineContext.HpInt(node, "trees", 100);
         var leaves = PipelineContext.HpInt(node, "leaves", 20);
+        var minLeaf = MinLeaf(node);
         var learningRate = PipelineContext.ReadDouble(PipelineContext.Cfg(node, "learningRate"), 0.2);
+        var l1 = PipelineContext.HpFloat(node, "l1");
         var l2 = PipelineContext.HpFloat(node, "l2");
+        var maxIter = IntOrNull(node, "maxIterations");
+        var historySize = PipelineContext.HpInt(node, "historySize", 20);
 
         if (task == MlTaskType.Regression)
         {
@@ -82,8 +119,37 @@ internal static class MlModelOps
                     MinimumExampleCountPerLeaf = minLeaf,
                     NumberOfThreads = 1,
                 }), "FastForestRegression"),
-                "lbfgs" => (ml.Regression.Trainers.LbfgsPoissonRegression(label, features, l2Regularization: l2 ?? 1f), "LbfgsPoissonRegression"),
-                _ => (ml.Regression.Trainers.Sdca(labelColumnName: label, featureColumnName: features, l2Regularization: l2), "SdcaRegression"),
+                "gam" => (ml.Regression.Trainers.Gam(new GamRegressionTrainer.Options
+                {
+                    LabelColumnName = label,
+                    FeatureColumnName = features,
+                    NumberOfIterations = PipelineContext.HpInt(node, "iterations", 9500),
+                    LearningRate = learningRate,
+                    NumberOfThreads = 1,
+                }), "GamRegression"),
+                "ogd" => (ml.Regression.Trainers.OnlineGradientDescent(new OnlineGradientDescentTrainer.Options
+                {
+                    LabelColumnName = label,
+                    FeatureColumnName = features,
+                    NumberOfIterations = PipelineContext.HpInt(node, "iterations", 1),
+                    LearningRate = (float)learningRate,
+                }), "OnlineGradientDescent"),
+                "lbfgs" => (ml.Regression.Trainers.LbfgsPoissonRegression(new LbfgsPoissonRegressionTrainer.Options
+                {
+                    LabelColumnName = label,
+                    FeatureColumnName = features,
+                    L1Regularization = l1 ?? 1f,
+                    L2Regularization = l2 ?? 1f,
+                    HistorySize = historySize,
+                }), "LbfgsPoissonRegression"),
+                _ => (ml.Regression.Trainers.Sdca(new SdcaRegressionTrainer.Options
+                {
+                    LabelColumnName = label,
+                    FeatureColumnName = features,
+                    L1Regularization = l1,
+                    L2Regularization = l2,
+                    MaximumNumberOfIterations = maxIter,
+                }), "SdcaRegression"),
             };
         }
 
@@ -108,9 +174,46 @@ internal static class MlModelOps
                 MinimumExampleCountPerLeaf = minLeaf,
                 NumberOfThreads = 1,
             }), "FastForestBinary"),
-            "lbfgs" => (ml.BinaryClassification.Trainers.LbfgsLogisticRegression(label, features, l2Regularization: l2 ?? 1f), "LbfgsLogisticRegression"),
-            "perceptron" => (ml.BinaryClassification.Trainers.AveragedPerceptron(label, features), "AveragedPerceptron"),
-            _ => (ml.BinaryClassification.Trainers.SdcaLogisticRegression(labelColumnName: label, featureColumnName: features, l2Regularization: l2), "SdcaLogisticRegression"),
+            "gam" => (ml.BinaryClassification.Trainers.Gam(new GamBinaryTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                NumberOfIterations = PipelineContext.HpInt(node, "iterations", 9500),
+                LearningRate = learningRate,
+                NumberOfThreads = 1,
+            }), "GamBinary"),
+            "sgd" => (ml.BinaryClassification.Trainers.SgdCalibrated(new SgdCalibratedTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                NumberOfIterations = PipelineContext.HpInt(node, "iterations", 20),
+                LearningRate = PipelineContext.ReadDouble(PipelineContext.Cfg(node, "learningRate"), 0.01),
+                L2Regularization = l2 ?? 1e-6f,
+            }), "SgdCalibrated"),
+            "lbfgs" => (ml.BinaryClassification.Trainers.LbfgsLogisticRegression(new LbfgsLogisticRegressionBinaryTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                L1Regularization = l1 ?? 1f,
+                L2Regularization = l2 ?? 1f,
+                HistorySize = historySize,
+            }), "LbfgsLogisticRegression"),
+            "perceptron" => (ml.BinaryClassification.Trainers.AveragedPerceptron(new AveragedPerceptronTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                LearningRate = (float)PipelineContext.ReadDouble(PipelineContext.Cfg(node, "learningRate"), 1.0),
+                NumberOfIterations = PipelineContext.HpInt(node, "iterations", 10),
+                L2Regularization = l2 ?? 0f,
+            }), "AveragedPerceptron"),
+            _ => (ml.BinaryClassification.Trainers.SdcaLogisticRegression(new SdcaLogisticRegressionBinaryTrainer.Options
+            {
+                LabelColumnName = label,
+                FeatureColumnName = features,
+                L1Regularization = l1,
+                L2Regularization = l2,
+                MaximumNumberOfIterations = maxIter,
+            }), "SdcaLogisticRegression"),
         };
     }
 

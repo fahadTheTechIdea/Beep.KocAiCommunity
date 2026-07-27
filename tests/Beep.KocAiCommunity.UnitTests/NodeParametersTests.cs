@@ -15,11 +15,14 @@ public class NodeParametersTests
     {
         // train and binning are different nodes → different field sets and types.
         var train = new TrainParameters();
-        train.Describe().Select(p => p.Name).Should().Equal("algorithm", "trees", "leaves", "learningRate", "l2");
+        train.Describe().Select(p => p.Name).Should().Equal(
+            "algorithm", "trees", "leaves", "minLeaf", "learningRate", "iterations", "l1", "l2", "maxIterations", "historySize");
         train.Algorithm.Type.Should().Be(NodeParameterType.Select);
         train.Algorithm.Options!.Select(o => o.Value).Should().Contain("fasttree");
         train.Trees.Type.Should().Be(NodeParameterType.Integer);
         train.LearningRate.Type.Should().Be(NodeParameterType.Number);
+        // FastTree-only knobs are gated to the tree algorithms.
+        train.Trees.VisibleWhen!.Values.Should().Contain("fasttree");
 
         var binning = new BinningParameters();
         binning.Describe().Select(p => p.Name).Should().Equal("bins");
@@ -36,7 +39,8 @@ public class NodeParametersTests
         p.Algorithm.Effective.Should().Be("fasttree");
         p.Trees.Get().Should().Be(250);        // from config
         p.Leaves.Get().Should().Be(20);        // default (not in config)
-        p.LearningRate.Get().Should().Be(0.2);  // default
+        p.MinLeaf.Get().Should().Be(10);       // default
+        p.LearningRate.Get().Should().BeNull(); // blank → each algorithm applies its own default
         p.L2.Get().Should().BeNull();          // no default → unset
     }
 

@@ -13,15 +13,31 @@ public sealed class SplitParameters : NodeParameters
     protected override IReadOnlyList<ParamField> Declare() => [TestFraction];
 }
 
+// The tree-family algorithms (share trees/leaves/minLeaf).
+file static class Algo
+{
+    public static readonly string[] Trees = ["fasttree", "fastforest", "ova-fasttree"];
+    public static readonly string[] LearningRate = ["fasttree", "gam", "perceptron", "sgd", "ogd", "ova-fasttree"];
+    public static readonly string[] Iterations = ["gam", "perceptron", "sgd", "ogd"];
+    public static readonly string[] Linear = ["sdca", "lbfgs"];
+    public static readonly string[] L2 = ["sdca", "lbfgs", "sgd", "perceptron"];
+}
+
 public sealed class TrainParameters : NodeParameters
 {
     public LookupParam Algorithm { get; } = new("algorithm", "Algorithm", "sdca", MlAlgorithms.All);
-    public IntParam Trees { get; } = new("trees", "Trees", 100, min: 1, help: "FastTree / FastForest only.");
-    public IntParam Leaves { get; } = new("leaves", "Leaves per tree", 20, min: 2, help: "FastTree / FastForest only.");
-    public NumberParam LearningRate { get; } = new("learningRate", "Learning rate", 0.2, min: 0, help: "FastTree only.");
-    public NumberParam L2 { get; } = new("l2", "L2 regularization", min: 0, help: "SDCA / L-BFGS; blank = trainer default.");
+    public IntParam Trees { get; } = new("trees", "Trees", 100, min: 1) { VisibleWhen = new("algorithm", Algo.Trees) };
+    public IntParam Leaves { get; } = new("leaves", "Leaves per tree", 20, min: 2) { VisibleWhen = new("algorithm", Algo.Trees) };
+    public IntParam MinLeaf { get; } = new("minLeaf", "Min rows per leaf", 10, min: 1) { VisibleWhen = new("algorithm", Algo.Trees) };
+    public NumberParam LearningRate { get; } = new("learningRate", "Learning rate", min: 0, help: "Blank = algorithm default.") { VisibleWhen = new("algorithm", Algo.LearningRate) };
+    public IntParam Iterations { get; } = new("iterations", "Iterations", min: 1, help: "Blank = algorithm default.") { VisibleWhen = new("algorithm", Algo.Iterations) };
+    public NumberParam L1 { get; } = new("l1", "L1 regularization", min: 0, help: "Blank = auto.") { VisibleWhen = new("algorithm", Algo.Linear) };
+    public NumberParam L2 { get; } = new("l2", "L2 regularization", min: 0, help: "Blank = default.") { VisibleWhen = new("algorithm", Algo.L2) };
+    public IntParam MaxIterations { get; } = new("maxIterations", "Max iterations", min: 1, help: "Blank = auto.") { VisibleWhen = new("algorithm", ["sdca"]) };
+    public IntParam HistorySize { get; } = new("historySize", "History size", 20, min: 1) { VisibleWhen = new("algorithm", ["lbfgs"]) };
 
-    protected override IReadOnlyList<ParamField> Declare() => [Algorithm, Trees, Leaves, LearningRate, L2];
+    protected override IReadOnlyList<ParamField> Declare() =>
+        [Algorithm, Trees, Leaves, MinLeaf, LearningRate, Iterations, L1, L2, MaxIterations, HistorySize];
 }
 
 public sealed class ClusterParameters : NodeParameters
@@ -35,12 +51,18 @@ public sealed class CrossValidateParameters : NodeParameters
 {
     public IntParam Folds { get; } = new("folds", "Folds", 5, min: 2, max: 10);
     public LookupParam Algorithm { get; } = new("algorithm", "Algorithm", "sdca", MlAlgorithms.All);
-    public IntParam Trees { get; } = new("trees", "Trees", 100, min: 1, help: "FastTree / FastForest only.");
-    public IntParam Leaves { get; } = new("leaves", "Leaves per tree", 20, min: 2, help: "FastTree / FastForest only.");
-    public NumberParam LearningRate { get; } = new("learningRate", "Learning rate", 0.2, min: 0, help: "FastTree only.");
-    public NumberParam L2 { get; } = new("l2", "L2 regularization", min: 0, help: "SDCA / L-BFGS; blank = trainer default.");
+    public IntParam Trees { get; } = new("trees", "Trees", 100, min: 1) { VisibleWhen = new("algorithm", Algo.Trees) };
+    public IntParam Leaves { get; } = new("leaves", "Leaves per tree", 20, min: 2) { VisibleWhen = new("algorithm", Algo.Trees) };
+    public IntParam MinLeaf { get; } = new("minLeaf", "Min rows per leaf", 10, min: 1) { VisibleWhen = new("algorithm", Algo.Trees) };
+    public NumberParam LearningRate { get; } = new("learningRate", "Learning rate", min: 0, help: "Blank = algorithm default.") { VisibleWhen = new("algorithm", Algo.LearningRate) };
+    public IntParam Iterations { get; } = new("iterations", "Iterations", min: 1, help: "Blank = algorithm default.") { VisibleWhen = new("algorithm", Algo.Iterations) };
+    public NumberParam L1 { get; } = new("l1", "L1 regularization", min: 0, help: "Blank = auto.") { VisibleWhen = new("algorithm", Algo.Linear) };
+    public NumberParam L2 { get; } = new("l2", "L2 regularization", min: 0, help: "Blank = default.") { VisibleWhen = new("algorithm", Algo.L2) };
+    public IntParam MaxIterations { get; } = new("maxIterations", "Max iterations", min: 1, help: "Blank = auto.") { VisibleWhen = new("algorithm", ["sdca"]) };
+    public IntParam HistorySize { get; } = new("historySize", "History size", 20, min: 1) { VisibleWhen = new("algorithm", ["lbfgs"]) };
 
-    protected override IReadOnlyList<ParamField> Declare() => [Folds, Algorithm, Trees, Leaves, LearningRate, L2];
+    protected override IReadOnlyList<ParamField> Declare() =>
+        [Folds, Algorithm, Trees, Leaves, MinLeaf, LearningRate, Iterations, L1, L2, MaxIterations, HistorySize];
 }
 
 // ---- Prepare ----

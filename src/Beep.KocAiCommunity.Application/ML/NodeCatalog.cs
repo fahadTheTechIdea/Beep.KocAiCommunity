@@ -48,6 +48,13 @@ public enum NodeParameterType
 public sealed record LookupOption(string Value, string Label, IReadOnlyList<string>? AppliesTo = null);
 
 /// <summary>
+/// Conditional visibility for a parameter: the field is shown only when the sibling parameter named
+/// <see cref="Param"/> currently holds one of <see cref="Values"/>. Used so the Train node shows only the
+/// hyperparameters that apply to the selected algorithm.
+/// </summary>
+public sealed record VisibleWhen(string Param, IReadOnlyList<string> Values);
+
+/// <summary>
 /// A typed, declared parameter of a node — the single contract the property panel binds to for get/set,
 /// regardless of node kind. It carries everything the editor needs: the value <see cref="Type"/>, the
 /// <see cref="Default"/>, whether it is <see cref="Required"/>, the lookup <see cref="Options"/> (as objects)
@@ -63,7 +70,8 @@ public sealed record NodeParameter(
     IReadOnlyList<LookupOption>? Options = null,
     double? Min = null,
     double? Max = null,
-    string? Help = null);
+    string? Help = null,
+    VisibleWhen? VisibleWhen = null);
 
 /// <summary>
 /// A code-first description of one pipeline node kind: its category, ports, and typed parameters.
