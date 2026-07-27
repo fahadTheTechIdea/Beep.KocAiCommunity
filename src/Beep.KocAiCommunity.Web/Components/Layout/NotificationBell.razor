@@ -9,7 +9,7 @@
 
 <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true">
     <ActivatorContent>
-        <div @onclick="Load">
+        <div @onclick="@(async () => { await context.ToggleAsync(); await Load(); })" style="cursor:pointer;" tabindex="0">
             <MudBadge Content="_unread" Color="Color.Error" Overlap="true" Visible="_unread > 0" Bordered="true">
                 <MudIcon Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
             </MudBadge>

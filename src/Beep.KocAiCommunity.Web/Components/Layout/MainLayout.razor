@@ -46,7 +46,7 @@
         {
             <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-1">
                 <ActivatorContent>
-                    <MudButton Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.AdminPanelSettings" EndIcon="@Icons.Material.Filled.ArrowDropDown">Admin</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.AdminPanelSettings" EndIcon="@Icons.Material.Filled.ArrowDropDown" OnClick="@context.ToggleAsync">Admin</MudButton>
                 </ActivatorContent>
                 <ChildContent>
                     <MudMenuItem Href="/admin" Icon="@Icons.Material.Filled.SpaceDashboard">Console</MudMenuItem>
@@ -63,11 +63,11 @@
                 <ActivatorContent>
                     @if (Identity.IsGuest)
                     {
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login">Sign in with KOC</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" OnClick="@context.ToggleAsync">Sign in with KOC</MudButton>
                     }
                     else
                     {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" EndIcon="@Icons.Material.Filled.ArrowDropDown">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" EndIcon="@Icons.Material.Filled.ArrowDropDown" OnClick="@context.ToggleAsync">
                             @Identity.Current.Label
                         </MudButton>
                     }
