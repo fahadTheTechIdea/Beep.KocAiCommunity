@@ -32,9 +32,14 @@
             <NotificationBell />
         }
 
+        @* Help is reachable from anywhere (including guests) via a persistent top-right icon. *@
+        <MudTooltip Text="Help & guides">
+            <MudIconButton Href="/help" Icon="@Icons.Material.Filled.HelpOutline" Color="Color.Inherit" aria-label="Help" />
+        </MudTooltip>
+
         @if (Env.IsDevelopment())
         {
-            @* Dev/demo only: switch personas to preview the app as different roles. Never in Production. *@
+            @* Account menu. In dev it also carries the persona switcher to preview the app as other roles. *@
             <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-2">
                 <ActivatorContent>
                     @if (Identity.IsGuest)
@@ -49,6 +54,11 @@
                     }
                 </ActivatorContent>
                 <ChildContent>
+                    @if (!Identity.IsGuest)
+                    {
+                        <AccountMenuLinks />
+                        <MudDivider Class="my-1" />
+                    }
                     <MudText Typo="Typo.caption" Class="px-4 py-2 d-block">View the app as (dev)</MudText>
                     <MudDivider />
                     @foreach (var p in DevIdentity.Personas)
@@ -71,9 +81,23 @@
         {
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" Class="ml-2">Sign in with KOC</MudButton>
         }
+        else if (Identity.HasAnyPosition || Identity.IsPlatformAdmin)
+        {
+            @* Production: real signed-in identity opens an account menu (profile + admin), no role switching. *@
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-2">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" EndIcon="@Icons.Material.Filled.ArrowDropDown">
+                        @Identity.Current.Label
+                    </MudButton>
+                </ActivatorContent>
+                <ChildContent>
+                    <AccountMenuLinks />
+                </ChildContent>
+            </MudMenu>
+        }
         else
         {
-            @* Production: show the real signed-in identity, with no role switching. *@
+            @* Signed in but no position and not an admin: nothing to navigate to, so just show the identity. *@
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" Class="ml-2" Style="pointer-events:none;">
                 @Identity.Current.Label
             </MudButton>

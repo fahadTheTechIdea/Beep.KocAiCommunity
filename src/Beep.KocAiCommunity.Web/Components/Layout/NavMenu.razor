@@ -6,11 +6,9 @@
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="/learn" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.School">Learn</MudNavLink>
     <MudNavLink Href="/community" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Forum">Community</MudNavLink>
-    <MudNavLink Href="/help" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.HelpOutline">Help</MudNavLink>
 
     @if (Identity.HasAnyPosition)
     {
-        <MudNavLink Href="/profile" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">My profile</MudNavLink>
         <MudNavLink Href="/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
         <MudNavLink Href="/compete" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">Compete</MudNavLink>
 
@@ -30,14 +28,7 @@
         <MudNavLink Href="/supervision" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SupervisorAccount">Supervision</MudNavLink>
     }
 
-    @if (Identity.IsPlatformAdmin)
-    {
-        <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="false">
-            <MudNavLink Href="/admin" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.SpaceDashboard">Console</MudNavLink>
-            <MudNavLink Href="/admin/overview" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Map">Overview</MudNavLink>
-            <MudNavLink Href="/connectors" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Hub">Connectors</MudNavLink>
-        </MudNavGroup>
-    }
+    @* Help, My profile, and the Admin console now live in the top-right menu (see MainLayout). *@
 
     @if (Identity.IsGuest)
     {
