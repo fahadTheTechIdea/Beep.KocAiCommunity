@@ -1,21 +1,30 @@
 # `cross-validate` — Cross-validate
+**Category:** Model · **Ports:** Table → Metrics · **Handler:** `MlModelHandlers` (`src/Beep.KocAiCommunity.ML/Nodes/MlModelHandlers.cs`, factories in `MlModelOps.cs`)
 
-**Category:** Model · **Ports:** Table → Metrics · **Handler:** `CrossValidateHandler` (+ `MlModelOps`)
+K-fold validation for a more honest metric, run entirely inside the train fold using the same trainer as `train`.
 
-K-fold validation for a more honest metric (runs inside the train fold).
+## What it does
+1. In predict mode → skip.
+2. `RequireLabel` — fails if no label column is set.
+3. Uses the **same** `MlModelOps.Trainer` / `MulticlassTrainer` as `train`.
+4. `CrossValidate` on the train fold only.
+5. Reports: regression → mean R²; multiclass → mean micro-accuracy; binary → mean accuracy (NonCalibrated).
 
-## Parameters
-| `key` | Label | Type | Default | Required | Options / Range | In UI today |
+## Parameters today
+| key | UI control | type | default | range / clamp | required | column-aware |
 |---|---|---|---|---|---|---|
-| `folds` | Folds | Number | `5` | no | clamped 2–10 | ✅ yes |
-| `algorithm` | Algorithm | Select | `sdca` | no | `sdca`, `lbfgs`, `fasttree`, `fastforest`, `perceptron`, `naivebayes` | ✅ yes |
-| `trees` | Trees (fasttree/fastforest) | Number | `100` | no | > 0 | ✅ yes |
-| `leaves` | Leaves per tree (fasttree/fastforest) | Number | `20` | no | > 0 | ✅ yes |
-| `learningRate` | Learning rate (fasttree) | Number | `0.2` | no | > 0 | ✅ yes |
-| `l2` | L2 regularization (sdca/lbfgs) | Number | blank = trainer default | no | > 0 | ✅ yes |
+| `folds` | Integer | int | `5` | `Math.Clamp(..., 2, 10)` | no | no |
+| `algorithm` | Select | string | `sdca` | options = `MlAlgorithms.All` (task-filtered) | no | no |
+| `trees` | Integer | int | `100` | min 1; FastTree/FastForest only | no | no |
+| `leaves` | Integer | int | `20` | min 2 | no | no |
+| `learningRate` | Number | number | `0.2` | min 0 | no | no |
+| `l2` | Number | number | _(none)_ | min 0; blank = trainer default | no | no |
 
-## Panel on click
-`folds` + `algorithm` + the four hyperparameters, each pre-filled with its default.
+## Gaps / plan (to be complete & friendly for non-IT users)
+- Should gain the **same per-algorithm hyperparameters** as `train` (see `train.md` per-algorithm tables) since it shares the trainer factory.
+- Multiclass path ignores `trees` / `leaves` / `learningRate` — surface this to the user or hide those fields for multiclass tasks.
+- As with `train`, FREE vs COMPETITION should drive whether label/task come from a picker or are locked.
 
 ## Notes
-Resolved in Phase 21a: uses the same trainer factory as `train` (`MlModelOps.Trainer`/`MulticlassTrainer`), so it now declares the identical `algorithm` + hyperparameter set and the inspector renders them. Skipped in predict mode. Covered by the `NodePropertyDriftTests` guard alongside `train`.
+- Shares `MlModelOps.Trainer` / `MulticlassTrainer` with `train`, so it stays algorithm-consistent with the model node.
+- Runs on the train fold only — the held-out test fold is never touched.

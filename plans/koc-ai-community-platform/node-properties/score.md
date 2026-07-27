@@ -1,14 +1,21 @@
 # `score` — Score
+**Category:** Evaluate · **Ports:** Model → Table · **Handler:** `MlModelHandlers` (`src/Beep.KocAiCommunity.ML/Nodes/MlModelHandlers.cs`, factories in `MlModelOps.cs`)
 
-**Category:** Evaluate · **Ports:** Model → Table · **Handler:** `ScoreHandler`
+Applies the trained model to the held-out test fold and returns the scored rows.
 
-Applies the trained model to the held-out (test-fold) set.
+## What it does
+1. In predict mode, or when the model is null → skip.
+2. Scores `FoldTestView` (the held-out test fold).
+3. Reports the scored row count.
 
-## Parameters
-_None._
+## Parameters today
+| key | UI control | type | default | range / clamp | required | column-aware |
+|---|---|---|---|---|---|---|
+| — | None — acts on all flowing columns. | | | | | |
 
-## Panel on click
-"This node has no settings."
+## Gaps / plan (to be complete & friendly for non-IT users)
+- None.
 
 ## Notes
-Skipped in predict mode (prediction is handled by the submission step). Pass-through: returns its input table unchanged.
+- Does **not** call `RequireLabel` — scoring only needs the model and features.
+- Operates on `FoldTestView`, keeping evaluation on genuinely held-out rows.

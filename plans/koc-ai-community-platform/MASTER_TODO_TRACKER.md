@@ -409,6 +409,22 @@ KOC blueprint theme. No DB schema change anywhere.
     green. **Pending:** Phase 21b (`VisibleWhen` for algorithm-conditional hyperparameters), 21c (help
     tooltips + range hints + reset-to-defaults).
 
+40. 🟡 **Full node revision + friendly panels (2026-07-27)** — spec `22_NODE_REVISION_AND_ALGORITHMS.md`.
+    Re-read **every** handler's actual `Execute` from source (not descriptors) and rewrote all **37** per-node
+    docs under `node-properties/` with exact defaults/clamps, column-awareness, gaps, and (for `train`/
+    `cross-validate`) the full **per-algorithm** trainer/hyperparameter breakdown. **Shipped (build-verified,
+    tests pending — Web app was running/locked):** (a) **column pickers** — `Column` → dropdown of the
+    dataset's real columns, `Columns` → multi-select checklist (loaded from `GetDatasetVersionAsync().Schema`),
+    text-box fallback when unknown; (b) **dropdown-label fix** — every `MudSelect` uses `ToStringFunc` so the
+    selected value shows its friendly label, not the raw key/GUID (verified vs `mudBlazor_Docs/Select.txt`).
+    **Decision:** Option A (one Train node, algorithm dropdown, per-algorithm fields) + custom per-node editors
+    where needed. **Planned:** 22b Train exposes target/id/task/features (competition pre-fills+locks, free mode
+    editable); 22c per-algorithm hyperparameters (add `minLeaf`, AveragedPerceptron params, etc.) + new
+    algorithms (LightGBM, GAM, SgdCalibrated, OneVersusAll, Ols) each backed by a real `MlModelOps` arm;
+    22d transform/prepare gaps (scaler column selectors, hash `bits`, one-hot output-kind, featurize-text
+    options, replace-missing Median); 22e Data/DuckDB builders (join-type + key picker, group-by aggregate
+    builder, sort keys, condition builder). Anti-drift guard must stay green as new keys are added.
+
 ## Global definition of done
 
 ```bash

@@ -20,6 +20,7 @@ else
             {
                 case "Dataset":
                     <MudSelect T="string" Label="@p.DisplayName" Value="@Get(p.Name)" ValueChanged="@(v => Set(p.Name, v))"
+                               ToStringFunc="@(id => Datasets.FirstOrDefault(d => d.Id.ToString() == id)?.Name ?? id)"
                                HelperText="@p.Help" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
                         @foreach (var d in Datasets)
                         {
@@ -34,10 +35,11 @@ else
 
                 case "Select":
                     <MudSelect T="string" Label="@p.DisplayName" Value="@Effective(p)" ValueChanged="@(v => Set(p.Name, v))"
+                               ToStringFunc="@(val => (p.Options ?? []).FirstOrDefault(o => o.Value == val)?.Label ?? val)"
                                HelperText="@p.Help" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
                         @foreach (var o in OptionsFor(p))
                         {
-                            <MudSelectItem Value="@o.Value">@o.Label</MudSelectItem>
+                            <MudSelectItem T="string" Value="@o.Value">@o.Label</MudSelectItem>
                         }
                     </MudSelect>
                     break;
@@ -69,6 +71,28 @@ else
                                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
                     break;
 
+                case "Column" when AvailableColumns.Count > 0:
+                    <MudSelect T="string" Label="@p.DisplayName" Value="@Get(p.Name)" ValueChanged="@(v => Set(p.Name, v))"
+                               HelperText="@p.Help" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" Clearable="true">
+                        @foreach (var c in AvailableColumns)
+                        {
+                            <MudSelectItem Value="@c">@c</MudSelectItem>
+                        }
+                    </MudSelect>
+                    break;
+
+                case "Columns" when AvailableColumns.Count > 0:
+                    <MudSelect T="string" Label="@p.DisplayName" MultiSelection="true"
+                               SelectedValues="@SelectedColumns(p.Name)" SelectedValuesChanged="@(v => SetColumns(p.Name, v))"
+                               MultiSelectionTextFunc="@(sel => string.Join(", ", sel))"
+                               HelperText="@(p.Help ?? "Pick one or more columns.")" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
+                        @foreach (var c in AvailableColumns)
+                        {
+                            <MudSelectItem T="string" Value="@c">@c</MudSelectItem>
+                        }
+                    </MudSelect>
+                    break;
+
                 default:
                     <MudTextField T="string" Label="@p.DisplayName" Value="@Get(p.Name)" ValueChanged="@(v => Set(p.Name, v))"
                                   HelperText="@p.Help" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-1"
@@ -88,6 +112,9 @@ else
 
     /// <summary>Datasets available to a Dataset-typed parameter (join / append).</summary>
     [Parameter] public IReadOnlyList<DatasetDto> Datasets { get; set; } = [];
+
+    /// <summary>The columns flowing into the node — turns Column/Columns fields into pickers instead of text.</summary>
+    [Parameter] public IReadOnlyList<string> AvailableColumns { get; set; } = [];
 
     /// <summary>The active ML task — a lookup option tagged with AppliesTo shows only for a matching task.</summary>
     [Parameter] public string Task { get; set; } = "BinaryClassification";
@@ -114,6 +141,13 @@ else
     // applies to, show it only for the active task — one generic rule, no per-field logic.
     private IEnumerable<LookupOptionDto> OptionsFor(NodeParameterDto p) =>
         (p.Options ?? []).Where(o => o.AppliesTo is null || o.AppliesTo.Contains(Task));
+
+    // Columns are stored as a comma-separated string; the multi-select works with a set.
+    private IReadOnlyCollection<string> SelectedColumns(string key) =>
+        Get(key).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private Task SetColumns(string key, IReadOnlyCollection<string> values) =>
+        Set(key, string.Join(", ", values));
 
     private async Task Set(string key, string? value)
     {

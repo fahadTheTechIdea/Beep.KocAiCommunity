@@ -1,14 +1,19 @@
 # `shuffle` — Shuffle rows
+**Category:** Shape · **Ports:** Table → Table · **Handler:** `ShuffleHandler` (`src/Beep.KocAiCommunity.ML/Nodes/MlPrepareHandlers.cs`)
 
-**Category:** Shape · **Ports:** Table → Table · **Handler:** `ShuffleHandler`
+Randomly reorders the rows of the table deterministically.
 
-Randomly reorder the rows (deterministic seed 1).
+## What it does
+1. Applies `ShuffleRows` with a fixed seed (`seed: 1`) to reorder all rows.
+2. Returns the shuffled rows directly (Shape handlers operate on rows, not through FitTransform).
 
-## Parameters
-_None._
+## Parameters today
+None.
 
-## Panel on click
-"This node has no settings."
+## Gaps / plan (to be complete & friendly for non-IT users)
+- Optionally expose the seed so users can reproduce or vary the ordering intentionally.
 
 ## Notes
-Safe after `split` — folds are tracked by the `__fold` value, not row position.
+- Deterministic: the fixed `seed: 1` means the same input always shuffles to the same order (reproducible runs).
+- No split guard — folds are tracked by the `__fold` value, not row position, so shuffling is safe before or after a split.
+- Not column-aware; operates on whole rows.

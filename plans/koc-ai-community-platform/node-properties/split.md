@@ -1,16 +1,24 @@
 # `split` — Train/test split
+**Category:** Split · **Ports:** Table → Table · **Handler:** `MlModelHandlers` (`src/Beep.KocAiCommunity.ML/Nodes/MlModelHandlers.cs`, factories in `MlModelOps.cs`)
 
-**Category:** Split · **Ports:** Table → Table · **Handler:** `SplitHandler`
+Holds out a fraction of rows for honest evaluation by tagging each row with an internal `__fold` marker.
 
-Holds out a fraction of rows for honest evaluation. Place it before the model. Writes the internal `__fold` marker (0 = train, 1 = test).
+## What it does
+1. In predict mode → no split (trains on the full set).
+2. Sets `ctx.HasSplit = true`.
+3. Clamps `testFraction` to the allowed range.
+4. Runs `TrainTestSplit(seed: 1)` and writes `__fold = 0` (train) / `__fold = 1` (test).
 
-## Parameters
-| `key` | Label | Type | Default | Required | Options / Range | In UI today |
+## Parameters today
+| key | UI control | type | default | range / clamp | required | column-aware |
 |---|---|---|---|---|---|---|
-| `testFraction` | Test fraction | Number | `0.25` | no | clamped 0.05–0.9 | ✅ yes |
+| `testFraction` | Number | number | `0.25` | `Math.Clamp(..., 0.05, 0.9)` | no | no |
 
-## Panel on click
-One number field, pre-filled `0.25`.
+## Gaps / plan (to be complete & friendly for non-IT users)
+- No major gaps.
+- Could expose a **stratify-by-label** toggle so class balance is preserved across folds.
+- Could expose a **seed** field for users who want reproducible-but-varied splits.
 
 ## Notes
-Deterministic (seed 1). In predict mode it is a no-op (trains on the full set). Row-sampling nodes after `split` are rejected (they'd drop a fold).
+- Deterministic — fixed seed `1`.
+- Enables the downstream `__fold` leakage guard: nodes that would drop a fold after `split` are rejected.

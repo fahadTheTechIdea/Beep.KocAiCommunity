@@ -101,7 +101,7 @@ else
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">@def.Description</MudText>
                 }
 
-                <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" Task="_task" OnChanged="StateHasChanged" />
+                <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" AvailableColumns="_columns" Task="_task" OnChanged="StateHasChanged" />
             }
         </BlueprintCard>
     </div>
@@ -122,7 +122,7 @@ else
                 </div>
                 @if (_runMode == "dataset")
                 {
-                    <MudSelect T="Guid?" @bind-Value="_selectedDatasetId" Label="Dataset" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
+                    <MudSelect T="Guid?" Value="_selectedDatasetId" ValueChanged="OnDatasetChanged" Label="Dataset" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
                         @foreach (var d in _fileDatasets)
                         {
                             <MudSelectItem T="Guid?" Value="@d.Id">@d.Name · @d.Classification</MudSelectItem>
@@ -233,6 +233,7 @@ else
     private string _runMode = "dataset";
     private IReadOnlyList<DatasetDto> _fileDatasets = [];
     private Guid? _selectedDatasetId;
+    private IReadOnlyList<string> _columns = [];
 
     // The node palette + property schema are served by the backend registry (GET /api/v1/ml/nodes),
     // so a new server-side handler shows up here with no client change.
@@ -293,6 +294,36 @@ else
         {
             _runMode = "upload";
         }
+
+        await LoadColumns();
+    }
+
+    // Load the selected dataset's column names so Column/Columns fields become pickers instead of text boxes.
+    private async Task LoadColumns()
+    {
+        if (_selectedDatasetId is not { } id)
+        {
+            _columns = [];
+            return;
+        }
+
+        try
+        {
+            var versions = await Api.GetDatasetVersionsAsync(id);
+            var latest = versions.OrderByDescending(v => v.VersionNumber).FirstOrDefault();
+            var detail = latest is null ? null : await Api.GetDatasetVersionAsync(id, latest.VersionNumber);
+            _columns = detail?.Schema.OrderBy(s => s.Ordinal).Select(s => s.ColumnName).ToList() ?? [];
+        }
+        catch
+        {
+            _columns = [];
+        }
+    }
+
+    private async Task OnDatasetChanged(Guid? id)
+    {
+        _selectedDatasetId = id;
+        await LoadColumns();
     }
 
     protected override async Task OnParametersSetAsync()

@@ -4,6 +4,7 @@ using Beep.KocAiCommunity.Ui.Shared.Components;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
 
@@ -103,6 +104,32 @@ public class NodePropertyPanelTests : TestContext
         cut.Find("input").Change("50");
 
         config.Should().ContainKey("bins").WhoseValue.Should().Be("50");
+    }
+
+    [Fact]
+    public void Column_fields_become_pickers_when_the_columns_are_known()
+    {
+        var descriptor = Descriptor(Param("column", "Column"), Param("columns", "Columns"));
+        var cols = new[] { "pclass", "sex", "age", "fare" };
+
+        var cut = Render(descriptor, new Dictionary<string, string>());
+        cut.SetParametersAndRender(ps => ps.Add(x => x.AvailableColumns, cols));
+
+        // Both Column and Columns render as MudSelect pickers (not text boxes), each offering the real columns.
+        var selects = cut.FindComponents<MudSelect<string>>();
+        selects.Should().HaveCountGreaterThanOrEqualTo(2);
+        cut.FindComponents<MudSelectItem<string>>().Select(i => i.Instance.Value)
+            .Should().Contain(cols);
+    }
+
+    [Fact]
+    public void Column_field_falls_back_to_a_text_box_when_no_columns_are_known()
+    {
+        var cut = Render(Descriptor(Param("column", "Column")), new Dictionary<string, string>());
+
+        // No known columns → a text field, no select picker.
+        cut.FindComponents<MudSelect<string>>().Should().BeEmpty();
+        cut.FindComponents<MudTextField<string>>().Should().NotBeEmpty();
     }
 
     [Fact]

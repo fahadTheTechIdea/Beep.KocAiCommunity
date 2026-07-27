@@ -1,16 +1,25 @@
 # `cluster` — Cluster (k-means)
+**Category:** Model · **Ports:** Table → Model · **Handler:** `MlModelHandlers` (`src/Beep.KocAiCommunity.ML/Nodes/MlModelHandlers.cs`, factories in `MlModelOps.cs`)
 
-**Category:** Model · **Ports:** Table → Model · **Handler:** `ClusterHandler`
+Unsupervised grouping of rows into k clusters — no label required.
 
-Unsupervised grouping — no label needed (e.g. well-log facies).
+## What it does
+1. In predict mode → skip.
+2. Features = numeric `FeatureNames`; if empty → skip.
+3. Fits `KMeans(numberOfClusters = k)` on `FoldTrainView`.
+4. Reports `AverageDistance` + `DaviesBouldinIndex`.
 
-## Parameters
-| `key` | Label | Type | Default | Required | Options / Range | In UI today |
+## Parameters today
+| key | UI control | type | default | range / clamp | required | column-aware |
 |---|---|---|---|---|---|---|
-| `clusters` | Clusters | Number | `3` | no | clamped 2–20 | ✅ yes |
+| `clusters` | Integer | int | `3` | `Math.Clamp(..., 2, 20)` | no | no |
 
-## Panel on click
-One number field, pre-filled `3`.
+## Gaps / plan (to be complete & friendly for non-IT users)
+- Expose **maxIterations** (`MaximumNumberOfIterations`).
+- Expose **initialization** (Select: `KMeansYinyang` default / `Random` / `KMeansPlusPlus`).
+- Optional **feature-columns picker** so users can cluster on a chosen subset.
 
 ## Notes
-Skipped in predict mode. Does not require a label, so it's the exception to the `RequireLabel` guard.
+- Unsupervised — **no label**; it is the exception to the `RequireLabel` guard.
+- `clusters` is read via `ReadDouble` + cast (not `HpInt`), so the `0 = unset` convention does not apply here.
+- Fits on the train fold only (`FoldTrainView`).
