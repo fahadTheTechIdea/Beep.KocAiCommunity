@@ -58,7 +58,7 @@ public sealed class TrainHandler : IPipelineNodeHandler
     {
         ctx.RequireLabel(node, input);
         var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
-        var features = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+        var features = SelectFeatures(node, NumericFeatures(full.Schema, ctx.FeatureNames(input)));
         if (features.Length == 0)
         {
             if (ctx.Mode == PipelineMode.Predict)
@@ -88,7 +88,7 @@ public sealed class ClusterHandler : IPipelineNodeHandler
         }
 
         var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
-        var features = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+        var features = SelectFeatures(node, NumericFeatures(full.Schema, ctx.FeatureNames(input)));
         if (features.Length == 0)
         {
             return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "no numeric features"), input);
@@ -121,7 +121,7 @@ public sealed class CrossValidateHandler : IPipelineNodeHandler
         var ml = ctx.Ml;
         var full = input.LoadIntoMl(ml, ctx.LabelColumn);
         var trainView = ctx.FoldTrainView(full);
-        var features = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+        var features = SelectFeatures(node, NumericFeatures(full.Schema, ctx.FeatureNames(input)));
         var folds = Math.Clamp((int)ReadDouble(Cfg(node, "folds"), 5), 2, 10);
 
         NodeExecutionResult status;

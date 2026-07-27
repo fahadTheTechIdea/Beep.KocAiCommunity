@@ -27,6 +27,7 @@ public sealed class TrainParameters : NodeParameters
 {
     public ColumnParam TargetColumn { get; } = new("targetColumn", "Target (label) column", help: "What to predict. Fixed by the competition when submitting.");
     public ColumnParam IdColumn { get; } = new("idColumn", "ID column", help: "Row identifier carried to the submission (never used as a feature).");
+    public ColumnsParam FeatureColumns { get; } = new("featureColumns", "Feature columns (blank = all except target/id)");
     public LookupParam Task { get; } = new("task", "Task", "BinaryClassification",
         [new("BinaryClassification", "Binary classification"), new("MulticlassClassification", "Multiclass classification"), new("Regression", "Regression")],
         help: "Chooses the metric and which algorithms apply.");
@@ -42,19 +43,21 @@ public sealed class TrainParameters : NodeParameters
     public IntParam HistorySize { get; } = new("historySize", "History size", 20, min: 1) { VisibleWhen = new("algorithm", ["lbfgs"]) };
 
     protected override IReadOnlyList<ParamField> Declare() =>
-        [TargetColumn, IdColumn, Task, Algorithm, Trees, Leaves, MinLeaf, LearningRate, Iterations, L1, L2, MaxIterations, HistorySize];
+        [TargetColumn, IdColumn, FeatureColumns, Task, Algorithm, Trees, Leaves, MinLeaf, LearningRate, Iterations, L1, L2, MaxIterations, HistorySize];
 }
 
 public sealed class ClusterParameters : NodeParameters
 {
     public IntParam Clusters { get; } = new("clusters", "Clusters", 3, min: 2, max: 20);
+    public ColumnsParam FeatureColumns { get; } = new("featureColumns", "Feature columns (blank = all numeric)");
 
-    protected override IReadOnlyList<ParamField> Declare() => [Clusters];
+    protected override IReadOnlyList<ParamField> Declare() => [Clusters, FeatureColumns];
 }
 
 public sealed class CrossValidateParameters : NodeParameters
 {
     public IntParam Folds { get; } = new("folds", "Folds", 5, min: 2, max: 10);
+    public ColumnsParam FeatureColumns { get; } = new("featureColumns", "Feature columns (blank = all except target/id)");
     public LookupParam Algorithm { get; } = new("algorithm", "Algorithm", "sdca", MlAlgorithms.All);
     public IntParam Trees { get; } = new("trees", "Trees", 100, min: 1) { VisibleWhen = new("algorithm", Algo.Trees) };
     public IntParam Leaves { get; } = new("leaves", "Leaves per tree", 20, min: 2) { VisibleWhen = new("algorithm", Algo.Trees) };
@@ -67,7 +70,7 @@ public sealed class CrossValidateParameters : NodeParameters
     public IntParam HistorySize { get; } = new("historySize", "History size", 20, min: 1) { VisibleWhen = new("algorithm", ["lbfgs"]) };
 
     protected override IReadOnlyList<ParamField> Declare() =>
-        [Folds, Algorithm, Trees, Leaves, MinLeaf, LearningRate, Iterations, L1, L2, MaxIterations, HistorySize];
+        [Folds, FeatureColumns, Algorithm, Trees, Leaves, MinLeaf, LearningRate, Iterations, L1, L2, MaxIterations, HistorySize];
 }
 
 // ---- Prepare ----

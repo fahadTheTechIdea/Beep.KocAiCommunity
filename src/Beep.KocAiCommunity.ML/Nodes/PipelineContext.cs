@@ -113,6 +113,14 @@ public sealed class PipelineContext : IDisposable
     public IEnumerable<string> FeatureNames(PipelineTable table)
         => table.Columns.Where(c => c != LabelColumn && c != IdColumn && c != FoldColumn);
 
+    /// <summary>Restrict candidate features to the model node's chosen <c>featureColumns</c> (blank = all).
+    /// The chosen set is intersected with the candidates, so label/id/fold can never sneak in as features.</summary>
+    public static string[] SelectFeatures(WorkflowNode node, string[] candidates)
+    {
+        var chosen = SplitList(Cfg(node, "featureColumns"));
+        return chosen.Count == 0 ? candidates : [.. candidates.Where(chosen.Contains)];
+    }
+
     /// <summary>
     /// Fails loudly when a supervised node's label column is missing — an earlier node (drop-columns, a
     /// SQL SELECT that omits it, group-by, or renaming the label itself) removed or renamed it. Without

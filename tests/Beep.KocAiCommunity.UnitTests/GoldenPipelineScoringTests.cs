@@ -168,6 +168,71 @@ public class GoldenPipelineScoringTests
     }
 
     [Fact]
+    public async Task Computed_feature_flows_through_training_and_prediction()
+    {
+        // The strongest end-to-end contract check: a computed feature (sum = a + b) is the ONLY selected
+        // feature. For the submission to be right, ALL of this must hold: compute-column adds `sum` to X on the
+        // training pass; it records a replay that re-adds `sum` to the eval set at predict; featureColumns picks
+        // it; and the model trains + scores on it. label depends on a+b (neither a nor b alone decides it).
+        var train = new StringBuilder("id,a,b,label\n");
+        for (var i = 0; i < 120; i++)
+        {
+            var a = i % 10;
+            var b = (i * 7) % 10;
+            train.Append($"t{i},{a},{b},{(a + b >= 10 ? 1 : 0)}\n");
+        }
+
+        var def = new WorkflowDefinition
+        {
+            Name = "computed-feature",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "c", Kind = "compute-column", Config = new Dictionary<string, string> { ["output"] = "sum", ["inputs"] = "a,b", ["expression"] = "(x, y) => x + y" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["featureColumns"] = "sum", ["algorithm"] = "fasttree" } },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "c"), new("c", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+        var eval = "id,a,b\ne1,9,9\ne2,0,1\n"; // sum 18 → 1 ; sum 1 → 0
+
+        var submission = await NewExecutor().PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, Csv(train.ToString()), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines[1].Should().Be("e1,1", "the computed sum reached the model and the eval set");
+        lines[2].Should().Be("e2,0");
+    }
+
+    [Fact]
+    public async Task Train_honors_the_selected_feature_columns()
+    {
+        // Train restricted to a single feature (x1) — the separable data still classifies correctly, proving
+        // the executor honors the Train node's featureColumns (the explicit "which columns are features").
+        var def = new WorkflowDefinition
+        {
+            Name = "feature-select",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["featureColumns"] = "x1", ["algorithm"] = "fasttree" } },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+        var eval = "id,x1,x2\ne1,9,0\ne2,0,9\n"; // x1 decides; x2 is deliberately anti-correlated
+
+        var submission = await NewExecutor().PredictAsync(def, "label", "id", MlTaskType.BinaryClassification, Csv(TrainCsv("1", "0")), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines[1].Should().Be("e1,1", "with only x1 as a feature, high x1 → positive");
+        lines[2].Should().Be("e2,0", "low x1 → negative regardless of x2");
+    }
+
+    [Fact]
     public async Task Configured_transform_options_run_end_to_end()
     {
         // Exercises the new transform properties: one-hot outputKind=binary, hash-encode bits, and a scaler
