@@ -26,12 +26,13 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         }
 
         var label = ResolveLabel(definition, labelColumn);
+        var id = TrainCfg(definition, "idColumn"); // exclude the id from features in preview iff the graph declares one
         var resolvedTask = ResolveTask(definition, task);
         var secondary = await ReadSecondaryAsync(secondaryDatasets, ct);
         var path = await SpillAsync(csv, ct);
         try
         {
-            return await Task.Run(() => Run(definition, compiled.Order, label, resolvedTask, path, secondary), ct);
+            return await Task.Run(() => Run(definition, compiled.Order, label, id, resolvedTask, path, secondary, ct), ct);
         }
         finally
         {
@@ -55,7 +56,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         var evalPath = await SpillAsync(evaluationCsv, ct);
         try
         {
-            return await Task.Run(() => Predict(definition, compiled.Order, label, id, resolvedTask, trainPath, evalPath, secondary), ct);
+            return await Task.Run(() => Predict(definition, compiled.Order, label, id, resolvedTask, trainPath, evalPath, secondary, ct), ct);
         }
         finally
         {
@@ -80,7 +81,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         definition.Nodes.FirstOrDefault(n => string.Equals(n.Kind, "train", StringComparison.OrdinalIgnoreCase))?.Config is { } c
         && c.TryGetValue(key, out var v) && !string.IsNullOrWhiteSpace(v) ? v : null;
 
-    private PipelineExecutionResult Run(WorkflowDefinition definition, IReadOnlyList<string> order, string labelColumn, MlTaskType task, string path, IReadOnlyDictionary<Guid, byte[]> secondary)
+    private PipelineExecutionResult Run(WorkflowDefinition definition, IReadOnlyList<string> order, string labelColumn, string? idColumn, MlTaskType task, string path, IReadOnlyDictionary<Guid, byte[]> secondary, CancellationToken ct = default)
     {
         var byId = definition.Nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
         using var ctx = new PipelineContext
@@ -89,6 +90,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             Task = task,
             Mode = PipelineMode.Execute,
             LabelColumn = labelColumn,
+            IdColumn = idColumn,
             SecondaryDatasets = secondary,
         };
 
@@ -103,6 +105,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         var rowCount = table.RowCount; // the dataset's row count, recorded on the run
         foreach (var nodeId in order)
         {
+            ct.ThrowIfCancellationRequested(); // bound runaway graphs at node boundaries
             var node = byId[nodeId];
             NodeResult result;
             try
@@ -132,7 +135,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         return new PipelineExecutionResult(true, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results, rowCount);
     }
 
-    private string Predict(WorkflowDefinition definition, IReadOnlyList<string> order, string labelColumn, string idColumn, MlTaskType task, string trainPath, string evalPath, IReadOnlyDictionary<Guid, byte[]> secondary)
+    private string Predict(WorkflowDefinition definition, IReadOnlyList<string> order, string labelColumn, string idColumn, MlTaskType task, string trainPath, string evalPath, IReadOnlyDictionary<Guid, byte[]> secondary, CancellationToken ct = default)
     {
         var byId = definition.Nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
         using var ctx = new PipelineContext
@@ -150,6 +153,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         var table = PipelineTable.FromCsvFile(trainPath);
         foreach (var nodeId in order)
         {
+            ct.ThrowIfCancellationRequested(); // bound runaway graphs at node boundaries
             var node = byId[nodeId];
             var handler = HandlerFor(node);
             ValidateNodeInputs(handler.Descriptor, node, table, ctx);

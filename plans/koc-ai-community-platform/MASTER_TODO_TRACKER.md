@@ -471,8 +471,16 @@ KOC blueprint theme. No DB schema change anywhere.
     `dataset` node) + a `PrimaryDatasetId` helper; `ValidateNodeInputs` skips the primary dataset node's
     `datasetId` — no double-load / latent throw. Tests: `Graph_is_the_source_of_truth_when_no_overrides_are_passed`
     (PredictAsync with all-null overrides reads target/id/task from the graph) + `WorkflowDatasetScannerTests`.
-    UnitTests 217, IntegrationTests 115 green. Pending: 23c submit secondaries, 23d feature parity, 23e client
-    validation, 23f robustness.
+    UnitTests 217, IntegrationTests 115 green.
+    **23c–f DONE (2026-07-27):** 23c — competition submit resolves the participant's OWN visible join/union
+    datasets (`CompetitionService` injects `IDatasetService`) and passes them to `PredictAsync`, so
+    feature-engineering joins work on submit; label/id/task stay the competition's. 23d — `ExecuteAsync` now
+    excludes the graph's id column from features in preview (parity with Predict). 23e — the designer runs a
+    client-side `GraphIssues()` check (has Dataset node, has model, single chain, dataset picked) and gates the
+    Run/Submit buttons with inline guidance. 23f — the executor checks the cancellation token at each node
+    boundary and competition submit enforces a 120s budget (runaway pipelines fail fast). Full gate green:
+    build -warnaserror 0/0, UnitTests 217, IntegrationTests 115, ComponentTests 35. **Deferred (migration/
+    lower priority):** quota-race atomicity, direct-upload id-coverage.
 
 ## Global definition of done
 

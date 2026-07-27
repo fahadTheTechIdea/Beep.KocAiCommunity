@@ -3,6 +3,7 @@ using System.Text;
 using Beep.KocAiCommunity.Application.Authorization;
 using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.Competitions;
+using Beep.KocAiCommunity.Application.Datasets;
 using Beep.KocAiCommunity.Application.Engagement;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Application.Notifications;
@@ -28,8 +29,12 @@ public sealed class CompetitionService(
     IPipelineExecutor pipeline,
     INotificationService notifications,
     IOutboxWriter outbox,
-    IEngagementService engagement) : ICompetitionService
+    IEngagementService engagement,
+    IDatasetService datasetsSvc) : ICompetitionService
 {
+    // Hard wall-clock budget for training + scoring a submitted pipeline (enforced at node boundaries).
+    private const int PipelineSubmitBudgetSeconds = 120;
+
     public async Task<Competition> CreateAsync(
         string userId, bool isPlatformAdmin, string title, string description, VisibilityScope scope, Guid visibilityOrgUnitId,
         DateTime? revealUtc, int quotaPerDay, string scorerCode, CancellationToken ct = default)
@@ -458,17 +463,63 @@ public sealed class CompetitionService(
         }
 
         // Run the participant's pipeline on the competition's authoritative data — participants
-        // never supply the inputs, so the score reflects only their modelling choices.
+        // never supply the primary inputs, so the score reflects only their modelling choices. Any
+        // join/union nodes may still bring in the participant's OWN visible datasets (feature engineering),
+        // resolved and passed as secondaries; label/id/task stay the competition's (authoritative override).
+        var secondary = await ResolveSecondaryDatasetsAsync(userId, definition, ct);
+
+        // Bound a runaway/expensive pipeline so it can't tie up the request indefinitely; the executor
+        // checks the token at each node boundary and fails fast.
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(PipelineSubmitBudgetSeconds));
         string predictionCsv;
-        await using (var trainStream = await artifacts.OpenReadAsync(competition.TrainingDatasetArtifactId.Value, ct))
-        await using (var evalStream = await artifacts.OpenReadAsync(competition.EvaluationArtifactId.Value, ct))
+        try
         {
+            await using var trainStream = await artifacts.OpenReadAsync(competition.TrainingDatasetArtifactId.Value, ct);
+            await using var evalStream = await artifacts.OpenReadAsync(competition.EvaluationArtifactId.Value, ct);
             predictionCsv = await pipeline.PredictAsync(
-                definition, competition.LabelColumn, competition.IdColumn, task, trainStream, evalStream, ct: ct);
+                definition, competition.LabelColumn, competition.IdColumn, task, trainStream, evalStream, secondary, timeout.Token);
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested && !ct.IsCancellationRequested)
+        {
+            throw new CompetitionException($"The pipeline took longer than {PipelineSubmitBudgetSeconds}s to train and score. Simplify it and try again.");
+        }
+
+        foreach (var s in secondary.Values)
+        {
+            await s.DisposeAsync();
         }
 
         using var predictions = new MemoryStream(Encoding.UTF8.GetBytes(predictionCsv));
         return await ScoreAndRecordAsync(competition, userId, predictions, "pipeline-predictions.csv", notes: "from Studio pipeline", ct);
+    }
+
+    // Resolve the join/union nodes' secondary datasets to the participant's OWN visible, file-bearing
+    // datasets so feature-engineering joins work on submit (mirrors the free-run path). Datasets the
+    // participant can't see are skipped — the executor then fails that node loudly with a clear message.
+    private async Task<IReadOnlyDictionary<Guid, Stream>> ResolveSecondaryDatasetsAsync(
+        string userId, WorkflowDefinition definition, CancellationToken ct)
+    {
+        var map = new Dictionary<Guid, Stream>();
+        foreach (var id in WorkflowDatasetScanner.ReferencedDatasetIds(definition))
+        {
+            var dataset = await datasetsSvc.GetVisibleAsync(userId, id, ct);
+            if (dataset?.FileArtifactId is not { } fileId)
+            {
+                continue;
+            }
+
+            var ms = new MemoryStream();
+            await using (var s = await artifacts.OpenReadAsync(fileId, ct))
+            {
+                await s.CopyToAsync(ms, ct);
+            }
+
+            ms.Position = 0;
+            map[id] = ms;
+        }
+
+        return map;
     }
 
     private async Task EnsureSubmittableAsync(Competition competition, string userId, CancellationToken ct)

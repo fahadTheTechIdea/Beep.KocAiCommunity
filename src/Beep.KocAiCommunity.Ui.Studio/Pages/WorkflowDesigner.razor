@@ -114,12 +114,22 @@ else
                     Runs your graph on the <b>Dataset</b> node's data, using the target column and task set on the
                     <b>Train</b> node. Pick those on the nodes, not here.
                 </MudText>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
-                           Disabled="@(_running || DatasetNodeId() is null)" OnClick="RunFromDataset">Run pipeline</MudButton>
-                @if (DatasetNodeId() is null)
-                {
-                    <MudText Typo="Typo.caption" Class="d-block mt-2" Style="opacity:.7;">Select a training dataset on the <b>Dataset</b> node to run (or upload a one-off CSV below).</MudText>
+                @{
+                    var issues = GraphIssues();
                 }
+                @if (issues.Count > 0)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-2">
+                        <ul class="pl-4 my-0" style="list-style:disc;">
+                            @foreach (var issue in issues)
+                            {
+                                <li>@issue</li>
+                            }
+                        </ul>
+                    </MudAlert>
+                }
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                           Disabled="@(_running || issues.Count > 0)" OnClick="RunFromDataset">Run pipeline</MudButton>
                 <MudDivider Class="my-3" />
                 <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.8;">Or run a one-off CSV:</MudText>
                 <InputFile OnChange="OnRun" accept=".csv" />
@@ -166,8 +176,22 @@ else
                 The server trains and scores your exact node graph on the competition's <b>hidden test set</b> — the same
                 data for everyone — so only your modelling choices move your rank.
             </MudText>
+            @{
+                var submitIssues = GraphIssues();
+            }
+            @if (submitIssues.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-2">
+                    <ul class="pl-4 my-0" style="list-style:disc;">
+                        @foreach (var issue in submitIssues)
+                        {
+                            <li>@issue</li>
+                        }
+                    </ul>
+                </MudAlert>
+            }
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EmojiEvents"
-                       OnClick="() => OnSubmitPipeline(compId)" Disabled="_submitting">Train &amp; submit</MudButton>
+                       OnClick="() => OnSubmitPipeline(compId)" Disabled="@(_submitting || submitIssues.Count > 0)">Train &amp; submit</MudButton>
             @if (_submitting)
             {
                 <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
@@ -272,6 +296,54 @@ else
         {
             _fileDatasets = [];
         }
+    }
+
+    // Lightweight client-side graph check (mirrors the server compiler's core rules) so users get inline
+    // guidance before running/submitting instead of a round-trip failure. The server compile stays authoritative.
+    private List<string> GraphIssues()
+    {
+        var issues = new List<string>();
+        var nodes = _diagram.Nodes.OfType<MlNode>().ToList();
+        if (nodes.Count == 0)
+        {
+            issues.Add("The canvas is empty — add a Dataset node and a model.");
+            return issues;
+        }
+
+        if (!nodes.Any(n => n.Kind == "dataset"))
+        {
+            issues.Add("Add a Dataset node — every pipeline needs a data source.");
+        }
+
+        if (!nodes.Any(n => n.Kind is "train" or "cluster"))
+        {
+            issues.Add("Add a Train (or Cluster) node — the pipeline needs a model.");
+        }
+
+        // Single chain: each node has at most one incoming and one outgoing link (join/union bring the second
+        // dataset via config, not an extra edge) — mirrors WorkflowCompiler's fan-in/fan-out rejection.
+        var outCount = new Dictionary<string, int>(StringComparer.Ordinal);
+        var inCount = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var link in _diagram.Links)
+        {
+            if ((link.Source as SinglePortAnchor)?.Port?.Parent is MlNode s && (link.Target as SinglePortAnchor)?.Port?.Parent is MlNode d)
+            {
+                outCount[s.NodeId] = outCount.GetValueOrDefault(s.NodeId) + 1;
+                inCount[d.NodeId] = inCount.GetValueOrDefault(d.NodeId) + 1;
+            }
+        }
+
+        if (outCount.Values.Any(v => v > 1) || inCount.Values.Any(v => v > 1))
+        {
+            issues.Add("Connect the nodes in a single chain — one input and one output per node.");
+        }
+
+        if (_competition is null && DatasetNodeId() is null)
+        {
+            issues.Add("Pick a training dataset on the Dataset node.");
+        }
+
+        return issues;
     }
 
     // The Dataset node's selected dataset id (the pipeline's data source), or null if none/unset.
