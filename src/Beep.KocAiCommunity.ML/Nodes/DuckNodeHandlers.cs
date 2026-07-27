@@ -147,11 +147,19 @@ public sealed class JoinDatasetHandler : IPipelineNodeHandler
             ? "w.*"
             : "w.*, " + string.Join(", ", otherCols.Select(c => $"o.{DuckDbSession.Quote(c)} AS {DuckDbSession.Quote(c)}"));
 
+        var join = (Cfg(node, "joinType") ?? "left").ToLowerInvariant() switch
+        {
+            "inner" => "INNER JOIN",
+            "right" => "RIGHT JOIN",
+            "full" => "FULL JOIN",
+            _ => "LEFT JOIN",
+        };
+
         ctx.Duck.ReplaceTable(WorkingTable,
-            $"SELECT {select} FROM {DuckDbSession.Quote(WorkingTable)} w LEFT JOIN {DuckDbSession.Quote(otherTable)} o ON w.{DuckDbSession.Quote(on)} = o.{DuckDbSession.Quote(on)}");
+            $"SELECT {select} FROM {DuckDbSession.Quote(WorkingTable)} w {join} {DuckDbSession.Quote(otherTable)} o ON w.{DuckDbSession.Quote(on)} = o.{DuckDbSession.Quote(on)}");
 
         var result = Duck.Done(ctx, node, this, replay: true);
-        return result with { Status = result.Status with { Detail = $"joined {otherCols.Count} column(s) on {on} · {result.Status.Detail}" } };
+        return result with { Status = result.Status with { Detail = $"{join.ToLowerInvariant()} · {otherCols.Count} column(s) on {on} · {result.Status.Detail}" } };
     }
 }
 

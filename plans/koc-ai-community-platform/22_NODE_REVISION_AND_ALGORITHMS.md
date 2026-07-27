@@ -1,7 +1,7 @@
 # Phase 22 — Full node revision: friendly property panels, column pickers, per-algorithm hyperparameters
 
 **Date:** 2026-07-27
-**Status:** 🟢 22a/22b/22c DONE — every node documented (37 docs); column pickers + friendly dropdowns shipped; Train exposes target/id/task (competition pre-fills & locks, free mode editable); per-algorithm hyperparameters + new trainers (GAM/SGD/OGD/One-vs-all) shipped and proven to train. 22d/22e (transform + DuckDB friendliness) pending.
+**Status:** 🟢 22a–22d DONE, 22e partial — every node documented (37 docs); column pickers + friendly dropdowns; Train exposes target/id/task (competition pre-fills & locks); per-algorithm hyperparameters + new trainers (GAM/SGD/OGD/One-vs-all) proven to train; transform friendliness (scaler/encoder column selectors, hash `bits`, one-hot `outputKind`) shipped; join-dataset gained a join-type dropdown + key-column picker. **Remaining:** the visual builders — group-by aggregate builder, sort-key builder, sql-filter condition builder (custom editors, not descriptor-expressible).
 **Goal:** make the Studio designer usable by **non-IT people** — every node exposes **all** its real properties, with the right control for each (column pickers, dropdowns that show friendly labels, numeric fields with ranges), and the Train node exposes **per-algorithm** hyperparameters. Competition runs pre-fill the fixed columns; free runs let the user set everything.
 
 This plan is the result of reading **every** handler's actual `Execute` code (not the descriptors) — see the per-node docs in [`node-properties/`](node-properties/), one file per node (all 37), each with: what it does, its real parameters (exact defaults/clamps from code), column-awareness, gaps, and notes.

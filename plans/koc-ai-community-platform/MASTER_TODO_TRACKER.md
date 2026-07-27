@@ -409,7 +409,14 @@ KOC blueprint theme. No DB schema change anywhere.
     green. **Pending:** Phase 21b (`VisibleWhen` for algorithm-conditional hyperparameters), 21c (help
     tooltips + range hints + reset-to-defaults).
 
-40. 🟢 **22a–c DONE, 22d/e pending (2026-07-27)** — spec `22_NODE_REVISION_AND_ALGORITHMS.md`.
+40. 🟢 **22a–d DONE, 22e partial (2026-07-27)** — spec `22_NODE_REVISION_AND_ALGORITHMS.md`.
+    **22d:** scalers (standardize/normalize/log-normalize/robust-scale/binning) + replace-missing gained an
+    optional `columns` selector (blank = all numeric); `hash-encode` exposes `bits` (1–30); `one-hot` exposes
+    `outputKind` (indicator/bag/key/binary) + a column selector; all honored by the executor
+    (`NormalizeHandler.Restrict`). **22e (partial):** `join-dataset` gained a `joinType` dropdown
+    (left/inner/right/full) and its key `on` is now a column picker. Proven via a configured-transforms golden
+    test. UnitTests 215, ComponentTests 34 green. **Remaining:** visual builders (group-by aggregate builder,
+    sort-key builder, sql-filter condition builder) — custom editors the descriptor panel can't express.
     **22b:** Train node now exposes `targetColumn`/`idColumn`/`task` (real column pickers + task select);
     competition mode pre-fills them from the competition and renders them **locked** (LockedKeys), free mode
     sources the run's label/task from the node. **22c:** `VisibleWhen` shows only the selected algorithm's

@@ -64,7 +64,7 @@ public sealed class StandardizeHandler : IPipelineNodeHandler
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
         {
-            var numeric = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+            var numeric = NormalizeHandler.Restrict(node, NumericFeatures(full.Schema, ctx.FeatureNames(input)));
             return numeric.Length == 0 ? (null, "") : (ctx.Ml.Transforms.NormalizeMeanVariance([.. numeric.Select(c => new InputOutputColumnPair(c))]), "standardized (mean/variance)");
         }, "no numeric columns");
 }
@@ -81,9 +81,17 @@ public sealed class NormalizeHandler : IPipelineNodeHandler
         Func<InputOutputColumnPair[], IEstimator<ITransformer>> build, string detail) =>
         ctx.FitTransform(node, input, full =>
         {
-            var numeric = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+            var numeric = Restrict(node, NumericFeatures(full.Schema, ctx.FeatureNames(input)));
             return numeric.Length == 0 ? (null, "") : (build([.. numeric.Select(c => new InputOutputColumnPair(c))]), detail);
         }, "no numeric columns");
+
+    // Optional per-node column subset: if the node's "columns" is set, keep only those; else all candidates.
+    // Lets scalers/encoders target specific columns instead of always hitting every numeric/text feature.
+    internal static string[] Restrict(WorkflowNode node, string[] candidates)
+    {
+        var chosen = SplitList(Cfg(node, "columns"));
+        return chosen.Count == 0 ? candidates : [.. candidates.Where(chosen.Contains)];
+    }
 }
 
 public sealed class LogNormalizeHandler : IPipelineNodeHandler
@@ -126,7 +134,7 @@ public sealed class ReplaceMissingHandler : IPipelineNodeHandler
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
         {
-            var numeric = NumericFeatures(full.Schema, ctx.FeatureNames(input));
+            var numeric = NormalizeHandler.Restrict(node, NumericFeatures(full.Schema, ctx.FeatureNames(input)));
             if (numeric.Length == 0)
             {
                 return (null, "");
@@ -150,8 +158,20 @@ public sealed class OneHotHandler : IPipelineNodeHandler
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
         {
-            var textCols = TextFeatures(full.Schema, ctx.FeatureNames(input));
-            return textCols.Length == 0 ? (null, "") : (ctx.Ml.Transforms.Categorical.OneHotEncoding([.. textCols.Select(c => new InputOutputColumnPair(c))]), $"encoded {textCols.Length}: {string.Join(", ", textCols)}");
+            var textCols = NormalizeHandler.Restrict(node, TextFeatures(full.Schema, ctx.FeatureNames(input)));
+            if (textCols.Length == 0)
+            {
+                return (null, "");
+            }
+
+            var kind = (Cfg(node, "outputKind") ?? "indicator").ToLowerInvariant() switch
+            {
+                "bag" => OneHotEncodingEstimator.OutputKind.Bag,
+                "key" => OneHotEncodingEstimator.OutputKind.Key,
+                "binary" => OneHotEncodingEstimator.OutputKind.Binary,
+                _ => OneHotEncodingEstimator.OutputKind.Indicator,
+            };
+            return (ctx.Ml.Transforms.Categorical.OneHotEncoding([.. textCols.Select(c => new InputOutputColumnPair(c))], outputKind: kind), $"encoded {textCols.Length} ({kind}): {string.Join(", ", textCols)}");
         }, "no categorical columns");
 }
 
@@ -163,8 +183,14 @@ public sealed class HashEncodeHandler : IPipelineNodeHandler
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
         {
-            var textCols = TextFeatures(full.Schema, ctx.FeatureNames(input));
-            return textCols.Length == 0 ? (null, "") : (ctx.Ml.Transforms.Categorical.OneHotHashEncoding([.. textCols.Select(c => new InputOutputColumnPair(c))]), $"hash-encoded {textCols.Length}: {string.Join(", ", textCols)}");
+            var textCols = NormalizeHandler.Restrict(node, TextFeatures(full.Schema, ctx.FeatureNames(input)));
+            if (textCols.Length == 0)
+            {
+                return (null, "");
+            }
+
+            var bits = Math.Clamp((int)ReadDouble(Cfg(node, "bits"), 16), 1, 30);
+            return (ctx.Ml.Transforms.Categorical.OneHotHashEncoding([.. textCols.Select(c => new InputOutputColumnPair(c))], numberOfBits: bits), $"hash-encoded {textCols.Length} @ {bits} bits: {string.Join(", ", textCols)}");
         }, "no categorical columns");
 }
 
@@ -176,7 +202,7 @@ public sealed class FeaturizeTextHandler : IPipelineNodeHandler
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input) =>
         ctx.FitTransform(node, input, full =>
         {
-            var textCols = TextFeatures(full.Schema, ctx.FeatureNames(input));
+            var textCols = NormalizeHandler.Restrict(node, TextFeatures(full.Schema, ctx.FeatureNames(input)));
             if (textCols.Length == 0)
             {
                 return (null, "");

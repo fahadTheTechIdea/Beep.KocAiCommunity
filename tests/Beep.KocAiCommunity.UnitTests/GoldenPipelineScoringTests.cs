@@ -138,6 +138,44 @@ public class GoldenPipelineScoringTests
 
     private static readonly string[] Grades = ["A", "B", "C"];
 
+    [Fact]
+    public async Task Configured_transform_options_run_end_to_end()
+    {
+        // Exercises the new transform properties: one-hot outputKind=binary, hash-encode bits, and a scaler
+        // restricted to a column subset. The pipeline must still fit and emit a valid id-aligned submission.
+        var def = new WorkflowDefinition
+        {
+            Name = "cfg-transforms",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "oh", Kind = "one-hot", Config = new Dictionary<string, string> { ["outputKind"] = "binary", ["columns"] = "sex" } },
+                new() { Id = "hh", Kind = "hash-encode", Config = new Dictionary<string, string> { ["bits"] = "8" } },
+                new() { Id = "nz", Kind = "normalize", Config = new Dictionary<string, string> { ["columns"] = "age,fare" } },
+                new() { Id = "sp", Kind = "split" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["algorithm"] = "fasttree" } },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "oh"), new("oh", "hh"), new("hh", "nz"), new("nz", "sp"), new("sp", "tr"), new("tr", "ev")],
+        };
+
+        var train = new StringBuilder("id,pclass,sex,age,fare,embarked,survived\n");
+        for (var i = 0; i < 120; i++)
+        {
+            var female = i % 2 == 0;
+            train.Append($"t{i},{(i % 3) + 1},{(female ? "female" : "male")},{20 + (i % 50)},{10 + (i % 90)},{new[] { "S", "C", "Q" }[i % 3]},{(female || (i % 3) + 1 == 1 ? 1 : 0)}\n");
+        }
+
+        const string eval = "id,pclass,sex,age,fare,embarked\ne1,1,female,30,80,S\ne2,3,male,40,10,S\n";
+
+        var submission = await NewExecutor().PredictAsync(def, "survived", "id", MlTaskType.BinaryClassification, Csv(train.ToString()), Csv(eval));
+
+        var lines = submission.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        lines.Should().HaveCount(3, "the configured transforms replay onto the eval set and one prediction per id comes out");
+        lines.Skip(1).Should().OnlyContain(l => l.EndsWith(",1") || l.EndsWith(",0"), "valid binary predictions");
+    }
+
     [Theory]
     [InlineData("sdca")]
     [InlineData("lbfgs")]

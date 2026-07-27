@@ -25,7 +25,7 @@ public class NodeParametersTests
         train.Trees.VisibleWhen!.Values.Should().Contain("fasttree");
 
         var binning = new BinningParameters();
-        binning.Describe().Select(p => p.Name).Should().Equal("bins");
+        binning.Describe().Select(p => p.Name).Should().Equal("bins", "columns");
         binning.Bins.Min.Should().Be(2);
         binning.Bins.Max.Should().Be(255);
     }

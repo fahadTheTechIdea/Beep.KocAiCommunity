@@ -147,16 +147,18 @@ public sealed class DropColumnsParameters : NodeParameters
 public sealed class BinningParameters : NodeParameters
 {
     public IntParam Bins { get; } = new("bins", "Max bins", 10, min: 2, max: 255);
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all numeric)");
 
-    protected override IReadOnlyList<ParamField> Declare() => [Bins];
+    protected override IReadOnlyList<ParamField> Declare() => [Bins, Columns];
 }
 
 public sealed class ReplaceMissingParameters : NodeParameters
 {
     public LookupParam Mode { get; } = new("mode", "Replace with", "mean",
         [new("mean", "Mean"), new("min", "Minimum"), new("max", "Maximum")]);
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all numeric)");
 
-    protected override IReadOnlyList<ParamField> Declare() => [Mode];
+    protected override IReadOnlyList<ParamField> Declare() => [Mode, Columns];
 }
 
 public sealed class PcaParameters : NodeParameters
@@ -207,10 +209,12 @@ public sealed class SortParameters : NodeParameters
 public sealed class JoinDatasetParameters : NodeParameters
 {
     public DatasetParam DatasetId { get; } = new("datasetId", "Dataset to join", required: true);
-    public TextParam On { get; } = new("on", "Key column (in both)", required: true);
+    public LookupParam JoinType { get; } = new("joinType", "Join type", "left",
+        [new("left", "Left (keep all current rows)"), new("inner", "Inner (only matches)"), new("right", "Right (keep all joined rows)"), new("full", "Full (keep both)")]);
+    public ColumnParam On { get; } = new("on", "Key column (in both)", required: true);
     public ColumnsParam Columns { get; } = new("columns", "Columns to bring (blank = all)");
 
-    protected override IReadOnlyList<ParamField> Declare() => [DatasetId, On, Columns];
+    protected override IReadOnlyList<ParamField> Declare() => [DatasetId, JoinType, On, Columns];
 }
 
 public sealed class UnionDatasetParameters : NodeParameters
@@ -260,37 +264,55 @@ public sealed class GlobalContrastParameters : NodeParameters
     protected override IReadOnlyList<ParamField> Declare() => [];
 }
 
+// Scalers share an optional column selector (blank = all numeric feature columns).
 public sealed class StandardizeParameters : NodeParameters
 {
-    protected override IReadOnlyList<ParamField> Declare() => [];
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all numeric)");
+
+    protected override IReadOnlyList<ParamField> Declare() => [Columns];
 }
 
 public sealed class NormalizeParameters : NodeParameters
 {
-    protected override IReadOnlyList<ParamField> Declare() => [];
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all numeric)");
+
+    protected override IReadOnlyList<ParamField> Declare() => [Columns];
 }
 
 public sealed class LogNormalizeParameters : NodeParameters
 {
-    protected override IReadOnlyList<ParamField> Declare() => [];
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all numeric)");
+
+    protected override IReadOnlyList<ParamField> Declare() => [Columns];
 }
 
 public sealed class RobustScaleParameters : NodeParameters
 {
-    protected override IReadOnlyList<ParamField> Declare() => [];
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all numeric)");
+
+    protected override IReadOnlyList<ParamField> Declare() => [Columns];
 }
 
 public sealed class OneHotParameters : NodeParameters
 {
-    protected override IReadOnlyList<ParamField> Declare() => [];
+    public LookupParam OutputKind { get; } = new("outputKind", "Output kind", "indicator",
+        [new("indicator", "Indicator (0/1 per category)"), new("bag", "Bag (counts)"), new("key", "Key (integer id)"), new("binary", "Binary encoding")]);
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all categorical)");
+
+    protected override IReadOnlyList<ParamField> Declare() => [OutputKind, Columns];
 }
 
 public sealed class HashEncodeParameters : NodeParameters
 {
-    protected override IReadOnlyList<ParamField> Declare() => [];
+    public IntParam Bits { get; } = new("bits", "Hash bits", 16, min: 1, max: 30, help: "2^bits buckets; higher = fewer collisions.");
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all categorical)");
+
+    protected override IReadOnlyList<ParamField> Declare() => [Bits, Columns];
 }
 
 public sealed class FeaturizeTextParameters : NodeParameters
 {
-    protected override IReadOnlyList<ParamField> Declare() => [];
+    public ColumnsParam Columns { get; } = new("columns", "Columns (blank = all text)");
+
+    protected override IReadOnlyList<ParamField> Declare() => [Columns];
 }
