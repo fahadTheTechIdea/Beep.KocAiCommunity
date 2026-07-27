@@ -20,10 +20,11 @@ public sealed class MlNode : NodeModel
         Title = kind;
     }
 
+    // Track status for a subtle canvas cue, but never write execution messages onto the node — those go to
+    // the designer's log pane. The node's title stays its kind.
     public void SetStatus(string status, string? detail = null)
     {
         Status = status;
-        Title = status == "idle" ? Kind : $"{Kind} · {status}" + (string.IsNullOrEmpty(detail) ? "" : $"\n{detail}");
         Refresh();
     }
 }

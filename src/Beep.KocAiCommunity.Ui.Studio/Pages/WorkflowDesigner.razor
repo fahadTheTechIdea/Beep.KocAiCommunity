@@ -36,7 +36,18 @@ else
             <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/workflows">Workflows</MudButton>
             <MudText Typo="Typo.h5" Class="koc-heading">@_registryName</MudText>
             <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_registryStatus == "published" ? Color.Success : Color.Info)">v@_registryVersion · @_registryStatus</MudChip>
+            @if (_running || _submitting)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
             <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                       Disabled="@(_running || GraphIssues().Count > 0)" OnClick="RunFromDataset">Run</MudButton>
+            @if (_registryCompetitionId is { } topCompId)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.EmojiEvents"
+                           Disabled="@(_submitting || GraphIssues().Count > 0)" OnClick="() => OnSubmitPipeline(topCompId)">Submit</MudButton>
+            }
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveRegistryDraft" Disabled="_registryBusy">Save draft</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Publish" OnClick="PublishRegistry" Disabled="_registryBusy">Publish</MudButton>
         }
@@ -106,108 +117,48 @@ else
         </BlueprintCard>
     </div>
 
-    <MudGrid Spacing="6" Class="mt-2">
-        <MudItem xs="12" md="5">
-            <BlueprintCard Class="pa-5">
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Run pipeline</MudText>
-                <MudText Typo="Typo.body2" Class="mb-3" Style="opacity:.8;max-width:60ch;">
-                    Runs your graph on the <b>Dataset</b> node's data, using the target column and task set on the
-                    <b>Train</b> node. Pick those on the nodes, not here.
-                </MudText>
-                @{
-                    var issues = GraphIssues();
-                }
-                @if (issues.Count > 0)
-                {
-                    <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-2">
-                        <ul class="pl-4 my-0" style="list-style:disc;">
-                            @foreach (var issue in issues)
-                            {
-                                <li>@issue</li>
-                            }
-                        </ul>
-                    </MudAlert>
-                }
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
-                           Disabled="@(_running || issues.Count > 0)" OnClick="RunFromDataset">Run pipeline</MudButton>
-                <MudDivider Class="my-3" />
-                <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.8;">Or run a one-off CSV:</MudText>
-                <InputFile OnChange="OnRun" accept=".csv" />
-                @if (_running)
-                {
-                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mt-2" />
-                }
-            </BlueprintCard>
-        </MudItem>
-
-        <MudItem xs="12" md="7">
-            <BlueprintCard Class="pa-0">
-                <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">Node-by-node execution</MudText></div>
-                @if (_result is null)
-                {
-                    <MudText Typo="Typo.body2" Class="pa-4">Build a pipeline and run it to see each node execute.</MudText>
-                }
-                else
-                {
-                    <MudList T="string" Dense="true">
-                        @foreach (var n in _result.Nodes)
-                        {
-                            <MudListItem T="string" Icon="@StatusIcon(n.Status)" IconColor="@StatusColor(n.Status)">
-                                <b>@n.Kind</b> — @n.Detail
-                            </MudListItem>
-                        }
-                    </MudList>
-                    @if (_result.Success)
+    @* One log pane below the designer — every run, submission, validation issue, and save is logged here.
+       The run/submit actions live in the top toolbar; the data source is the Dataset node. *@
+    <BlueprintCard Class="pa-3 mt-3">
+        <div class="d-flex align-center mb-2">
+            <MudText Typo="Typo.subtitle1" Class="koc-heading">Log</MudText>
+            @if (_registryCompetitionId is not null)
+            {
+                <MudText Typo="Typo.caption" Class="ml-3" Style="opacity:.7;">Submit trains &amp; scores your graph on the competition's hidden test set.</MudText>
+            }
+            <MudSpacer />
+            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => _log.Clear())" Disabled="@(_log.Count == 0)">Clear</MudButton>
+        </div>
+        @{
+            var issues = GraphIssues();
+        }
+        @if (issues.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-2">
+                <ul class="pl-4 my-0" style="list-style:disc;">
+                    @foreach (var issue in issues)
                     {
-                        <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="ma-3">
-                            Pipeline complete · @_result.Algorithm · @_result.PrimaryMetric @_result.PrimaryValue.ToString("0.###")
-                        </MudAlert>
+                        <li>@issue</li>
                     }
+                </ul>
+            </MudAlert>
+        }
+        <div style="max-height:260px;overflow:auto;font-family:monospace;font-size:.82rem;line-height:1.55;">
+            @if (_log.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Style="opacity:.6;">Run the pipeline or submit to see the log here.</MudText>
+            }
+            else
+            {
+                @foreach (var entry in Enumerable.Reverse(_log))
+                {
+                    <div style="@($"color:{LogColor(entry.Level)};")">
+                        <span style="opacity:.5;">@entry.At.ToString("HH:mm:ss")</span> @entry.Message
+                    </div>
                 }
-            </BlueprintCard>
-        </MudItem>
-    </MudGrid>
-
-    @if (_registryCompetitionId is { } compId)
-    {
-        <BlueprintCard Class="pa-5 mt-4">
-            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Submit to @(_registryCompetitionTitle ?? "the competition")</MudText>
-            <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:70ch;">
-                The server trains and scores your exact node graph on the competition's <b>hidden test set</b> — the same
-                data for everyone — so only your modelling choices move your rank.
-            </MudText>
-            @{
-                var submitIssues = GraphIssues();
             }
-            @if (submitIssues.Count > 0)
-            {
-                <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-2">
-                    <ul class="pl-4 my-0" style="list-style:disc;">
-                        @foreach (var issue in submitIssues)
-                        {
-                            <li>@issue</li>
-                        }
-                    </ul>
-                </MudAlert>
-            }
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EmojiEvents"
-                       OnClick="() => OnSubmitPipeline(compId)" Disabled="@(_submitting || submitIssues.Count > 0)">Train &amp; submit</MudButton>
-            @if (_submitting)
-            {
-                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="ml-2" />
-            }
-            @if (_submissionResult is not null)
-            {
-                <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="mt-3">
-                    Scored <b>@_submissionResult.Score?.ToString("0.###")</b> — your best result is on the leaderboard.
-                </MudAlert>
-            }
-            @if (_submitError is not null)
-            {
-                <MudAlert Severity="Severity.Error" Variant="Variant.Text" Dense="true" Class="mt-3">@_submitError</MudAlert>
-            }
-        </BlueprintCard>
-    }
+        </div>
+    </BlueprintCard>
 }
 
 @code {
@@ -240,7 +191,6 @@ else
     private readonly string _labelColumn = "label";
     private readonly string _task = "BinaryClassification";
     private bool _running;
-    private PipelineExecutionResult? _result;
 
     private IReadOnlyList<DatasetDto> _fileDatasets = [];
     private IReadOnlyList<string> _columns = [];
@@ -252,8 +202,6 @@ else
     private IReadOnlyList<string> _categories = [];
 
     private bool _submitting;
-    private SubmissionResultDto? _submissionResult;
-    private string? _submitError;
 
     protected override void OnInitialized()
     {
@@ -428,7 +376,6 @@ else
         var latest = detail.Versions.OrderByDescending(v => v.VersionNumber).FirstOrDefault();
         _registryMode = true;
         _selected = null;
-        _result = null;
         _loadedWorkflowId = id;
         _registryName = detail.Name;
         _registryVersion = latest?.VersionNumber ?? 1;
@@ -503,6 +450,7 @@ else
             {
                 _registryVersion = version.VersionNumber;
                 _registryStatus = version.Status;
+                Log("info", $"Saved draft v{version.VersionNumber}.");
                 StateHasChanged();
             }
         }
@@ -762,52 +710,23 @@ else
         || n.Kind.Contains(_search, StringComparison.OrdinalIgnoreCase)
         || n.Category.Contains(_search, StringComparison.OrdinalIgnoreCase);
 
-    // ---- Run / submit ----
-
-    private async Task OnRun(InputFileChangeEventArgs e)
-    {
-        _running = true;
-        _result = null;
-        foreach (var n in _diagram.Nodes.OfType<MlNode>())
-        {
-            n.SetStatus("idle");
-        }
-        StateHasChanged();
-
-        try
-        {
-            using var ms = new MemoryStream();
-            await using (var stream = e.File.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024))
-            {
-                await stream.CopyToAsync(ms);
-            }
-            ms.Position = 0;
-
-            ApplyResult(await Api.ExecuteWorkflowAsync(BuildDefinition(), ms, e.File.Name, EffectiveLabel(), EffectiveTask()));
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Run failed: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _running = false;
-        }
-    }
+    // ---- Run / submit (actions live in the top toolbar; all output goes to the log pane) ----
 
     private async Task RunFromDataset()
     {
         if (DatasetNodeId() is not { } id)
         {
+            Log("warning", "Pick a training dataset on the Dataset node first.");
             return;
         }
 
         _running = true;
-        _result = null;
         foreach (var n in _diagram.Nodes.OfType<MlNode>())
         {
             n.SetStatus("idle");
         }
+
+        Log("info", $"Running pipeline · target '{EffectiveLabel()}' · {EffectiveTask()} …");
         StateHasChanged();
 
         try
@@ -815,11 +734,15 @@ else
             var (result, error) = await Api.ExecuteWorkflowFromDatasetAsync(BuildDefinition(), id, EffectiveLabel(), EffectiveTask());
             if (error is not null)
             {
-                Snackbar.Add(error, Severity.Warning);
+                Log("error", $"Run failed: {error}");
                 return;
             }
 
             ApplyResult(result);
+        }
+        catch (Exception ex)
+        {
+            Log("error", $"Run failed: {ex.Message}");
         }
         finally
         {
@@ -827,37 +750,46 @@ else
         }
     }
 
-    // Reflects each node's execution status back onto the canvas.
+    // Log each node's execution + the headline metric; set the node's status only for a subtle canvas cue.
     private void ApplyResult(PipelineExecutionResult? result)
     {
-        _result = result;
-        if (_result is null)
+        if (result is null)
         {
             return;
         }
 
         var byId = _diagram.Nodes.OfType<MlNode>().ToDictionary(n => n.NodeId);
-        foreach (var nr in _result.Nodes)
+        foreach (var nr in result.Nodes)
         {
             if (byId.TryGetValue(nr.NodeId, out var node))
             {
-                node.SetStatus(nr.Status, nr.Detail);
+                node.SetStatus(nr.Status);
             }
+
+            var level = nr.Status switch { "failed" => "error", "skipped" => "warning", _ => "info" };
+            Log(level, $"{nr.Kind}: {nr.Status}{(string.IsNullOrEmpty(nr.Detail) ? "" : $" — {nr.Detail}")}");
         }
+
+        Log(result.Success ? "success" : "error", result.Success
+            ? $"Pipeline complete · {result.Algorithm} · {result.PrimaryMetric} {result.PrimaryValue:0.###} · {result.RowCount} rows"
+            : "Pipeline failed — see the node messages above.");
     }
 
     private async Task OnSubmitPipeline(Guid competitionId)
     {
         _submitting = true;
-        _submissionResult = null;
-        _submitError = null;
+        Log("info", $"Submitting to {_registryCompetitionTitle ?? "the competition"} …");
+        StateHasChanged();
         try
         {
-            _submissionResult = await Api.SubmitPipelineAsync(competitionId, BuildDefinition());
+            var result = await Api.SubmitPipelineAsync(competitionId, BuildDefinition());
+            Log(result is null ? "error" : "success", result is null
+                ? "Submission failed — no result returned."
+                : $"Submitted — scored {result.Score?.ToString("0.###") ?? "?"}. Your best result is on the leaderboard.");
         }
         catch (Exception ex)
         {
-            _submitError = ex.Message;
+            Log("error", $"Submission failed: {ex.Message}");
         }
         finally
         {
@@ -865,18 +797,17 @@ else
         }
     }
 
-    private static string StatusIcon(string status) => status switch
-    {
-        "done" => Icons.Material.Filled.CheckCircle,
-        "failed" => Icons.Material.Filled.Error,
-        "skipped" => Icons.Material.Filled.RemoveCircleOutline,
-        _ => Icons.Material.Filled.RadioButtonUnchecked,
-    };
+    // ---- Log pane ----
 
-    private static Color StatusColor(string status) => status switch
+    private readonly List<(DateTime At, string Level, string Message)> _log = [];
+
+    private void Log(string level, string message) => _log.Add((DateTime.Now, level, message));
+
+    private static string LogColor(string level) => level switch
     {
-        "done" => Color.Success,
-        "failed" => Color.Error,
-        _ => Color.Default,
+        "error" => "var(--mud-palette-error)",
+        "warning" => "var(--mud-palette-warning)",
+        "success" => "var(--mud-palette-success)",
+        _ => "inherit",
     };
 }
