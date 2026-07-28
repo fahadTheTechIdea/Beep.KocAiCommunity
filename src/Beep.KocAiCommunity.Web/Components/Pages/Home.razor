@@ -12,9 +12,9 @@
 
 <PageTitle>@KocBrand.ProductName</PageTitle>
 
-@if (!Identity.IsGuest && Featured is { } featured)
+@if (Featured is { } featured)
 {
-    <!-- The arena leads: the featured competition with a live countdown and podium. -->
+    <!-- The arena leads: the featured competition with a live countdown and podium (guests see it too). -->
     <BlueprintCard Class="@($"koc-arena-banner pa-6 mb-6{(featured.HasHeroImage ? " koc-has-photo" : "")}")" Style="@HeroStyle(featured)">
         <div class="d-flex justify-space-between flex-wrap gap-5">
             <div style="min-width:280px;max-width:60ch;">
@@ -48,8 +48,16 @@
                 <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.85;">
                     🥇 Winner takes the <b>Gusher</b> badge · top 3 earn <b>@CompetitionRewards.PodiumBarrels bbl</b> + <b>On the Podium</b> · every scored entry @CompetitionRewards.ScoredSubmissionBarrels bbl
                 </MudText>
-                <MudButton Size="Size.Large" Variant="Variant.Filled" Class="koc-arena-cta" Style="background:#fff;color:var(--koc-accent-900);font-weight:700;"
-                           StartIcon="@Icons.Material.Filled.EmojiEvents" Href="@($"/compete/{featured.Id}")">Enter the arena</MudButton>
+                @if (Identity.IsGuest)
+                {
+                    <MudButton Size="Size.Large" Variant="Variant.Filled" Class="koc-arena-cta" Style="background:#fff;color:var(--koc-accent-900);font-weight:700;"
+                               StartIcon="@Icons.Material.Filled.Login" OnClick="PrimaryCta">Sign in to compete</MudButton>
+                }
+                else
+                {
+                    <MudButton Size="Size.Large" Variant="Variant.Filled" Class="koc-arena-cta" Style="background:#fff;color:var(--koc-accent-900);font-weight:700;"
+                               StartIcon="@Icons.Material.Filled.EmojiEvents" Href="@($"/compete/{featured.Id}")">Enter the arena</MudButton>
+                }
             </div>
             <div class="d-flex flex-column gap-3" style="min-width:280px;">
                 <CountdownTimer TargetUtc="featured.RevealUtc" />
@@ -84,12 +92,15 @@
     </BlueprintCard>
 }
 
-@if (!Identity.IsGuest)
+@if (!Identity.IsGuest || _showcase is not null)
 {
-    <!-- Fun first: champions and live challenges — for everyone, before anything else. -->
+    <!-- Fun first: champions and live challenges — for everyone, including signed-out visitors. -->
     <div class="d-flex align-center justify-space-between mb-2">
         <span class="koc-eyebrow">🏆 This month's champions</span>
-        <MudButton Href="/community" Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowForward">All leaderboards</MudButton>
+        @if (!Identity.IsGuest)
+        {
+            <MudButton Href="/community" Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowForward">All leaderboards</MudButton>
+        }
     </div>
     <MudGrid Spacing="4" Class="mb-8">
         <MudItem xs="12" md="4">
@@ -108,7 +119,7 @@
                     @foreach (var p in _xpBoard.Take(5))
                     {
                         <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);cursor:pointer;@(p.IsMe ? "background:rgba(42,124,190,.08);" : "")"
-                             @onclick="@(() => Nav.NavigateTo($"/profile/{p.UserId}"))">
+                             @onclick="@(() => OpenProfile(p.UserId))">
                             <span style="width:28px;text-align:center;">@HomeMedal(p.Rank)</span>
                             <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(p.AvatarIcon)" /></MudAvatar>
                             <div class="flex-grow-1">
@@ -123,6 +134,16 @@
         </MudItem>
 
         <MudItem xs="12" md="4">
+            @if (Identity.IsGuest)
+            {
+                <BlueprintCard Class="pa-5" Style="height:100%;border-color:var(--koc-accent-500);display:flex;flex-direction:column;justify-content:center;">
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">🛢️ Earn your place</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3" Style="opacity:.8;">Sign in to earn Barrels, climb the leaderboard, and represent your team.</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" OnClick="PrimaryCta">Sign in with KOC</MudButton>
+                </BlueprintCard>
+            }
+            else
+            {
             <BlueprintCard Class="pa-5" Style="height:100%;">
                 <MudText Typo="Typo.subtitle2" Class="koc-heading mb-3">🛢️ Team standings</MudText>
                 @if (_teamBoard is null)
@@ -148,13 +169,17 @@
                     }
                 }
             </BlueprintCard>
+            }
         </MudItem>
 
         <MudItem xs="12" md="4">
             <BlueprintCard Class="pa-5" Style="height:100%;border-color:var(--koc-accent-500);">
                 <div class="d-flex justify-space-between align-center mb-3">
                     <MudText Typo="Typo.subtitle2" Class="koc-heading">⚔️ Live challenges</MudText>
-                    <MudLink Href="/compete" Typo="Typo.caption">Compete →</MudLink>
+                    @if (!Identity.IsGuest)
+                    {
+                        <MudLink Href="/compete" Typo="Typo.caption">Compete →</MudLink>
+                    }
                 </div>
                 @if (_activeCompetitions is null)
                 {
@@ -178,8 +203,16 @@
                                     <CountdownTimer TargetUtc="c.RevealUtc" Compact="true" RefreshSeconds="60" />
                                 }
                             </div>
-                            <MudButton Href="@($"/compete/{c.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-1"
-                                       StartIcon="@Icons.Material.Filled.EmojiEvents">Enter</MudButton>
+                            @if (Identity.IsGuest)
+                            {
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-1"
+                                           StartIcon="@Icons.Material.Filled.Login" OnClick="PrimaryCta">Sign in to enter</MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Href="@($"/compete/{c.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-1"
+                                           StartIcon="@Icons.Material.Filled.EmojiEvents">Enter</MudButton>
+                            }
                         </div>
                     }
                 }
@@ -362,6 +395,7 @@
     };
 
     private IReadOnlyList<CompetitionDto>? _activeCompetitions;
+    private PublicShowcaseDto? _showcase;      // signed-out landing preview (competitions + leaderboards)
     private ProfileDto? _myProfile;
 
     protected override void OnInitialized() => Identity.Changed += OnChanged;
@@ -404,6 +438,8 @@
         _xpBoard = null;
         if (Identity.IsGuest)
         {
+            // Top learners come from the public showcase (loaded in LoadCompetitionsAsync).
+            _xpBoard = _showcase?.TopLearners;
             return;
         }
 
@@ -427,11 +463,36 @@
 
     private static string HomeMedal(int rank) => rank switch { 1 => "🥇", 2 => "🥈", 3 => "🥉", _ => $"#{rank}" };
 
+    // A guest has no profile pages to browse — nudge them to sign in instead.
+    private void OpenProfile(string userId)
+    {
+        if (Identity.IsGuest)
+        {
+            PrimaryCta();
+            return;
+        }
+
+        Nav.NavigateTo($"/profile/{userId}");
+    }
+
     private async Task LoadCompetitionsAsync()
     {
         if (Identity.IsGuest)
         {
-            _activeCompetitions = null;
+            // Guests can't call the employee-gated endpoints, so use the curated public showcase to
+            // populate the same fields the flashy sections render from.
+            try
+            {
+                _showcase = await Api.GetPublicShowcaseAsync();
+                _activeCompetitions = _showcase.Competitions;
+                _featuredBoard = _showcase.FeaturedBoard;
+            }
+            catch
+            {
+                _showcase = null;
+                _activeCompetitions = null;
+            }
+
             return;
         }
 

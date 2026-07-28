@@ -1,7 +1,9 @@
 using Beep.KocAiCommunity.Application.Authorization;
 using Beep.KocAiCommunity.Application.Competitions;
+using Beep.KocAiCommunity.Application.Engagement;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Competitions;
+using Beep.KocAiCommunity.Contracts.Engagement;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Beep.KocAiCommunity.Domain.Competitions;
 using Beep.KocAiCommunity.Domain.Organization;
@@ -265,6 +267,32 @@ public static class CompetitionEndpoints
         })
         .WithName("MySubmissions")
         .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // Anonymous landing preview: active company-wide competitions, the featured live top-3, and this
+        // month's top learners — everything a signed-out visitor needs to be enticed to sign in. Read-only
+        // and non-private (only Company-visible competitions), so no authorization is required.
+        group.MapGet("/public/showcase", async (ICompetitionService svc, IEngagementService engagement, IScorerRegistry scorers, CancellationToken ct) =>
+        {
+            var list = await svc.BrowsePublicAsync(ct);
+            var stats = await svc.GetStatsAsync([.. list.Select(c => c.Id)], ct);
+            var dtos = list.Select(c => ToDto(c, stats.GetValueOrDefault(c.Id), scorers)).ToList();
+
+            var featured = list.FirstOrDefault(c => c.IsFeatured) ?? list.FirstOrDefault();
+            IReadOnlyList<LeaderboardEntryDto> board = [];
+            if (featured is not null)
+            {
+                var entries = await svc.GetLeaderboardNamedAsync(featured.Id, "live", ct);
+                board = entries.Take(3).Select(e => new LeaderboardEntryDto(e.Rank, e.UserId, e.DisplayName, e.Score)).ToList();
+            }
+
+            IReadOnlyList<XpLeaderboardRowDto> learners;
+            try { learners = [.. (await engagement.GetXpLeaderboardAsync(string.Empty, LeaderboardPeriod.Month, ct)).Take(5)]; }
+            catch { learners = []; }
+
+            return Results.Ok(new PublicShowcaseDto(featured?.Id, dtos, board, learners));
+        })
+        .WithName("PublicShowcase")
+        .AllowAnonymous();
 
         return group;
     }

@@ -85,6 +85,12 @@ public interface ICompetitionService
     Task<Submission> SubmitPipelineAsync(string userId, Guid competitionId, WorkflowDefinition definition, CancellationToken ct = default);
 
     Task<IReadOnlyList<Competition>> BrowseVisibleAsync(string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Active, company-wide competitions for the signed-out landing preview (featured first). No user scope
+    /// is applied — only Company-visible competitions are returned, so nothing team/group-private leaks.
+    /// </summary>
+    Task<IReadOnlyList<Competition>> BrowsePublicAsync(CancellationToken ct = default);
     Task<Competition?> GetAsync(Guid competitionId, CancellationToken ct = default);
 
     /// <summary>Arena stats for a set of competitions, computed in one pass (no per-competition queries).</summary>

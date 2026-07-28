@@ -58,6 +58,8 @@ public interface IKocApiClient
     Task SetCompetitionPrizesAsync(Guid competitionId, SetPrizesRequest request, CancellationToken ct = default);
     /// <summary>Persist the web-relative path of a competition's hero image (the file is served from the web app's wwwroot).</summary>
     Task SetCompetitionHeroImagePathAsync(Guid competitionId, string? path, CancellationToken ct = default);
+    /// <summary>Curated, anonymously-accessible data for the signed-out landing page (competitions + leaderboards).</summary>
+    Task<PublicShowcaseDto> GetPublicShowcaseAsync(CancellationToken ct = default);
     /// <summary>Final standings; null when still concealed until the reveal time.</summary>
     Task<IReadOnlyList<LeaderboardEntryDto>?> GetFinalLeaderboardAsync(Guid competitionId, CancellationToken ct = default);
 
@@ -225,6 +227,10 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public async Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<CompetitionDto>>("/api/v1/competitions", ct) ?? [];
+
+    public async Task<PublicShowcaseDto> GetPublicShowcaseAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<PublicShowcaseDto>("/api/v1/public/showcase", ct)
+        ?? new PublicShowcaseDto(null, [], [], []);
 
     public async Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default)
     {

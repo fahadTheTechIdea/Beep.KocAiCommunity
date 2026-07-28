@@ -200,6 +200,24 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
+    public async Task Public_showcase_is_reachable_without_signing_in()
+    {
+        // A signed-in host runs an active, company-wide competition.
+        var host = _factory.CreateClientAs("showcase-host", "Employee");
+        var competitionId = await CreateCompetition(host, revealUtc: null, quota: 5);
+        (await host.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .EnsureSuccessStatusCode();
+
+        // A guest (no auth) can read the landing showcase and see that competition.
+        var guest = _factory.CreateClientAs(sub: null);
+        var response = await guest.GetAsync("/api/v1/public/showcase");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var showcase = (await response.Content.ReadFromJsonAsync<PublicShowcaseDto>())!;
+        showcase.Competitions.Should().Contain(c => c.Id == competitionId);
+    }
+
+    [Fact]
     public async Task A_non_creator_non_admin_cannot_set_the_hero_image()
     {
         var creator = _factory.CreateClientAs("hero-owner", "Employee");

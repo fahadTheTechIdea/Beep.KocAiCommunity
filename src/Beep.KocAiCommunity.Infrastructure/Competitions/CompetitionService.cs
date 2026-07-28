@@ -415,6 +415,13 @@ public sealed class CompetitionService(
         return visible;
     }
 
+    public async Task<IReadOnlyList<Competition>> BrowsePublicAsync(CancellationToken ct = default) =>
+        await db.Set<Competition>().AsNoTracking()
+            .Where(c => c.Status == "active" && c.VisibilityScope == VisibilityScope.Company)
+            .OrderByDescending(c => c.IsFeatured)
+            .ThenByDescending(c => c.CreatedUtc)
+            .ToListAsync(ct);
+
     public Task<Competition?> GetAsync(Guid competitionId, CancellationToken ct = default) =>
         db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.Id == competitionId, ct);
 
