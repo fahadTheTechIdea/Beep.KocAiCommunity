@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Beep.KocAiCommunity.Infrastructure.Admin;
 
 /// <summary>Platform-admin RBAC management over user profiles, competition-creator grants, and org codes.</summary>
-public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IKocCurrentUser me) : IAccessAdminService
+public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IKocCurrentUser me, IKocUserDirectory directory) : IAccessAdminService
 {
     public async Task<IReadOnlyList<AccessUserView>> ListUsersAsync(CancellationToken ct = default)
     {
@@ -24,9 +24,22 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
         var nameByCode = await db.OrgUnits.AsNoTracking().Where(u => u.Code != null)
             .ToDictionaryAsync(u => u.Code!, u => u.Name, ct);
 
+        // Anyone the platform has recorded — including a colleague who has only ever signed in through
+        // the corporate network — belongs in the console, so their roles can be managed here.
+        var rolesByUser = await db.Set<Microsoft.AspNetCore.Identity.IdentityUserRole<string>>().AsNoTracking()
+            .Join(db.Set<Microsoft.AspNetCore.Identity.IdentityRole>().AsNoTracking(),
+                ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
+            .ToListAsync(ct);
+        var roleNames = rolesByUser
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)[.. g.Select(x => x.Name!).OrderBy(n => n, StringComparer.Ordinal)]);
+        var knownUserIds = await db.Set<Microsoft.AspNetCore.Identity.IdentityUser>().AsNoTracking()
+            .Select(u => u.Id).ToListAsync(ct);
+
         var userIds = profiles.Keys
             .Union(memberByUser.Keys)
             .Union(grants.Keys)
+            .Union(knownUserIds)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToList();
 
@@ -43,7 +56,7 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
 
             views.Add(new AccessUserView(
                 userId, profile?.Email, profile?.DisplayName, profile?.CompanyId, profile?.DepartmentId,
-                departmentName, position, maxScope));
+                departmentName, position, maxScope, roleNames.GetValueOrDefault(userId, [])));
         }
 
         return views;
@@ -111,6 +124,43 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
 
         return new AccessUserView(userId, profile.Email, profile.DisplayName, profile.CompanyId, profile.DepartmentId,
             departmentName, position, maxScope);
+    }
+
+    public async Task SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default)
+    {
+        // Losing the last administrator would leave the platform unmanageable with no way back short of
+        // a database edit — refuse rather than let an admin remove their own last foothold.
+        if (!roles.Contains(KocRoles.PlatformAdmin, StringComparer.OrdinalIgnoreCase)
+            && await IsLastPlatformAdminAsync(userId, ct))
+        {
+            throw new AccessAdminException("This is the only Platform Admin — grant the role to someone else before removing it here.");
+        }
+
+        try
+        {
+            await directory.SetRolesAsync(userId, roles, ct);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new AccessAdminException(ex.Message);
+        }
+
+        await audit.WriteAsync(new AuditEntry("user-roles.set", "user", userId,
+            AfterJson: $"{{\"roles\":\"{string.Join(',', roles)}\"}}"), ct);
+    }
+
+    private async Task<bool> IsLastPlatformAdminAsync(string userId, CancellationToken ct)
+    {
+        var adminRoleId = await db.Set<Microsoft.AspNetCore.Identity.IdentityRole>().AsNoTracking()
+            .Where(r => r.Name == KocRoles.PlatformAdmin).Select(r => r.Id).FirstOrDefaultAsync(ct);
+        if (adminRoleId is null)
+        {
+            return false;
+        }
+
+        var admins = await db.Set<Microsoft.AspNetCore.Identity.IdentityUserRole<string>>().AsNoTracking()
+            .Where(ur => ur.RoleId == adminRoleId).Select(ur => ur.UserId).ToListAsync(ct);
+        return admins.Count == 1 && admins[0] == userId;
     }
 
     public async Task SetCompetitionGrantAsync(string userId, VisibilityScope maxScope, CancellationToken ct = default)

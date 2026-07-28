@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using Beep.KocAiCommunity.Api.Endpoints;
 using Beep.KocAiCommunity.Api.RealTime;
 using Beep.KocAiCommunity.Infrastructure;
+using Beep.KocAiCommunity.Infrastructure.Identity;
 using Beep.KocAiCommunity.Infrastructure.Learning;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Beep.KocAiCommunity.ServiceDefaults;
@@ -32,9 +33,30 @@ builder.Services.AddSingleton<Beep.KocAiCommunity.Application.ML.IPredictionPool
 
 // Data Protection + the ISecretProtector used to encrypt secret platform settings.
 builder.Services.AddKocSecretProtection();
+builder.Services.AddKocSetup();
 builder.Services.AddKocCurrentUser();
 builder.Services.AddKocAuthorization();
 builder.Services.AddKocApiAuthentication(builder.Configuration);
+
+// The platform's own user + role store. Always registered: sign-in varies by deployment, but who a
+// person is to this platform — and what they may do — is always recorded here.
+var authMode = new Beep.KocAiCommunity.ServiceDefaults.Security.KocSetupStore(builder.Configuration).Mode;
+builder.Services.AddKocUserDirectory();
+
+// Authorization comes from that store, not from whatever the identity provider asserted. Demo mode is
+// the exception: there the switchable persona is the point.
+if (authMode != Beep.KocAiCommunity.ServiceDefaults.Security.KocAuthMode.DemoPersonas)
+{
+    builder.Services.AddScoped<Microsoft.AspNetCore.Authentication.IClaimsTransformation,
+        Beep.KocAiCommunity.Api.Security.AppDatabaseRoleClaims>();
+}
+
+// Passwords and the token issuer exist only where this app holds the credentials.
+if (authMode == Beep.KocAiCommunity.ServiceDefaults.Security.KocAuthMode.LocalAccounts)
+{
+    builder.Services.AddKocLocalAccounts();
+    builder.Services.AddScoped<Beep.KocAiCommunity.Api.Security.AccessTokenIssuer>();
+}
 
 // Global fixed-window rate limit (generous default; per-endpoint policies layer on later).
 builder.Services.AddRateLimiter(options =>
@@ -44,6 +66,13 @@ builder.Services.AddRateLimiter(options =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions { PermitLimit = 1000, Window = TimeSpan.FromMinutes(1) }));
+
+    // Sign-in is the one anonymous write path, so it gets a far tighter budget than the global one —
+    // enough for a person who mistypes a password, not enough to guess one.
+    options.AddPolicy(Beep.KocAiCommunity.Api.Endpoints.AuthEndpoints.RateLimitPolicy, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
 });
 
 // The outbox dispatcher is disabled in tests to avoid contending on the shared in-memory database.
@@ -81,6 +110,13 @@ var v1 = app.MapGroup("/api/v1");
 v1.MapGet("/ping", () => Results.Ok(new { message = "pong" }));
 v1.MapMetaEndpoints();
 v1.MapMeEndpoints();
+
+// Registration/sign-in exists only where this app holds the passwords.
+if (authMode == Beep.KocAiCommunity.ServiceDefaults.Security.KocAuthMode.LocalAccounts)
+{
+    v1.MapAuthEndpoints();
+}
+
 v1.MapOrgEndpoints();
 v1.MapLearningEndpoints();
 v1.MapCompetitionEndpoints();

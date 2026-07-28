@@ -17,7 +17,7 @@ namespace Beep.KocAiCommunity.IntegrationTests;
 /// with the outbox dispatcher disabled and the test authentication scheme installed. Seeds a
 /// small KOC org tree used by the endpoint tests.
 /// </summary>
-public sealed class KocApiFactory : WebApplicationFactory<Program>
+public class KocApiFactory : WebApplicationFactory<Program>
 {
     // Unique per factory instance so parallel test classes get isolated databases.
     private readonly string _connString = $"Data Source=file:kocapitests-{Guid.NewGuid():N}?mode=memory&cache=shared";
@@ -25,6 +25,16 @@ public sealed class KocApiFactory : WebApplicationFactory<Program>
     private bool _seeded;
 
     public KocApiFactory() => _keepAlive = new SqliteConnection(_connString);
+
+    /// <summary>
+    /// The sign-in mode the host boots in. Demo by default — the tests install their own authentication
+    /// scheme, so what matters is that the mode is <em>pinned</em> rather than read from the developer's
+    /// machine. <see cref="LocalAccountsApiFactory"/> overrides it to exercise real registration/sign-in.
+    /// </summary>
+    protected virtual string AuthMode => "DemoPersonas";
+
+    /// <summary>A fixed signing key so issued tokens validate within the test host.</summary>
+    protected const string TestSigningKey = "dGVzdC1zaWduaW5nLWtleS0zMi1ieXRlcy1sb25nISEhIQ==";
 
     public Guid Company { get; private set; }
     public Guid G1 { get; private set; }
@@ -37,6 +47,18 @@ public sealed class KocApiFactory : WebApplicationFactory<Program>
         _keepAlive.Open();
 
         builder.UseEnvironment("Development");
+
+        // Authentication is chosen while Program.cs runs, which is *before* ConfigureAppConfiguration
+        // callbacks are applied (the same ordering that forces the DbContext swap below). UseSetting lands
+        // in the host's configuration immediately, so these are visible in time.
+        //
+        // Pinning matters: without it the host would fall back to the first-run setup file in the
+        // developer's own LocalApplicationData and the suite would depend on whichever mode that machine
+        // happens to have chosen.
+        builder.UseSetting("Auth:Mode", AuthMode);
+        builder.UseSetting("Auth:TokenSigningKey", TestSigningKey);
+        builder.UseSetting("Setup:File", Path.Combine(Path.GetTempPath(), $"koc-tests-{Guid.NewGuid():N}", "setup.json"));
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -65,16 +87,34 @@ public sealed class KocApiFactory : WebApplicationFactory<Program>
             // contention/disposal races on a shared connection object. _keepAlive keeps it alive.
             services.AddDbContext<KocDbContext>(options => options.UseSqlite(_connString));
 
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
-                options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
-            }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+            ConfigureAuthentication(services);
         });
     }
 
+    /// <summary>
+    /// Swaps in the header-driven test scheme so a test can act as any user. Overridden by
+    /// <see cref="LocalAccountsApiFactory"/>, which keeps the host's real token validation so the
+    /// register/sign-in path is exercised end to end rather than bypassed.
+    /// </summary>
+    protected virtual void ConfigureAuthentication(IServiceCollection services) =>
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+            options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+        }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+
     public HttpClient CreateClientAs(string? sub, params string[] roles) =>
         CreateClientAs(sub, competitionCreator: true, roles);
+
+    /// <summary>
+    /// An unauthenticated client against a created schema — for endpoints that establish an identity
+    /// themselves (registration and sign-in) rather than being handed one.
+    /// </summary>
+    public HttpClient CreateAnonymousClient()
+    {
+        EnsureSeeded();
+        return CreateClient();
+    }
 
     /// <summary>
     /// Creates an authenticated test client. By default the user is granted Company-scope

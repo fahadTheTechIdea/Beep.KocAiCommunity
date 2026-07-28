@@ -35,6 +35,7 @@ public static class KocLocalServiceCollectionExtensions
 
         // Remote HTTP client for competitions (+ dev identity forwarding) and the realtime hub URL.
         services.AddSingleton<DevIdentity>();
+        services.AddSingleton(new DevIdentityOptions());
         services.AddTransient<DevIdentityHandler>();
         services.AddHttpClient<KocApiClient>(client => client.BaseAddress = new Uri(apiBaseUrl))
             .AddHttpMessageHandler<DevIdentityHandler>();

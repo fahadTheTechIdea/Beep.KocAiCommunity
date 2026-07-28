@@ -4,7 +4,12 @@ namespace Beep.KocAiCommunity.Web.Services;
 /// When intranet Windows auth is on, forwards the <b>real signed-in user</b> to the API — overriding
 /// the dev-persona headers set upstream. Fail-closed: if no authenticated user is present it strips the
 /// identity headers entirely (the API then sees an unauthenticated call → 401) rather than leaking the
-/// default persona. Roles default to Employee until the KOC directory API maps the user's real roles.
+/// default persona.
+/// <para>
+/// Identity only — no roles. What the corporate account may do is decided by the platform's own
+/// database (see <c>AppDatabaseRoleClaims</c>), so that an administrator changing someone's roles in the
+/// RBAC console takes effect regardless of how that person signs in.
+/// </para>
 ///
 /// Note: reads the principal via <see cref="IHttpContextAccessor"/>. Under IIS Windows Authentication
 /// (in-process) this carries the signed-in user; validate interactive Blazor Server calls in the KOC
@@ -21,7 +26,6 @@ public sealed class WindowsIdentityForwardingHandler(IHttpContextAccessor access
         if (accessor.HttpContext?.User.Identity is { IsAuthenticated: true, Name.Length: > 0 } id)
         {
             request.Headers.Add("X-Dev-User", id.Name!);
-            request.Headers.Add("X-Dev-Roles", "Employee");
         }
 
         return base.SendAsync(request, cancellationToken);

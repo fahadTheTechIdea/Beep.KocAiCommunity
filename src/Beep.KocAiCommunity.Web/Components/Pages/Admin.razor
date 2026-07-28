@@ -233,9 +233,11 @@ else
 
         <MudTabPanel Text="RBAC / Users" Icon="@Icons.Material.Filled.ManageAccounts" OnClick="EnsureRbac">
             <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:80ch;">
-                Manage who can <b>create competitions</b> and at what level, and each user's org identity
-                (email, company, department). Department is picked from the org tree, which keeps the
-                <code>Company&nbsp;ID</code> / <code>Dept&nbsp;ID</code> codes in sync with the unit.
+                Manage each user's <b>roles</b>, who can <b>create competitions</b> and at what level, and
+                their org identity (email, company, department). Department is picked from the org tree,
+                which keeps the <code>Company&nbsp;ID</code> / <code>Dept&nbsp;ID</code> codes in sync with
+                the unit. Roles live in this platform's own database and apply however people sign in —
+                with a password here, through the corporate network, or via Entra.
             </MudText>
 
             @if (_users is null)
@@ -253,6 +255,7 @@ else
                                 <th>Company</th>
                                 <th>Department</th>
                                 <th>Position</th>
+                                <th style="min-width:230px;">Roles</th>
                                 <th style="min-width:190px;">Can create competitions</th>
                             </tr>
                         </thead>
@@ -282,6 +285,23 @@ else
                                         </MudSelect>
                                     </td>
                                     <td><MudChip T="string" Size="Size.Small" Variant="Variant.Text">@u.PositionLevel</MudChip></td>
+                                    <td>
+                                        @* One position level plus any number of function roles — the same
+                                           shape the authorization policies expect. *@
+                                        <MudSelect T="string" MultiSelection="true" SelectedValues="@RoleSet(u)"
+                                                   SelectedValuesChanged="@(v => OnRolesChanged(u, v))"
+                                                   MultiSelectionTextFunc="@(sel => sel.Count == 0 ? "No access" : string.Join(", ", sel))"
+                                                   Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
+                                            @foreach (var r in _positionRoles)
+                                            {
+                                                <MudSelectItem T="string" Value="@r">@r</MudSelectItem>
+                                            }
+                                            @foreach (var r in _functionRoles)
+                                            {
+                                                <MudSelectItem T="string" Value="@r">★ @r</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </td>
                                     <td>
                                         <MudSelect T="string" Value="@(u.MaxCompetitionScope ?? "None")" ValueChanged="@(v => OnGrantChanged(u, v))"
                                                    Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
@@ -533,10 +553,31 @@ else
 
     // ---- RBAC / Users ----
 
+    private IReadOnlyList<string> _positionRoles = [];
+    private IReadOnlyList<string> _functionRoles = [];
+
     private async Task EnsureRbac()
     {
         _orgUnits ??= await Api.GetAdminOrgUnitsAsync();
         _users ??= await Api.GetAdminUsersAsync();
+
+        // The assignable names come from the server so the console can't drift from the policies.
+        if (_positionRoles.Count == 0 && await Api.GetAssignableRolesAsync() is { } roles)
+        {
+            _positionRoles = roles.Positions;
+            _functionRoles = roles.Functions;
+        }
+    }
+
+    private static IReadOnlyCollection<string> RoleSet(AdminUserDto u) => u.Roles ?? [];
+
+    private async Task OnRolesChanged(AdminUserDto u, IReadOnlyCollection<string> roles)
+    {
+        var error = await Api.SetUserRolesAsync(u.UserId, [.. roles]);
+        Snackbar.Add(
+            error ?? $"{u.DisplayName ?? u.UserId}: {(roles.Count == 0 ? "all roles removed" : string.Join(", ", roles))}.",
+            error is null ? Severity.Success : Severity.Warning);
+        _users = await Api.GetAdminUsersAsync();
     }
 
     private string EmailDraft(AdminUserDto u) => _emailDrafts.TryGetValue(u.UserId, out var v) ? (v ?? "") : (u.Email ?? "");

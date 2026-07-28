@@ -3,9 +3,13 @@
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Web.Components.Shared
 @using Microsoft.Extensions.Hosting
+@using Microsoft.AspNetCore.Components.Authorization
+@using Beep.KocAiCommunity.ServiceDefaults.Security
 @inject DevIdentity Identity
 @inject IHostEnvironment Env
 @inject NavigationManager Nav
+@inject KocSetupStore SetupStore
+@inject AuthenticationStateProvider AuthState
 @implements IDisposable
 
 <MudThemeProvider Theme="_theme" />
@@ -56,9 +60,9 @@
             </MudMenu>
         }
 
-        @if (Env.IsDevelopment())
+        @if (IsDemoMode)
         {
-            @* Dev/demo only: switch personas to preview the app as different roles. Never in Production. *@
+            @* Demo mode only: switch personas to preview the app as different roles. Never with real sign-in. *@
             <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-2">
                 <ActivatorContent>
                     @if (Identity.IsGuest)
@@ -93,14 +97,31 @@
         }
         else if (Identity.IsGuest)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" Class="ml-2">Sign in with KOC</MudButton>
+            @* Real sign-in: local accounts get a login page; intranet/Entra sign the visitor in themselves. *@
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" Class="ml-2"
+                       Href="@LoginHref">@(HasLoginPage ? "Sign in" : "Sign in with KOC")</MudButton>
         }
         else
         {
-            @* Production: show the real signed-in identity, with no role switching. *@
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle" Class="ml-2" Style="pointer-events:none;">
-                @Identity.Current.Label
-            </MudButton>
+            @* Signed in for real: show who, and offer sign-out where there's a session to end. *@
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-2">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountCircle"
+                               EndIcon="@(HasLoginPage ? Icons.Material.Filled.ArrowDropDown : null)" OnClick="@context.ToggleAsync">
+                        @Identity.Current.Label
+                    </MudButton>
+                </ActivatorContent>
+                <ChildContent>
+                    <MudMenuItem Href="/profile" Icon="@Icons.Material.Filled.EmojiEvents">My profile</MudMenuItem>
+                    @if (HasLoginPage)
+                    {
+                        <MudDivider />
+                        <form method="post" action="/account/logout" style="margin:0;">
+                            <button type="submit" class="koc-menu-form-button">Sign out</button>
+                        </form>
+                    }
+                </ChildContent>
+            </MudMenu>
         }
     </MudAppBar>
 
@@ -140,10 +161,46 @@
     private readonly MudTheme _theme = KocTheme.Build();
     private bool _drawerOpen = true;
 
+    /// <summary>True when nobody really signs in and the persona switcher stands in for an identity.</summary>
+    private bool IsDemoMode => SetupStore.Mode is KocAuthMode.DemoPersonas or KocAuthMode.Unconfigured;
+
+    /// <summary>True when this app owns the sign-in page (and therefore a sign-out to offer).</summary>
+    private bool HasLoginPage => SetupStore.Mode == KocAuthMode.LocalAccounts;
+
+    private string LoginHref => HasLoginPage ? "/account/login" : "/";
+
     protected override void OnInitialized()
     {
         Identity.Changed += OnIdentityChanged;
         Nav.LocationChanged += OnLocationChanged;
+    }
+
+    /// <summary>
+    /// Outside demo mode the identity the UI renders from is the real signed-in user, resolved once per
+    /// circuit from the authentication cookie/token. Without this the nav, route guard, and "(you)"
+    /// highlighting would still be reading a development persona.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsDemoMode)
+        {
+            return;
+        }
+
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            var userId = user.FindFirst("oid")?.Value
+                ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? user.Identity.Name!;
+            var displayName = user.FindFirst("name")?.Value ?? user.Identity.Name ?? userId;
+            var roles = user.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            Identity.SetRealUser(userId, displayName, roles);
+        }
+        else
+        {
+            Identity.SetPersona("guest");
+        }
     }
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;

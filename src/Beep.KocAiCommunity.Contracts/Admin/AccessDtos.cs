@@ -9,7 +9,10 @@ public sealed record AdminUserDto(
     string? DepartmentId,
     string? DepartmentName,
     string PositionLevel,
-    string? MaxCompetitionScope);
+    string? MaxCompetitionScope,
+    /// <summary>The platform roles this user holds. Assigned here whatever the sign-in method, because
+    /// authorization is the app's own concern — the identity provider only establishes who someone is.</summary>
+    IReadOnlyList<string>? Roles = null);
 
 /// <summary>
 /// Sets a user's identity/org fields. <paramref name="DepartmentCode"/> is an OrgUnit code; the
@@ -19,6 +22,12 @@ public sealed record UpsertUserProfileRequest(string? Email, string? DisplayName
 
 /// <summary>Grants (or updates) a user's competition-creation capability at a maximum audience level.</summary>
 public sealed record SetCompetitionGrantRequest(string MaxScope);
+
+/// <summary>Replaces a user's platform roles with exactly this set.</summary>
+public sealed record SetUserRolesRequest(IReadOnlyList<string> Roles);
+
+/// <summary>The role names an administrator may assign, for the console's editor.</summary>
+public sealed record AssignableRolesDto(IReadOnlyList<string> Positions, IReadOnlyList<string> Functions);
 
 /// <summary>An org unit and its assignable business code, for the code editor.</summary>
 public sealed record OrgUnitCodeDto(Guid Id, string Name, string Type, string Path, string? Code);

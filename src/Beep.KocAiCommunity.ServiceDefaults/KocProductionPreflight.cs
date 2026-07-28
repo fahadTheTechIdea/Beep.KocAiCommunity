@@ -37,9 +37,21 @@ public static class KocProductionPreflight
                 errors.Add("DevAuth:Enabled must be false in Production — it authenticates every request as a dev user.");
             }
 
-            if (!SecurityExtensions.IsWindowsAuthEnabled(configuration) && !SecurityExtensions.IsEntraConfigured(configuration))
+            // The setup mode is the single answer to "how does this host authenticate people".
+            var setup = new Security.KocSetupStore(configuration);
+            switch (setup.Mode)
             {
-                errors.Add("No production authentication is configured — set AzureAd:* (Microsoft Entra) or WindowsAuth:Enabled=true.");
+                case Security.KocAuthMode.DemoPersonas:
+                    errors.Add("Authentication is set to the demo persona switcher, which signs everyone in without a password — finish setup and choose accounts, intranet sign-on, or Entra.");
+                    break;
+
+                case Security.KocAuthMode.Unconfigured:
+                    errors.Add("No authentication has been configured — run the first-run setup, or set Auth:Mode (LocalAccounts, WindowsIntranet, EntraId).");
+                    break;
+
+                case Security.KocAuthMode.LocalAccounts when string.IsNullOrWhiteSpace(setup.Current.TokenSigningKey):
+                    errors.Add("Local accounts are configured without a token signing key — re-run setup, or set Auth:TokenSigningKey.");
+                    break;
             }
         }
 

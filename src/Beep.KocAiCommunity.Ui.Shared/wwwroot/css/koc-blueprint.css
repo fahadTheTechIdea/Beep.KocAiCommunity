@@ -308,3 +308,56 @@
     .koc-row-pulse td { animation: none; }
     .koc-countdown-urgent .koc-countdown-unit { animation: none; }
 }
+
+/* ---- Sign-in, registration, and first-run setup ----
+   These pages render before any circuit exists (static SSR, so the form post can set the auth
+   cookie), which rules out MudBlazor inputs — they need interactivity. Plain controls, styled to
+   match the rest of the app. */
+.koc-bare-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+.koc-auth-shell { display: flex; align-items: center; justify-content: center; width: 100%; }
+
+.koc-field-label {
+    display: block; margin: 0 0 4px; font-size: .82rem; font-weight: 600;
+    letter-spacing: .02em; opacity: .85;
+}
+.koc-field {
+    display: block; width: 100%; box-sizing: border-box; margin-bottom: 14px;
+    padding: 10px 12px; font-size: .95rem; font-family: inherit;
+    color: inherit; background: transparent;
+    border: 1px solid var(--koc-divider, rgba(128,128,128,.4)); border-radius: 6px;
+}
+.koc-field:focus {
+    outline: none; border-color: var(--koc-accent-500);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--koc-accent-500) 25%, transparent);
+}
+.koc-submit {
+    display: block; width: 100%; margin-top: 6px; padding: 11px 16px;
+    font-size: .95rem; font-weight: 600; font-family: inherit; letter-spacing: .02em;
+    color: #fff; background: var(--koc-accent-700); cursor: pointer;
+    border: none; border-radius: 6px;
+}
+.koc-submit:hover { background: var(--koc-accent-900); }
+.koc-submit:disabled { opacity: .55; cursor: not-allowed; }
+
+/* First-run wizard: one radio card per sign-in mode. */
+.koc-setup-option {
+    display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+    margin-bottom: 10px; padding: 12px 14px;
+    border: 1px solid var(--koc-divider, rgba(128,128,128,.4)); border-radius: 8px;
+}
+.koc-setup-option:hover { border-color: var(--koc-accent-500); }
+.koc-setup-option:has(input:checked) {
+    border-color: var(--koc-accent-700);
+    background: color-mix(in srgb, var(--koc-accent-300) 12%, transparent);
+}
+.koc-setup-option input { margin-top: 4px; }
+.koc-setup-option span { display: block; }
+.koc-setup-option small { display: block; margin-top: 2px; opacity: .78; line-height: 1.45; }
+.koc-setup-detail { margin: -4px 0 14px 34px; }
+
+/* A form-post button that reads as a normal menu item (sign-out must be a POST, not a link). */
+.koc-menu-form-button {
+    display: block; width: 100%; padding: 6px 16px; text-align: left;
+    font: inherit; color: inherit; background: none; border: none; cursor: pointer;
+}
+.koc-menu-form-button:hover { background: rgba(128,128,128,.12); }

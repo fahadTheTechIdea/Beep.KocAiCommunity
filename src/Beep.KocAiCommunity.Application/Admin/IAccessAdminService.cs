@@ -8,7 +8,8 @@ public sealed class AccessAdminException(string message) : Exception(message);
 /// <summary>A user row for the admin RBAC console.</summary>
 public sealed record AccessUserView(
     string UserId, string? Email, string? DisplayName, string? CompanyId, string? DepartmentId,
-    string? DepartmentName, PositionLevel PositionLevel, VisibilityScope? MaxCompetitionScope);
+    string? DepartmentName, PositionLevel PositionLevel, VisibilityScope? MaxCompetitionScope,
+    IReadOnlyList<string>? Roles = null);
 
 /// <summary>An org unit + its business code.</summary>
 public sealed record OrgUnitCodeView(Guid Id, string Name, OrgUnitType Type, string Path, string? Code);
@@ -31,6 +32,13 @@ public interface IAccessAdminService
     /// together. A null/blank department code clears the placement. Creates the profile if none.
     /// </summary>
     Task<AccessUserView> UpsertProfileAsync(string userId, string? email, string? displayName, string? departmentCode, CancellationToken ct = default);
+
+    /// <summary>
+    /// Replaces a user's platform roles. These decide what every authorization policy allows, and they
+    /// live in this database whichever way the person signs in — so an administrator can grant a
+    /// corporate-intranet colleague CompetitionAdmin here without touching the directory.
+    /// </summary>
+    Task SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default);
 
     /// <summary>Grants (or updates) a user's competition-creation capability at the given max scope.</summary>
     Task SetCompetitionGrantAsync(string userId, VisibilityScope maxScope, CancellationToken ct = default);

@@ -33,6 +33,11 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient remote) : IKocApi
 
     public virtual Task<PlatformMetaDto?> GetPlatformMetaAsync(CancellationToken ct = default) => remote.GetPlatformMetaAsync(ct);
     public virtual Task<MeResponse?> GetMeAsync(CancellationToken ct = default) => remote.GetMeAsync(ct);
+    public virtual Task<AssignableRolesDto?> GetAssignableRolesAsync(CancellationToken ct = default) => remote.GetAssignableRolesAsync(ct);
+    public virtual Task<string?> SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default) => remote.SetUserRolesAsync(userId, roles, ct);
+    public virtual Task<(AuthTokenResponse? Auth, string? Error)> RegisterAsync(RegisterRequest request, CancellationToken ct = default) => remote.RegisterAsync(request, ct);
+    public virtual Task<(AuthTokenResponse? Auth, string? Error)> LoginAsync(LoginRequest request, CancellationToken ct = default) => remote.LoginAsync(request, ct);
+    public virtual Task<RegistrationStateResponse?> GetRegistrationStateAsync(CancellationToken ct = default) => remote.GetRegistrationStateAsync(ct);
     public virtual Task<IReadOnlyList<TrackDto>> GetTracksAsync(CancellationToken ct = default) => remote.GetTracksAsync(ct);
     public virtual Task<TrackDetailDto?> GetTrackAsync(Guid trackId, CancellationToken ct = default) => remote.GetTrackAsync(trackId, ct);
     public virtual Task EnrollAsync(Guid trackId, CancellationToken ct = default) => remote.EnrollAsync(trackId, ct);

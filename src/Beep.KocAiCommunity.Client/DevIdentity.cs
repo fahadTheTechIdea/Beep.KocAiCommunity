@@ -77,8 +77,15 @@ public sealed class DevIdentity
     }
 }
 
+/// <summary>
+/// Whether the persona headers may be sent at all. Off once a real sign-in mode is configured: those
+/// headers are an assertion the API only honours in demo mode, and sending them elsewhere is at best
+/// noise and at worst a habit worth not forming.
+/// </summary>
+public sealed record DevIdentityOptions(bool ForwardHeaders = true);
+
 /// <summary>Attaches the current dev identity to outgoing API requests (nothing for a guest).</summary>
-public sealed class DevIdentityHandler(DevIdentity identity) : DelegatingHandler
+public sealed class DevIdentityHandler(DevIdentity identity, DevIdentityOptions options) : DelegatingHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -86,7 +93,7 @@ public sealed class DevIdentityHandler(DevIdentity identity) : DelegatingHandler
         request.Headers.Remove("X-Dev-Roles");
 
         // A guest sends no identity, so the API's dev auth treats the call as unauthenticated.
-        if (!identity.IsGuest && !string.IsNullOrEmpty(identity.UserId))
+        if (options.ForwardHeaders && !identity.IsGuest && !string.IsNullOrEmpty(identity.UserId))
         {
             request.Headers.Add("X-Dev-User", identity.UserId);
             request.Headers.Add("X-Dev-Roles", string.Join(',', identity.Roles));

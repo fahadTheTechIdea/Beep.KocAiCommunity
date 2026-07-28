@@ -1,0 +1,19 @@
+@inherits LayoutComponentBase
+@using Beep.KocAiCommunity.Ui.Shared.Theme
+
+@* A chrome-free layout for pages shown before there is a signed-in user: the login and registration
+   forms and the first-run setup wizard. No nav, no persona switcher, no notification bell — none of
+   which mean anything yet, and all of which would need an identity the visitor doesn't have. *@
+
+<MudThemeProvider Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<main class="koc-bare-shell">
+    @Body
+</main>
+
+@code {
+    private readonly MudTheme _theme = KocTheme.Build();
+}

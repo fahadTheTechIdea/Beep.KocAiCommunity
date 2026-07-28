@@ -104,6 +104,24 @@ public static class AdminEndpoints
             }
         }).WithName("AdminUpsertUserProfile");
 
+        admin.MapGet("/roles", () => Results.Ok(new AssignableRolesDto(
+            KocRoles.AllPositions,
+            [KocRoles.PlatformAdmin, KocRoles.CompetitionAdmin, KocRoles.LearningAdmin, KocRoles.Auditor])))
+        .WithName("AdminAssignableRoles");
+
+        admin.MapPut("/users/{userId}/roles", async (string userId, SetUserRolesRequest req, IAccessAdminService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.SetUserRolesAsync(userId, req.Roles ?? [], ct);
+                return Results.NoContent();
+            }
+            catch (AccessAdminException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        }).WithName("AdminSetUserRoles");
+
         admin.MapPut("/users/{userId}/competition-grant", async (string userId, SetCompetitionGrantRequest req, IAccessAdminService svc, CancellationToken ct) =>
         {
             if (!Enum.TryParse<VisibilityScope>(req.MaxScope, ignoreCase: true, out var scope))
@@ -139,7 +157,7 @@ public static class AdminEndpoints
 
     private static AdminUserDto ToUserDto(AccessUserView u) =>
         new(u.UserId, u.Email, u.DisplayName, u.CompanyId, u.DepartmentId, u.DepartmentName,
-            u.PositionLevel.ToString(), u.MaxCompetitionScope?.ToString());
+            u.PositionLevel.ToString(), u.MaxCompetitionScope?.ToString(), u.Roles ?? []);
 
     private static DemoDataStatusDto ToDemoDto(DemoDataStatus s) =>
         new(s.Seeded, s.Users, s.Competitions, s.Discussions, s.Datasets);

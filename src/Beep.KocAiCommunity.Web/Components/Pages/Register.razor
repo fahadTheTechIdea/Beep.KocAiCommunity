@@ -1,0 +1,76 @@
+@page "/account/register"
+@using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@layout Beep.KocAiCommunity.Web.Components.Layout.BareLayout
+@inject IKocApiClient Api
+
+@* Static server rendering, like the login page: the form posts to /account/register so the response
+   can write the authentication cookie. *@
+
+<PageTitle>Create an account · @KocBrand.ProductName</PageTitle>
+
+<div class="koc-auth-shell">
+    <BlueprintCard Class="pa-6" Style="width:100%;max-width:440px;">
+        <div class="text-center mb-4">
+            <img src="@KocBrand.Icon("179-exploration.png")" alt="" width="46" height="46" />
+            <MudText Typo="Typo.h5" Class="koc-heading mt-2">Create your account</MudText>
+            @if (_isFirstAccount)
+            {
+                <MudText Typo="Typo.body2" Style="opacity:.85;">
+                    This is the first account on this installation, so it becomes the <b>platform administrator</b>.
+                </MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Style="opacity:.75;">Join the community, enter competitions, and build pipelines.</MudText>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Text" Dense="true" Class="mb-3">@Error</MudAlert>
+        }
+
+        <form method="post" action="/account/register">
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+
+            <label class="koc-field-label" for="displayName">Your name</label>
+            <input class="koc-field" id="displayName" name="displayName" type="text" autocomplete="name" placeholder="Shown on leaderboards" />
+
+            <label class="koc-field-label" for="email">Work email</label>
+            <input class="koc-field" id="email" name="email" type="email" autocomplete="username" required autofocus />
+
+            <label class="koc-field-label" for="password">Password</label>
+            <input class="koc-field" id="password" name="password" type="password" autocomplete="new-password" required minlength="8" />
+            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">At least 8 characters, with an upper and lower case letter and a digit.</MudText>
+
+            <button class="koc-submit" type="submit">Create account</button>
+        </form>
+
+        <MudText Typo="Typo.caption" Class="d-block mt-4 text-center" Style="opacity:.75;">
+            Already registered? <a href="@LoginHref">Sign in</a>
+        </MudText>
+    </BlueprintCard>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "returnUrl")] private string? ReturnUrl { get; set; }
+
+    private bool _isFirstAccount;
+
+    private string LoginHref =>
+        string.IsNullOrWhiteSpace(ReturnUrl) ? "/account/login" : $"/account/login?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _isFirstAccount = (await Api.GetRegistrationStateAsync())?.IsFirstAccount ?? false;
+        }
+        catch
+        {
+            _isFirstAccount = false;
+        }
+    }
+}

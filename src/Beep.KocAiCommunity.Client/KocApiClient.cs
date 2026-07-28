@@ -30,6 +30,15 @@ public interface IKocApiClient
     /// <summary>Anonymous platform metadata (demo mode / demo data present) for the startup notice.</summary>
     Task<PlatformMetaDto?> GetPlatformMetaAsync(CancellationToken ct = default);
     Task<MeResponse?> GetMeAsync(CancellationToken ct = default);
+
+    /// <summary>Creates an account (local-accounts mode) and returns its access token, or the reason it failed.</summary>
+    Task<(AuthTokenResponse? Auth, string? Error)> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
+
+    /// <summary>Signs in with an email and password, returning the access token or the reason it failed.</summary>
+    Task<(AuthTokenResponse? Auth, string? Error)> LoginAsync(LoginRequest request, CancellationToken ct = default);
+
+    /// <summary>Whether this installation still needs its first (administrator) account.</summary>
+    Task<RegistrationStateResponse?> GetRegistrationStateAsync(CancellationToken ct = default);
     Task<IReadOnlyList<TrackDto>> GetTracksAsync(CancellationToken ct = default);
     Task<TrackDetailDto?> GetTrackAsync(Guid trackId, CancellationToken ct = default);
     Task EnrollAsync(Guid trackId, CancellationToken ct = default);
@@ -138,6 +147,12 @@ public interface IKocApiClient
     Task<(AdminUserDto? User, string? Error)> UpsertUserProfileAsync(string userId, UpsertUserProfileRequest request, CancellationToken ct = default);
     Task<string?> SetCompetitionGrantAsync(string userId, string maxScope, CancellationToken ct = default);
     Task<string?> RevokeCompetitionGrantAsync(string userId, CancellationToken ct = default);
+
+    /// <summary>The role names an administrator may assign, split into position levels and function roles.</summary>
+    Task<AssignableRolesDto?> GetAssignableRolesAsync(CancellationToken ct = default);
+
+    /// <summary>Replaces a user's platform roles. Returns null on success, or the reason it was refused.</summary>
+    Task<string?> SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default);
     Task<string?> SetOrgUnitCodeAsync(Guid orgUnitId, string? code, CancellationToken ct = default);
 
     // Versioned workflow registry.
@@ -209,6 +224,25 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public Task<MeResponse?> GetMeAsync(CancellationToken ct = default) =>
         http.GetFromJsonAsync<MeResponse>("/api/v1/me", ct);
+
+    public Task<(AuthTokenResponse? Auth, string? Error)> RegisterAsync(RegisterRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<AuthTokenResponse>("/api/v1/auth/register", request, ct);
+
+    public Task<(AuthTokenResponse? Auth, string? Error)> LoginAsync(LoginRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<AuthTokenResponse>("/api/v1/auth/login", request, ct);
+
+    public async Task<RegistrationStateResponse?> GetRegistrationStateAsync(CancellationToken ct = default)
+    {
+        // Absent outside the local-accounts mode (the endpoints aren't mapped) — that isn't an error.
+        try
+        {
+            return await http.GetFromJsonAsync<RegistrationStateResponse>("/api/v1/auth/state", ct);
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
+    }
 
     public async Task<IReadOnlyList<TrackDto>> GetTracksAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks", ct) ?? [];
@@ -687,6 +721,12 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public Task<string?> RevokeCompetitionGrantAsync(string userId, CancellationToken ct = default) =>
         DeleteVoidAsync($"/api/v1/admin/users/{userId}/competition-grant", ct);
+
+    public Task<AssignableRolesDto?> GetAssignableRolesAsync(CancellationToken ct = default) =>
+        http.GetFromJsonAsync<AssignableRolesDto>("/api/v1/admin/roles", ct);
+
+    public Task<string?> SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default) =>
+        PutVoidAsync($"/api/v1/admin/users/{userId}/roles", new SetUserRolesRequest(roles), ct);
 
     public Task<string?> SetOrgUnitCodeAsync(Guid orgUnitId, string? code, CancellationToken ct = default) =>
         PutVoidAsync($"/api/v1/admin/org-units/{orgUnitId}/code", new SetOrgUnitCodeRequest(code), ct);
