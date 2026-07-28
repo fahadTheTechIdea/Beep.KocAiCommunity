@@ -13,6 +13,16 @@ public sealed class SplitParameters : NodeParameters
     protected override IReadOnlyList<ParamField> Declare() => [TestFraction];
 }
 
+public sealed class TimeSplitParameters : NodeParameters
+{
+    public ColumnParam OrderColumn { get; } = new("orderColumn", "Time / order column", required: true,
+        help: "The column that orders the series in time (a date or a sequence number).");
+    public NumberParam TestFraction { get; } = new("testFraction", "Test fraction (most recent)", 0.25, min: 0.05, max: 0.9,
+        help: "Share of the most-recent rows held out for evaluation — the model never sees the future.");
+
+    protected override IReadOnlyList<ParamField> Declare() => [OrderColumn, TestFraction];
+}
+
 // The tree-family algorithms (share trees/leaves/minLeaf).
 file static class Algo
 {

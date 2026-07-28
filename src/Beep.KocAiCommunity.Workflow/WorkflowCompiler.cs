@@ -19,7 +19,7 @@ public static class WorkflowCompiler
             "rename-column", "convert-numeric", "compute-column", "combine-columns",
             "lp-normalize", "global-contrast", "take-rows", "shuffle",
             "sql", "sql-filter", "group-by", "sort", "distinct", "join-dataset", "union-dataset",
-            "split", "train", "cross-validate", "cluster", "score", "evaluate",
+            "split", "time-split", "train", "cross-validate", "cluster", "score", "evaluate",
         };
 
     public static WorkflowValidationResult Compile(WorkflowDefinition definition)

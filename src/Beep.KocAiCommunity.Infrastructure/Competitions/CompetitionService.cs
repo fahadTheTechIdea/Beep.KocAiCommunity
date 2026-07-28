@@ -490,7 +490,14 @@ public sealed class CompetitionService(
             throw new CompetitionException("This competition has no training/evaluation data for pipeline submissions.");
         }
 
-        if (!Enum.TryParse<MlTaskType>(competition.TaskType, ignoreCase: true, out var task))
+        // Forecasting runs on the regression engine (chronological hold-out via the time-split node); every
+        // other task maps to its own MlTaskType.
+        MlTaskType task;
+        if (string.Equals(competition.TaskType, "Forecasting", StringComparison.OrdinalIgnoreCase))
+        {
+            task = MlTaskType.Regression;
+        }
+        else if (!Enum.TryParse(competition.TaskType, ignoreCase: true, out task))
         {
             task = MlTaskType.BinaryClassification;
         }

@@ -18,6 +18,7 @@ public static class CompetitionDisplay
         "BinaryClassification" => "Classification",
         "MulticlassClassification" => "Multiclass",
         "Regression" => "Regression",
+        "Forecasting" => "Forecasting",
         _ => taskType,
     };
 

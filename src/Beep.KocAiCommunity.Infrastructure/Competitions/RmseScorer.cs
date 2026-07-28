@@ -13,7 +13,9 @@ public sealed class RmseScorer : IScoringPlugin
 {
     public string Code => "rmse";
     public bool HigherIsBetter => false;
-    public IReadOnlyCollection<string> SupportedTasks => ["Regression"];
+    // Forecasting is scored exactly like regression (RMSE by id); it differs only in using a chronological
+    // hold-out (the time-split node) rather than a random one.
+    public IReadOnlyCollection<string> SupportedTasks => ["Regression", "Forecasting"];
 
     public async Task<double> ScoreAsync(Stream predictions, Stream answerKey, string idColumn = "id", CancellationToken ct = default)
     {

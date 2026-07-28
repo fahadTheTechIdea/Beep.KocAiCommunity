@@ -1,3 +1,5 @@
+using System.Globalization;
+using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Microsoft.ML;
@@ -45,6 +47,96 @@ public sealed class SplitHandler : IPipelineNodeHandler
 
         var output = PipelineTable.FromCsvFile(outPath);
         return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "done", $"{output.RowCount} rows · {fraction:0.##} held out for test"), output);
+    }
+}
+
+public sealed class TimeSplitHandler : IPipelineNodeHandler
+{
+    public NodeDescriptor Descriptor { get; } = new("time-split", "Split", "Chronological split",
+        "For time-series forecasting: order by a time column and hold out the most-recent rows, so the "
+        + "model is trained on the past and evaluated on the future (no leakage). Place before the model.",
+        PortKind.Table, PortKind.Table, new TimeSplitParameters().Describe());
+
+    public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
+    {
+        if (ctx.Mode == PipelineMode.Predict)
+        {
+            return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "done", "trained on the full history for prediction"), input);
+        }
+
+        var orderColumn = Cfg(node, "orderColumn") ?? string.Empty;
+        var col = input.Columns.ToList().IndexOf(orderColumn);
+        if (string.IsNullOrWhiteSpace(orderColumn) || col < 0)
+        {
+            return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "failed",
+                string.IsNullOrWhiteSpace(orderColumn) ? "pick the time/order column" : $"column '{orderColumn}' not found"), input);
+        }
+
+        var fraction = Math.Clamp(ReadDouble(Cfg(node, "testFraction"), 0.25), 0.05, 0.9);
+
+        // Read every row, then order it in time. The most-recent `fraction` becomes the test fold so the
+        // model never sees the future — a random split would leak later observations into training.
+        string[]? header = null;
+        var rows = new List<string[]>();
+        using (var reader = new StreamReader(input.CsvPath))
+        {
+            foreach (var record in KocCsv.ParseRecords(reader))
+            {
+                if (header is null)
+                {
+                    header = record;
+                }
+                else
+                {
+                    rows.Add(record);
+                }
+            }
+        }
+
+        if (header is null || rows.Count < 2)
+        {
+            return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "failed", "need at least two rows to split"), input);
+        }
+
+        var ordered = OrderChronologically(rows, col);
+        var trainCount = Math.Clamp((int)Math.Round(ordered.Count * (1 - fraction)), 1, ordered.Count - 1);
+
+        var outPath = ctx.NewTemp();
+        using (var sw = new StreamWriter(outPath))
+        {
+            sw.WriteLine(KocCsv.WriteRow([.. header, FoldColumn]));
+            for (var i = 0; i < ordered.Count; i++)
+            {
+                sw.WriteLine(KocCsv.WriteRow([.. ordered[i], i < trainCount ? "0" : "1"]));
+            }
+        }
+
+        ctx.HasSplit = true; // a fold marker now exists; downstream nodes must not drop it (guards leakage)
+        var output = PipelineTable.FromCsvFile(outPath);
+        return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "done",
+            $"{trainCount} past rows train · {ordered.Count - trainCount} most-recent held out (by {orderColumn})"), output);
+    }
+
+    // Sort ascending by the order column, choosing one homogeneous key type (date → number → text) so we
+    // never compare mixed types. Blank keys sort first (treated as the earliest).
+    private static List<string[]> OrderChronologically(List<string[]> rows, int col)
+    {
+        string Value(string[] r) => col < r.Length ? r[col] : string.Empty;
+        var values = rows.Select(Value).Where(v => !string.IsNullOrWhiteSpace(v)).ToList();
+
+        bool AllParse(Func<string, bool> tryParse) => values.Count > 0 && values.All(tryParse);
+
+        if (AllParse(v => DateTime.TryParse(v, CultureInfo.InvariantCulture, DateTimeStyles.None, out _)))
+        {
+            return [.. rows.OrderBy(r => DateTime.TryParse(Value(r), CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : DateTime.MinValue)];
+        }
+
+        if (AllParse(v => double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out _)))
+        {
+            return [.. rows.OrderBy(r => double.TryParse(Value(r), NumberStyles.Any, CultureInfo.InvariantCulture, out var n) ? n : double.MinValue)];
+        }
+
+        return [.. rows.OrderBy(Value, StringComparer.Ordinal)];
     }
 }
 
@@ -196,7 +288,7 @@ public sealed class EvaluateHandler : IPipelineNodeHandler
         {
             var m = ml.Regression.Evaluate(scored, labelColumnName: ctx.LabelColumn);
             ctx.PrimaryValue = m.RSquared;
-            status = new NodeExecutionResult(node.Id, node.Kind, "done", $"R² {m.RSquared:0.###} · RMSE {m.RootMeanSquaredError:0.###}");
+            status = new NodeExecutionResult(node.Id, node.Kind, "done", $"R² {m.RSquared:0.###} · RMSE {m.RootMeanSquaredError:0.###} · MAE {m.MeanAbsoluteError:0.###}");
         }
         else if (ctx.Task == MlTaskType.MulticlassClassification)
         {

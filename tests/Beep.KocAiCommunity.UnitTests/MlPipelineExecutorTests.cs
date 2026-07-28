@@ -813,6 +813,86 @@ public class MlPipelineExecutorTests
         tk.Detail.Should().Contain("split");
     }
 
+    [Fact]
+    public async Task Chronological_split_trains_on_the_past_and_scores_on_the_future()
+    {
+        // Time-series forecasting = regression + a chronological hold-out. The time-split orders by the
+        // date column and holds out the most-recent rows, so the model is scored on genuinely future data.
+        var def = new WorkflowDefinition
+        {
+            Name = "forecast",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "nz", Kind = "normalize" },
+                new() { Id = "ts", Kind = "time-split", Config = new Dictionary<string, string> { ["orderColumn"] = "date", ["testFraction"] = "0.25" } },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "nz"), new("nz", "ts"), new("ts", "tr"), new("tr", "ev")],
+        };
+
+        // A clean relationship y = 3·x1 + 2·x2 + 5, with the features cycling through their range so the
+        // chronologically held-out tail is in-distribution (forecasting from features, not blind extrapolation).
+        var sb = new StringBuilder("date,x1,x2,y\n");
+        for (var i = 0; i < 48; i++)
+        {
+            var x1 = i % 10;
+            var x2 = (i * 3) % 7;
+            sb.Append($"2024-{1 + (i / 28):00}-{1 + (i % 28):00},{x1},{x2},{(3 * x1) + (2 * x2) + 5}\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "y", MlTaskType.Regression, csv, 10);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == "time-split").Detail.Should().Contain("held out");
+        result.PrimaryMetric.Should().Be("RSquared");
+        result.PrimaryValue.Should().BeGreaterThan(0.7);
+    }
+
+    [Fact]
+    public async Task Forecasts_future_values_as_a_submission()
+    {
+        var def = new WorkflowDefinition
+        {
+            Name = "forecast-submission",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "nz", Kind = "normalize" },
+                new() { Id = "ts", Kind = "time-split", Config = new Dictionary<string, string> { ["orderColumn"] = "date" } },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "nz"), new("nz", "ts"), new("ts", "tr"), new("tr", "ev")],
+        };
+
+        var train = new StringBuilder("id,date,x1,x2,y\n");
+        for (var i = 0; i < 40; i++)
+        {
+            var x1 = i % 10;
+            var x2 = (i * 3) % 7;
+            train.Append($"h{i},2024-{1 + (i / 28):00}-{1 + (i % 28):00},{x1},{x2},{(3 * x1) + (2 * x2) + 5}\n");
+        }
+        using var trainCsv = new MemoryStream(Encoding.UTF8.GetBytes(train.ToString()));
+
+        // Two future points; the one with the larger drivers must forecast the higher value.
+        var eval = "id,date,x1,x2\nf-lo,2024-03-01,0,0\nf-hi,2024-03-20,9,6\n";
+        using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval));
+
+        var csv = await NewExecutor().PredictAsync(def, "y", "id", MlTaskType.Regression, trainCsv, evalCsv);
+
+        var lines = csv.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        var preds = lines.Skip(1)
+            .Select(l => l.Split(','))
+            .ToDictionary(p => p[0], p => double.Parse(p[1], System.Globalization.CultureInfo.InvariantCulture));
+        preds.Should().ContainKeys("f-lo", "f-hi");
+        preds["f-hi"].Should().BeGreaterThan(preds["f-lo"], "higher drivers forecast a higher value");
+    }
+
     // Three separable clusters → classes a/b/c.
     private static string MulticlassCsv(bool withId)
     {
