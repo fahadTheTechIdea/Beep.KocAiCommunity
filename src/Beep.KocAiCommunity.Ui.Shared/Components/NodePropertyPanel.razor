@@ -49,7 +49,7 @@ else
                     break;
 
                 case "Select":
-                    <MudSelect T="string" Label="@p.DisplayName" Value="@Effective(p)" ValueChanged="@(v => Set(p.Name, v))" ReadOnly="@Locked(p)"
+                    <MudSelect T="string" Label="@p.DisplayName" Value="@CurrentOf(p.Name)" ValueChanged="@(v => Set(p.Name, v))" ReadOnly="@Locked(p)"
                                ToStringFunc="@(val => (p.Options ?? []).FirstOrDefault(o => o.Value == val)?.Label ?? val)"
                                HelperText="@p.Help" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2">
                         @foreach (var o in OptionsFor(p))
@@ -148,18 +148,26 @@ else
         Config.TryGetValue("task", out var t) && !string.IsNullOrEmpty(t) ? t : Task;
 
     // A field with a VisibleWhen shows only when its sibling parameter currently holds a matching value
-    // (using the sibling's current config value, or its declared default when unset).
-    private bool Visible(NodeParameterDto p)
+    // (resolved the same way the sibling's own editor resolves it — see CurrentOf).
+    private bool Visible(NodeParameterDto p) =>
+        p.VisibleWhen is not { } vw || (CurrentOf(vw.Param) is { } current && vw.Values.Contains(current));
+
+    // The value a parameter's editor actually shows: the stored value, else the declared default. For a
+    // lookup whose options are task-tagged, a value the active task retired (e.g. 'sdca' left behind after
+    // switching the Train node to Anomaly detection) falls back to the first option that does apply — so the
+    // dropdown is never empty, never shows a trainer the engine won't use, and the hyperparameters gated on
+    // it (VisibleWhen) follow along. Display-only: the stale config value is overwritten on the next edit.
+    private string? CurrentOf(string name)
     {
-        if (p.VisibleWhen is not { } vw)
+        var p = Descriptor?.Parameters.FirstOrDefault(x => x.Name == name);
+        var raw = Config.TryGetValue(name, out var v) && !string.IsNullOrEmpty(v) ? v : p?.Default;
+        if (p is null || p.Type != "Select")
         {
-            return true;
+            return raw;
         }
 
-        var current = Config.TryGetValue(vw.Param, out var v) && !string.IsNullOrEmpty(v)
-            ? v
-            : Descriptor?.Parameters.FirstOrDefault(x => x.Name == vw.Param)?.Default;
-        return current is not null && vw.Values.Contains(current);
+        var options = OptionsFor(p).ToList();
+        return options.Count == 0 || options.Any(o => o.Value == raw) ? raw : options[0].Value;
     }
 
     private string Get(string key) => Config.TryGetValue(key, out var v) ? v : string.Empty;

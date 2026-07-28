@@ -1,4 +1,5 @@
 using Beep.KocAiCommunity.Contracts.Competitions;
+using Beep.KocAiCommunity.Ui.Shared.Components;
 using MudBlazor;
 
 namespace Beep.KocAiCommunity.Web.Components.Shared;
@@ -13,15 +14,7 @@ public static class CompetitionDisplay
         _ => Color.Default,
     };
 
-    public static string TaskLabel(string taskType) => taskType switch
-    {
-        "BinaryClassification" => "Classification",
-        "MulticlassClassification" => "Multiclass",
-        "Regression" => "Regression",
-        "Forecasting" => "Forecasting",
-        "AnomalyDetection" => "Anomaly detection",
-        _ => taskType,
-    };
+    public static string TaskLabel(string taskType) => MlTaskLabels.Display(taskType);
 
     /// <summary>"Accuracy" / "RMSE — lower wins", from the enriched DTO (falls back to task inference).</summary>
     public static string MetricLabel(CompetitionDto c)

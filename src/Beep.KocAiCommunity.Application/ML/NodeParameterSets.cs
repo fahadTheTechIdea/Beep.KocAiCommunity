@@ -31,15 +31,18 @@ file static class Algo
     public static readonly string[] Iterations = ["gam", "perceptron", "sgd", "ogd"];
     public static readonly string[] Linear = ["sdca", "lbfgs"];
     public static readonly string[] L2 = ["sdca", "lbfgs", "sgd", "perceptron"];
+    public static readonly string[] Pca = ["randomized-pca"];
 }
 
 public sealed class TrainParameters : NodeParameters
 {
-    public ColumnParam TargetColumn { get; } = new("targetColumn", "Target (label) column", help: "What to predict. Fixed by the competition when submitting.");
+    public ColumnParam TargetColumn { get; } = new("targetColumn", "Target (label) column",
+        help: "What to predict. For anomaly detection it is ground truth used only for scoring — never trained on. Fixed by the competition when submitting.");
     public ColumnParam IdColumn { get; } = new("idColumn", "ID column", help: "Row identifier carried to the submission (never used as a feature).");
     public ColumnsParam FeatureColumns { get; } = new("featureColumns", "Feature columns (blank = all except target/id)");
     public LookupParam Task { get; } = new("task", "Task", "BinaryClassification",
-        [new("BinaryClassification", "Binary classification"), new("MulticlassClassification", "Multiclass classification"), new("Regression", "Regression")],
+        [new("BinaryClassification", "Binary classification"), new("MulticlassClassification", "Multiclass classification"), new("Regression", "Regression"),
+         new("AnomalyDetection", "Anomaly detection (unsupervised)")],
         help: "Chooses the metric and which algorithms apply.");
     public LookupParam Algorithm { get; } = new("algorithm", "Algorithm", "sdca", MlAlgorithms.All);
     public IntParam Trees { get; } = new("trees", "Trees", 100, min: 1) { VisibleWhen = new("algorithm", Algo.Trees) };
@@ -51,9 +54,12 @@ public sealed class TrainParameters : NodeParameters
     public NumberParam L2 { get; } = new("l2", "L2 regularization", min: 0, help: "Blank = default.") { VisibleWhen = new("algorithm", Algo.L2) };
     public IntParam MaxIterations { get; } = new("maxIterations", "Max iterations", min: 1, help: "Blank = auto.") { VisibleWhen = new("algorithm", ["sdca"]) };
     public IntParam HistorySize { get; } = new("historySize", "History size", 20, min: 1) { VisibleWhen = new("algorithm", ["lbfgs"]) };
+    public IntParam Rank { get; } = new("rank", "Normal-subspace components", min: 1, max: 20,
+        help: "How many components describe \"normal\". Fewer = a tighter notion of normal, so more rows look anomalous. Blank = features − 1.")
+    { VisibleWhen = new("algorithm", Algo.Pca) };
 
     protected override IReadOnlyList<ParamField> Declare() =>
-        [TargetColumn, IdColumn, FeatureColumns, Task, Algorithm, Trees, Leaves, MinLeaf, LearningRate, Iterations, L1, L2, MaxIterations, HistorySize];
+        [TargetColumn, IdColumn, FeatureColumns, Task, Algorithm, Trees, Leaves, MinLeaf, LearningRate, Iterations, L1, L2, MaxIterations, HistorySize, Rank];
 }
 
 public sealed class ClusterParameters : NodeParameters

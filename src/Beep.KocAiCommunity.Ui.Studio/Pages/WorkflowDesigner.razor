@@ -36,6 +36,50 @@ else
             <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/workflows">Workflows</MudButton>
             <MudText Typo="Typo.h5" Class="koc-heading">@_registryName</MudText>
             <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_registryStatus == "published" ? Color.Success : Color.Info)">v@_registryVersion · @_registryStatus</MudChip>
+
+            @* What this pipeline is learning. It lives on the Train node — surfaced (and settable) here so it
+               isn't discoverable only by selecting that node. A competition's task is fixed, and the ribbon
+               below already states it, so the control is free-mode only. *@
+            @if (_competition is null)
+            {
+                @if (TrainNode() is null)
+                {
+                    <MudTooltip Text="Add a Train node to choose what the pipeline learns.">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default"
+                                 Icon="@Icons.Material.Filled.ModelTraining" Style="opacity:.6;">No model yet</MudChip>
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Dense="true">
+                        <ActivatorContent>
+                            <MudTooltip Text="The task the Train node learns — sets the metric and which algorithms apply.">
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                         Icon="@Icons.Material.Filled.ModelTraining" OnClick="@context.ToggleAsync" Style="cursor:pointer;">
+                                    @EffectiveTaskLabel()
+                                </MudChip>
+                            </MudTooltip>
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudText Typo="Typo.caption" Class="px-4 py-2 d-block">What is this pipeline learning?</MudText>
+                            <MudDivider />
+                            @foreach (var option in TaskOptions())
+                            {
+                                <MudMenuItem OnClick="@(() => SetTask(option.Value))">
+                                    @if (option.Value == EffectiveTask())
+                                    {
+                                        <b>@option.Label ✓</b>
+                                    }
+                                    else
+                                    {
+                                        @option.Label
+                                    }
+                                </MudMenuItem>
+                            }
+                        </ChildContent>
+                    </MudMenu>
+                }
+            }
             @if (_running || _submitting)
             {
                 <MudProgressCircular Indeterminate="true" Size="Size.Small" />
@@ -52,6 +96,27 @@ else
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Publish" OnClick="PublishRegistry" Disabled="_registryBusy">Publish</MudButton>
         }
     </div>
+
+    @* Competition context: what you're building for, and the facts the server will enforce on submission. *@
+    @if (_competition is { } comp)
+    {
+        <BlueprintCard Class="pa-3 mb-3">
+            <div class="d-flex align-center gap-3 flex-wrap">
+                <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Secondary" />
+                <div>
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading">🏆 @comp.Title</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:.75;">
+                        Predict <code>@comp.LabelColumn</code> per <code>@comp.IdColumn</code> · scored on
+                        <b>@(string.IsNullOrEmpty(comp.MetricName) ? "the host's metric" : comp.MetricName)</b>
+                        @(comp.HigherIsBetter ? "(higher wins)" : "(lower wins)")
+                    </MudText>
+                </div>
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@MlTaskLabels.Display(comp.TaskType)</MudChip>
+                <MudSpacer />
+                <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.OpenInNew" Href="@($"/compete/{comp.Id}")">Competition page</MudButton>
+            </div>
+        </BlueprintCard>
+    }
 
     <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;">
         <!-- Palette -->
@@ -112,7 +177,39 @@ else
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">@def.Description</MudText>
                 }
 
-                <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" AvailableColumns="_columns" Task="_task" LockedKeys="@(_selected.Kind == "train" ? _lockedKeys : [])" OnChanged="OnNodeChanged" />
+                @* In a competition the source is the host's data, not one of your datasets — so the Dataset
+                   node shows the actual files it will run on instead of an empty picker. *@
+                @if (_competition is { } dsComp && _selected.Kind == "dataset")
+                {
+                    <div class="mb-2" style="border:1px solid var(--koc-divider);border-radius:6px;padding:10px;">
+                        <div class="d-flex align-center gap-2 mb-1">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Secondary" />
+                            <MudText Typo="Typo.caption" Class="koc-heading">Competition data</MudText>
+                        </div>
+                        @if (_competitionTrainingCsv is null)
+                        {
+                            <MudText Typo="Typo.caption" Style="opacity:.7;">Loading the host's files…</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Class="d-block">
+                                <b>training.csv</b> · @CsvRowCount(_competitionTrainingCsv) rows × @_columns.Count columns
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.75;">
+                                <b>evaluation.csv</b> · @(_competitionEvalCsv is null ? "—" : $"{CsvRowCount(_competitionEvalCsv)} rows") — scored on submit, never shown to your graph while training.
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.7;">
+                                Target <code>@dsComp.LabelColumn</code> · id <code>@dsComp.IdColumn</code> — fixed by the host.
+                            </MudText>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @* Task = the graph's effective task (the Train node's, else the fallback) so a node without a
+                       task field of its own — Cross-validate — still offers only the trainers that apply. *@
+                    <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" AvailableColumns="_columns" Task="@EffectiveTask()" LockedKeys="@(_selected.Kind == "train" ? _lockedKeys : [])" OnChanged="OnNodeChanged" />
+                }
             }
         </BlueprintCard>
     </div>
@@ -175,6 +272,11 @@ else
     private string? _registryCompetitionTitle;
     private CompetitionDto? _competition;
     private IReadOnlyList<string> _lockedKeys = [];
+
+    // The host's files, fetched once when the workflow targets a competition: the training CSV is what Run
+    // executes on (and where the column pickers get their names), the evaluation CSV is shown for context.
+    private string? _competitionTrainingCsv;
+    private string? _competitionEvalCsv;
 
     // Registry-edit mode: the designer is editing a versioned workflow from /workflows.
     [Parameter] public Guid? WorkflowId { get; set; }
@@ -306,9 +408,50 @@ else
         _diagram.Nodes.OfType<MlNode>().FirstOrDefault(n => n.Kind == "dataset") is { } d
         && d.Config.TryGetValue("datasetId", out var v) && Guid.TryParse(v, out var id) ? id : null;
 
+    // The host's training + evaluation CSVs for a competition-targeted workflow. Fetched once per load; the
+    // training header is the graph's column vocabulary, so every Column/Columns picker works exactly as it
+    // does for a personal dataset.
+    private async Task LoadCompetitionDataAsync()
+    {
+        _competitionTrainingCsv = _competitionEvalCsv = null;
+        if (_competition is not { HasDatasets: true } comp)
+        {
+            return;
+        }
+
+        try
+        {
+            _competitionTrainingCsv = await Api.GetCompetitionDataAsync(comp.Id, "training");
+            _competitionEvalCsv = await Api.GetCompetitionDataAsync(comp.Id, "evaluation");
+        }
+        catch
+        {
+            // Leave them null — the Dataset node says the files couldn't be read and Run reports it.
+        }
+    }
+
+    // Column names from a CSV's header row.
+    private static IReadOnlyList<string> CsvHeader(string csv)
+    {
+        using var reader = new StringReader(csv);
+        var line = reader.ReadLine();
+        return line is null ? [] : [.. line.Split(',').Select(c => c.Trim().Trim('"')).Where(c => c.Length > 0)];
+    }
+
+    // Data rows in a CSV (header excluded) — shown on the Dataset node so the host's data isn't a black box.
+    private static int CsvRowCount(string csv) =>
+        Math.Max(0, csv.Split('\n').Count(l => !string.IsNullOrWhiteSpace(l)) - 1);
+
     // Load the Dataset node's column names so Column/Columns fields become pickers instead of text boxes.
     private async Task LoadColumns()
     {
+        // In a competition the columns come from the host's training file, not a dataset the user picked.
+        if (_competitionTrainingCsv is { } csv)
+        {
+            _columns = CsvHeader(csv);
+            return;
+        }
+
         if (DatasetNodeId() is not { } id)
         {
             _columns = [];
@@ -385,6 +528,7 @@ else
             ? (await Api.GetCompetitionsAsync()).FirstOrDefault(c => c.Id == cid)
             : null;
         _registryCompetitionTitle = _competition?.Title;
+        await LoadCompetitionDataAsync();
 
         var json = "{}";
         if (latest is not null)
@@ -704,6 +848,29 @@ else
 
     private string EffectiveTask() => TrainCfg("task") ?? _task;
 
+    private MlNode? TrainNode() => _diagram.Nodes.OfType<MlNode>().FirstOrDefault(n => n.Kind == "train");
+
+    // The task choices come from the Train node's own `task` lookup in the server catalog, so a task added
+    // to the runtime appears in this menu with no client change — the same list the property panel shows.
+    private IReadOnlyList<LookupOptionDto> TaskOptions() =>
+        Get("train")?.Parameters.FirstOrDefault(p => p.Name == "task")?.Options ?? [];
+
+    private string EffectiveTaskLabel() =>
+        TaskOptions().FirstOrDefault(o => o.Value == EffectiveTask())?.Label ?? EffectiveTask();
+
+    // Writes to the Train node — the one place the task is stored — then saves and refreshes so the property
+    // panel's task-scoped fields (algorithm list, per-algorithm knobs) follow immediately.
+    private async Task SetTask(string value)
+    {
+        if (TrainNode() is not { } train || string.Equals(EffectiveTask(), value, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        train.Config["task"] = value;
+        await OnNodeChanged();
+    }
+
     private bool MatchesSearch(NodeDescriptorDto n) =>
         string.IsNullOrWhiteSpace(_search)
         || n.DisplayName.Contains(_search, StringComparison.OrdinalIgnoreCase)
@@ -714,7 +881,16 @@ else
 
     private async Task RunFromDataset()
     {
-        if (DatasetNodeId() is not { } id)
+        // Two sources, one action: a competition runs on the host's training file, a personal workflow on the
+        // dataset chosen on the Dataset node. Running before submitting is how you see your metric locally.
+        var competitionRun = _competition is not null;
+        if (competitionRun && _competitionTrainingCsv is null)
+        {
+            Log("warning", "The competition's training data couldn't be read — try reloading the page.");
+            return;
+        }
+
+        if (!competitionRun && DatasetNodeId() is null)
         {
             Log("warning", "Pick a training dataset on the Dataset node first.");
             return;
@@ -726,19 +902,30 @@ else
             n.SetStatus("idle");
         }
 
-        Log("info", $"Running pipeline · target '{EffectiveLabel()}' · {EffectiveTask()} …");
+        Log("info", competitionRun
+            ? $"Running on the competition's training data · target '{EffectiveLabel()}' · {EffectiveTask()} …"
+            : $"Running pipeline · target '{EffectiveLabel()}' · {EffectiveTask()} …");
         StateHasChanged();
 
         try
         {
-            var (result, error) = await Api.ExecuteWorkflowFromDatasetAsync(BuildDefinition(), id, EffectiveLabel(), EffectiveTask());
+            if (competitionRun)
+            {
+                using var csv = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(_competitionTrainingCsv!));
+                var result = await Api.ExecuteWorkflowAsync(BuildDefinition(), csv, "training.csv", EffectiveLabel(), EffectiveTask());
+                ApplyResult(result);
+                Log("info", "This is your local score on the host's training data — Submit scores you on the hidden evaluation set.");
+                return;
+            }
+
+            var (datasetResult, error) = await Api.ExecuteWorkflowFromDatasetAsync(BuildDefinition(), DatasetNodeId()!.Value, EffectiveLabel(), EffectiveTask());
             if (error is not null)
             {
                 Log("error", $"Run failed: {error}");
                 return;
             }
 
-            ApplyResult(result);
+            ApplyResult(datasetResult);
         }
         catch (Exception ex)
         {

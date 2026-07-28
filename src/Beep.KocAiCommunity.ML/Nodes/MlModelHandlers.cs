@@ -143,8 +143,9 @@ public sealed class TimeSplitHandler : IPipelineNodeHandler
 public sealed class TrainHandler : IPipelineNodeHandler
 {
     public NodeDescriptor Descriptor { get; } = new("train", "Model", "Train model",
-        "Fit a model on the training features (ESP failure, production rate, …).", PortKind.Table, PortKind.Model,
-        new TrainParameters().Describe());
+        "Fit a model on the training features (ESP failure, production rate, …). The Task setting here drives "
+        + "the whole run, including unsupervised anomaly detection — which learns \"normal\" and needs no label.",
+        PortKind.Table, PortKind.Model, new TrainParameters().Describe());
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
@@ -213,6 +214,14 @@ public sealed class CrossValidateHandler : IPipelineNodeHandler
         if (ctx.Mode == PipelineMode.Predict)
         {
             return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "skipped", "not used for prediction"), input);
+        }
+
+        // K-fold needs a label to fold on. Anomaly detection is unsupervised, so there is nothing to
+        // cross-validate — say so instead of quietly folding it as a binary classifier on the ground truth.
+        if (ctx.Task == MlTaskType.AnomalyDetection)
+        {
+            return new NodeResult(new NodeExecutionResult(node.Id, node.Kind, "skipped",
+                "cross-validation doesn't apply to unsupervised anomaly detection — use a split + evaluate for AUC"), input);
         }
 
         ctx.RequireLabel(node, input);
@@ -303,9 +312,13 @@ public sealed class EvaluateHandler : IPipelineNodeHandler
             }
             else
             {
+                // AUC is the score; the detection rate is what it means on the ground — of the top `flagged`
+                // rows the model calls most anomalous, how many are the real ones.
                 var auc = RocAuc.Compute(rows);
+                var detected = DetectionRate.Compute(rows);
                 ctx.PrimaryValue = auc;
-                status = new NodeExecutionResult(node.Id, node.Kind, "done", $"AUC {auc:0.###} · {flagged} anomalies of {rows.Count}");
+                status = new NodeExecutionResult(node.Id, node.Kind, "done",
+                    $"AUC {auc:0.###} · detection rate {detected:0.###} ({detected * flagged:0.#} of {flagged} found in the top {flagged}) · {rows.Count} rows");
             }
         }
         else if (ctx.Task == MlTaskType.Regression)

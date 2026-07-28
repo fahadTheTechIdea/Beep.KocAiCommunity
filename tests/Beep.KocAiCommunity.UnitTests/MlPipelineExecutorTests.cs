@@ -940,6 +940,98 @@ public class MlPipelineExecutorTests
     }
 
     [Fact]
+    public async Task Anomaly_evaluate_reports_the_detection_rate_alongside_auc()
+    {
+        // The task catalog advertises AUC · DetectionRate, so the evaluate node must report both.
+        var def = new WorkflowDefinition
+        {
+            Name = "anomaly-metrics",
+            Nodes = [new() { Id = "d", Kind = "dataset" }, new() { Id = "tr", Kind = "train" }, new() { Id = "ev", Kind = "evaluate" }],
+            Edges = [new("d", "tr"), new("tr", "ev")],
+        };
+
+        var sb = new StringBuilder("x1,x2,x3,label\n");
+        for (var i = 0; i < 95; i++)
+        {
+            var x1 = i % 7;
+            var x2 = (i * 2) % 5;
+            sb.Append($"{x1},{x2},{x1 + x2 + (i % 2) * 0.1},0\n");
+        }
+        for (var i = 0; i < 5; i++)
+        {
+            sb.Append($"{i % 7},{(i * 2) % 5},{(i % 7) + ((i * 2) % 5) + 25},1\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.AnomalyDetection, csv, 10);
+
+        result.Success.Should().BeTrue();
+        result.Nodes.Single(n => n.Kind == "evaluate").Detail.Should().Contain("detection rate");
+    }
+
+    [Fact]
+    public async Task Anomaly_train_honours_the_rank_set_on_the_node()
+    {
+        // The 'rank' knob the property panel exposes must reach the trainer, not be ignored in favour of
+        // the features-1 default — it's the one thing a competitor tunes on an anomaly pipeline.
+        var def = new WorkflowDefinition
+        {
+            Name = "anomaly-rank",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["task"] = "AnomalyDetection", ["rank"] = "1" } },
+            ],
+            Edges = [new("d", "tr")],
+        };
+
+        var sb = new StringBuilder("x1,x2,x3,label\n");
+        for (var i = 0; i < 60; i++)
+        {
+            var x1 = i % 7;
+            var x2 = (i * 2) % 5;
+            sb.Append($"{x1},{x2},{x1 + x2},0\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.AnomalyDetection, csv, 10);
+
+        result.Success.Should().BeTrue();
+        result.Nodes.Single(n => n.Kind == "train").Detail.Should().Contain("rank 1");
+    }
+
+    [Fact]
+    public async Task Cross_validate_is_skipped_for_unsupervised_anomaly_detection()
+    {
+        // K-fold has no meaning without a label to fold on; the node must say so rather than quietly
+        // cross-validating a binary classifier on the ground-truth column.
+        var def = new WorkflowDefinition
+        {
+            Name = "anomaly-cv",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["task"] = "AnomalyDetection" } },
+                new() { Id = "cv", Kind = "cross-validate" },
+            ],
+            Edges = [new("d", "tr"), new("tr", "cv")],
+        };
+
+        var sb = new StringBuilder("x1,x2,label\n");
+        for (var i = 0; i < 40; i++)
+        {
+            sb.Append($"{i % 7},{(i * 2) % 5},0\n");
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.AnomalyDetection, csv, 10);
+
+        var cv = result.Nodes.Single(n => n.Kind == "cross-validate");
+        cv.Status.Should().Be("skipped");
+        cv.Detail.Should().Contain("unsupervised");
+    }
+
+    [Fact]
     public async Task Flags_outliers_with_higher_anomaly_scores_as_a_submission()
     {
         var def = new WorkflowDefinition

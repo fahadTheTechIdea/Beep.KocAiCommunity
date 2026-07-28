@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Beep.KocAiCommunity.Contracts.Competitions;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Beep.KocAiCommunity.Infrastructure.Workflow;
@@ -113,6 +114,32 @@ public class WorkflowRegistryEndpointsTests(KocApiFactory factory) : IClassFixtu
         var validation = await (await me.PostAsync($"/api/v1/workflows/{wf.Id}/versions/1/validate", null))
             .Content.ReadFromJsonAsync<WorkflowValidationResult>();
         validation!.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Joining_a_competition_creates_a_workflow_that_carries_the_competition()
+    {
+        // The competition page's "Join & build" click: create a workflow targeting the competition, then
+        // find it again on a later visit to offer "Continue" instead of joining twice. The CompetitionId is
+        // what makes the designer competition-aware (host data, locked target/task, Submit).
+        var host = _factory.CreateClientAs("join-host", competitionCreator: true, "Employee");
+        var created = await (await host.PostAsJsonAsync("/api/v1/competitions",
+            new CreateCompetitionRequest("ESP anomalies", "Flag abnormal sensor spikes", "Company", null, null, 5, "auc")))
+            .Content.ReadFromJsonAsync<CompetitionDto>();
+
+        var me = _factory.CreateClientAs("join-competitor", "Employee");
+        var entry = await (await me.PostAsJsonAsync("/api/v1/workflows",
+            new CreateWorkflowRequest("ESP anomalies — my pipeline", "Competition entry", "Internal", created!.Id)))
+            .Content.ReadFromJsonAsync<WorkflowSummaryDto>();
+
+        entry!.CompetitionId.Should().Be(created.Id);
+
+        var mine = await me.GetFromJsonAsync<List<WorkflowSummaryDto>>("/api/v1/workflows");
+        mine.Should().ContainSingle(w => w.Id == entry.Id && w.CompetitionId == created.Id);
+
+        // The designer reads the same link off the detail endpoint when it loads the workflow.
+        var detail = await me.GetFromJsonAsync<WorkflowDetailDto>($"/api/v1/workflows/{entry.Id}");
+        detail!.CompetitionId.Should().Be(created.Id);
     }
 
     private async Task SeedTemplatesAsync()

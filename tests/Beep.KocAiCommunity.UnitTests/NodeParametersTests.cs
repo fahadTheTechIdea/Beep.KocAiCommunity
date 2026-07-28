@@ -16,13 +16,15 @@ public class NodeParametersTests
         // train and binning are different nodes → different field sets and types.
         var train = new TrainParameters();
         train.Describe().Select(p => p.Name).Should().Equal(
-            "targetColumn", "idColumn", "featureColumns", "task", "algorithm", "trees", "leaves", "minLeaf", "learningRate", "iterations", "l1", "l2", "maxIterations", "historySize");
+            "targetColumn", "idColumn", "featureColumns", "task", "algorithm", "trees", "leaves", "minLeaf", "learningRate", "iterations", "l1", "l2", "maxIterations", "historySize", "rank");
         train.Algorithm.Type.Should().Be(NodeParameterType.Select);
         train.Algorithm.Options!.Select(o => o.Value).Should().Contain("fasttree");
         train.Trees.Type.Should().Be(NodeParameterType.Integer);
         train.LearningRate.Type.Should().Be(NodeParameterType.Number);
         // FastTree-only knobs are gated to the tree algorithms.
         train.Trees.VisibleWhen!.Values.Should().Contain("fasttree");
+        // The anomaly knob is gated to the (only) unsupervised trainer, so it never shows for a supervised task.
+        train.Rank.VisibleWhen!.Values.Should().Equal("randomized-pca");
 
         var binning = new BinningParameters();
         binning.Describe().Select(p => p.Name).Should().Equal("bins", "columns");

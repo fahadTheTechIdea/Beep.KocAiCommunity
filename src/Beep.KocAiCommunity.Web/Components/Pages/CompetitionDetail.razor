@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.SignalR.Client
 @using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Contracts.Workflow
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Ui.Shared.Components
@@ -11,6 +12,7 @@
 @inject DevIdentity Identity
 @inject RealtimeOptions Realtime
 @inject ISnackbar Snackbar
+@inject NavigationManager Nav
 
 <PageTitle>@(_competition?.Title ?? "Competition") · @KocBrand.ProductName</PageTitle>
 
@@ -54,6 +56,21 @@ else
                 @if (CompetitionDisplay.RevealProgress(_competition, DateTime.UtcNow) is { } progress)
                 {
                     <div class="koc-deadline-bar" title="Progress toward the final reveal"><span style="width:@(((int)(progress * 100)))%"></span></div>
+                }
+
+                @* The one way in: takes you to your pipeline for this competition, creating it on first click. *@
+                @if (_competition.Status != "concluded" && _competition.HasDatasets)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true"
+                               StartIcon="@(_myEntry is null ? Icons.Material.Filled.RocketLaunch : Icons.Material.Filled.AccountTree)"
+                               Disabled="_joining" OnClick="EnterCompetition">
+                        @(_joining ? "Opening…" : _myEntry is null ? "Join & build your pipeline" : "Continue your pipeline")
+                    </MudButton>
+                    <MudText Typo="Typo.caption" Style="opacity:.8;color:#e8f1f8;">
+                        @(_myEntry is null
+                            ? "Opens the Studio node editor on this competition's data — target, id and task are set for you."
+                            : $"Opens “{_myEntry.Name}” in the Studio node editor.")
+                    </MudText>
                 }
             </div>
         </div>
@@ -171,9 +188,13 @@ else
                             </MudItem>
                         }
                     </MudGrid>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree" Href="/workflow">
-                        Build a pipeline in the Studio
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree"
+                               Disabled="@(_joining || _competition.Status == "concluded")" OnClick="EnterCompetition">
+                        @(_myEntry is null ? "Build a pipeline in the Studio" : "Continue your pipeline")
                     </MudButton>
+                    <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.7;">
+                        The Studio reads these files directly — no download needed unless you want to explore them yourself.
+                    </MudText>
                 }
                 else
                 {
@@ -204,6 +225,32 @@ else
                         </MudChip>
                     }
                 </div>
+
+                @* Where you stand — the board can be long, so say it plainly instead of making the user hunt. *@
+                @if (_leaderboard is { Count: > 0 })
+                {
+                    var mine = _leaderboard.FirstOrDefault(e => e.UserId == Identity.UserId);
+                    <div class="px-4 pb-3">
+                        @if (mine is not null)
+                        {
+                            var leader = _leaderboard[0];
+                            var gap = Math.Abs(leader.Score - mine.Score);
+                            <MudAlert Severity="@(mine.Rank == 1 ? Severity.Success : Severity.Info)" Variant="Variant.Text" Dense="true">
+                                <b>You're #@mine.Rank of @_leaderboard.Count</b> · best @mine.Score.ToString("0.###")
+                                @(mine.Rank == 1
+                                    ? " — you're leading the board."
+                                    : $" · {gap:0.###} {(_competition.HigherIsBetter ? "behind" : "off")} the leader ({leader.Score:0.###}).")
+                            </MudAlert>
+                        }
+                        else if (_competition.Status != "concluded")
+                        {
+                            <MudAlert Severity="Severity.Normal" Variant="Variant.Text" Dense="true">
+                                You're not on the board yet — @_leaderboard.Count competitor(s) ahead of you.
+                                <MudLink OnClick="EnterCompetition" Style="cursor:pointer;">Build a pipeline and claim a rank →</MudLink>
+                            </MudAlert>
+                        }
+                    </div>
+                }
 
                 <LiveBoard Entries="_leaderboard" MyUserId="@Identity.UserId" BoardKey="live" />
             </MudTabPanel>
@@ -402,6 +449,10 @@ else
     private HubConnection? _hub;
     private Guid? _joinedCompetition;
 
+    // My workflow targeting this competition (null until I join), and the in-flight join.
+    private WorkflowSummaryDto? _myEntry;
+    private bool _joining;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -456,6 +507,70 @@ else
         await LoadLeaderboard();
         await LoadMySubmissions();
         await LoadData();
+        await LoadMyEntryAsync();
+    }
+
+    /// <summary>My workflow for this competition, if I've already joined — decides "Join" vs "Continue".</summary>
+    private async Task LoadMyEntryAsync()
+    {
+        try
+        {
+            _myEntry = (await Api.GetWorkflowsAsync()).FirstOrDefault(w => w.CompetitionId == Id);
+        }
+        catch
+        {
+            _myEntry = null; // the button still works; it just offers to create one
+        }
+    }
+
+    /// <summary>
+    /// Joining is one click: open my pipeline for this competition, creating it the first time. The workflow
+    /// carries the competition id, which is what makes the designer competition-aware — it loads the host's
+    /// data, locks the target/id/task, and shows the Submit action.
+    /// </summary>
+    private async Task EnterCompetition()
+    {
+        if (_competition is null || _joining)
+        {
+            return;
+        }
+
+        _joining = true;
+        try
+        {
+            if (_myEntry is null)
+            {
+                await LoadMyEntryAsync(); // another tab/session may have joined already
+            }
+
+            if (_myEntry is null)
+            {
+                var request = new CreateWorkflowRequest(
+                    $"{_competition.Title} — my pipeline",
+                    $"Competition entry for “{_competition.Title}”.",
+                    "Internal",
+                    Id);
+                var (workflow, error) = await Api.CreateWorkflowAsync(request);
+                if (workflow is null)
+                {
+                    Snackbar.Add(error ?? "Couldn't create your pipeline.", Severity.Warning);
+                    return;
+                }
+
+                _myEntry = workflow;
+                Snackbar.Add("You're in — build your pipeline and submit it.", Severity.Success);
+            }
+
+            Nav.NavigateTo($"/workflow/{_myEntry.Id}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _joining = false;
+        }
     }
 
     private async Task LoadLeaderboard()

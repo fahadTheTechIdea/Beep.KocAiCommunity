@@ -12,6 +12,7 @@ public static class MlAlgorithms
     public const string Binary = "BinaryClassification";
     public const string Multiclass = "MulticlassClassification";
     public const string Regression = "Regression";
+    public const string Anomaly = "AnomalyDetection";
 
     /// <summary>Every trainer, as lookup options tagged with the tasks it supports.</summary>
     public static readonly IReadOnlyList<LookupOption> All =
@@ -26,5 +27,9 @@ public static class MlAlgorithms
         new("ogd", "Online gradient descent", [Regression]),
         new("naivebayes", "Naive Bayes", [Multiclass]),
         new("ova-fasttree", "One-vs-all (FastTree)", [Multiclass]),
+        // Anomaly detection is unsupervised: the only trainer is RandomizedPCA, which learns the "normal"
+        // subspace and scores a row by its reconstruction error. Tagged so it is the sole option the panel
+        // offers once the task is Anomaly detection — and so the supervised hyperparameters hide themselves.
+        new("randomized-pca", "Randomized PCA (reconstruction error)", [Anomaly]),
     ];
 }

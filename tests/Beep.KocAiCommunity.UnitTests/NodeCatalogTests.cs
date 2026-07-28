@@ -64,6 +64,33 @@ public class NodeCatalogTests
         MlTaskCatalog.Find("forecasting")!.Task.Should().Be(MlTaskType.Regression);
     }
 
+    [Fact]
+    public void Train_node_offers_every_executable_task_including_anomaly_detection()
+    {
+        // A competition injects its task onto the Train node and locks it. If the lookup didn't carry the
+        // value, the panel would show a bare enum name and validation would reject the graph.
+        var task = Registry.Find("train")!.Parameters.Single(p => p.Name == "task");
+        task.Options!.Select(o => o.Value).Should().BeEquivalentTo(
+            new[] { "BinaryClassification", "MulticlassClassification", "Regression", "AnomalyDetection" });
+
+        Registry.ValidateParameters("train", new Dictionary<string, string> { ["task"] = "AnomalyDetection" })
+            .IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Anomaly_detection_offers_exactly_one_trainer_and_its_own_knob()
+    {
+        // The panel filters lookup options by the active task, so an anomaly pipeline sees RandomizedPCA
+        // only — and the rank field it gates on, rather than the supervised hyperparameters.
+        var parameters = Registry.Find("train")!.Parameters;
+        var forAnomaly = parameters.Single(p => p.Name == "algorithm").Options!
+            .Where(o => o.AppliesTo is null || o.AppliesTo.Contains("AnomalyDetection"))
+            .Select(o => o.Value);
+        forAnomaly.Should().Equal("randomized-pca");
+
+        parameters.Single(p => p.Name == "rank").VisibleWhen!.Values.Should().Equal("randomized-pca");
+    }
+
     [Theory]
     [InlineData("train")]
     [InlineData("cross-validate")]
@@ -76,6 +103,6 @@ public class NodeCatalogTests
 
         var algorithm = Registry.Find(kind)!.Parameters.Single(p => p.Name == "algorithm");
         algorithm.Options!.Select(o => o.Value).Should().BeEquivalentTo(
-            new[] { "sdca", "lbfgs", "fasttree", "fastforest", "gam", "perceptron", "sgd", "ogd", "naivebayes", "ova-fasttree" });
+            new[] { "sdca", "lbfgs", "fasttree", "fastforest", "gam", "perceptron", "sgd", "ogd", "naivebayes", "ova-fasttree", "randomized-pca" });
     }
 }

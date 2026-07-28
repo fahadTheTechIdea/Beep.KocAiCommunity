@@ -21,8 +21,10 @@ internal static class MlModelOps
         {
             // Unsupervised: RandomizedPCA learns the "normal" subspace and flags rows with a large
             // reconstruction error (a high Score). Rank must stay below the feature count or the
-            // reconstruction is perfect and every score collapses to zero. Seeded for reproducibility.
-            var rank = Math.Clamp(features.Length - 1, 1, 20);
+            // reconstruction is perfect and every score collapses to zero — so the node's rank, when set,
+            // is clamped to that ceiling rather than trusted. Seeded for reproducibility.
+            var ceiling = Math.Clamp(features.Length - 1, 1, 20);
+            var rank = Math.Clamp(IntOrNull(node, "rank") ?? ceiling, 1, ceiling);
             var pca = ml.Transforms.Concatenate("Features", features)
                 .Append(ml.AnomalyDetection.Trainers.RandomizedPca(new RandomizedPcaTrainer.Options
                 {

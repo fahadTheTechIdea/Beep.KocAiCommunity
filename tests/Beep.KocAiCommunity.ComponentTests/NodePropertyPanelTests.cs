@@ -192,6 +192,54 @@ public class NodePropertyPanelTests : TestContext
     }
 
     [Fact]
+    public void A_lookup_value_the_task_retired_falls_back_to_one_that_applies()
+    {
+        // Switching the Train node to Anomaly detection retires every supervised trainer, but the config
+        // still holds 'sdca'. The dropdown must show the trainer that will actually run, not an empty list
+        // and not a value the engine ignores.
+        var task = Param("task", "Select", def: "BinaryClassification", options:
+            [new("BinaryClassification", "Binary", null), new("AnomalyDetection", "Anomaly detection", null)]);
+        var algo = Param("algorithm", "Select", def: "sdca", options:
+        [
+            new("sdca", "SDCA", ["BinaryClassification"]),
+            new("randomized-pca", "Randomized PCA", ["AnomalyDetection"]),
+        ]);
+
+        var config = new Dictionary<string, string> { ["task"] = "AnomalyDetection", ["algorithm"] = "sdca" };
+        var cut = Render(Descriptor(task, algo), config);
+
+        // The select shows the applicable trainer's label. Had the stale value survived, the panel's
+        // value→label lookup would render "SDCA" instead — a trainer the anomaly engine never runs.
+        cut.Markup.Should().Contain("Randomized PCA");
+        cut.Markup.Should().NotContain("SDCA");
+    }
+
+    [Fact]
+    public void Fields_gated_on_a_lookup_follow_the_value_the_task_leaves_valid()
+    {
+        // 'rank' is gated on randomized-pca and 'l2' on sdca. With the task switched to anomaly detection —
+        // and a stale 'sdca' still in config — the anomaly knob must appear and the supervised one vanish.
+        var task = Param("task", "Select", def: "BinaryClassification", options:
+            [new("BinaryClassification", "Binary", null), new("AnomalyDetection", "Anomaly detection", null)]);
+        var algo = Param("algorithm", "Select", def: "sdca", options:
+        [
+            new("sdca", "SDCA", ["BinaryClassification"]),
+            new("randomized-pca", "Randomized PCA", ["AnomalyDetection"]),
+        ]);
+        var l2 = Param("l2", "Number") with { VisibleWhen = new VisibleWhenDto("algorithm", ["sdca"]) };
+        var rank = Param("rank", "Integer") with { VisibleWhen = new VisibleWhenDto("algorithm", ["randomized-pca"]) };
+
+        var supervised = Render(Descriptor(task, algo, l2, rank), new Dictionary<string, string>());
+        supervised.Markup.Should().Contain("l2");
+        supervised.Markup.Should().NotContain("rank");
+
+        var anomaly = Render(Descriptor(task, algo, l2, rank),
+            new Dictionary<string, string> { ["task"] = "AnomalyDetection", ["algorithm"] = "sdca" });
+        anomaly.Markup.Should().Contain("rank");
+        anomaly.Markup.Should().NotContain("l2");
+    }
+
+    [Fact]
     public void Lookup_shows_only_options_that_apply_to_the_active_task()
     {
         // perceptron applies to binary only, naivebayes to multiclass only.
