@@ -99,6 +99,45 @@ public static class HelpCatalog
             """,
             ["dataset", "profile", "classification", "version", "import"]),
 
+        new("choosing-a-task", "Choosing an ML task", "Studio",
+            "Classification, regression, forecasting, or anomaly detection — which fits your problem, and the gotchas for each.",
+            """
+            # Which ML task?
+
+            Pick the task that matches the *shape of the answer* you want.
+
+            | You want to predict… | Task | Scored on |
+            |---|---|---|
+            | A yes/no outcome (fails / doesn't) | **Binary classification** | Accuracy |
+            | One of several classes (rock facies) | **Multiclass classification** | Accuracy |
+            | A number (production rate) | **Regression** | RMSE (lower wins) |
+            | A number **over time** (decline curve) | **Time-series forecasting** | RMSE (lower wins) |
+            | The **rare abnormal** rows (sensor faults) | **Anomaly detection** | AUC (higher wins) |
+
+            ## Time-series forecasting
+
+            Forecasting is regression with one crucial rule: you must **train on the past and test on the
+            future**. A random split leaks later readings into training and flatters your score.
+
+            - Add a **Chronological split** node (`time-split`) and point it at your **date/sequence
+              column**. It holds out the most-recent rows instead of random ones.
+            - Build features the model can actually use for future rows — lags, rolling averages, days
+              online, seasonality — not the raw timestamp alone.
+
+            ## Anomaly detection
+
+            Anomaly detection is **unsupervised**: it learns what *normal* looks like and flags rows that
+            deviate. You don't label anomalies to train.
+
+            - **Train on normal history only.** If you mix labelled anomalies into training, they pollute
+              the "normal" model and detection gets worse.
+            - No train/test split is needed — the detector uses every row. (The publish check knows this
+              and won't ask for a split on an anomaly model.)
+            - It's scored on **AUC**, not accuracy: when 99% of rows are normal, a model that flags nothing
+              is 99% "accurate" but useless. AUC measures whether the true anomalies rank above the rest.
+            """,
+            ["task", "forecasting", "anomaly", "regression", "classification", "time-split", "auc"]),
+
         new("faq", "Frequently asked questions", "FAQ",
             "Quick answers to common questions.",
             """
@@ -113,7 +152,8 @@ public static class HelpCatalog
             administrator.
 
             **My model won't publish — why?** A supervised model must have a *train/test split* before
-            it. Add a `split` node between your dataset and the model.
+            it. Add a `split` node (or a `time-split` for forecasting) between your dataset and the model.
+            Anomaly-detection models are unsupervised and don't need one.
 
             **Can I download a Confidential dataset?** Only if you own it or are a platform admin.
             """,
