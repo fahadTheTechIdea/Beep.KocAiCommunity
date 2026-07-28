@@ -6,6 +6,9 @@ public enum MlTaskType
     BinaryClassification,
     MulticlassClassification,
     Regression,
+
+    /// <summary>Unsupervised outlier flagging (RandomizedPCA); scored on ranking (AUC) against a rare positive class.</summary>
+    AnomalyDetection,
 }
 
 /// <summary>

@@ -148,7 +148,13 @@ public sealed class TrainHandler : IPipelineNodeHandler
 
     public NodeResult Execute(PipelineContext ctx, WorkflowNode node, PipelineTable input)
     {
-        ctx.RequireLabel(node, input);
+        // Anomaly detection is unsupervised — it learns "normal" from the features alone, so it needs no
+        // label to train (a label, if present, is ground truth used only by the evaluate node).
+        if (ctx.Task != MlTaskType.AnomalyDetection)
+        {
+            ctx.RequireLabel(node, input);
+        }
+
         var full = input.LoadIntoMl(ctx.Ml, ctx.LabelColumn);
         var features = SelectFeatures(node, NumericFeatures(full.Schema, ctx.FeatureNames(input)));
         if (features.Length == 0)
@@ -284,7 +290,25 @@ public sealed class EvaluateHandler : IPipelineNodeHandler
         var scored = ctx.Model.Transform(withLabel);
 
         NodeExecutionResult status;
-        if (ctx.Task == MlTaskType.Regression)
+        if (ctx.Task == MlTaskType.AnomalyDetection)
+        {
+            // Rank the continuous anomaly Score against the ground-truth label (rare positives). AUC is the
+            // right metric here — accuracy is meaningless when almost every row is "normal".
+            var rows = MlModelOps.ReadScoreAndLabel(scored, ctx.LabelColumn);
+            var flagged = rows.Count(r => r.Positive);
+            if (flagged == 0 || flagged == rows.Count)
+            {
+                ctx.PrimaryValue = 0.5;
+                status = new NodeExecutionResult(node.Id, node.Kind, "done", $"no labelled anomalies in the held-out set ({rows.Count} rows)");
+            }
+            else
+            {
+                var auc = RocAuc.Compute(rows);
+                ctx.PrimaryValue = auc;
+                status = new NodeExecutionResult(node.Id, node.Kind, "done", $"AUC {auc:0.###} · {flagged} anomalies of {rows.Count}");
+            }
+        }
+        else if (ctx.Task == MlTaskType.Regression)
         {
             var m = ml.Regression.Evaluate(scored, labelColumnName: ctx.LabelColumn);
             ctx.PrimaryValue = m.RSquared;

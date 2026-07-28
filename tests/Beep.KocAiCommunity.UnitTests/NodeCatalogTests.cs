@@ -55,10 +55,13 @@ public class NodeCatalogTests
     }
 
     [Fact]
-    public void Task_catalog_marks_supported_and_roadmap_tasks()
+    public void Task_catalog_marks_every_task_supported()
     {
-        MlTaskCatalog.Find("binary")!.Supported.Should().BeTrue();
-        MlTaskCatalog.Find("anomaly")!.Supported.Should().BeFalse();
+        // All five tasks are executable via the node engine (forecasting = regression + chronological
+        // split; anomaly = unsupervised RandomizedPCA scored on AUC).
+        MlTaskCatalog.All.Should().OnlyContain(t => t.Supported);
+        MlTaskCatalog.Find("anomaly")!.Task.Should().Be(MlTaskType.AnomalyDetection);
+        MlTaskCatalog.Find("forecasting")!.Task.Should().Be(MlTaskType.Regression);
     }
 
     [Theory]

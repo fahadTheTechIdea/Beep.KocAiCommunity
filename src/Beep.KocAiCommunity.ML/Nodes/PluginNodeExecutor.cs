@@ -98,6 +98,7 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         {
             MlTaskType.Regression => "RSquared",
             MlTaskType.MulticlassClassification => "MicroAccuracy",
+            MlTaskType.AnomalyDetection => "AUC",
             _ => "Accuracy",
         };
 

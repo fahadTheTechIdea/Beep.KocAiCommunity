@@ -5,15 +5,25 @@ namespace Beep.KocAiCommunity.Application.ML;
 /// <summary>
 /// Enforces the "split before fit" rule: a supervised model must not be reachable from a dataset
 /// without a train/test split in between, otherwise it would be fit on the train+test union (leakage).
-/// Operates on the workflow graph; unsupervised <c>cluster</c> nodes are exempt.
+/// Operates on the workflow graph. Either a random <c>split</c> or a chronological <c>time-split</c>
+/// satisfies the rule. Unsupervised models are exempt: the <c>cluster</c> node, and a <c>train</c> node
+/// configured for anomaly detection (RandomizedPCA learns "normal" from all rows, so there is no leak).
 /// </summary>
 public static class FeaturizationGuard
 {
     private static readonly HashSet<string> SupervisedModelKinds = new(StringComparer.OrdinalIgnoreCase) { "train", "cross-validate" };
+    private static readonly HashSet<string> SplitKinds = new(StringComparer.OrdinalIgnoreCase) { "split", "time-split" };
 
     public static IReadOnlyList<string> Check(WorkflowDefinition definition)
     {
         var kindById = definition.Nodes.ToDictionary(n => n.Id, n => n.Kind, StringComparer.Ordinal);
+
+        // A train node configured for anomaly detection is unsupervised — exempt it like a cluster node.
+        var unsupervised = definition.Nodes
+            .Where(n => n.Config is { } c && c.TryGetValue("task", out var task)
+                        && string.Equals(task, nameof(MlTaskType.AnomalyDetection), StringComparison.OrdinalIgnoreCase))
+            .Select(n => n.Id)
+            .ToHashSet(StringComparer.Ordinal);
         var adjacency = definition.Nodes.ToDictionary(n => n.Id, _ => new List<string>(), StringComparer.Ordinal);
         foreach (var edge in definition.Edges)
         {
@@ -39,12 +49,12 @@ public static class FeaturizationGuard
                 var (node, passed) = queue.Dequeue();
                 var kind = kindById[node];
 
-                if (SupervisedModelKinds.Contains(kind) && !passed)
+                if (SupervisedModelKinds.Contains(kind) && !passed && !unsupervised.Contains(node))
                 {
                     leaks.Add(node);
                 }
 
-                var nextPassed = passed || IsKind(kind, "split");
+                var nextPassed = passed || SplitKinds.Contains(kind);
                 foreach (var next in adjacency[node])
                 {
                     var state = (next, nextPassed);

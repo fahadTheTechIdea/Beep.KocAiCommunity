@@ -393,6 +393,67 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
+    public async Task Anomaly_pipeline_submission_scores_by_auc()
+    {
+        var creator = _factory.CreateClientAs("an-creator", "Employee");
+        var response = await creator.PostAsJsonAsync("/api/v1/competitions",
+            new CreateCompetitionRequest("Flag the faults", "Detect abnormal sensor rows", "Company", null, null, 25, "auc"));
+        response.EnsureSuccessStatusCode();
+        var competitionId = (await response.Content.ReadFromJsonAsync<CompetitionDto>())!.Id;
+
+        // Training is normal history only (unsupervised): every row lies on the plane x3 = x1 + x2.
+        var training = new StringBuilder("id,x1,x2,x3\n");
+        for (var i = 0; i < 80; i++)
+        {
+            var x1 = i % 7;
+            var x2 = (i * 2) % 5;
+            training.Append($"h{i},{x1},{x2},{x1 + x2}\n");
+        }
+        // Evaluation mixes normals (on the plane) with off-plane anomalies; the answer key marks them.
+        var evaluation = new StringBuilder("id,x1,x2,x3\n");
+        var answerKey = new StringBuilder("id,label\n");
+        for (var i = 0; i < 10; i++)
+        {
+            var x1 = i % 7;
+            var x2 = (i * 2) % 5;
+            var anomaly = i % 3 == 0; // ~a third are off-plane
+            evaluation.Append($"e{i},{x1},{x2},{x1 + x2 + (anomaly ? 30 : 0)}\n");
+            answerKey.Append($"e{i},{(anomaly ? 1 : 0)}\n");
+        }
+
+        (await creator.PostAsync(
+            $"/api/v1/competitions/{competitionId}/datasets?labelColumn=label&idColumn=id&task=AnomalyDetection",
+            TwoFiles(training.ToString(), evaluation.ToString())))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile(answerKey.ToString())))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var participant = _factory.CreateClientAs("an-a", "Employee");
+        var definition = new WorkflowDefinition
+        {
+            Name = "anomaly",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "tr"), new("tr", "ev")],
+        };
+
+        var submit = await participant.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/submit-pipeline", definition);
+        submit.StatusCode.Should().Be(HttpStatusCode.OK, await submit.Content.ReadAsStringAsync());
+        var result = (await submit.Content.ReadFromJsonAsync<SubmissionResultDto>())!;
+        result.Score.Should().NotBeNull();
+        result.Score!.Value.Should().BeGreaterThan(0.8, "off-plane anomalies should rank well above the normal rows");
+
+        var dto = (await participant.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!;
+        dto.TaskType.Should().Be("AnomalyDetection");
+        dto.MetricName.Should().Be("AUC");
+        dto.HigherIsBetter.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Multiclass_pipeline_submission_scores_by_accuracy()
     {
         var creator = _factory.CreateClientAs("mc-creator", "Employee");

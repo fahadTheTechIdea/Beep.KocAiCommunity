@@ -893,6 +893,91 @@ public class MlPipelineExecutorTests
         preds["f-hi"].Should().BeGreaterThan(preds["f-lo"], "higher drivers forecast a higher value");
     }
 
+    [Fact]
+    public async Task Detects_anomalies_unsupervised_and_scores_auc()
+    {
+        // No split: RandomizedPCA learns "normal" from the features (the label is ground truth used only
+        // by the evaluate node), and the rare far-away rows get the highest anomaly scores.
+        var def = new WorkflowDefinition
+        {
+            Name = "anomaly",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "tr"), new("tr", "ev")],
+        };
+
+        // Normals lie on the plane x3 = x1 + x2 (a 2-D subspace); anomalies break it. RandomizedPCA (rank 2
+        // of 3) learns the plane and flags the off-plane rows with a large reconstruction error.
+        var sb = new StringBuilder("x1,x2,x3,label\n");
+        for (var i = 0; i < 95; i++)
+        {
+            var x1 = i % 7;
+            var x2 = (i * 2) % 5;
+            sb.Append($"{x1},{x2},{x1 + x2 + (i % 2) * 0.1},0\n");
+        }
+        for (var i = 0; i < 5; i++)
+        {
+            var x1 = i % 7;
+            var x2 = (i * 2) % 5;
+            sb.Append($"{x1},{x2},{x1 + x2 + 25},1\n"); // off-plane ⇒ anomalous
+        }
+        using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.AnomalyDetection, csv, 10);
+
+        var failed = result.Nodes.FirstOrDefault(n => n.Status is "failed");
+        result.Success.Should().BeTrue($"but node '{failed?.Kind}' failed: {failed?.Detail}");
+        result.Nodes.Single(n => n.Kind == "train").Detail.Should().Contain("RandomizedPca");
+        result.PrimaryMetric.Should().Be("AUC");
+        // AUC is computed and wired; its magnitude here is only indicative because studio mode fits the
+        // detector on every provided row (labels included). Ranking quality is proven by the submission
+        // test, which trains on normal history only — the realistic anomaly-detection setup.
+        result.PrimaryValue.Should().BeInRange(0d, 1d);
+    }
+
+    [Fact]
+    public async Task Flags_outliers_with_higher_anomaly_scores_as_a_submission()
+    {
+        var def = new WorkflowDefinition
+        {
+            Name = "anomaly-submission",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "tr"), new("tr", "ev")],
+        };
+
+        // Train on normal history only (unsupervised): all rows lie on the plane x3 = x1 + x2.
+        var train = new StringBuilder("id,x1,x2,x3,label\n");
+        for (var i = 0; i < 100; i++)
+        {
+            var x1 = i % 7;
+            var x2 = (i * 2) % 5;
+            train.Append($"h{i},{x1},{x2},{x1 + x2 + (i % 2) * 0.1},0\n");
+        }
+        using var trainCsv = new MemoryStream(Encoding.UTF8.GetBytes(train.ToString()));
+
+        // A normal row (on the plane) vs an off-plane outlier.
+        var eval = "id,x1,x2,x3\nnormal,2,3,5\noutlier,2,3,30\n";
+        using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval));
+
+        var csv = await NewExecutor().PredictAsync(def, "label", "id", MlTaskType.AnomalyDetection, trainCsv, evalCsv);
+
+        var lines = csv.Trim().Split('\n');
+        lines[0].Should().Be("id,prediction");
+        var scores = lines.Skip(1)
+            .Select(l => l.Split(','))
+            .ToDictionary(p => p[0], p => double.Parse(p[1], System.Globalization.CultureInfo.InvariantCulture));
+        scores["outlier"].Should().BeGreaterThan(scores["normal"], "the far-away row is more anomalous");
+    }
+
     // Three separable clusters → classes a/b/c.
     private static string MulticlassCsv(bool withId)
     {

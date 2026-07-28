@@ -66,6 +66,7 @@ public static class DependencyInjection
         // Competitions + trusted scorers.
         services.AddSingleton<IScoringPlugin, Competitions.AccuracyScorer>();
         services.AddSingleton<IScoringPlugin, Competitions.RmseScorer>();
+        services.AddSingleton<IScoringPlugin, Competitions.AucScorer>();
         services.AddSingleton<IScorerRegistry, Competitions.ScorerRegistry>();
         services.AddScoped<ICompetitionService, Competitions.CompetitionService>();
 

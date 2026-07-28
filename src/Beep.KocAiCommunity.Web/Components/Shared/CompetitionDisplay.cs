@@ -19,6 +19,7 @@ public static class CompetitionDisplay
         "MulticlassClassification" => "Multiclass",
         "Regression" => "Regression",
         "Forecasting" => "Forecasting",
+        "AnomalyDetection" => "Anomaly detection",
         _ => taskType,
     };
 

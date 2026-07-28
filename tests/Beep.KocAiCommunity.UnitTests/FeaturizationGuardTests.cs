@@ -48,4 +48,25 @@ public class FeaturizationGuardTests
         var def = Graph([Node("ds", "dataset"), Node("cl", "cluster")], ("ds", "cl"));
         FeaturizationGuard.Check(def).Should().BeEmpty();
     }
+
+    [Fact]
+    public void A_chronological_time_split_satisfies_the_rule()
+    {
+        // Forecasting uses time-split instead of a random split; it must count as a split.
+        var def = Graph([Node("ds", "dataset"), Node("ts", "time-split"), Node("tr", "train")], ("ds", "ts"), ("ts", "tr"));
+        FeaturizationGuard.Check(def).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Unsupervised_anomaly_training_does_not_require_a_split()
+    {
+        // A train node configured for anomaly detection learns "normal" from all rows — no leak, no split needed.
+        var train = new WorkflowNode { Id = "tr", Kind = "train", Config = new Dictionary<string, string> { ["task"] = "AnomalyDetection" } };
+        var def = Graph([Node("ds", "dataset"), train], ("ds", "tr"));
+        FeaturizationGuard.Check(def).Should().BeEmpty();
+
+        // But a supervised train (no task, or a different task) with no split is still a leak.
+        var supervised = Graph([Node("ds", "dataset"), Node("tr", "train")], ("ds", "tr"));
+        FeaturizationGuard.Check(supervised).Should().NotBeEmpty();
+    }
 }

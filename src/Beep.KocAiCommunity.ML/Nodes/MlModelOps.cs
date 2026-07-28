@@ -17,6 +17,23 @@ internal static class MlModelOps
     public static (ITransformer Model, string Algorithm, ITransformer? LabelMap) FitModel(
         MLContext ml, MlTaskType task, WorkflowNode node, string label, IDataView train, string[] features)
     {
+        if (task == MlTaskType.AnomalyDetection)
+        {
+            // Unsupervised: RandomizedPCA learns the "normal" subspace and flags rows with a large
+            // reconstruction error (a high Score). Rank must stay below the feature count or the
+            // reconstruction is perfect and every score collapses to zero. Seeded for reproducibility.
+            var rank = Math.Clamp(features.Length - 1, 1, 20);
+            var pca = ml.Transforms.Concatenate("Features", features)
+                .Append(ml.AnomalyDetection.Trainers.RandomizedPca(new RandomizedPcaTrainer.Options
+                {
+                    FeatureColumnName = "Features",
+                    Rank = rank,
+                    EnsureZeroMean = true,
+                    Seed = 1,
+                }));
+            return (pca.Fit(train), $"RandomizedPca(rank {rank})", null);
+        }
+
         if (task == MlTaskType.MulticlassClassification)
         {
             var (trainer, name) = MulticlassTrainer(ml, node);
@@ -220,7 +237,9 @@ internal static class MlModelOps
     public static List<string> ReadPredictions(IDataView scored, MlTaskType task, (string True, string False)? binaryTokens = null)
     {
         var list = new List<string>();
-        if (task == MlTaskType.Regression)
+        // Regression emits a numeric Score; anomaly detection emits a continuous anomaly Score (higher =
+        // more anomalous) that the AUC scorer ranks against the rare positive class.
+        if (task is MlTaskType.Regression or MlTaskType.AnomalyDetection)
         {
             var col = scored.Schema["Score"];
             using var cursor = scored.GetRowCursor([col]);
@@ -292,6 +311,47 @@ internal static class MlModelOps
         }
 
         return trueToken is not null && falseToken is not null ? (trueToken, falseToken) : null;
+    }
+
+    /// <summary>
+    /// Reads the anomaly <c>Score</c> paired with the ground-truth label (numeric 0/1, positive = anomaly)
+    /// from a scored view, for computing AUC in the evaluate node.
+    /// </summary>
+    public static List<(double Score, bool Positive)> ReadScoreAndLabel(IDataView scored, string labelColumn)
+    {
+        var rows = new List<(double, bool)>();
+        var scoreCol = scored.Schema["Score"];
+        var labelCol = scored.Schema[labelColumn];
+        using var cursor = scored.GetRowCursor([scoreCol, labelCol]);
+        var scoreGetter = cursor.GetGetter<float>(scoreCol);
+
+        // A 0/1 label is inferred as Boolean by the loader but as Single when the schema is carried, so read
+        // whichever type the column actually is (positive = anomaly).
+        float score = 0;
+        if (labelCol.Type.RawType == typeof(bool))
+        {
+            var boolGetter = cursor.GetGetter<bool>(labelCol);
+            bool label = false;
+            while (cursor.MoveNext())
+            {
+                scoreGetter(ref score);
+                boolGetter(ref label);
+                rows.Add((score, label));
+            }
+        }
+        else
+        {
+            var floatGetter = cursor.GetGetter<float>(labelCol);
+            float label = 0;
+            while (cursor.MoveNext())
+            {
+                scoreGetter(ref score);
+                floatGetter(ref label);
+                rows.Add((score, label >= 0.5f));
+            }
+        }
+
+        return rows;
     }
 
     public static List<string> ReadColumn(string path, string columnName)

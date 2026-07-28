@@ -39,7 +39,8 @@ public class MlNodeEndpointsTests(KocApiFactory factory) : IClassFixture<KocApiF
 
         var tasks = await me.GetFromJsonAsync<List<MlTaskDto>>("/api/v1/ml/tasks");
         tasks.Should().Contain(t => t.Key == "binary" && t.Supported);
-        tasks.Should().Contain(t => t.Key == "anomaly" && !t.Supported);
+        tasks.Should().Contain(t => t.Key == "anomaly" && t.Supported);
+        tasks.Should().OnlyContain(t => t.Supported); // all five tasks are now executable
 
         // A graph that fits without a split is flagged.
         var leak = new WorkflowDefinition

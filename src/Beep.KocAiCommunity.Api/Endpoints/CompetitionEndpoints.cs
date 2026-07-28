@@ -302,6 +302,7 @@ public static class CompetitionEndpoints
         var scorer = scorers.Resolve(c.ScorerCode);
         var metric = scorer.Code.Equals("rmse", StringComparison.OrdinalIgnoreCase) ? "RMSE"
             : scorer.Code.Equals("accuracy", StringComparison.OrdinalIgnoreCase) ? "Accuracy"
+            : scorer.Code.Equals("auc", StringComparison.OrdinalIgnoreCase) ? "AUC"
             : scorer.Code;
         return new(c.Id, c.Title, c.Description, c.Status, c.VisibilityScope.ToString(), c.RevealUtc,
             c.AnswerKeyArtifactId is not null,
