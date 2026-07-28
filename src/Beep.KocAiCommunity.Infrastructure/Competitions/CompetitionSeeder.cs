@@ -24,6 +24,7 @@ public static class CompetitionSeeder
     private const string EspTitle = "ESP Pump Failure — Predictive Maintenance (Demo)";
     private const string ProductionTitle = "Production Forecast — Daily Oil Rate, bopd (Demo)";
     private const string ProductionForecastTitle = "Production Decline — Forecast the Next 90 Days (Demo)";
+    private const string AnomalyTitle = "ESP Fault Watch — Flag Abnormal Sensor Rows (Demo)";
     private const string FaciesTitle = "Rock Facies from Well Logs (Demo)";
 
     public static async Task SeedDemoAsync(KocDbContext db, IArtifactService artifacts, CancellationToken ct = default)
@@ -72,6 +73,14 @@ public static class CompetitionSeeder
             + "and is scored on the future — a random split would leak later days into training. Scored on "
             + "RMSE (lower is better).",
             "rmse", "oil_rate", "Forecasting", BuildProductionForecast(), solveTrack));
+
+        await MaybeAddAsync(db, artifacts, stamp, ct, new DemoSpec(
+            AnomalyTitle,
+            "Unsupervised anomaly detection: from correlated ESP sensor readings (intake pressure, motor "
+            + "temperature, vibration, current, flow), flag the abnormal rows where one sensor breaks the "
+            + "normal pattern. Train on the normal history (no label needed) — the label (1 = anomaly) is "
+            + "held back and only used to score. Scored on AUC (higher is better).",
+            "auc", "label", "AnomalyDetection", BuildAnomaly(), solveTrack));
 
         await MaybeAddAsync(db, artifacts, stamp, ct, new DemoSpec(
             FaciesTitle,
@@ -272,6 +281,61 @@ public static class CompetitionSeeder
             var (id, features, label) = Day(d);
             evaluation.Append($"{id},{features}\n");
             answerKey.Append($"{id},{label}\n");
+        }
+
+        return (training.ToString(), evaluation.ToString(), answerKey.ToString());
+    }
+
+    // ESP anomaly detection: normal readings are driven by one latent load, so all five sensors move
+    // together (the data lies near a low-dimensional subspace). An anomaly spikes ONE sensor off its
+    // correlated value, breaking the pattern — exactly what RandomizedPCA's reconstruction error catches.
+    // Training is normal-only (unsupervised); the label lives only in the evaluation answer key.
+    private static (string, string, string) BuildAnomaly()
+    {
+        var rnd = new Random(20260107);
+        const string header = "intake_pressure,motor_temp,vibration,current,flow_rate";
+
+        double[] Draw()
+        {
+            var f = Gauss(rnd, 0, 1); // latent load the whole pump tracks
+            return
+            [
+                700 + (60 * f) + Gauss(rnd, 0, 6),
+                120 + (30 * f) + Gauss(rnd, 0, 3),
+                Math.Max(0.1, 2.0 + (0.8 * f) + Gauss(rnd, 0, 0.15)),
+                55 + (12 * f) + Gauss(rnd, 0, 1.5),
+                1800 + (250 * f) + Gauss(rnd, 0, 25),
+            ];
+        }
+
+        double[] Anomaly()
+        {
+            var r = Draw();
+            switch (rnd.Next(3))
+            {
+                case 0: r[2] += 6.5; break; // vibration spike
+                case 1: r[1] += 90; break;  // motor overheating
+                default: r[3] += 45; break; // current surge
+            }
+
+            return r;
+        }
+
+        static string Fmt(double[] r) => string.Join(',', r.Select(F));
+
+        var training = new StringBuilder($"id,{header}\n");
+        for (var i = 0; i < 500; i++)
+        {
+            training.Append($"n{i},{Fmt(Draw())}\n");
+        }
+
+        var evaluation = new StringBuilder($"id,{header}\n");
+        var answerKey = new StringBuilder("id,label\n");
+        for (var k = 0; k < 160; k++)
+        {
+            var anomaly = k % 6 == 0; // ~1 in 6 is abnormal
+            evaluation.Append($"e{k},{Fmt(anomaly ? Anomaly() : Draw())}\n");
+            answerKey.Append($"e{k},{(anomaly ? 1 : 0)}\n");
         }
 
         return (training.ToString(), evaluation.ToString(), answerKey.ToString());

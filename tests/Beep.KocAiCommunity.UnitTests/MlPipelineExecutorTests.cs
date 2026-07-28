@@ -978,6 +978,60 @@ public class MlPipelineExecutorTests
         scores["outlier"].Should().BeGreaterThan(scores["normal"], "the far-away row is more anomalous");
     }
 
+    [Fact]
+    public async Task Detects_multivariate_sensor_anomalies_where_one_signal_breaks_the_pattern()
+    {
+        // Mirrors the seeded ESP demo: five sensors move together with a latent load; an anomaly spikes one
+        // of them off its correlated value. Trains on normal history only, then the anomalies must score higher.
+        var def = new WorkflowDefinition
+        {
+            Name = "esp-anomaly",
+            Nodes = [new() { Id = "d", Kind = "dataset" }, new() { Id = "tr", Kind = "train" }, new() { Id = "ev", Kind = "evaluate" }],
+            Edges = [new("d", "tr"), new("tr", "ev")],
+        };
+
+        static string Normal(int i)
+        {
+            var f = (i % 20) - 10; // latent load in [-10, 9]
+            var n = (i % 3) * 0.01; // tiny deterministic jitter
+            return $"{700 + (6 * f) + n},{120 + (3 * f)},{2.0 + (0.08 * f) + n},{55 + (1.2 * f)},{1800 + (25 * f)}";
+        }
+
+        var train = new StringBuilder("id,intake,motor,vibration,current,flow,label\n");
+        for (var i = 0; i < 200; i++)
+        {
+            train.Append($"h{i},{Normal(i)},0\n");
+        }
+        using var trainCsv = new MemoryStream(Encoding.UTF8.GetBytes(train.ToString()));
+
+        var eval = new StringBuilder("id,intake,motor,vibration,current,flow\n");
+        var anomalyIds = new HashSet<string>();
+        for (var k = 0; k < 40; k++)
+        {
+            if (k % 2 == 0)
+            {
+                eval.Append($"e{k},{Normal(k)}\n");
+            }
+            else
+            {
+                // A normal row with the vibration sensor spiked ⇒ breaks the correlation.
+                var f = (k % 20) - 10;
+                eval.Append($"e{k},{700 + (6 * f)},{120 + (3 * f)},{2.0 + (0.08 * f) + 7.0},{55 + (1.2 * f)},{1800 + (25 * f)}\n");
+                anomalyIds.Add($"e{k}");
+            }
+        }
+        using var evalCsv = new MemoryStream(Encoding.UTF8.GetBytes(eval.ToString()));
+
+        var csv = await NewExecutor().PredictAsync(def, "label", "id", MlTaskType.AnomalyDetection, trainCsv, evalCsv);
+        var rows = csv.Trim().Split('\n').Skip(1)
+            .Select(l => l.Split(','))
+            .Select(p => (Id: p[0], Score: double.Parse(p[1], System.Globalization.CultureInfo.InvariantCulture), Positive: anomalyIds.Contains(p[0])))
+            .ToList();
+
+        var auc = Beep.KocAiCommunity.Application.Common.RocAuc.Compute(rows.Select(r => (r.Score, r.Positive)).ToList());
+        auc.Should().BeGreaterThan(0.8, "spiked-sensor rows must rank well above the normal rows");
+    }
+
     // Three separable clusters → classes a/b/c.
     private static string MulticlassCsv(bool withId)
     {
