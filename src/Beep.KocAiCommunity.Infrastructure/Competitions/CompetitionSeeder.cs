@@ -23,6 +23,7 @@ public static class CompetitionSeeder
     private const string WellIntegrityTitle = "Well Integrity — Intervention Needed? (Demo)";
     private const string EspTitle = "ESP Pump Failure — Predictive Maintenance (Demo)";
     private const string ProductionTitle = "Production Forecast — Daily Oil Rate, bopd (Demo)";
+    private const string ProductionForecastTitle = "Production Decline — Forecast the Next 90 Days (Demo)";
     private const string FaciesTitle = "Rock Facies from Well Logs (Demo)";
 
     public static async Task SeedDemoAsync(KocDbContext db, IArtifactService artifacts, CancellationToken ct = default)
@@ -62,6 +63,15 @@ public static class CompetitionSeeder
             + "and days online. A regression challenge scored on RMSE (lower is better) against a hidden test "
             + "set — tune your pipeline to minimise the error.",
             "rmse", "oil_rate", "Regression", BuildProduction(), solveTrack));
+
+        await MaybeAddAsync(db, artifacts, stamp, ct, new DemoSpec(
+            ProductionForecastTitle,
+            "Time-series forecasting on a real production shape: from a well's daily choke, tubing-head "
+            + "pressure, water cut and gas rate, forecast the daily oil rate (bopd) for the NEXT 90 days. "
+            + "Add a Chronological split node (order by the date column) so your model trains on the past "
+            + "and is scored on the future — a random split would leak later days into training. Scored on "
+            + "RMSE (lower is better).",
+            "rmse", "oil_rate", "Forecasting", BuildProductionForecast(), solveTrack));
 
         await MaybeAddAsync(db, artifacts, stamp, ct, new DemoSpec(
             FaciesTitle,
@@ -220,6 +230,51 @@ public static class CompetitionSeeder
         }
 
         return Emit(header, "oil_rate", 560, 160, Row);
+    }
+
+    // Production decline over time: oil rate falls as water cut climbs and the well ages, on top of
+    // day-to-day operating swings. The eval set is the NEXT 90 days (not a random hold-out), so a fair
+    // model must train on the past and forecast the future — hence the Chronological split node. Most of
+    // the signal lives in in-range operating features (water cut, choke) so it stays learnable.
+    private static (string, string, string) BuildProductionForecast()
+    {
+        var rnd = new Random(20260106);
+        const string header = "date,choke,tubing_pressure,water_cut,gas_rate,days_online";
+        var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        (string Id, string Features, string Label) Day(int d)
+        {
+            var date = start.AddDays(d).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var daysOnline = 200 + d;
+            var choke = (int)Math.Clamp(Gauss(rnd, 32, 6), 16, 52);
+            var thp = Gauss(rnd, 1200, 180);
+            var water = Math.Clamp(20 + (d * 0.09) + Gauss(rnd, 0, 4), 0, 95);
+            var gas = Math.Max(0, Gauss(rnd, 1200, 300));
+            var oil = Math.Max(0,
+                1650 - (8 * water) - (0.4 * daysOnline) + (10 * (choke - 32)) + (0.2 * (thp - 1200)) + Gauss(rnd, 0, 40));
+            return ($"d{d:000}", $"{date},{choke},{F(thp)},{F(water)},{F(gas)},{daysOnline}", F(oil));
+        }
+
+        const int trainDays = 300;
+        const int evalDays = 90;
+
+        var training = new StringBuilder($"id,{header},oil_rate\n");
+        for (var d = 0; d < trainDays; d++)
+        {
+            var (id, features, label) = Day(d);
+            training.Append($"{id},{features},{label}\n");
+        }
+
+        var evaluation = new StringBuilder($"id,{header}\n");
+        var answerKey = new StringBuilder("id,oil_rate\n");
+        for (var d = trainDays; d < trainDays + evalDays; d++)
+        {
+            var (id, features, label) = Day(d);
+            evaluation.Append($"{id},{features}\n");
+            answerKey.Append($"{id},{label}\n");
+        }
+
+        return (training.ToString(), evaluation.ToString(), answerKey.ToString());
     }
 
     // Facies from logs: pick the rock type first, then draw log responses typical of it (clear signal).

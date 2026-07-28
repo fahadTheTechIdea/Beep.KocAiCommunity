@@ -338,6 +338,61 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
+    public async Task Forecasting_pipeline_submission_scores_the_future_via_a_chronological_split()
+    {
+        var creator = _factory.CreateClientAs("fc-creator", "Employee");
+        var response = await creator.PostAsJsonAsync("/api/v1/competitions",
+            new CreateCompetitionRequest("Production decline forecast", "Forecast the next days", "Company", null, null, 25, "rmse"));
+        response.EnsureSuccessStatusCode();
+        var competitionId = (await response.Content.ReadFromJsonAsync<CompetitionDto>())!.Id;
+
+        // A dated series; the target y = 3*x1 + 2*x2 + 5 is driven by in-range operating features.
+        var training = new StringBuilder("id,date,x1,x2,y\n");
+        for (var i = 0; i < 60; i++)
+        {
+            var day = new DateTime(2024, 1, 1).AddDays(i).ToString("yyyy-MM-dd");
+            var x1 = i % 10;
+            var x2 = (i * 3) % 7;
+            training.Append($"h{i},{day},{x1},{x2},{(3 * x1) + (2 * x2) + 5}\n");
+        }
+        // Evaluation rows are LATER dates (the future) with in-range drivers.
+        const string evaluation = "id,date,x1,x2\nf0,2024-04-01,2,3\nf1,2024-04-02,7,1\nf2,2024-04-03,4,5\n";
+        const string answerKey = "id,y\nf0,17\nf1,28\nf2,27\n"; // 3*2+2*3+5, 3*7+2*1+5, 3*4+2*5+5
+
+        (await creator.PostAsync(
+            $"/api/v1/competitions/{competitionId}/datasets?labelColumn=y&idColumn=id&task=Forecasting",
+            TwoFiles(training.ToString(), evaluation)))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile(answerKey)))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var participant = _factory.CreateClientAs("fc-a", "Employee");
+        var definition = new WorkflowDefinition
+        {
+            Name = "forecast",
+            Nodes =
+            [
+                new() { Id = "d", Kind = "dataset" },
+                new() { Id = "nz", Kind = "normalize" },
+                new() { Id = "ts", Kind = "time-split", Config = new Dictionary<string, string> { ["orderColumn"] = "date" } },
+                new() { Id = "tr", Kind = "train" },
+                new() { Id = "ev", Kind = "evaluate" },
+            ],
+            Edges = [new("d", "nz"), new("nz", "ts"), new("ts", "tr"), new("tr", "ev")],
+        };
+
+        var submit = await participant.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/submit-pipeline", definition);
+        submit.StatusCode.Should().Be(HttpStatusCode.OK, await submit.Content.ReadAsStringAsync());
+        var result = (await submit.Content.ReadFromJsonAsync<SubmissionResultDto>())!;
+        result.Score.Should().NotBeNull();
+        result.Score!.Value.Should().BeGreaterThanOrEqualTo(0).And.BeLessThan(20); // RMSE — real forecasting, not a wild miss
+
+        var dto = (await participant.GetFromJsonAsync<CompetitionDto>($"/api/v1/competitions/{competitionId}"))!;
+        dto.TaskType.Should().Be("Forecasting");
+        dto.MetricName.Should().Be("RMSE");
+    }
+
+    [Fact]
     public async Task Multiclass_pipeline_submission_scores_by_accuracy()
     {
         var creator = _factory.CreateClientAs("mc-creator", "Employee");
