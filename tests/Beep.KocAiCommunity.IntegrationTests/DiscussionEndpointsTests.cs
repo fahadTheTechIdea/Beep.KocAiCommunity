@@ -37,4 +37,62 @@ public class DiscussionEndpointsTests(KocApiFactory factory) : IClassFixture<Koc
         (await outsider.PostAsJsonAsync($"/api/v1/discussions/{created.Id}/replies", new CreateReplyRequest("hi")))
             .StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task Anyone_can_read_the_community_but_taking_part_needs_an_account()
+    {
+        // The same rule as the learning catalogue: what the platform is for is visible before anyone
+        // commits to an account. Writing is what needs somebody to attribute it to.
+        var author = _factory.CreateClientAs("community-author", "Employee");
+        var created = (await (await author.PostAsJsonAsync("/api/v1/discussions",
+            new CreateDiscussionRequest("Open to read", "Anyone should be able to read this.", "Company")))
+            .Content.ReadFromJsonAsync<DiscussionDto>())!;
+
+        var guest = _factory.CreateClientAs(sub: null);
+
+        var list = (await guest.GetFromJsonAsync<List<DiscussionDto>>("/api/v1/discussions"))!;
+        list.Should().Contain(d => d.Id == created.Id);
+
+        var thread = (await guest.GetFromJsonAsync<DiscussionDetailDto>($"/api/v1/discussions/{created.Id}"))!;
+        thread.Body.Should().Be("Anyone should be able to read this.");
+        thread.CanModerate.Should().BeFalse("a reader with no account moderates nothing");
+
+        // Every way of taking part still needs a person.
+        (await guest.PostAsJsonAsync("/api/v1/discussions", new CreateDiscussionRequest("Mine", "b", "Company")))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await guest.PostAsJsonAsync($"/api/v1/discussions/{created.Id}/replies", new CreateReplyRequest("hi")))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await guest.PostAsJsonAsync($"/api/v1/discussions/{created.Id}/react", new ReactRequest("👍")))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await guest.DeleteAsync($"/api/v1/discussions/{created.Id}"))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Opening_the_community_up_does_not_open_the_narrower_discussions()
+    {
+        // The gate that moved was authentication, not visibility. A group-scoped thread must stay
+        // invisible to a reader with no org membership — which is exactly what an anonymous caller is.
+        var manager = _factory.CreateClientAs("mgr-private", "Manager");
+        var group = (await (await manager.PostAsJsonAsync("/api/v1/discussions",
+            new CreateDiscussionRequest("Team only", "Not for the internet.", "Group")))
+            .Content.ReadFromJsonAsync<DiscussionDto>())!;
+
+        var guest = _factory.CreateClientAs(sub: null);
+
+        (await guest.GetFromJsonAsync<List<DiscussionDto>>("/api/v1/discussions"))!
+            .Should().NotContain(d => d.Id == group.Id);
+        (await guest.GetAsync($"/api/v1/discussions/{group.Id}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task The_staff_directory_is_not_searchable_without_an_account()
+    {
+        // Mention candidates are colleagues' names. Reading a thread is public; enumerating who works
+        // here is not, and the only caller who needs it is one already composing a post.
+        var guest = _factory.CreateClientAs(sub: null);
+
+        (await guest.GetAsync("/api/v1/community/mention-candidates?q=a"))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
 }

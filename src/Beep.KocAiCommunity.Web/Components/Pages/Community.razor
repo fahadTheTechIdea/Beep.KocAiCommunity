@@ -5,12 +5,15 @@
 @using Beep.KocAiCommunity.Web.Components.Dialogs
 @using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Web.Security
+@using Beep.KocAiCommunity.ServiceDefaults.Security
 @using Microsoft.AspNetCore.Components.Forms
 @inject IKocApiClient Api
 @inject IDialogService DialogService
 @inject DevIdentity Identity
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
+@inject KocSetupStore SetupStore
 
 <PageTitle>Community · @KocBrand.ProductName</PageTitle>
 
@@ -197,7 +200,7 @@
                             <MudText Typo="Typo.caption" Style="opacity:.75;">@_open.AuthorDisplayName · @_open.Scope · @Ago(_open.CreatedUtc)</MudText>
                         </div>
                         <MudText Typo="Typo.body1" Class="mb-2" Style="white-space:pre-wrap;">@_open.Body</MudText>
-                        <ReactionBar Reactions="_open.Reactions" OnReact="ReactToThread" />
+                        <ReactionBar Reactions="_open.Reactions" OnReact="ReactToThread" ReadOnly="@(!Identity.HasAnyPosition)" />
 
                         @if (_open.Attachments.Count > 0)
                         {
@@ -230,7 +233,7 @@
                                         }
                                     </div>
                                     <MudText Typo="Typo.body2" Style="white-space:pre-wrap;">@r.Body</MudText>
-                                    <ReactionBar Reactions="r.Reactions" OnReact="@(emoji => ReactToReply(r.Id, emoji))" />
+                                    <ReactionBar Reactions="r.Reactions" OnReact="@(emoji => ReactToReply(r.Id, emoji))" ReadOnly="@(!Identity.HasAnyPosition)" />
                                 </div>
                             </div>
                         }
@@ -238,6 +241,23 @@
                         @if (_open.IsLocked)
                         {
                             <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mt-3">This discussion is locked — no new replies.</MudAlert>
+                        }
+                        else if (!Identity.HasAnyPosition)
+                        {
+                            @* Reading needed nothing. Writing needs somebody to attribute the words to —
+                               so this is the first and only place the page asks. SignInPrompt decides
+                               what "sign in" means here: a login page on the web, the KOC account inside. *@
+                            <MudAlert Severity="Severity.Normal" Variant="Variant.Text" Dense="true" Class="mt-3">
+                                @if (SignInPrompt.Href(SetupStore) is { } href)
+                                {
+                                    <MudLink Href="@href"><b>Sign in</b></MudLink>
+                                    <span> to join the conversation.</span>
+                                }
+                                else
+                                {
+                                    <span>@SignInPrompt.ButtonText(SetupStore, "join the conversation").</span>
+                                }
+                            </MudAlert>
                         }
                         else
                         {

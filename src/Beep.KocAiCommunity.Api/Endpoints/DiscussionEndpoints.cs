@@ -32,18 +32,24 @@ public static class DiscussionEndpoints
         .WithName("CreateDiscussion")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
+        // Reading the community is open to everyone, the same way the learning catalogue is: what the
+        // platform is for is visible before anyone commits to an account. Taking part — posting,
+        // replying, reacting — is what needs a person to attribute it to.
+        //
+        // Visibility still does the work. An anonymous reader resolves to no org membership, so they see
+        // company-wide discussions and nothing narrower.
         group.MapGet("/discussions", async (IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
         {
-            var visible = await svc.BrowseVisibleAsync(me.UserId!, ct);
+            var visible = await svc.BrowseVisibleAsync(me.UserId ?? string.Empty, ct);
             var names = await svc.ResolveDisplayNamesAsync([.. visible.Select(v => v.Discussion.AuthorUserId)], ct);
             return Results.Ok(visible.Select(v => ToDto(v, names)).ToList());
         })
         .WithName("BrowseDiscussions")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         group.MapGet("/discussions/{id:guid}", async (Guid id, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
         {
-            var thread = await svc.GetVisibleAsync(me.UserId!, IsModerator(me), id, ct);
+            var thread = await svc.GetVisibleAsync(me.UserId ?? string.Empty, IsModerator(me), id, ct);
             if (thread is null)
             {
                 return Results.NotFound();
@@ -60,7 +66,7 @@ public static class DiscussionEndpoints
                 [.. thread.Attachments.Select(a => new AttachmentDto(a.Id, a.FileName, a.SizeBytes, a.UploadedByUserId, a.CreatedUtc))]));
         })
         .WithName("GetDiscussion")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         group.MapPost("/discussions/{id:guid}/replies", async (Guid id, CreateReplyRequest req, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
         {
@@ -141,7 +147,7 @@ public static class DiscussionEndpoints
         {
             try
             {
-                var content = await svc.OpenAttachmentAsync(me.UserId!, attachmentId, ct);
+                var content = await svc.OpenAttachmentAsync(me.UserId ?? string.Empty, attachmentId, ct);
                 return Results.File(content.Content, content.ContentType, content.FileName);
             }
             catch (CommunityException ex)
@@ -150,7 +156,9 @@ public static class DiscussionEndpoints
             }
         })
         .WithName("DownloadAttachment")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        // An attachment is part of the thread it hangs off. If the post is readable the file is too —
+        // the visibility check is the same one, so nothing narrower than company-wide is reachable.
+        .AllowAnonymous();
 
         return group;
     }

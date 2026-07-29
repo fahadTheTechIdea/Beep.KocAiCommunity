@@ -157,7 +157,7 @@ public class CompetitionCategoryAdminTests(KocApiFactory factory) : IClassFixtur
         // property of the material, so two controls for it would be two ways to disagree.
         var links = (await admin.GetFromJsonAsync<List<LearningLinkDto>>("/api/v1/admin/learning-links"))!;
         links.Should().ContainSingle(l => l.Title == "Flag the abnormal");
-        links.Should().NotContain(l => l.Title == "اكتشاف الشاذ");
+        links.Should().NotContain(l => l.Title == "ارصد الحالات غير الطبيعية");
 
         var trackId = links.Single(l => l.Title == "Flag the abnormal").TrackId;
         (await admin.PutAsJsonAsync($"/api/v1/admin/learning-tracks/{trackId}/recommended-competition",
@@ -165,7 +165,7 @@ public class CompetitionCategoryAdminTests(KocApiFactory factory) : IClassFixtur
 
         // Set once in English, and the Arabic reader is sent to the same place.
         var arabic = (await admin.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks?language=ar"))!;
-        arabic.Single(t => t.Title == "اكتشاف الشاذ").RecommendedCompetitionId.Should().Be(competitionId);
+        arabic.Single(t => t.Title == "ارصد الحالات غير الطبيعية").RecommendedCompetitionId.Should().Be(competitionId);
     }
 
     [Fact]

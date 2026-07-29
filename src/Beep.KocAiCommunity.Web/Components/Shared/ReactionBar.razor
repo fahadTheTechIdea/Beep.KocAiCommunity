@@ -6,17 +6,26 @@
         var current = Reactions.FirstOrDefault(r => r.Emoji == emoji);
         var count = current?.Count ?? 0;
         var mine = current?.Mine ?? false;
-        <MudButton Size="Size.Small" Variant="@(mine ? Variant.Filled : Variant.Text)"
-                   Color="@(mine ? Color.Primary : Color.Default)" Class="px-2" Style="min-width:0;"
-                   OnClick="() => OnReact.InvokeAsync(emoji)">
-            <span style="font-size:15px;">@emoji</span>@(count > 0 ? $" {count}" : "")
-        </MudButton>
+        @* A reader who isn't signed in still sees what a thread received — the counts are part of the
+           conversation. Only the ones nobody has picked are dropped, so the row doesn't turn into six
+           dead buttons offering something the reader can't do. *@
+        @if (!ReadOnly || count > 0)
+        {
+            <MudButton Size="Size.Small" Variant="@(mine ? Variant.Filled : Variant.Text)"
+                       Color="@(mine ? Color.Primary : Color.Default)" Class="px-2" Style="min-width:0;"
+                       Disabled="@ReadOnly" OnClick="() => OnReact.InvokeAsync(emoji)">
+                <span style="font-size:15px;">@emoji</span>@(count > 0 ? $" {count}" : "")
+            </MudButton>
+        }
     }
 </div>
 
 @code {
     [Parameter] public IReadOnlyList<ReactionDto> Reactions { get; set; } = [];
     [Parameter] public EventCallback<string> OnReact { get; set; }
+
+    /// <summary>Show the reactions without offering to add one — for a reader with no account.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
 
     // Mirrors the server-side curated set (CommunityEmojis.Allowed).
     private static readonly string[] Emojis = ["👍", "❤️", "🎉", "💡", "🚀", "✅"];

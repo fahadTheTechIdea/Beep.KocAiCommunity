@@ -17,7 +17,7 @@ namespace Beep.KocAiCommunity.ComponentTests;
 /// </summary>
 public class LearnLanguageTests : TestContext
 {
-    private const string ArabicTitle = "اكتشاف الشاذ";
+    private const string ArabicTitle = "ارصد الحالات غير الطبيعية";
 
     /// <summary>Stands in for the catalogue: English everywhere, with one track translated.</summary>
     private sealed class FakeApi : RemoteFallbackKocApiClient

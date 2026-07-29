@@ -102,7 +102,7 @@ public class LearningEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
 
         // The translated track swaps for its Arabic version...
         english.Should().Contain(t => t.Title == "Flag the abnormal");
-        arabic.Should().Contain(t => t.Title == "اكتشاف الشاذ");
+        arabic.Should().Contain(t => t.Title == "ارصد الحالات غير الطبيعية");
         arabic.Should().NotContain(t => t.Title == "Flag the abnormal", "the two are the same material");
 
         // ...and it takes the original's place rather than being appended to the end.
@@ -111,7 +111,7 @@ public class LearningEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
         // ...while everything not yet translated is still offered, marked as English. A partly
         // translated catalogue that hid its untranslated half would read as a broken page.
         arabic.Should().Contain(t => t.Title == "Getting started with data" && t.Language == "en");
-        arabic.Single(t => t.Title == "اكتشاف الشاذ").Language.Should().Be("ar");
+        arabic.Single(t => t.Title == "ارصد الحالات غير الطبيعية").Language.Should().Be("ar");
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public class LearningEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
     {
         var guest = _factory.CreateClientAs(sub: null);
         var arabic = (await guest.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks?language=ar"))!;
-        var translated = arabic.Single(t => t.Title == "اكتشاف الشاذ");
+        var translated = arabic.Single(t => t.Title == "ارصد الحالات غير الطبيعية");
 
         // Read in either language, a track offers the other — the reader who lands on the wrong one
         // needs a way across, and the API is where that pairing has to be answered.

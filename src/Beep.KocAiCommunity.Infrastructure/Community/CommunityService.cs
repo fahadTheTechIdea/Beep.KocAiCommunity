@@ -450,8 +450,11 @@ public sealed partial class CommunityService(
     private static string Normalize(string value) =>
         new string(value.Where(c => !char.IsWhiteSpace(c)).ToArray()).ToLowerInvariant();
 
+    // An author always sees their own thread, whatever its scope. The length check keeps that shortcut
+    // from firing for an anonymous reader, whose id is the empty string: a row that somehow carried an
+    // empty author would otherwise be visible to the whole internet.
     private async Task<bool> CanSeeAsync(string userId, Discussion discussion, CancellationToken ct) =>
-        discussion.AuthorUserId == userId
+        (userId.Length > 0 && discussion.AuthorUserId == userId)
         || await visibility.CanSeeAsync(userId, discussion.VisibilityScope, discussion.VisibilityOrgUnitId, ct);
 
     // Barrels are a side effect of collaborating: never let an award failure fail the post.
