@@ -16,4 +16,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Learning track content, authored as markdown and embedded so the seeder needs no files on disk. -->
+    <EmbeddedResource Include="Learning\Content\*.md" />
+  </ItemGroup>
+
 </Project>

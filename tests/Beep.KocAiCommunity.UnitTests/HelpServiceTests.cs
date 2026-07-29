@@ -26,8 +26,12 @@ public class HelpServiceTests
     {
         // "barrels" appears in the earning-barrels article's tags and body.
         Svc.List(null, "barrels").Should().Contain(a => a.Slug == "earning-barrels");
-        // "leakage" appears only in the workflow article's body.
-        Svc.List(null, "leakage").Should().ContainSingle().Which.Slug.Should().Be("build-a-workflow");
+
+        // "leakage" appears in the workflow guide and in the split node reference. Asserting the search
+        // finds the right articles, not an exact count — a count breaks every time content is added,
+        // which is the opposite of what this test is for.
+        Svc.List(null, "leakage").Select(a => a.Slug)
+            .Should().Contain("build-a-workflow").And.Contain("nodes-split");
     }
 
     [Fact]

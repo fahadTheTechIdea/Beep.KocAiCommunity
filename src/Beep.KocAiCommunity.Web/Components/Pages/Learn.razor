@@ -4,6 +4,7 @@
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @using Markdig
 @inject IKocApiClient Api
+@inject DevIdentity Identity
 
 <PageTitle>Learn · @KocBrand.ProductName</PageTitle>
 
@@ -13,7 +14,7 @@
 @if (_error is not null)
 {
     <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">
-        Couldn't reach the API (@_error). Make sure the API is running and <code>KocApi:BaseUrl</code> is correct.
+        The learning catalogue couldn't be loaded (@_error).
     </MudAlert>
 }
 else if (_tracks is null)
@@ -47,9 +48,20 @@ else
                         </MudText>
                     }
 
-                    <div class="mt-auto d-flex gap-2">
+                    @if (track.RecommendedCompetitionTitle is { Length: > 0 } competitionTitle)
+                    {
+                        @* Where the track leads. Set by an admin in the catalogue console. *@
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-2">
+                            Put it to work in
+                            <MudLink Href="@($"/compete/{track.RecommendedCompetitionId}")"><b>@competitionTitle</b></MudLink>
+                        </MudAlert>
+                    }
+
+                    <div class="mt-auto d-flex gap-2 align-center">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenTrack(track.Id)">Open</MudButton>
-                        @if (progress is null)
+                        @* Enrolling records progress against a person, so it appears once there is one —
+                           silently, with no prompt. Reading the material is never gated or nagged. *@
+                        @if (!Identity.IsGuest && progress is null)
                         {
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => Enroll(track.Id)">Enroll</MudButton>
                         }
@@ -83,8 +95,11 @@ else
                         {
                             <MudText Typo="Typo.body2">Content coming soon.</MudText>
                         }
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="mt-2"
-                                   OnClick="() => Complete(_selected.Id, lesson.Id)">Mark complete</MudButton>
+                        @if (!Identity.IsGuest)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="mt-2"
+                                       OnClick="() => Complete(_selected.Id, lesson.Id)">Mark complete</MudButton>
+                        }
                     </ChildContent>
                 </MudExpansionPanel>
             }
@@ -106,16 +121,34 @@ else
 
     private async Task LoadAsync()
     {
+        // The catalogue is public; a guest simply has no progress of their own to overlay on it. Asking
+        // for it anyway is what produced a 401 reported as "the API is down".
         try
         {
             _error = null;
             _tracks = await Api.GetTracksAsync();
-            var mine = await Api.GetMyLearningAsync();
-            _mine = mine.ToDictionary(m => m.TrackId);
         }
         catch (Exception ex)
         {
             _error = ex.Message;
+            return;
+        }
+
+        if (Identity.IsGuest)
+        {
+            _mine = [];
+            return;
+        }
+
+        try
+        {
+            var mine = await Api.GetMyLearningAsync();
+            _mine = mine.ToDictionary(m => m.TrackId);
+        }
+        catch
+        {
+            // Progress is an overlay on the catalogue, not a precondition for showing it.
+            _mine = [];
         }
     }
 

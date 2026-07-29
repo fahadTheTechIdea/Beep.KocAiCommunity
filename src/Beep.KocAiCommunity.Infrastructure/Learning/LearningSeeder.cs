@@ -41,6 +41,15 @@ public static class LearningSeeder
             "Tune, check, and package a model your team can trust and reuse day to day.",
             Simple("Reproducible runs", "Tuning with AutoML", "Validation that holds up", "Explainability basics", "Versioning a model", "Rollback and approvals", "Hand-over to the team"), ct);
 
+        // Authored tracks live as markdown documents (see TrackDocument). refreshContent keeps their
+        // lesson text current on databases that already have them, matched by order so nobody's progress
+        // is lost when the training team edits a lesson.
+        foreach (var document in TrackDocument.All())
+        {
+            await EnsureTrackAsync(db, stamp, document.Order, document.Level, document.Title, document.Summary,
+                [.. document.Lessons], ct, refreshContent: true);
+        }
+
         await db.SaveChangesAsync(ct);
     }
 

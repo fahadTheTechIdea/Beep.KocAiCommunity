@@ -7,6 +7,17 @@
    same path — so every node, from 'train' to 'normalize', is edited the same way. Each node still supplies
    its own distinct parameter set. *@
 
+@* Every node palette has a reference article. Linking by category costs one line and no per-node
+   wiring, and puts the explanation where someone is actually confused — in front of the setting they
+   don't recognise, rather than only on the Help page. *@
+@if (Descriptor is not null)
+{
+    <MudLink Href="@($"/help/nodes-{Descriptor.Category.ToLowerInvariant()}")" Target="_blank"
+             Typo="Typo.caption" Class="d-block mb-3">
+        What does this node do? →
+    </MudLink>
+}
+
 @if (Descriptor is null || Descriptor.Parameters.Count == 0)
 {
     <MudText Typo="Typo.body2">No options — this step acts on the columns flowing into it.</MudText>
