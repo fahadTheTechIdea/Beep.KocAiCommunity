@@ -8,9 +8,18 @@ public sealed record MyLearningItem(TrackEnrollment Enrollment, string Title, in
 /// <summary>Learner-facing operations for guided learning tracks.</summary>
 public interface ILearningService
 {
-    Task<IReadOnlyList<LearningTrack>> BrowseVisibleAsync(string userId, CancellationToken ct = default);
+    /// <summary>
+    /// The published tracks this reader may see, in one language. A track with no translation into the
+    /// requested language is still listed in the language it was written in — a partly translated
+    /// catalogue should read as "this one is only in English", not hide material from the reader.
+    /// </summary>
+    Task<IReadOnlyList<LearningTrack>> BrowseVisibleAsync(string userId, string language, CancellationToken ct = default);
+
     Task<LearningTrack?> GetAsync(Guid trackId, CancellationToken ct = default);
     Task<IReadOnlyList<Lesson>> GetLessonsAsync(Guid trackId, CancellationToken ct = default);
+
+    /// <summary>The other languages the same material is published in, as (language, track id) pairs.</summary>
+    Task<IReadOnlyDictionary<string, Guid>> GetTranslationsAsync(Guid trackId, CancellationToken ct = default);
 
     /// <summary>Enroll the user (idempotent — returns the existing enrollment if present).</summary>
     Task<TrackEnrollment> EnrollAsync(string userId, Guid trackId, CancellationToken ct = default);

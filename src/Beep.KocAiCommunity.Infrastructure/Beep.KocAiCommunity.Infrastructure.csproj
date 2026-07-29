@@ -17,8 +17,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Learning track content, authored as markdown and embedded so the seeder needs no files on disk. -->
-    <EmbeddedResource Include="Learning\Content\*.md" />
+    <!-- Learning track content, authored as markdown and embedded so the seeder needs no files on disk.
+
+         WithCulture=false is load-bearing. MSBuild reads a file named `07-anomaly-detection.ar.md` as a
+         localized resource because `ar` is a culture code, and moves it into an `ar/` satellite assembly
+         where GetManifestResourceStream will never find it — the track simply vanishes from the
+         catalogue with nothing to say why. These are content keyed by language in the database, not
+         .NET localization, so the heuristic is wrong for every file here. -->
+    <EmbeddedResource Include="Learning\Content\*.md" WithCulture="false" />
   </ItemGroup>
 
 </Project>

@@ -31,9 +31,82 @@ public class TrackDocumentTests
 
         // Orders 0-3 belong to the original starter tracks seeded in code.
         documents.Should().OnlyContain(d => d.Order >= 4, "authored tracks continue after the starters");
-        documents.Select(d => d.Order).Should().OnlyHaveUniqueItems("two tracks at the same order sort arbitrarily");
-        documents.Select(d => d.Title).Should().OnlyHaveUniqueItems("the seeder matches existing tracks by title");
+
+        // A translation deliberately shares its original's order — it takes the same place in the
+        // catalogue — so the ordering only has to be unambiguous within one language.
+        documents.GroupBy(d => d.Language)
+            .Should().OnlyContain(g => g.Select(d => d.Order).Distinct().Count() == g.Count(),
+                "two tracks at the same order in the same language sort arbitrarily");
+
+        documents.Select(d => (d.ContentKey, d.Language)).Should()
+            .OnlyHaveUniqueItems("the seeder matches an existing track by content key and language");
     }
+
+    [Fact]
+    public void A_translation_is_paired_with_its_original_by_file_name()
+    {
+        var documents = TrackDocument.All();
+
+        var arabic = documents.Where(d => d.Language == TrackLanguages.Arabic).ToList();
+        arabic.Should().NotBeEmpty("at least one track is translated, which is what proves the path works");
+
+        // The pairing is the whole mechanism: 07-anomaly-detection.ar.md must key on the same material
+        // as 07-anomaly-detection.md, or the two would seed as unrelated tracks and the reader would
+        // never be offered the other language.
+        foreach (var translation in arabic)
+        {
+            documents.Should().Contain(
+                d => d.ContentKey == translation.ContentKey && d.Language == TrackLanguages.English,
+                "'{0}' is keyed on '{1}' and needs the English document it translates", translation.Title, translation.ContentKey);
+
+            translation.ContentKey.Should().NotContain(".ar", "the language suffix names the file, not the material");
+        }
+    }
+
+    [Fact]
+    public void An_arabic_document_declares_its_language_and_splits_on_arabic_headings()
+    {
+        // A translator writes headings in the language they are writing in. Requiring the English word
+        // "Lesson" inside an Arabic document would make the file unmaintainable by the person who owns it.
+        var document = TrackDocument.Parse("""
+            title: اكتشاف الشاذ
+            summary: اعثر على القراءات التي لا تنتمي.
+            level: Advanced
+            order: 7
+            language: ar
+
+            ## الدرس 1 — مشكلة الأعطال المُصنَّفة
+            التصنيف يحتاج أمثلة لما تبحث عنه.
+
+            ## الدرس 2 — مقبض الرتبة
+            ابدأ بالقيمة الافتراضية.
+            """);
+
+        document.Should().NotBeNull();
+        document!.Language.Should().Be(TrackLanguages.Arabic);
+        document.Title.Should().Be("اكتشاف الشاذ");
+        document.Lessons.Should().HaveCount(2);
+        document.Lessons[0].Title.Should().Be("مشكلة الأعطال المُصنَّفة");
+        document.Lessons[1].Content.Should().Contain("الافتراضية");
+    }
+
+    [Fact]
+    public void A_document_with_no_language_header_is_english()
+    {
+        // Every track written before translation existed says nothing about its language, and all of
+        // them are English. Defaulting anywhere else would relabel the entire catalogue.
+        TrackDocument.All().Where(d => d.ContentKey == "04-classification")
+            .Should().OnlyContain(d => d.Language == TrackLanguages.English);
+    }
+
+    [Theory]
+    [InlineData("ar", "ar")]
+    [InlineData("AR", "ar")]
+    [InlineData("fr", "en")]
+    [InlineData("", "en")]
+    [InlineData(null, "en")]
+    public void An_unrecognised_language_reads_as_english(string? requested, string expected) =>
+        TrackLanguages.Normalize(requested).Should().Be(expected);
 
     [Fact]
     public void Every_lesson_has_a_title_and_a_body()

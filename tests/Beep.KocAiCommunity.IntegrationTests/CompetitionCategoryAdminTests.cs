@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Beep.KocAiCommunity.Contracts.Admin;
 using Beep.KocAiCommunity.Contracts.Competitions;
+using Beep.KocAiCommunity.Contracts.Learning;
 using FluentAssertions;
 using Xunit;
 
@@ -141,6 +142,30 @@ public class CompetitionCategoryAdminTests(KocApiFactory factory) : IClassFixtur
             new SetRecommendedCompetitionRequest(null))).StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await admin.GetFromJsonAsync<List<LearningLinkDto>>("/api/v1/admin/learning-links"))!
             .Single(l => l.TrackId == trackId).RecommendedCompetitionId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Linking_a_track_links_every_translation_of_it()
+    {
+        var admin = Admin("cat-admin-translations");
+
+        var competition = await admin.PostAsJsonAsync("/api/v1/competitions",
+            new CreateCompetitionRequest("Anomaly challenge", "x", "Company", null, null, 5, "auc"));
+        var competitionId = (await competition.Content.ReadFromJsonAsync<CompetitionDto>())!.Id;
+
+        // The catalogue lists one row per piece of material, not one per language: the link is a
+        // property of the material, so two controls for it would be two ways to disagree.
+        var links = (await admin.GetFromJsonAsync<List<LearningLinkDto>>("/api/v1/admin/learning-links"))!;
+        links.Should().ContainSingle(l => l.Title == "Flag the abnormal");
+        links.Should().NotContain(l => l.Title == "اكتشاف الشاذ");
+
+        var trackId = links.Single(l => l.Title == "Flag the abnormal").TrackId;
+        (await admin.PutAsJsonAsync($"/api/v1/admin/learning-tracks/{trackId}/recommended-competition",
+            new SetRecommendedCompetitionRequest(competitionId))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Set once in English, and the Arabic reader is sent to the same place.
+        var arabic = (await admin.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks?language=ar"))!;
+        arabic.Single(t => t.Title == "اكتشاف الشاذ").RecommendedCompetitionId.Should().Be(competitionId);
     }
 
     [Fact]

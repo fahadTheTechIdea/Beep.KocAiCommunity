@@ -14,7 +14,16 @@ public sealed class LearningTrackConfiguration : IEntityTypeConfiguration<Learni
         b.Property(x => x.Summary).HasMaxLength(1024).IsRequired();
         b.Property(x => x.Status).HasMaxLength(32).IsRequired();
         b.Property(x => x.Domain).HasMaxLength(32).IsRequired();
-        b.HasIndex(x => new { x.Status, x.OrderNo });
+        b.Property(x => x.Language).HasMaxLength(8).IsRequired().HasDefaultValue(TrackLanguages.English);
+        b.Property(x => x.ContentKey).HasMaxLength(64).IsRequired().HasDefaultValue(string.Empty);
+
+        // The catalogue is always read for one language at a time, so it leads the index.
+        b.HasIndex(x => new { x.Language, x.Status, x.OrderNo });
+
+        // Finding a track's translations. Not unique: every unpaired track carries an empty content key,
+        // and a unique index would need a provider-specific filter to let them coexist. The seeder is
+        // what keeps one row per (key, language) — this index is here to make the lookup cheap.
+        b.HasIndex(x => new { x.ContentKey, x.Language });
     }
 }
 

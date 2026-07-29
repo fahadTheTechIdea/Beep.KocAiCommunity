@@ -24,30 +24,35 @@ public static class LearningSeeder
         await EnsureTrackAsync(db, stamp, order: 0, TrackLevel.Beginner,
             "AI for Everyone — Start Here",
             "Never touched AI before? Start here. Plain words, pictures, and a first challenge — no maths, no code.",
-            BeginnerLessons(), ct, refreshContent: true);
+            BeginnerLessons(), ct, refreshContent: true, contentKey: "ai-for-everyone");
 
         await EnsureTrackAsync(db, stamp, order: 1, TrackLevel.Beginner,
             "Getting started with data",
             "Read, clean, and make sense of a dataset. For anyone curious about AI — no coding needed.",
-            Simple("What is a dataset?", "Loading well data", "Spotting gaps and outliers", "Simple summaries", "Charts that tell the truth", "Your first insight"), ct);
+            Simple("What is a dataset?", "Loading well data", "Spotting gaps and outliers", "Simple summaries", "Charts that tell the truth", "Your first insight"), ct,
+            contentKey: "getting-started-with-data");
 
         await EnsureTrackAsync(db, stamp, order: 2, TrackLevel.Intermediate,
             "Solve a real problem",
             "Build a model for a production, facilities, or subsurface question using your own data.",
-            Simple("Framing the question", "Features from sensor tags", "Train / test split by time", "Fit your first model", "Read the metrics", "Avoid leakage", "Compare two models", "Ship a prediction"), ct);
+            Simple("Framing the question", "Features from sensor tags", "Train / test split by time", "Fit your first model", "Read the metrics", "Avoid leakage", "Compare two models", "Ship a prediction"), ct,
+            contentKey: "solve-a-real-problem");
 
         await EnsureTrackAsync(db, stamp, order: 3, TrackLevel.Advanced,
             "Make it dependable",
             "Tune, check, and package a model your team can trust and reuse day to day.",
-            Simple("Reproducible runs", "Tuning with AutoML", "Validation that holds up", "Explainability basics", "Versioning a model", "Rollback and approvals", "Hand-over to the team"), ct);
+            Simple("Reproducible runs", "Tuning with AutoML", "Validation that holds up", "Explainability basics", "Versioning a model", "Rollback and approvals", "Hand-over to the team"), ct,
+            contentKey: "make-it-dependable");
 
         // Authored tracks live as markdown documents (see TrackDocument). refreshContent keeps their
         // lesson text current on databases that already have them, matched by order so nobody's progress
-        // is lost when the training team edits a lesson.
+        // is lost when the training team edits a lesson. A translation is another document with the same
+        // content key and a different language, so it seeds as its own track through the same path.
         foreach (var document in TrackDocument.All())
         {
             await EnsureTrackAsync(db, stamp, document.Order, document.Level, document.Title, document.Summary,
-                [.. document.Lessons], ct, refreshContent: true);
+                [.. document.Lessons], ct, refreshContent: true,
+                contentKey: document.ContentKey, language: document.Language);
         }
 
         await db.SaveChangesAsync(ct);
@@ -55,15 +60,36 @@ public static class LearningSeeder
 
     private static async Task EnsureTrackAsync(
         KocDbContext db, DateTime stamp, int order, TrackLevel level, string title, string summary,
-        (string Title, string? Content)[] lessons, CancellationToken ct, bool refreshContent = false)
+        (string Title, string? Content)[] lessons, CancellationToken ct, bool refreshContent = false,
+        string contentKey = "", string language = TrackLanguages.English)
     {
-        var existing = await db.LearningTracks.FirstOrDefaultAsync(t => t.Title == title, ct);
+        // Identity is (content key, language): the same material in two languages is two tracks, and a
+        // translator changing a title must not orphan the row. Databases seeded before content keys
+        // existed are matched by title once and backfilled, so an upgrade doesn't duplicate the
+        // catalogue — and doesn't lose anyone's progress against the original rows.
+        var existing = await db.LearningTracks
+            .FirstOrDefaultAsync(t => t.ContentKey == contentKey && t.Language == language, ct);
+
+        if (existing is null && contentKey.Length > 0)
+        {
+            existing = await db.LearningTracks.FirstOrDefaultAsync(t => t.ContentKey == "" && t.Title == title, ct);
+            if (existing is not null)
+            {
+                existing.ContentKey = contentKey;
+                existing.Language = language;
+            }
+        }
+
         if (existing is not null)
         {
             // Authored tracks (e.g. the beginner track) refresh their lesson text in place so content
             // edits ship without a database reset. Lesson rows are matched by order, preserving progress.
             if (refreshContent)
             {
+                // Matched by key rather than title, so the title itself is content that can be edited.
+                existing.Title = title;
+                existing.Summary = summary;
+
                 var rows = await db.Lessons.Where(l => l.TrackId == existing.Id).OrderBy(l => l.OrderNo).ToListAsync(ct);
                 foreach (var lesson in rows)
                 {
@@ -85,6 +111,8 @@ public static class LearningSeeder
             Summary = summary,
             Level = level,
             OrderNo = order,
+            Language = language,
+            ContentKey = contentKey,
             Status = "published",
             Domain = "upstream",
             VisibilityScope = VisibilityScope.Company,
@@ -99,7 +127,7 @@ public static class LearningSeeder
                 TrackId = track.Id,
                 OrderNo = i + 1,
                 Title = lessons[i].Title,
-                ContentRef = $"seed://{level}/{order}/{i + 1}",
+                ContentRef = $"seed://{language}/{level}/{order}/{i + 1}",
                 Content = lessons[i].Content ?? Body(lessons[i].Title, level, i + 1),
                 EstimatedMinutes = level == TrackLevel.Beginner ? 8 : 20,
                 CreatedUtc = stamp,

@@ -4,6 +4,7 @@ using Beep.KocAiCommunity.Application.Competitions;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Admin;
 using Beep.KocAiCommunity.Contracts.Competitions;
+using Beep.KocAiCommunity.Domain.Learning;
 using Beep.KocAiCommunity.Domain.Organization;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -182,9 +183,19 @@ public static class AdminEndpoints
         {
             var tracks = await db.LearningTracks.AsNoTracking()
                 .OrderBy(t => t.OrderNo)
-                .Select(t => new LearningLinkDto(t.Id, t.Title, t.RecommendedCompetitionId))
+                .Select(t => new { t.Id, t.Title, t.RecommendedCompetitionId, t.ContentKey, t.Language })
                 .ToListAsync(ct);
-            return Results.Ok(tracks);
+
+            // One row per piece of material, not per translation. The link is shared across languages,
+            // so listing both would show an admin two controls for one setting and no way to tell that
+            // changing either changes both.
+            var links = tracks
+                .GroupBy(t => t.ContentKey.Length > 0 ? t.ContentKey : t.Id.ToString())
+                .Select(g => g.FirstOrDefault(t => t.Language == TrackLanguages.English) ?? g.First())
+                .Select(t => new LearningLinkDto(t.Id, t.Title, t.RecommendedCompetitionId))
+                .ToList();
+
+            return Results.Ok(links);
         }).WithName("AdminListLearningLinks");
 
         admin.MapPut("/learning-tracks/{id:guid}/recommended-competition", async (
@@ -201,7 +212,18 @@ public static class AdminEndpoints
                 return Results.BadRequest(new { error = "No competition with that id." });
             }
 
-            track.RecommendedCompetitionId = req.CompetitionId;
+            // The link belongs to the material, not to one translation of it: an admin choosing where
+            // "Flag the abnormal" leads means the same for its Arabic version, and expecting them to set
+            // it once per language is how the two quietly drift apart.
+            var siblings = track.ContentKey.Length > 0
+                ? await db.LearningTracks.Where(t => t.ContentKey == track.ContentKey).ToListAsync(ct)
+                : [track];
+
+            foreach (var sibling in siblings)
+            {
+                sibling.RecommendedCompetitionId = req.CompetitionId;
+            }
+
             await db.SaveChangesAsync(ct);
             await audit.WriteAsync(new AuditEntry("learning-track.recommended-competition", "learning-track", id.ToString(),
                 AfterJson: $"{{\"competition\":\"{req.CompetitionId?.ToString() ?? "none"}\"}}"), ct);

@@ -47,7 +47,7 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient remote) : IKocApi
     public virtual Task<(AuthTokenResponse? Auth, string? Error)> RegisterAsync(RegisterRequest request, CancellationToken ct = default) => remote.RegisterAsync(request, ct);
     public virtual Task<(AuthTokenResponse? Auth, string? Error)> LoginAsync(LoginRequest request, CancellationToken ct = default) => remote.LoginAsync(request, ct);
     public virtual Task<RegistrationStateResponse?> GetRegistrationStateAsync(CancellationToken ct = default) => remote.GetRegistrationStateAsync(ct);
-    public virtual Task<IReadOnlyList<TrackDto>> GetTracksAsync(CancellationToken ct = default) => remote.GetTracksAsync(ct);
+    public virtual Task<IReadOnlyList<TrackDto>> GetTracksAsync(string? language = null, CancellationToken ct = default) => remote.GetTracksAsync(language, ct);
     public virtual Task<TrackDetailDto?> GetTrackAsync(Guid trackId, CancellationToken ct = default) => remote.GetTrackAsync(trackId, ct);
     public virtual Task EnrollAsync(Guid trackId, CancellationToken ct = default) => remote.EnrollAsync(trackId, ct);
     public virtual Task CompleteLessonAsync(Guid trackId, Guid lessonId, CancellationToken ct = default) => remote.CompleteLessonAsync(trackId, lessonId, ct);

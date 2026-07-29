@@ -10,16 +10,29 @@ namespace Beep.KocAiCommunity.Infrastructure.Learning;
 
 public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibility, IEngagementService engagement) : ILearningService
 {
-    public async Task<IReadOnlyList<LearningTrack>> BrowseVisibleAsync(string userId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<LearningTrack>> BrowseVisibleAsync(string userId, string language, CancellationToken ct = default)
     {
+        var wanted = TrackLanguages.Normalize(language);
+
         var published = await db.LearningTracks
             .AsNoTracking()
             .Where(t => t.Status == "published")
             .OrderBy(t => t.OrderNo)
             .ToListAsync(ct);
 
+        // Choose one row per piece of material: the reader's language when it exists, otherwise whatever
+        // the material was written in. Filtering on language in the query instead would silently drop
+        // every untranslated track, which for a catalogue that is mostly English reads as a broken page.
+        var translated = published
+            .Where(t => t.ContentKey.Length > 0 && t.Language == wanted)
+            .Select(t => t.ContentKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var chosen = published.Where(t =>
+            t.Language == wanted || t.ContentKey.Length == 0 || !translated.Contains(t.ContentKey));
+
         var visible = new List<LearningTrack>(published.Count);
-        foreach (var track in published)
+        foreach (var track in chosen)
         {
             if (await visibility.CanSeeAsync(userId, track.VisibilityScope, track.VisibilityOrgUnitId, ct))
             {
@@ -28,6 +41,26 @@ public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibi
         }
 
         return visible;
+    }
+
+    public async Task<IReadOnlyDictionary<string, Guid>> GetTranslationsAsync(Guid trackId, CancellationToken ct = default)
+    {
+        var key = await db.LearningTracks.AsNoTracking()
+            .Where(t => t.Id == trackId)
+            .Select(t => t.ContentKey)
+            .FirstOrDefaultAsync(ct);
+
+        if (string.IsNullOrEmpty(key))
+        {
+            return new Dictionary<string, Guid>();
+        }
+
+        var siblings = await db.LearningTracks.AsNoTracking()
+            .Where(t => t.ContentKey == key && t.Status == "published")
+            .Select(t => new { t.Language, t.Id })
+            .ToListAsync(ct);
+
+        return siblings.ToDictionary(s => s.Language, s => s.Id, StringComparer.OrdinalIgnoreCase);
     }
 
     public Task<LearningTrack?> GetAsync(Guid trackId, CancellationToken ct = default) =>

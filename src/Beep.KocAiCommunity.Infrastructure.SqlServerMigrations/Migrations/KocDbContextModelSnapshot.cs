@@ -2110,6 +2110,13 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("ContentKey")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasDefaultValue("");
+
                     b.Property<string>("CreatedByUserId")
                         .HasColumnType("nvarchar(max)");
 
@@ -2123,6 +2130,13 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)")
+                        .HasDefaultValue("en");
 
                     b.Property<string>("LastModifiedByUserId")
                         .HasColumnType("nvarchar(max)");
@@ -2165,7 +2179,9 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Status", "OrderNo");
+                    b.HasIndex("ContentKey", "Language");
+
+                    b.HasIndex("Language", "Status", "OrderNo");
 
                     b.ToTable("LearningTracks", "koc");
                 });

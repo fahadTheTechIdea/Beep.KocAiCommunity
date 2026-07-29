@@ -1,5 +1,6 @@
 @page "/learn"
 @using Beep.KocAiCommunity.Contracts.Learning
+@using Beep.KocAiCommunity.Domain.Learning
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @using Markdig
@@ -10,6 +11,24 @@
 
 <PageHeader Eyebrow="Learn &amp; compete" Title="Learning tracks"
             Subtitle="Guided tracks from your first look at data to a model your team can rely on. Enroll, work through the lessons, and watch your progress." />
+
+@* Reading the material is the part of the platform open to everyone, so it is the part that most needs
+   to be readable in both of KOC's working languages. Each language is named in itself — someone looking
+   for Arabic looks for العربية, not for the word "Arabic" written in a script they came here to leave. *@
+<div class="d-flex align-center gap-2 mb-6">
+    <MudIcon Icon="@Icons.Material.Filled.Translate" Size="Size.Small" />
+    <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+        @foreach (var language in TrackLanguages.All)
+        {
+            var isCurrent = language == _language;
+            <MudButton Color="@(isCurrent ? Color.Primary : Color.Default)"
+                       Variant="@(isCurrent ? Variant.Filled : Variant.Outlined)"
+                       OnClick="() => SwitchLanguage(language)">
+                @TrackLanguages.NativeName(language)
+            </MudButton>
+        }
+    </MudButtonGroup>
+</div>
 
 @if (_error is not null)
 {
@@ -27,14 +46,23 @@ else
         @foreach (var track in _tracks)
         {
             var progress = _mine.GetValueOrDefault(track.Id);
+            var rtl = TrackLanguages.IsRightToLeft(track.Language);
             <MudItem xs="12" md="4">
                 <BlueprintCard Class="pa-6" Style="height:100%;display:flex;flex-direction:column;">
                     <div class="d-flex justify-space-between align-center">
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@track.Level</MudChip>
                         <MudText Typo="Typo.caption">@track.LessonCount lessons</MudText>
                     </div>
-                    <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-2">@track.Title</MudText>
-                    <MudText Typo="Typo.body2" Class="mb-4">@track.Summary</MudText>
+                    @* A catalogue that is only partly translated says so on the card rather than
+                       quietly serving English under an Arabic heading. *@
+                    @if (track.Language != _language)
+                    {
+                        <MudText Typo="Typo.caption" Class="mt-2 mud-text-secondary">
+                            Only in @TrackLanguages.NativeName(track.Language)
+                        </MudText>
+                    }
+                    <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-2" dir="@(rtl ? "rtl" : "ltr")">@track.Title</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" dir="@(rtl ? "rtl" : "ltr")">@track.Summary</MudText>
 
                     @if (progress is not null)
                     {
@@ -73,10 +101,31 @@ else
 
     @if (_selected is not null)
     {
+        var selectedRtl = TrackLanguages.IsRightToLeft(_selected.Language);
         <MudDivider Class="my-8" />
-        <MudText Typo="Typo.h5" Class="koc-heading mb-1">@_selected.Title</MudText>
-        <MudText Typo="Typo.body2" Class="mb-4">@_selected.Summary</MudText>
 
+        @* The whole track — heading, summary, and every lesson body — reads in the direction its own
+           language reads. Rendering Arabic prose left-to-right is not a cosmetic problem; punctuation
+           and any embedded Latin term land in the wrong place and the paragraph stops making sense. *@
+        <div dir="@(selectedRtl ? "rtl" : "ltr")">
+            <MudText Typo="Typo.h5" Class="koc-heading mb-1">@_selected.Title</MudText>
+            <MudText Typo="Typo.body2" Class="mb-4">@_selected.Summary</MudText>
+        </div>
+
+        @if (OtherTranslations(_selected) is { Count: > 0 } others)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-4">
+                Also available in
+                @foreach (var other in others)
+                {
+                    <MudLink Class="mx-1" @onclick="() => OpenTrack(other.Value)" Style="cursor:pointer;">
+                        <b>@TrackLanguages.NativeName(other.Key)</b>
+                    </MudLink>
+                }
+            </MudAlert>
+        }
+
+        <div dir="@(selectedRtl ? "rtl" : "ltr")">
         <MudExpansionPanels MultiExpansion="true">
             @foreach (var lesson in _selected.Lessons)
             {
@@ -104,6 +153,7 @@ else
                 </MudExpansionPanel>
             }
         </MudExpansionPanels>
+        </div>
     }
 }
 
@@ -112,6 +162,7 @@ else
     private Dictionary<Guid, MyLearningDto> _mine = [];
     private TrackDetailDto? _selected;
     private string? _error;
+    private string _language = TrackLanguages.English;
 
     private static readonly MarkdownPipeline _md = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
@@ -126,7 +177,7 @@ else
         try
         {
             _error = null;
-            _tracks = await Api.GetTracksAsync();
+            _tracks = await Api.GetTracksAsync(_language);
         }
         catch (Exception ex)
         {
@@ -153,6 +204,26 @@ else
     }
 
     private async Task OpenTrack(Guid trackId) => _selected = await Api.GetTrackAsync(trackId);
+
+    private async Task SwitchLanguage(string language)
+    {
+        if (language == _language)
+        {
+            return;
+        }
+
+        _language = language;
+
+        // Close the open track: it is in the language the reader just left. Whether the same material
+        // exists in the new one is the catalogue's answer to give, not something to guess at here.
+        _selected = null;
+        await LoadAsync();
+    }
+
+    /// <summary>The same material in every language except the one being read.</summary>
+    private static IReadOnlyList<KeyValuePair<string, Guid>> OtherTranslations(TrackDetailDto track) =>
+        [.. (track.Translations ?? new Dictionary<string, Guid>())
+            .Where(t => !string.Equals(t.Key, track.Language, StringComparison.OrdinalIgnoreCase))];
 
     private async Task Enroll(Guid trackId)
     {

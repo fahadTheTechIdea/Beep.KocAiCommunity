@@ -90,6 +90,59 @@ public class LearningEndpointsTests(KocApiFactory factory) : IClassFixture<KocAp
         entry.Status.Should().Be("completed");
     }
 
+    [Fact]
+    public async Task The_catalogue_reads_in_arabic_without_hiding_what_is_only_in_english()
+    {
+        // Learning is the half of the platform open to everyone, so it is the half that most needs to be
+        // readable in both of KOC's working languages.
+        var guest = _factory.CreateClientAs(sub: null);
+
+        var english = (await guest.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks"))!;
+        var arabic = (await guest.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks?language=ar"))!;
+
+        // The translated track swaps for its Arabic version...
+        english.Should().Contain(t => t.Title == "Flag the abnormal");
+        arabic.Should().Contain(t => t.Title == "اكتشاف الشاذ");
+        arabic.Should().NotContain(t => t.Title == "Flag the abnormal", "the two are the same material");
+
+        // ...and it takes the original's place rather than being appended to the end.
+        arabic.Should().HaveSameCount(english, "a translation replaces its original, it does not add to the catalogue");
+
+        // ...while everything not yet translated is still offered, marked as English. A partly
+        // translated catalogue that hid its untranslated half would read as a broken page.
+        arabic.Should().Contain(t => t.Title == "Getting started with data" && t.Language == "en");
+        arabic.Single(t => t.Title == "اكتشاف الشاذ").Language.Should().Be("ar");
+    }
+
+    [Fact]
+    public async Task A_track_says_which_languages_it_is_published_in()
+    {
+        var guest = _factory.CreateClientAs(sub: null);
+        var arabic = (await guest.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks?language=ar"))!;
+        var translated = arabic.Single(t => t.Title == "اكتشاف الشاذ");
+
+        // Read in either language, a track offers the other — the reader who lands on the wrong one
+        // needs a way across, and the API is where that pairing has to be answered.
+        var detail = (await guest.GetFromJsonAsync<TrackDetailDto>($"/api/v1/tracks/{translated.Id}"))!;
+        detail.Language.Should().Be("ar");
+        detail.Translations.Should().ContainKey("en");
+
+        var original = (await guest.GetFromJsonAsync<TrackDetailDto>($"/api/v1/tracks/{detail.Translations!["en"]}"))!;
+        original.Title.Should().Be("Flag the abnormal");
+        original.Translations.Should().ContainKey("ar").WhoseValue.Should().Be(translated.Id);
+    }
+
+    [Fact]
+    public async Task An_unrecognised_language_reads_as_english_rather_than_empty()
+    {
+        var guest = _factory.CreateClientAs(sub: null);
+
+        var tracks = (await guest.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks?language=zz"))!;
+
+        tracks.Should().NotBeEmpty("a bad query string must not empty the catalogue");
+        tracks.Should().Contain(t => t.Title == "Flag the abnormal");
+    }
+
     private static async Task<Guid> FirstTrackId(HttpClient client)
     {
         var tracks = (await client.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks"))!;

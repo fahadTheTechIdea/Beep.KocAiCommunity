@@ -3,6 +3,7 @@ using Beep.KocAiCommunity.Application.Competitions;
 using Beep.KocAiCommunity.Application.Learning;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Learning;
+using Beep.KocAiCommunity.Domain.Learning;
 
 namespace Beep.KocAiCommunity.Api.Endpoints;
 
@@ -15,9 +16,9 @@ public static class LearningEndpoints
         // they are committing to. Visibility still applies: an anonymous reader resolves to no org
         // membership, so they see company-wide tracks and nothing narrower.
         group.MapGet("/tracks", async (
-            IKocCurrentUser me, ILearningService learning, ICompetitionService competitions, CancellationToken ct) =>
+            string? language, IKocCurrentUser me, ILearningService learning, ICompetitionService competitions, CancellationToken ct) =>
         {
-            var tracks = await learning.BrowseVisibleAsync(me.UserId ?? string.Empty, ct);
+            var tracks = await learning.BrowseVisibleAsync(me.UserId ?? string.Empty, TrackLanguages.Normalize(language), ct);
 
             // Titles for the linked competitions, so a track can say where it leads without the page
             // making a request per card. A link into a hidden competition resolves to nothing and the
@@ -35,7 +36,7 @@ public static class LearningEndpoints
 
                 result.Add(new TrackDto(
                     track.Id, track.Title, track.Summary, track.Level.ToString(), track.OrderNo, track.Domain,
-                    lessons.Count, linked.Id, linked.Title));
+                    lessons.Count, linked.Id, linked.Title, track.Language));
             }
 
             return Results.Ok(result);
@@ -57,9 +58,11 @@ public static class LearningEndpoints
             }
 
             var lessons = await learning.GetLessonsAsync(id, ct);
+            var translations = await learning.GetTranslationsAsync(id, ct);
             return Results.Ok(new TrackDetailDto(
                 track.Id, track.Title, track.Summary, track.Level.ToString(), track.Domain,
-                [.. lessons.Select(l => new LessonDto(l.Id, l.OrderNo, l.Title, l.EstimatedMinutes, l.HandsOnKind, l.Content))]));
+                [.. lessons.Select(l => new LessonDto(l.Id, l.OrderNo, l.Title, l.EstimatedMinutes, l.HandsOnKind, l.Content))],
+                track.Language, translations));
         })
         .WithName("GetTrack")
         .AllowAnonymous();

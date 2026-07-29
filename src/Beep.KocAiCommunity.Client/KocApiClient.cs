@@ -39,7 +39,8 @@ public interface IKocApiClient
 
     /// <summary>Whether this installation still needs its first (administrator) account.</summary>
     Task<RegistrationStateResponse?> GetRegistrationStateAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<TrackDto>> GetTracksAsync(CancellationToken ct = default);
+    /// <summary>The learning catalogue in a language. Null asks for the platform default (English).</summary>
+    Task<IReadOnlyList<TrackDto>> GetTracksAsync(string? language = null, CancellationToken ct = default);
     Task<TrackDetailDto?> GetTrackAsync(Guid trackId, CancellationToken ct = default);
     Task EnrollAsync(Guid trackId, CancellationToken ct = default);
     Task CompleteLessonAsync(Guid trackId, Guid lessonId, CancellationToken ct = default);
@@ -262,8 +263,9 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         }
     }
 
-    public async Task<IReadOnlyList<TrackDto>> GetTracksAsync(CancellationToken ct = default) =>
-        await http.GetFromJsonAsync<List<TrackDto>>("/api/v1/tracks", ct) ?? [];
+    public async Task<IReadOnlyList<TrackDto>> GetTracksAsync(string? language = null, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<TrackDto>>(
+            language is { Length: > 0 } ? $"/api/v1/tracks?language={Uri.EscapeDataString(language)}" : "/api/v1/tracks", ct) ?? [];
 
     public Task<TrackDetailDto?> GetTrackAsync(Guid trackId, CancellationToken ct = default) =>
         http.GetFromJsonAsync<TrackDetailDto>($"/api/v1/tracks/{trackId}", ct);

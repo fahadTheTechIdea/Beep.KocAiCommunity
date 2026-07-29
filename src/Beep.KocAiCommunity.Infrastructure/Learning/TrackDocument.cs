@@ -20,10 +20,28 @@ public sealed record TrackDocument(
     int Order,
     IReadOnlyList<(string Title, string? Content)> Lessons)
 {
+    /// <summary>
+    /// The language the document is written in. Declared with a <c>language:</c> header; English when
+    /// absent, because every track that existed before translation was English.
+    /// </summary>
+    public string Language { get; init; } = TrackLanguages.English;
+
+    /// <summary>
+    /// Ties a document to its translations. Taken from the file name — <c>07-anomaly-detection.md</c> and
+    /// <c>07-anomaly-detection.ar.md</c> both key on <c>07-anomaly-detection</c> — so a translator pairs a
+    /// document by naming it, with no identifier to copy across and get wrong.
+    /// </summary>
+    public string ContentKey { get; init; } = string.Empty;
+
     private const string ResourcePrefix = "Beep.KocAiCommunity.Infrastructure.Learning.Content.";
 
-    /// <summary>The heading that starts a lesson. Everything under it, up to the next one, is its body.</summary>
-    private const string LessonHeading = "## Lesson";
+    /// <summary>
+    /// The headings that start a lesson — everything under one, up to the next, is its body. A translator
+    /// writes the heading in the language they are writing in; requiring the English word inside an
+    /// Arabic document would make the file unreadable to the person maintaining it. Only these prefixes
+    /// start a lesson, so an ordinary <c>##</c> section inside a lesson body stays part of that body.
+    /// </summary>
+    private static readonly string[] LessonHeadings = ["## Lesson", "## الدرس"];
 
     /// <summary>Every track document embedded in this assembly, in the order the tracks should appear.</summary>
     public static IReadOnlyList<TrackDocument> All() =>
@@ -32,7 +50,8 @@ public sealed record TrackDocument(
             .Where(name => name.StartsWith(ResourcePrefix, StringComparison.Ordinal) && name.EndsWith(".md", StringComparison.Ordinal))
             .Select(Load)
             .OfType<TrackDocument>()
-            .OrderBy(doc => doc.Order)];
+            .OrderBy(doc => doc.Order)
+            .ThenBy(doc => doc.Language, StringComparer.Ordinal)];
 
     private static TrackDocument? Load(string resourceName)
     {
@@ -43,7 +62,29 @@ public sealed record TrackDocument(
         }
 
         using var reader = new StreamReader(stream);
-        return Parse(reader.ReadToEnd());
+        var document = Parse(reader.ReadToEnd());
+        return document is null ? null : document with { ContentKey = ContentKeyFrom(resourceName) };
+    }
+
+    /// <summary>
+    /// The content key a resource name implies. Embedded resource names replace directory separators with
+    /// dots, so <c>…Content.07-anomaly-detection.ar.md</c> arrives flat: strip the prefix, the
+    /// <c>.md</c>, and a trailing language suffix, and what's left names the material.
+    /// </summary>
+    private static string ContentKeyFrom(string resourceName)
+    {
+        var name = resourceName[ResourcePrefix.Length..^".md".Length];
+
+        foreach (var language in TrackLanguages.All)
+        {
+            var suffix = "." + language;
+            if (name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                return name[..^suffix.Length];
+            }
+        }
+
+        return name;
     }
 
     /// <summary>
@@ -57,6 +98,7 @@ public sealed record TrackDocument(
         string? title = null, summary = null;
         var level = TrackLevel.Beginner;
         var order = 0;
+        var language = TrackLanguages.English;
 
         var lessons = new List<(string Title, string? Content)>();
         string? lessonTitle = null;
@@ -74,12 +116,12 @@ public sealed record TrackDocument(
 
         foreach (var line in lines)
         {
-            if (line.StartsWith(LessonHeading, StringComparison.Ordinal))
+            if (LessonHeadings.FirstOrDefault(h => line.StartsWith(h, StringComparison.Ordinal)) is { } marker)
             {
                 FlushLesson();
 
                 // "## Lesson 3 — Reading the metrics" → "Reading the metrics". Em dash or hyphen.
-                var heading = line[LessonHeading.Length..].Trim();
+                var heading = line[marker.Length..].Trim();
                 var separator = heading.IndexOfAny(['—', '-', ':']);
                 lessonTitle = (separator >= 0 ? heading[(separator + 1)..] : heading).Trim();
                 continue;
@@ -95,6 +137,7 @@ public sealed record TrackDocument(
             if (TryHeader(line, "title:", out var headerValue)) { title = headerValue; }
             else if (TryHeader(line, "summary:", out headerValue)) { summary = headerValue; }
             else if (TryHeader(line, "order:", out headerValue)) { order = int.TryParse(headerValue, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0; }
+            else if (TryHeader(line, "language:", out headerValue)) { language = TrackLanguages.Normalize(headerValue); }
             else if (TryHeader(line, "level:", out headerValue) && Enum.TryParse<TrackLevel>(headerValue, ignoreCase: true, out var parsedLevel)) { level = parsedLevel; }
         }
 
@@ -102,7 +145,7 @@ public sealed record TrackDocument(
 
         return title is null || summary is null || lessons.Count == 0
             ? null
-            : new TrackDocument(title, summary, level, order, lessons);
+            : new TrackDocument(title, summary, level, order, lessons) { Language = language };
     }
 
     private static bool TryHeader(string line, string key, out string value)
