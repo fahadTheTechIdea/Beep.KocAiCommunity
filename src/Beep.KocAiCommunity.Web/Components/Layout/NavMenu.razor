@@ -1,31 +1,34 @@
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 @using Beep.KocAiCommunity.Client
 @inject DevIdentity Identity
 @implements IDisposable
 
 <MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-    <MudNavLink Href="/learn" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.School">Learn</MudNavLink>
-    <MudNavLink Href="/community" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Forum">Community</MudNavLink>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">@L["Home"]</MudNavLink>
+    <MudNavLink Href="/learn" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.School">@L["Learn"]</MudNavLink>
+    <MudNavLink Href="/community" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Forum">@L["Community"]</MudNavLink>
 
     @if (Identity.HasAnyPosition)
     {
-        <MudNavLink Href="/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-        <MudNavLink Href="/compete" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">Compete</MudNavLink>
+        <MudNavLink Href="/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">@L["Dashboard"]</MudNavLink>
+        <MudNavLink Href="/compete" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">@L["Compete"]</MudNavLink>
 
         <MudNavGroup Title="Studio" Icon="@Icons.Material.Filled.Build" Expanded="true">
-            <MudNavLink Href="/datasets" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dataset">Datasets</MudNavLink>
-            <MudNavLink Href="/workflows" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Schema">Workflows</MudNavLink>
-            <MudNavLink Href="/studio" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Hub">AutoML</MudNavLink>
-            <MudNavLink Href="/nodes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Widgets">Node catalog</MudNavLink>
-            <MudNavLink Href="/runs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PlayCircle">Runs</MudNavLink>
-            <MudNavLink Href="/experiments" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Science">Experiments</MudNavLink>
-            <MudNavLink Href="/models" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2">Models</MudNavLink>
+            <MudNavLink Href="/datasets" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dataset">@L["Datasets"]</MudNavLink>
+            <MudNavLink Href="/workflows" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Schema">@L["Workflows"]</MudNavLink>
+            <MudNavLink Href="/studio" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Hub">@L["AutoML"]</MudNavLink>
+            <MudNavLink Href="/nodes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Widgets">@L["Node catalog"]</MudNavLink>
+            <MudNavLink Href="/runs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PlayCircle">@L["Runs"]</MudNavLink>
+            <MudNavLink Href="/experiments" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Science">@L["Experiments"]</MudNavLink>
+            <MudNavLink Href="/models" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2">@L["Models"]</MudNavLink>
         </MudNavGroup>
     }
 
     @if (Identity.IsSupervisor)
     {
-        <MudNavLink Href="/supervision" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SupervisorAccount">Supervision</MudNavLink>
+        <MudNavLink Href="/supervision" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SupervisorAccount">@L["Supervision"]</MudNavLink>
     }
 
     @* Help, My profile, and the Admin console now live in the top-right menu (see MainLayout). *@
@@ -34,7 +37,7 @@
     {
         <MudDivider Class="my-2" />
         <div class="pa-3">
-            <MudText Typo="Typo.caption">Sign in to learn, compete, and build models.</MudText>
+            <MudText Typo="Typo.caption">@L["Sign in to learn, compete, and build models."]</MudText>
         </div>
     }
 </MudNavMenu>

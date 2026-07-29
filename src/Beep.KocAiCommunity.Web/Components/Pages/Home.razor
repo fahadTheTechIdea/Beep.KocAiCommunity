@@ -7,7 +7,12 @@
 @using Beep.KocAiCommunity.Contracts.Supervision
 @using Beep.KocAiCommunity.ServiceDefaults.Security
 @using Beep.KocAiCommunity.Web.Security
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Beep.KocAiCommunity.Contracts.Localization
+@using Microsoft.Extensions.Localization
+@using System.Globalization
 @inject DevIdentity Identity
+@inject IStringLocalizer<Strings> L
 @inject IKocApiClient Api
 @inject NavigationManager Nav
 @inject KocSetupStore Setup
@@ -21,7 +26,7 @@
 
 <!-- 1 · Hero -->
 <section class="mb-8">
-    <span class="koc-eyebrow mb-3 d-block">@KocBrand.Company · @(Identity.IsGuest ? "Guest preview" : Identity.Current.Label)</span>
+    <span class="koc-eyebrow mb-3 d-block">@KocBrand.Company · @(Identity.IsGuest ? L["Guest preview"] : Identity.Current.Label)</span>
     <MudText Typo="Typo.h3" HtmlTag="h1" Class="koc-heading mb-4" Style="text-wrap:balance;max-width:22ch;">@Content.Headline</MudText>
     <MudText Typo="Typo.body1" Class="mb-6" Style="max-width:60ch;">@Content.Sub</MudText>
 
@@ -29,23 +34,23 @@
         @if (Identity.IsGuest)
         {
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.Login" OnClick="PrimaryCta">@SignInPrompt.ButtonText(Setup)</MudButton>
+                       StartIcon="@Icons.Material.Filled.Login" OnClick="PrimaryCta">@SignInPrompt.ButtonText(Setup, L)</MudButton>
         }
         else
         {
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.Dashboard" OnClick="PrimaryCta">Continue where you left off</MudButton>
+                       StartIcon="@Icons.Material.Filled.Dashboard" OnClick="PrimaryCta">@L["Continue where you left off"]</MudButton>
         }
         @* Secondary actions are links, not buttons — only one thing on this page is the main action. *@
-        <MudLink Href="/compete" Typo="Typo.body1" Class="ml-2">Browse competitions →</MudLink>
+        <MudLink Href="/compete" Typo="Typo.body1" Class="ml-2">@L["Browse competitions"] →</MudLink>
         <MudLink Href="/learn" Typo="Typo.body1">@Content.SecondaryCta →</MudLink>
     </div>
 
     @* The platform's pulse in three figures — proof of life before any prose about what it does. *@
     <div class="koc-stat-strip">
-        <div class="koc-stat"><b>@LiveCompetitionCount</b><span>competitions running</span></div>
-        <div class="koc-stat"><b>@TotalCompetitors</b><span>competitors</span></div>
-        <div class="koc-stat"><b>@TotalSubmissions</b><span>submissions scored</span></div>
+        <div class="koc-stat"><b>@LiveCompetitionCount</b><span>@L["competitions running"]</span></div>
+        <div class="koc-stat"><b>@TotalCompetitors</b><span>@L["competitors"]</span></div>
+        <div class="koc-stat"><b>@TotalSubmissions</b><span>@L["submissions scored"]</span></div>
     </div>
 </section>
 
@@ -59,15 +64,21 @@
                         XpTotal="@_myProfile.XpTotal" NextLevelXp="@_myProfile.NextLevelXp" Diameter="72" />
                 <div>
                     <MudText Typo="Typo.h6" Class="koc-heading">@Greeting, @_myProfile.DisplayName</MudText>
-                    <MudText Typo="Typo.caption" Style="opacity:.7;direction:rtl;">@GreetingArabic</MudText>
+                    @* The warm second line was how this page said hello in Arabic when there was no other way to.
+                       Now that the interface has a language of its own, showing it under an Arabic
+                       greeting would only say the same thing twice. *@
+                    @if (!KocLanguages.IsRightToLeft(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName))
+                    {
+                        <MudText Typo="Typo.caption" Style="opacity:.7;direction:rtl;">@GreetingArabic</MudText>
+                    }
                     <div class="d-flex gap-4 mt-1">
-                        <MudText Typo="Typo.body2"><b>🛢️ @_myProfile.XpTotal</b> Barrels</MudText>
-                        <MudText Typo="Typo.body2"><b>🔥 @_myProfile.CurrentStreakDays</b> day streak</MudText>
-                        <MudText Typo="Typo.body2"><b>Lvl @_myProfile.Level</b> @_myProfile.LevelTitle</MudText>
+                        <MudText Typo="Typo.body2"><b>🛢️ @_myProfile.XpTotal</b> @L["Barrels"]</MudText>
+                        <MudText Typo="Typo.body2"><b>🔥 @_myProfile.CurrentStreakDays</b> @L["day streak"]</MudText>
+                        <MudText Typo="Typo.body2"><b>@L["Lvl {0}", _myProfile.Level]</b> @_myProfile.LevelTitle</MudText>
                     </div>
                 </div>
             </div>
-            <MudButton Href="/profile" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EmojiEvents">My profile</MudButton>
+            <MudButton Href="/profile" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EmojiEvents">@L["My profile"]</MudButton>
         </div>
     </BlueprintCard>
 }
@@ -79,12 +90,12 @@
         <BlueprintCard Class="@($"koc-arena-banner pa-6{(featured.HasHeroImage ? " koc-has-photo" : "")}")" Style="@HeroStyle(featured)">
             <div class="d-flex justify-space-between flex-wrap gap-5">
                 <div style="min-width:280px;max-width:60ch;">
-                    <span class="koc-eyebrow">⚔ Featured competition</span>
+                    <span class="koc-eyebrow">⚔ @L["Featured competition"]</span>
                     <MudText Typo="Typo.h4" HtmlTag="h2" Class="koc-heading" Style="color:#fff;text-wrap:balance;">🏆 @featured.Title</MudText>
                     <MudText Typo="Typo.body2" Class="mb-3" Style="opacity:.9;max-width:56ch;">@featured.Description</MudText>
                     <div class="d-flex gap-2 flex-wrap mb-3">
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.45);">@CompetitionDisplay.TaskLabel(featured.TaskType)</MudChip>
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.45);">@CompetitionDisplay.MetricLabel(featured)</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.45);">@L[CompetitionDisplay.TaskLabel(featured.TaskType)]</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.45);">@CompetitionDisplay.MetricLabel(featured, L)</MudChip>
                         @if (!string.IsNullOrWhiteSpace(featured.FirstPrize))
                         {
                             <MudChip T="string" Size="Size.Small" Style="background:rgba(255,215,0,.2);color:#fff;border:1px solid rgba(255,215,0,.55);">🥇 @featured.FirstPrize</MudChip>
@@ -92,17 +103,17 @@
                     </div>
                     <MudButton Size="Size.Large" Variant="Variant.Filled" Class="koc-arena-cta"
                                Style="background:#fff;color:var(--koc-accent-900);font-weight:700;"
-                               StartIcon="@Icons.Material.Filled.EmojiEvents" Href="@($"/compete/{featured.Id}")">Enter the arena</MudButton>
+                               StartIcon="@Icons.Material.Filled.EmojiEvents" Href="@($"/compete/{featured.Id}")">@L["Enter the arena"]</MudButton>
                 </div>
                 <div class="d-flex flex-column gap-3" style="min-width:260px;">
                     <CountdownTimer TargetUtc="featured.RevealUtc" />
                     <div class="d-flex gap-4">
-                        <div><span class="koc-stat-value" style="font-size:24px;">@featured.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">competitors</MudText></div>
-                        <div><span class="koc-stat-value" style="font-size:24px;">@featured.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">submissions</MudText></div>
+                        <div><span class="koc-stat-value" style="font-size:24px;">@featured.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">@L["competitors"]</MudText></div>
+                        <div><span class="koc-stat-value" style="font-size:24px;">@featured.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">@L["submissions"]</MudText></div>
                     </div>
                     @if (CompetitionDisplay.RevealProgress(featured, DateTime.UtcNow) is { } progress)
                     {
-                        <div class="koc-deadline-bar" title="Progress toward the final reveal"><span style="width:@(((int)(progress * 100)))%"></span></div>
+                        <div class="koc-deadline-bar" title="@L["Progress toward the final reveal"]"><span style="width:@(((int)(progress * 100)))%"></span></div>
                     }
                 </div>
             </div>
@@ -112,13 +123,13 @@
            uses, rather than a three-row summary tucked into a corner. *@
         <BlueprintCard Class="pa-5 mt-4">
             <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-2">
-                <MudText Typo="Typo.h6" HtmlTag="h3" Class="koc-heading">🏁 Live standings — @featured.Title</MudText>
-                <MudLink Href="@($"/compete/{featured.Id}?tab=leaderboard")" Typo="Typo.body2">Full leaderboard →</MudLink>
+                <MudText Typo="Typo.h6" HtmlTag="h3" Class="koc-heading">🏁 @L["Live standings — {0}", featured.Title]</MudText>
+                <MudLink Href="@($"/compete/{featured.Id}?tab=leaderboard")" Typo="Typo.body2">@L["Full leaderboard"] →</MudLink>
             </div>
             @if (Identity.IsGuest)
             {
                 <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">
-                    Competitors are shown by initials until you sign in.
+                    @L["Competitors are shown by initials until you sign in."]
                 </MudText>
             }
             <div style="overflow-x:auto;">
@@ -131,26 +142,26 @@
 <!-- 3 · Champions — two boards, both at full size. -->
 <section class="mb-8">
     <div class="d-flex align-center justify-space-between mb-2">
-        <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading">🏆 This month's champions</MudText>
+        <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading">🏆 @L["This month's champions"]</MudText>
         @if (!Identity.IsGuest)
         {
-            <MudLink Href="/community" Typo="Typo.body2">All leaderboards →</MudLink>
+            <MudLink Href="/community" Typo="Typo.body2">@L["All leaderboards"] →</MudLink>
         }
     </div>
     <MudGrid Spacing="4">
         <MudItem xs="12" md="6">
             <BlueprintCard Class="pa-5" Style="height:100%;">
-                <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="koc-heading mb-3">Top learners</MudText>
-                <XpBoard Entries="_xpBoard" Rows="10" Caption="Top learners this month"
+                <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="koc-heading mb-3">@L["Top learners"]</MudText>
+                <XpBoard Entries="_xpBoard" Rows="10" Caption="@L["Top learners this month"]"
                          OnSelect="@(row => OpenProfile(row.UserId))" />
             </BlueprintCard>
         </MudItem>
         <MudItem xs="12" md="6">
             <BlueprintCard Class="pa-5" Style="height:100%;">
-                <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="koc-heading mb-3">Team standings</MudText>
+                <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="koc-heading mb-3">@L["Team standings"]</MudText>
                 @if (Identity.IsGuest)
                 {
-                    <p class="koc-board-empty">Team standings appear once you sign in.</p>
+                    <p class="koc-board-empty">@L["Team standings appear once you sign in."]</p>
                 }
                 else if (_teamBoard is null)
                 {
@@ -166,7 +177,7 @@
                 }
                 else if (_teamBoard.Count == 0)
                 {
-                    <p class="koc-board-empty">Team standings appear once colleagues start earning Barrels.</p>
+                    <p class="koc-board-empty">@L["Team standings appear once colleagues start earning Barrels."]</p>
                 }
                 else
                 {
@@ -177,8 +188,8 @@
                                 <span class="koc-board-rank"><RankMedal Rank="t.Rank" /></span>
                                 <span class="koc-board-avatar"><MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Primary" /></span>
                                 <span class="koc-board-main">
-                                    <b>@t.OrgUnitName@(t.IsMyTeam ? " (your team)" : "")</b>
-                                    <small>@t.MemberCount people · @t.AverageXp.ToString("N0") avg</small>
+                                    <b>@t.OrgUnitName@(t.IsMyTeam ? $" ({L["your team"]})" : "")</b>
+                                    <small>@L["{0} people · {1} avg", t.MemberCount, t.AverageXp.ToString("N0")]</small>
                                 </span>
                                 <span class="koc-board-score">🛢️ @t.TotalXp.ToString("N0")</span>
                             </div>
@@ -195,8 +206,8 @@
     <!-- 4 · Everything currently running. -->
     <section class="mb-8">
         <div class="d-flex align-center justify-space-between mb-3">
-            <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading">⚔ Competitions running now</MudText>
-            <MudLink Href="/compete" Typo="Typo.body2">All competitions →</MudLink>
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading">⚔ @L["Competitions running now"]</MudText>
+            <MudLink Href="/compete" Typo="Typo.body2">@L["All competitions"] →</MudLink>
         </div>
         <MudGrid Spacing="4">
             @foreach (var c in _activeCompetitions.Take(3))
@@ -214,8 +225,8 @@
     <!-- 5 · Learning tracks straight from the catalog. -->
     <section class="mb-8">
         <div class="d-flex align-center justify-space-between mb-3">
-            <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading">🎓 Learn &amp; grow</MudText>
-            <MudLink Href="/learn" Typo="Typo.body2">All tracks →</MudLink>
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading">🎓 @L["Learn & grow"]</MudText>
+            <MudLink Href="/learn" Typo="Typo.body2">@L["All tracks"] →</MudLink>
         </div>
         <MudGrid Spacing="4">
             @foreach (var (t, i) in _liveTracks.Take(3).Select((x, i) => (x, i)))
@@ -228,7 +239,7 @@
                         </div>
                         <MudText Typo="Typo.h6" HtmlTag="h3" Class="koc-heading mt-3 mb-2">@t.Title</MudText>
                         <MudText Typo="Typo.body2" Class="mb-2">@t.Summary</MudText>
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@t.LessonCount lessons</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@L["{0} lessons", t.LessonCount]</MudChip>
                     </BlueprintCard>
                 </MudItem>
             }
@@ -241,31 +252,31 @@
     <!-- 6 · Management pulse: live org KPIs for the supervisor's scope. -->
     <section class="mb-6">
         <div class="d-flex align-center justify-space-between mb-2">
-            <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading">Organization pulse · @_rollup.ScopeLabel</MudText>
-            <MudLink Href="/dashboard" Typo="Typo.body2">Full dashboard →</MudLink>
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading">@L["Organization pulse"] · @_rollup.ScopeLabel</MudText>
+            <MudLink Href="/dashboard" Typo="Typo.body2">@L["Full dashboard"] →</MudLink>
         </div>
         <MudGrid Spacing="4">
             <MudItem xs="6" md="2">
                 <BlueprintCard Class="pa-4">
-                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Primary" /><MudText Typo="Typo.overline">People</MudText></div>
+                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Primary" /><MudText Typo="Typo.overline">@L["People"]</MudText></div>
                     <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.MemberCount</MudText>
                 </BlueprintCard>
             </MudItem>
             <MudItem xs="6" md="2">
                 <BlueprintCard Class="pa-4">
-                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.School" Color="Color.Primary" /><MudText Typo="Typo.overline">Learning</MudText></div>
+                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.School" Color="Color.Primary" /><MudText Typo="Typo.overline">@L["Learning"]</MudText></div>
                     <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.ActiveLearners</MudText>
                 </BlueprintCard>
             </MudItem>
             <MudItem xs="6" md="2">
                 <BlueprintCard Class="pa-4">
-                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" Color="Color.Primary" /><MudText Typo="Typo.overline">Tracks done</MudText></div>
+                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" Color="Color.Primary" /><MudText Typo="Typo.overline">@L["Tracks done"]</MudText></div>
                     <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.TracksCompleted</MudText>
                 </BlueprintCard>
             </MudItem>
             <MudItem xs="6" md="2">
                 <BlueprintCard Class="pa-4">
-                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Primary" /><MudText Typo="Typo.overline">Competing</MudText></div>
+                    <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Primary" /><MudText Typo="Typo.overline">@L["Competing"]</MudText></div>
                     <MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.CompetitionsEntered</MudText>
                 </BlueprintCard>
             </MudItem>
@@ -277,10 +288,10 @@
                         var idle = Math.Max(0, _rollup.MemberCount - done - doing);
                     }
                     @KocCharts.Donut(
-                        [new KocCharts.Seg("Completed a track", done, "var(--koc-accent-700)"),
-                         new KocCharts.Seg("Learning now", doing, "var(--koc-accent-300)"),
-                         new KocCharts.Seg("Not started", idle, "#dbe4ec")],
-                        _rollup.MemberCount.ToString(), "learning status")
+                        [new KocCharts.Seg(L["Completed a track"], done, "var(--koc-accent-700)"),
+                         new KocCharts.Seg(L["Learning now"], doing, "var(--koc-accent-300)"),
+                         new KocCharts.Seg(L["Not started"], idle, "#dbe4ec")],
+                        _rollup.MemberCount.ToString(), L["learning status"])
                 </BlueprintCard>
             </MudItem>
         </MudGrid>
@@ -445,9 +456,9 @@
     // Local time-of-day greeting, with a warm Arabic variant for the KOC workplace.
     private string Greeting => DateTime.Now.Hour switch
     {
-        < 12 => "Good morning",
-        < 17 => "Good afternoon",
-        _ => "Good evening",
+        < 12 => L["Good morning"],
+        < 17 => L["Good afternoon"],
+        _ => L["Good evening"],
     };
 
     private string GreetingArabic => DateTime.Now.Hour < 12 ? "صباح الخير" : "مساء الخير";
@@ -484,29 +495,31 @@
 
     private sealed record RoleContent(string Headline, string Sub, string SecondaryCta);
 
-    private RoleContent Content => _content[_role];
-
-    private readonly Dictionary<RoleView, RoleContent> _content = new()
+    /// <summary>
+    /// The hero copy, per role. Built on demand rather than held in a field: every string goes through
+    /// the localizer, which is not available while fields are being initialized.
+    /// </summary>
+    private RoleContent Content => _role switch
     {
-        [RoleView.Employee] = new(
-            "Your AI & ML workspace.",
-            "Learn machine learning on real KOC subsurface, production, and facilities data — take a track, enter an internal competition, and share your work with colleagues.",
-            "Browse learning tracks"),
-        [RoleView.TeamLeader] = new(
-            "Your team's AI & ML workspace.",
-            "Follow how your team is learning machine learning on KOC data — progress across tracks, competitions entered, and the projects they build.",
-            "View team activity"),
-        [RoleView.Manager] = new(
-            "Your department's AI & ML workspace.",
-            "See how machine-learning skills are building across your department on KOC data — who is learning, what teams are working on, and models coming into use.",
-            "View governance"),
-        [RoleView.DCEO] = new(
-            "Your directorate's AI & ML workspace.",
-            "See how machine-learning capability is building across your directorate — participation by group, use cases coming into production, and the governance behind them.",
-            "View governance"),
-        [RoleView.CEO] = new(
-            "KOC's AI & ML workspace.",
-            "A company-wide view of KOC's own machine-learning environment — participation across directorates, skills building on company data, and governance keeping it sovereign.",
-            "View governance"),
+        RoleView.TeamLeader => new(
+            L["Your team's AI & ML workspace."],
+            L["Follow how your team is learning machine learning on KOC data — progress across tracks, competitions entered, and the projects they build."],
+            L["View team activity"]),
+        RoleView.Manager => new(
+            L["Your department's AI & ML workspace."],
+            L["See how machine-learning skills are building across your department on KOC data — who is learning, what teams are working on, and models coming into use."],
+            L["View governance"]),
+        RoleView.DCEO => new(
+            L["Your directorate's AI & ML workspace."],
+            L["See how machine-learning capability is building across your directorate — participation by group, use cases coming into production, and the governance behind them."],
+            L["View governance"]),
+        RoleView.CEO => new(
+            L["KOC's AI & ML workspace."],
+            L["A company-wide view of KOC's own machine-learning environment — participation across directorates, skills building on company data, and governance keeping it sovereign."],
+            L["View governance"]),
+        _ => new(
+            L["Your AI & ML workspace."],
+            L["Learn machine learning on real KOC subsurface, production, and facilities data — take a track, enter an internal competition, and share your work with colleagues."],
+            L["Browse learning tracks"]),
     };
 }

@@ -47,6 +47,10 @@ public class HomeHeroTests : TestContext
     private IRenderedComponent<Home> Render(bool asGuest, params CompetitionDto[] comps)
     {
         Services.AddMudServices();
+        // Components take IStringLocalizer now; without the resource machinery registered
+        // every render fails on DI rather than on anything the test is about.
+        Services.AddLogging();
+        Services.AddLocalization();
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton<IKocApiClient>(new FakeApi(comps));
 

@@ -1,4 +1,6 @@
 using Beep.KocAiCommunity.ServiceDefaults.Security;
+using Beep.KocAiCommunity.Ui.Shared.Localization;
+using Microsoft.Extensions.Localization;
 
 namespace Beep.KocAiCommunity.Web.Security;
 
@@ -16,22 +18,31 @@ public static class SignInPrompt
     public static bool UsesLoginPage(KocSetupStore setup) =>
         setup.SignInWith == KocSignInSource.SiteAccounts && !setup.DemoPersonasEnabled;
 
+    /// <summary>Every phrase this class can produce, for the localization coverage test.</summary>
+    public static readonly string[] Translatable =
+    [
+        "Sign in", "Sign in with KOC", "Sign in to {0}", "Sign in with KOC to {0}",
+        "Use the persona picker in the top right to view the app as different roles.",
+        "Sign in with your account, or register if you don't have one yet.",
+        "You are signed in automatically with your KOC account — if you are seeing this, contact the platform team.",
+    ];
+
     /// <summary>The call to action on a button.</summary>
-    public static string ButtonText(KocSetupStore setup) =>
-        UsesLoginPage(setup) ? "Sign in" : "Sign in with KOC";
+    public static string ButtonText(KocSetupStore setup, IStringLocalizer<Strings> l) =>
+        UsesLoginPage(setup) ? l["Sign in"] : l["Sign in with KOC"];
 
     /// <summary>The same invitation phrased as "sign in to do X".</summary>
-    public static string ButtonText(KocSetupStore setup, string toDoWhat) =>
-        UsesLoginPage(setup) ? $"Sign in to {toDoWhat}" : $"Sign in with KOC to {toDoWhat}";
+    public static string ButtonText(KocSetupStore setup, IStringLocalizer<Strings> l, string toDoWhat) =>
+        UsesLoginPage(setup) ? l["Sign in to {0}", toDoWhat] : l["Sign in with KOC to {0}", toDoWhat];
 
     /// <summary>Where the button goes, or null when a handler deals with it (demo personas).</summary>
     public static string? Href(KocSetupStore setup) => UsesLoginPage(setup) ? "/account/login" : null;
 
     /// <summary>How someone signs in here, for explanatory copy on a gate or an empty state.</summary>
-    public static string HowToSignIn(KocSetupStore setup) => setup switch
+    public static string HowToSignIn(KocSetupStore setup, IStringLocalizer<Strings> l) => setup switch
     {
-        { DemoPersonasEnabled: true } => "Use the persona picker in the top right to view the app as different roles.",
-        { SignInWith: KocSignInSource.SiteAccounts } => "Sign in with your account, or register if you don't have one yet.",
-        _ => "You are signed in automatically with your KOC account — if you are seeing this, contact the platform team.",
+        { DemoPersonasEnabled: true } => l["Use the persona picker in the top right to view the app as different roles."],
+        { SignInWith: KocSignInSource.SiteAccounts } => l["Sign in with your account, or register if you don't have one yet."],
+        _ => l["You are signed in automatically with your KOC account — if you are seeing this, contact the platform team."],
     };
 }

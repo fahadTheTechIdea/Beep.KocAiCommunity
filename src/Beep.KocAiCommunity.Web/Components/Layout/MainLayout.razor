@@ -8,7 +8,9 @@
 @using Beep.KocAiCommunity.Web.Security
 @using Beep.KocAiCommunity.Ui.Shared.Localization
 @using Beep.KocAiCommunity.Contracts.Localization
+@using Microsoft.Extensions.Localization
 @inject DevIdentity Identity
+@inject IStringLocalizer<Strings> L
 @inject IHostEnvironment Env
 @inject NavigationManager Nav
 @inject KocSetupStore SetupStore
@@ -45,25 +47,25 @@
         <LanguageSwitcher Language="@_language" OnSwitch="SwitchLanguage" />
 
         @* These items moved off the left drawer and sit directly on the top-right, always visible. *@
-        <MudTooltip Text="Help & guides">
+        <MudTooltip Text="@L["Help & guides"]">
             <MudIconButton Href="/help" Icon="@Icons.Material.Filled.HelpOutline" Color="Color.Inherit" aria-label="Help" />
         </MudTooltip>
 
         @if (Identity.HasAnyPosition)
         {
-            <MudButton Href="/profile" Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.EmojiEvents" Class="ml-1">My profile</MudButton>
+            <MudButton Href="/profile" Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.EmojiEvents" Class="ms-1">@L["My profile"]</MudButton>
         }
 
         @if (Identity.IsPlatformAdmin)
         {
             <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="ml-1">
                 <ActivatorContent>
-                    <MudButton Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.AdminPanelSettings" EndIcon="@Icons.Material.Filled.ArrowDropDown" OnClick="@context.ToggleAsync">Admin</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.AdminPanelSettings" EndIcon="@Icons.Material.Filled.ArrowDropDown" OnClick="@context.ToggleAsync">@L["Admin"]</MudButton>
                 </ActivatorContent>
                 <ChildContent>
-                    <MudMenuItem Href="/admin" Icon="@Icons.Material.Filled.SpaceDashboard">Console</MudMenuItem>
-                    <MudMenuItem Href="/admin/overview" Icon="@Icons.Material.Filled.Map">Overview</MudMenuItem>
-                    <MudMenuItem Href="/connectors" Icon="@Icons.Material.Filled.Hub">Connectors</MudMenuItem>
+                    <MudMenuItem Href="/admin" Icon="@Icons.Material.Filled.SpaceDashboard">@L["Console"]</MudMenuItem>
+                    <MudMenuItem Href="/admin/overview" Icon="@Icons.Material.Filled.Map">@L["Overview"]</MudMenuItem>
+                    <MudMenuItem Href="/connectors" Icon="@Icons.Material.Filled.Hub">@L["Connectors"]</MudMenuItem>
                 </ChildContent>
             </MudMenu>
         }
@@ -75,7 +77,7 @@
                 <ActivatorContent>
                     @if (Identity.IsGuest)
                     {
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" OnClick="@context.ToggleAsync">Sign in with KOC</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" OnClick="@context.ToggleAsync">@L["Sign in with KOC"]</MudButton>
                     }
                     else
                     {
@@ -85,7 +87,7 @@
                     }
                 </ActivatorContent>
                 <ChildContent>
-                    <MudText Typo="Typo.caption" Class="px-4 py-2 d-block">View the app as (dev)</MudText>
+                    <MudText Typo="Typo.caption" Class="px-4 py-2 d-block">@L["View the app as (dev)"]</MudText>
                     <MudDivider />
                     @foreach (var p in DevIdentity.Personas)
                     {
@@ -107,7 +109,7 @@
         {
             @* Real sign-in: local accounts get a login page; intranet/Entra sign the visitor in themselves. *@
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" Class="ml-2"
-                       Href="@LoginHref">@SignInPrompt.ButtonText(SetupStore)</MudButton>
+                       Href="@LoginHref">@SignInPrompt.ButtonText(SetupStore, L)</MudButton>
         }
         else
         {
@@ -120,12 +122,12 @@
                     </MudButton>
                 </ActivatorContent>
                 <ChildContent>
-                    <MudMenuItem Href="/profile" Icon="@Icons.Material.Filled.EmojiEvents">My profile</MudMenuItem>
+                    <MudMenuItem Href="/profile" Icon="@Icons.Material.Filled.EmojiEvents">@L["My profile"]</MudMenuItem>
                     @if (HasLoginPage)
                     {
                         <MudDivider />
                         <form method="post" action="/account/logout" style="margin:0;">
-                            <button type="submit" class="koc-menu-form-button">Sign out</button>
+                            <button type="submit" class="koc-menu-form-button">@L["Sign out"]</button>
                         </form>
                     }
                 </ChildContent>
@@ -149,22 +151,22 @@
                     <MudIcon Icon="@(Identity.IsGuest ? Icons.Material.Filled.Lock : Icons.Material.Filled.Block)" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
                     @if (Identity.IsGuest)
                     {
-                        <MudText Typo="Typo.h6" Class="koc-heading mb-1">Sign in to continue</MudText>
-                        <MudText Typo="Typo.body2" Class="mb-4">This area is for signed-in members. @SignInPrompt.HowToSignIn(SetupStore)</MudText>
+                        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Sign in to continue"]</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-4">@L["This area is for signed-in members."] @SignInPrompt.HowToSignIn(SetupStore, L)</MudText>
                         @if (IsDemoMode)
                         {
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Switch("employee"))">View as Employee</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Switch("employee"))">@L["View as Employee"]</MudButton>
                         }
                         else if (HasLoginPage)
                         {
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@LoginHref">@SignInPrompt.ButtonText(SetupStore)</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@LoginHref">@SignInPrompt.ButtonText(SetupStore, L)</MudButton>
                         }
                     }
                     else
                     {
-                        <MudText Typo="Typo.h6" Class="koc-heading mb-1">You don't have access to this area</MudText>
-                        <MudText Typo="Typo.body2" Class="mb-4">Your role (<b>@Identity.Current.Label</b>) can't view this page. Supervision needs a team-lead role or above; Admin needs Platform Admin.</MudText>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/">Back to home</MudButton>
+                        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["You don't have access to this area"]</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-4">@L["Your role ({0}) can't view this page. Supervision needs a team-lead role or above; Admin needs Platform Admin.", Identity.Current.Label]</MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/">@L["Back to home"]</MudButton>
                     }
                 </BlueprintCard>
             }

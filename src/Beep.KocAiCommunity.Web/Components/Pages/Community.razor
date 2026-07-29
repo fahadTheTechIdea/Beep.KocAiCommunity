@@ -8,28 +8,31 @@
 @using Beep.KocAiCommunity.Web.Security
 @using Beep.KocAiCommunity.ServiceDefaults.Security
 @using Microsoft.AspNetCore.Components.Forms
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
 @inject IKocApiClient Api
+@inject IStringLocalizer<Strings> L
 @inject IDialogService DialogService
 @inject DevIdentity Identity
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
 @inject KocSetupStore SetupStore
 
-<PageTitle>Community · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Community"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Community" Title="The KOC AI community"
-            Subtitle="Learn together, cheer each other on, and climb the leaderboards — everything stays inside KOC.">
+<PageHeader Eyebrow="@L["Community"]" Title="@L["The KOC AI community"]"
+            Subtitle="@L["Learn together, cheer each other on, and climb the leaderboards — everything stays inside KOC."]">
     <Actions>
         @if (Identity.HasAnyPosition)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">New discussion</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">@L["New discussion"]</MudButton>
         }
     </Actions>
 </PageHeader>
 
 @if (_error is not null)
 {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Couldn't reach the API (@_error).</MudAlert>
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">@L["Couldn't reach the API ({0}).", _error]</MudAlert>
 }
 
 @* ---- Community pulse: stats + champions podium (real data only) ---- *@
@@ -38,25 +41,25 @@
     <MudGrid Spacing="4" Class="mb-2">
         <MudItem xs="12" md="5">
             <BlueprintCard Class="pa-4" Style="height:100%;">
-                <MudText Typo="Typo.overline" Class="mb-2">Community pulse</MudText>
+                <MudText Typo="Typo.overline" Class="mb-2">@L["Community pulse"]</MudText>
                 <div class="d-flex flex-wrap gap-6">
                     <div>
                         <div class="koc-stat-value" style="font-size:26px;">@(_discussions?.Count ?? 0)</div>
-                        <MudText Typo="Typo.caption">discussions</MudText>
+                        <MudText Typo="Typo.caption">@L["open discussions"]</MudText>
                     </div>
                     <div>
                         <div class="koc-stat-value" style="font-size:26px;">@_earnedBadges<span style="font-size:14px;opacity:.5;">/@_totalBadges</span></div>
-                        <MudText Typo="Typo.caption">badges earned</MudText>
+                        <MudText Typo="Typo.caption">@L["badges earned"]</MudText>
                     </div>
                     <div>
                         <div class="koc-stat-value" style="font-size:26px;">@(_myRank is { } r ? $"#{r}" : "—")</div>
-                        <MudText Typo="Typo.caption">your rank (month)</MudText>
+                        <MudText Typo="Typo.caption">@L["your rank (month)"]</MudText>
                     </div>
                     @if (_profile is not null)
                     {
                         <div>
                             <div class="koc-stat-value" style="font-size:26px;">🛢️ @_profile.XpTotal</div>
-                            <MudText Typo="Typo.caption">your Barrels</MudText>
+                            <MudText Typo="Typo.caption">@L["your Barrels"]</MudText>
                         </div>
                     }
                 </div>
@@ -66,8 +69,8 @@
         <MudItem xs="12" md="7">
             <BlueprintCard Class="pa-4" Style="height:100%;">
                 <div class="d-flex justify-space-between align-center mb-1">
-                    <MudText Typo="Typo.overline">🏆 Champions this month</MudText>
-                    <MudLink Typo="Typo.caption" @onclick="@(() => _tab = 1)" Style="cursor:pointer;">Full leaderboard →</MudLink>
+                    <MudText Typo="Typo.overline">🏆 @L["Champions this month"]</MudText>
+                    <MudLink Typo="Typo.caption" @onclick="@(() => _tab = 1)" Style="cursor:pointer;">@L["Full leaderboard"] →</MudLink>
                 </div>
                 @if (_champions is null)
                 {
@@ -75,7 +78,7 @@
                 }
                 else if (_champions.Count == 0)
                 {
-                    <MudText Typo="Typo.body2" Style="opacity:.7;">No Barrels earned yet this month — the podium is wide open.</MudText>
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">@L["No Barrels earned yet this month — the podium is wide open."]</MudText>
                 }
                 else
                 {
@@ -101,7 +104,7 @@
 
 <MudTabs @bind-ActivePanelIndex="_tab" Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="pt-2">
     @* ============ FEED ============ *@
-    <MudTabPanel Text="Discussions" Icon="@Icons.Material.Filled.Forum">
+    <MudTabPanel Text="@L["Discussions"]" Icon="@Icons.Material.Filled.Forum">
         <MudGrid Spacing="6">
             <MudItem xs="12" md="5">
                 @if (_discussions is null)
@@ -112,8 +115,8 @@
                 {
                     <BlueprintCard Class="pa-6" Style="text-align:center;">
                         <MudIcon Icon="@Icons.Material.Filled.Forum" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-                        <MudText Typo="Typo.h6" Class="koc-heading mb-1">Start the conversation</MudText>
-                        <MudText Typo="Typo.body2">No discussions yet — share a question, a tip, or a win.</MudText>
+                        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Start the conversation"]</MudText>
+                        <MudText Typo="Typo.body2">@L["No discussions yet — share a question, a tip, or a win."]</MudText>
                     </BlueprintCard>
                 }
                 else
@@ -161,7 +164,7 @@
                 {
                     <BlueprintCard Class="pa-8" Style="text-align:center;">
                         <MudIcon Icon="@Icons.Material.Filled.Forum" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-                        <MudText Typo="Typo.body2">Select a discussion to read and reply.</MudText>
+                        <MudText Typo="Typo.body2">@L["Select a discussion to read and reply."]</MudText>
                     </BlueprintCard>
                 }
                 else
@@ -176,21 +179,21 @@
                                 <MudText Typo="Typo.h6" Class="koc-heading">@_open.Title</MudText>
                                 @if (_open.IsLocked)
                                 {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text" Icon="@Icons.Material.Filled.Lock">Locked</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text" Icon="@Icons.Material.Filled.Lock">@L["Locked"]</MudChip>
                                 }
                             </div>
                             <div class="d-flex align-center">
                                 @if (Identity.HasAnyPosition && _open.AuthorUserId != Identity.UserId)
                                 {
                                     <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                                               StartIcon="@Icons.Material.Filled.Celebration" OnClick="() => KudosTo(_open.AuthorUserId, _open.AuthorDisplayName)">Kudos</MudButton>
+                                               StartIcon="@Icons.Material.Filled.Celebration" OnClick="() => KudosTo(_open.AuthorUserId, _open.AuthorDisplayName)">@L["Kudos"]</MudButton>
                                 }
                                 @if (_open.CanModerate)
                                 {
                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true">
-                                        <MudMenuItem Icon="@Icons.Material.Filled.PushPin" OnClick="() => Pin(!_open.IsPinned)">@(_open.IsPinned ? "Unpin" : "Pin")</MudMenuItem>
-                                        <MudMenuItem Icon="@Icons.Material.Filled.Lock" OnClick="() => Lock(!_open.IsLocked)">@(_open.IsLocked ? "Unlock" : "Lock")</MudMenuItem>
-                                        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="DeleteThread">Delete thread</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Filled.PushPin" OnClick="() => Pin(!_open.IsPinned)">@(_open.IsPinned ? L["Unpin"] : L["Pin"])</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Lock" OnClick="() => Lock(!_open.IsLocked)">@(_open.IsLocked ? L["Unlock"] : L["Lock"])</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="DeleteThread">@L["Delete thread"]</MudMenuItem>
                                     </MudMenu>
                                 }
                             </div>
@@ -205,7 +208,7 @@
                         @if (_open.Attachments.Count > 0)
                         {
                             <div class="mt-3">
-                                <MudText Typo="Typo.caption" Class="koc-heading">Attachments</MudText>
+                                <MudText Typo="Typo.caption" Class="koc-heading">@L["Attachments"]</MudText>
                                 @foreach (var a in _open.Attachments)
                                 {
                                     <div class="d-flex align-center gap-1">
@@ -218,7 +221,7 @@
                         }
 
                         <MudDivider Class="my-3" />
-                        <MudText Typo="Typo.caption" Class="koc-heading mb-2">@_open.Replies.Count @(_open.Replies.Count == 1 ? "reply" : "replies")</MudText>
+                        <MudText Typo="Typo.caption" Class="koc-heading mb-2">@(_open.Replies.Count == 1 ? L["{0} reply", _open.Replies.Count] : L["{0} replies", _open.Replies.Count])</MudText>
 
                         @foreach (var r in _open.Replies)
                         {
@@ -240,7 +243,7 @@
 
                         @if (_open.IsLocked)
                         {
-                            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mt-3">This discussion is locked — no new replies.</MudAlert>
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mt-3">@L["This discussion is locked — no new replies."]</MudAlert>
                         }
                         else if (!Identity.HasAnyPosition)
                         {
@@ -250,29 +253,29 @@
                             <MudAlert Severity="Severity.Normal" Variant="Variant.Text" Dense="true" Class="mt-3">
                                 @if (SignInPrompt.Href(SetupStore) is { } href)
                                 {
-                                    <MudLink Href="@href"><b>Sign in</b></MudLink>
-                                    <span> to join the conversation.</span>
+                                    <MudLink Href="@href"><b>@L["Sign in"]</b></MudLink>
+                                    <span> @L["to join the conversation."]</span>
                                 }
                                 else
                                 {
-                                    <span>@SignInPrompt.ButtonText(SetupStore, "join the conversation").</span>
+                                    <span>@SignInPrompt.ButtonText(SetupStore, L, L["join the conversation"]).</span>
                                 }
                             </MudAlert>
                         }
                         else
                         {
                             <div class="mt-4 d-flex gap-2">
-                                <MudAutocomplete T="MentionCandidateDto" Label="Mention" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                                <MudAutocomplete T="MentionCandidateDto" Label="@L["Mention"]" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
                                                  Style="max-width:160px;" SearchFunc="SearchMentions" ToStringFunc="@(c => c?.DisplayName ?? "")"
                                                  ValueChanged="AppendMention" ResetValueOnEmptyText="true" CoerceText="false" />
-                                <MudTextField @bind-Value="_replyBody" Label="Write a reply" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                                <MudTooltip Text="Attach a file">
+                                <MudTextField @bind-Value="_replyBody" Label="@L["Write a reply"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                <MudTooltip Text="@L["Attach a file"]">
                                     <label class="d-inline-flex align-center" style="cursor:pointer;height:100%;">
                                         <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Default" />
                                         <InputFile OnChange="UploadAttachment" style="display:none;" />
                                     </label>
                                 </MudTooltip>
-                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reply" Disabled="@string.IsNullOrWhiteSpace(_replyBody)">Send</MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Reply" Disabled="@string.IsNullOrWhiteSpace(_replyBody)">@L["Send"]</MudButton>
                             </div>
                         }
                     </BlueprintCard>
@@ -282,9 +285,9 @@
     </MudTabPanel>
 
     @* ============ LEADERBOARDS ============ *@
-    <MudTabPanel Text="Leaderboards" Icon="@Icons.Material.Filled.Leaderboard" OnClick="EnsureLeaderboards">
+    <MudTabPanel Text="@L["Leaderboards"]" Icon="@Icons.Material.Filled.Leaderboard" OnClick="EnsureLeaderboards">
         <div class="d-flex gap-2 mb-4">
-            @foreach (var p in _periods)
+            @foreach (var p in Periods)
             {
                 <MudButton Variant="@(p.Key == _period ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Size="Size.Small"
                            OnClick="@(() => ChangePeriod(p.Key))">@p.Label</MudButton>
@@ -293,14 +296,14 @@
 
         <MudGrid Spacing="6">
             <MudItem xs="12" md="6">
-                <MudText Typo="Typo.h6" Class="koc-heading mb-3">🏆 Top learners</MudText>
+                <MudText Typo="Typo.h6" Class="koc-heading mb-3">🏆 @L["Top learners"]</MudText>
                 @if (_xpBoard is null)
                 {
                     <MudProgressCircular Indeterminate="true" />
                 }
                 else if (_xpBoard.Count == 0)
                 {
-                    <BlueprintCard Class="pa-5"><MudText Typo="Typo.body2">No Barrels earned in this period yet — be the first!</MudText></BlueprintCard>
+                    <BlueprintCard Class="pa-5"><MudText Typo="Typo.body2">@L["No Barrels earned in this period yet — be the first!"]</MudText></BlueprintCard>
                 }
                 else
                 {
@@ -311,12 +314,12 @@
                                 <span style="font-size:20px;width:34px;text-align:center;">@Medal(row.Rank)</span>
                                 <MudAvatar Size="Size.Small" Style="background:#fff;cursor:pointer;" @onclick="() => ViewProfile(row.UserId)"><MudImage Src="@KocBrand.Icon(row.AvatarIcon)" /></MudAvatar>
                                 <div class="flex-grow-1" style="cursor:pointer;" @onclick="() => ViewProfile(row.UserId)">
-                                    <MudText Typo="Typo.body2"><b>@row.DisplayName</b> @(row.IsMe ? "(you)" : "")</MudText>
-                                    <MudText Typo="Typo.caption" Style="opacity:.7;">Lvl @row.Level · @row.LevelTitle</MudText>
+                                    <MudText Typo="Typo.body2"><b>@row.DisplayName</b> @(row.IsMe ? $"({L["you"]})" : "")</MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:.7;">@L["Lvl {0}", row.Level] · @row.LevelTitle</MudText>
                                 </div>
                                 @if (Identity.HasAnyPosition && !row.IsMe)
                                 {
-                                    <MudTooltip Text="Give kudos">
+                                    <MudTooltip Text="@L["Give kudos"]">
                                         <MudIconButton Icon="@Icons.Material.Filled.Celebration" Size="Size.Small" Color="Color.Primary" OnClick="() => KudosTo(row.UserId, row.DisplayName)" />
                                     </MudTooltip>
                                 }
@@ -328,14 +331,14 @@
             </MudItem>
 
             <MudItem xs="12" md="6">
-                <MudText Typo="Typo.h6" Class="koc-heading mb-3">🛢️ Team standings</MudText>
+                <MudText Typo="Typo.h6" Class="koc-heading mb-3">🛢️ @L["Team standings"]</MudText>
                 @if (_teamBoard is null)
                 {
                     <MudProgressCircular Indeterminate="true" />
                 }
                 else if (_teamBoard.Count == 0)
                 {
-                    <BlueprintCard Class="pa-5"><MudText Typo="Typo.body2">Team standings appear once colleagues start earning Barrels.</MudText></BlueprintCard>
+                    <BlueprintCard Class="pa-5"><MudText Typo="Typo.body2">@L["Team standings appear once colleagues start earning Barrels."]</MudText></BlueprintCard>
                 }
                 else
                 {
@@ -345,10 +348,10 @@
                             <div class="d-flex align-center gap-3">
                                 <span style="font-size:20px;width:34px;text-align:center;">@Medal(t.Rank)</span>
                                 <div class="flex-grow-1">
-                                    <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b> @(t.IsMyTeam ? "(your team)" : "")</MudText>
-                                    <MudText Typo="Typo.caption" Style="opacity:.7;">@t.MemberCount active · @t.TotalXp bbl total</MudText>
+                                    <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b> @(t.IsMyTeam ? $"({L["your team"]})" : "")</MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:.7;">@L["{0} active · {1} bbl total", t.MemberCount, t.TotalXp]</MudText>
                                 </div>
-                                <MudText Typo="Typo.body1"><b>@t.AverageXp</b> avg</MudText>
+                                <MudText Typo="Typo.body1">@L["{0} avg", t.AverageXp]</MudText>
                             </div>
                         </BlueprintCard>
                     }
@@ -358,7 +361,7 @@
     </MudTabPanel>
 
     @* ============ BADGES ============ *@
-    <MudTabPanel Text="Badges" Icon="@Icons.Material.Filled.WorkspacePremium" OnClick="EnsureBadges">
+    <MudTabPanel Text="@L["Badges"]" Icon="@Icons.Material.Filled.WorkspacePremium" OnClick="EnsureBadges">
         @if (_badges is null)
         {
             <MudProgressCircular Indeterminate="true" />
@@ -366,7 +369,7 @@
         else
         {
             <MudText Typo="Typo.body2" Class="mb-4">
-                You've earned <b>@_earnedBadges of @_totalBadges</b> badges. Keep learning, competing, and helping colleagues to collect them all.
+                @L["You've earned {0} of {1} badges. Keep learning, competing, and helping colleagues to collect them all.", _earnedBadges, _totalBadges]
             </MudText>
             <MudGrid Spacing="4">
                 @foreach (var b in _badges.OrderByDescending(x => x.EarnedUtc.HasValue).ThenBy(x => x.Name))
@@ -387,7 +390,7 @@
                             <div class="mt-2">
                                 @if (earned)
                                 {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.CheckCircle">Earned @b.EarnedUtc!.Value.ToLocalTime().ToString("d MMM yyyy")</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.CheckCircle">@L["Earned {0}", b.EarnedUtc!.Value.ToLocalTime().ToString("d MMM yyyy")]</MudChip>
                                 }
                                 else
                                 {
@@ -402,7 +405,7 @@
     </MudTabPanel>
 
     @* ============ ACTIVITY ============ *@
-    <MudTabPanel Text="Activity" Icon="@Icons.Material.Filled.Bolt" OnClick="EnsureActivity">
+    <MudTabPanel Text="@L["Activity"]" Icon="@Icons.Material.Filled.Bolt" OnClick="EnsureActivity">
         @if (_activity is null)
         {
             <MudProgressCircular Indeterminate="true" />
@@ -410,7 +413,7 @@
         else if (_activity.Count == 0)
         {
             <BlueprintCard Class="pa-6" Style="text-align:center;">
-                <MudText Typo="Typo.body2">Nothing here yet. Earn a badge or cheer a colleague to get things moving.</MudText>
+                <MudText Typo="Typo.body2">@L["Nothing here yet. Earn a badge or cheer a colleague to get things moving."]</MudText>
             </BlueprintCard>
         }
         else
@@ -457,9 +460,13 @@
     private IReadOnlyList<ActivityDto>? _activity;
     private string _period = "week";
 
-    private readonly (string Key, string Label)[] _periods =
+    /// <summary>
+    /// Built on demand, not held in a field: the labels go through the localizer, which is not
+    /// available while fields initialize — and a literal here would be invisible to the coverage test.
+    /// </summary>
+    private (string Key, string Label)[] Periods =>
     [
-        ("week", "This week"), ("month", "This month"), ("all", "All time"),
+        ("week", L["This week"]), ("month", L["This month"]), ("all", L["All time"]),
     ];
 
     protected override async Task OnInitializedAsync()
@@ -685,7 +692,7 @@
             return;
         }
 
-        Snackbar.Add($"Attached {attachment!.FileName}.", Severity.Success);
+        Snackbar.Add(L["Attached {0}.", attachment!.FileName], Severity.Success);
         await ReloadOpenAsync();
     }
 
@@ -734,15 +741,15 @@
         };
     }
 
-    private static string Ago(DateTime utc)
+    private string Ago(DateTime utc)
     {
         var span = DateTime.UtcNow - utc;
         return span switch
         {
-            { TotalMinutes: < 1 } => "just now",
-            { TotalMinutes: < 60 } => $"{(int)span.TotalMinutes}m ago",
-            { TotalHours: < 24 } => $"{(int)span.TotalHours}h ago",
-            { TotalDays: < 7 } => $"{(int)span.TotalDays}d ago",
+            { TotalMinutes: < 1 } => L["just now"],
+            { TotalMinutes: < 60 } => L["{0}m ago", (int)span.TotalMinutes],
+            { TotalHours: < 24 } => L["{0}h ago", (int)span.TotalHours],
+            { TotalDays: < 7 } => L["{0}d ago", (int)span.TotalDays],
             _ => utc.ToLocalTime().ToString("d MMM"),
         };
     }

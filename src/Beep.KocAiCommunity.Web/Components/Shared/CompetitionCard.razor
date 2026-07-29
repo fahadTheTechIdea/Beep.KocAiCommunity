@@ -1,5 +1,8 @@
 @using Beep.KocAiCommunity.Contracts.Competitions
 @using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 @* A rich arena card for the browse grid and landing sections. Runs entirely on the enriched
    CompetitionDto — no leaderboard fetch. Pass Top3 to add a mini-podium (spotlight card). *@
@@ -7,7 +10,7 @@
 <BlueprintCard Class="pa-4" Style="height:100%;display:flex;flex-direction:column;">
     <div class="d-flex justify-space-between align-center mb-1">
         <MudText Typo="Typo.subtitle1" Class="koc-heading">🏆 @Competition.Title</MudText>
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(Competition.Status)">@Competition.Status</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(Competition.Status)">@L[CompetitionDisplay.StatusLabel(Competition.Status)]</MudChip>
     </div>
 
     <MudText Typo="Typo.body2" Class="mb-2" Style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
@@ -19,18 +22,18 @@
         {
             <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">@category</MudChip>
         }
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@CompetitionDisplay.TaskLabel(Competition.TaskType)</MudChip>
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@CompetitionDisplay.MetricLabel(Competition)</MudChip>
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Visibility">@Competition.Scope</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@L[CompetitionDisplay.TaskLabel(Competition.TaskType)]</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@CompetitionDisplay.MetricLabel(Competition, L)</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Visibility">@L[CompetitionDisplay.ScopeLabel(Competition.Scope)]</MudChip>
         @if (Competition.HasDatasets)
         {
-            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success" Icon="@Icons.Material.Filled.Dataset">data ready</MudChip>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success" Icon="@Icons.Material.Filled.Dataset">@L["data ready"]</MudChip>
         }
     </div>
 
     <div class="d-flex gap-4 align-center mb-2">
-        <div><span class="koc-stat-value" style="font-size:20px;">@Competition.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.7;">competitors</MudText></div>
-        <div><span class="koc-stat-value" style="font-size:20px;">@Competition.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.7;">submissions</MudText></div>
+        <div><span class="koc-stat-value" style="font-size:20px;">@Competition.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.7;">@L["competitors"]</MudText></div>
+        <div><span class="koc-stat-value" style="font-size:20px;">@Competition.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.7;">@L["submissions"]</MudText></div>
         @if (Competition.RevealUtc is not null)
         {
             <CountdownTimer TargetUtc="Competition.RevealUtc" Compact="true" RefreshSeconds="60" />
@@ -39,7 +42,7 @@
 
     @if (CompetitionDisplay.RevealProgress(Competition, DateTime.UtcNow) is { } progress)
     {
-        <div class="koc-deadline-bar mb-2" title="Progress toward the final reveal">
+        <div class="koc-deadline-bar mb-2" title="@L["Progress toward the final reveal"]">
             <span style="width:@(((int)(progress * 100)))%"></span>
         </div>
     }
@@ -51,9 +54,9 @@
 
     <MudSpacer />
     <div class="d-flex justify-space-between align-center mt-1">
-        <MudText Typo="Typo.caption" Style="opacity:.6;">Hosted by @Competition.HostName</MudText>
+        <MudText Typo="Typo.caption" Style="opacity:.6;">@L["Hosted by {0}", Competition.HostName]</MudText>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.EmojiEvents"
-                   Href="@($"/compete/{Competition.Id}")">Enter</MudButton>
+                   Href="@($"/compete/{Competition.Id}")">@L["Enter"]</MudButton>
     </div>
 </BlueprintCard>
 

@@ -1,4 +1,7 @@
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
 @implements IAsyncDisposable
+@inject IStringLocalizer<Strings> L
 
 @* Live countdown to a UTC instant. Full mode renders unit boxes; Compact renders inline text.
    Renders nothing when TargetUtc is null. The only time semantics competitions have today is
@@ -9,26 +12,26 @@
     var remaining = target - DateTime.UtcNow;
     if (Compact)
     {
-        <span class="koc-countdown-compact" title="@Label">
-            @(remaining <= TimeSpan.Zero ? "🔓 revealed" : $"⏳ {CompactText(remaining)}")
+        <span class="koc-countdown-compact" title="@LabelText">
+            @(remaining <= TimeSpan.Zero ? $"🔓 {L["Revealed"]}" : $"⏳ {CompactText(remaining)}")
         </span>
     }
     else if (remaining <= TimeSpan.Zero)
     {
         <div>
-            <span class="koc-eyebrow">@Label</span>
-            <div class="koc-countdown-compact" style="font-size:20px;">🔓 Revealed</div>
+            <span class="koc-eyebrow">@LabelText</span>
+            <div class="koc-countdown-compact" style="font-size:20px;">🔓 @L["Revealed"]</div>
         </div>
     }
     else
     {
         <div>
-            <span class="koc-eyebrow">@Label</span>
-            <div class="koc-countdown @(remaining < TimeSpan.FromHours(24) ? "koc-countdown-urgent" : null)" role="timer" aria-label="@Label">
-                @Unit((int)remaining.TotalDays, "days")
-                @Unit(remaining.Hours, "hrs")
-                @Unit(remaining.Minutes, "min")
-                @Unit(remaining.Seconds, "sec")
+            <span class="koc-eyebrow">@LabelText</span>
+            <div class="koc-countdown @(remaining < TimeSpan.FromHours(24) ? "koc-countdown-urgent" : null)" role="timer" aria-label="@LabelText">
+                @Unit((int)remaining.TotalDays, L["days"])
+                @Unit(remaining.Hours, L["hrs"])
+                @Unit(remaining.Minutes, L["min"])
+                @Unit(remaining.Seconds, L["sec"])
             </div>
         </div>
     }
@@ -36,7 +39,8 @@
 
 @code {
     [Parameter] public DateTime? TargetUtc { get; set; }
-    [Parameter] public string Label { get; set; } = "Final reveal";
+    /// <summary>Localized by the caller — the label above the clock, e.g. "Final reveal".</summary>
+    [Parameter] public string? Label { get; set; }
     [Parameter] public bool Compact { get; set; }
     [Parameter] public int RefreshSeconds { get; set; } = 1;
 
@@ -48,6 +52,8 @@
     private bool _loopStarted;
     private bool _elapsedFired;
 
+    private string LabelText => Label ?? L["Final reveal"];
+
     private static RenderFragment Unit(int value, string label) => __builder =>
     {
         <span class="koc-countdown-unit">
@@ -56,10 +62,10 @@
         </span>
     };
 
-    private static string CompactText(TimeSpan r) =>
-        r.TotalDays >= 1 ? $"{(int)r.TotalDays}d {r.Hours:00}h"
-        : r.TotalHours >= 1 ? $"{r.Hours}h {r.Minutes:00}m"
-        : $"{r.Minutes}m {r.Seconds:00}s";
+    private string CompactText(TimeSpan r) =>
+        r.TotalDays >= 1 ? $"{(int)r.TotalDays}{L["d"]} {r.Hours:00}{L["h"]}"
+        : r.TotalHours >= 1 ? $"{r.Hours}{L["h"]} {r.Minutes:00}{L["m"]}"
+        : $"{r.Minutes}{L["m"]} {r.Seconds:00}{L["s"]}";
 
     protected override void OnAfterRender(bool firstRender)
     {

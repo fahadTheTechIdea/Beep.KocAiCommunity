@@ -32,6 +32,10 @@ public class NodePropertyPanelTests : TestContext
         IReadOnlyList<string>? lockedKeys = null)
     {
         Services.AddMudServices();
+        // Components take IStringLocalizer now; without the resource machinery registered
+        // every render fails on DI rather than on anything the test is about.
+        Services.AddLogging();
+        Services.AddLocalization();
         JSInterop.Mode = JSRuntimeMode.Loose;
         return RenderComponent<NodePropertyPanel>(ps => ps
             .Add(x => x.Descriptor, descriptor)

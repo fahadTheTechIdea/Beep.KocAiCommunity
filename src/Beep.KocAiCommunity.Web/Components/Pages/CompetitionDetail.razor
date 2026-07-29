@@ -5,6 +5,9 @@
 @using Beep.KocAiCommunity.Contracts.Workflow
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Web.Components.Shared
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @implements IAsyncDisposable
 @inject IKocApiClient Api
@@ -14,15 +17,15 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
 
-<PageTitle>@(_competition?.Title ?? "Competition") · @KocBrand.ProductName</PageTitle>
+<PageTitle>@(_competition?.Title ?? L["Competition"].Value) · @KocBrand.ProductName</PageTitle>
 
 @if (_notFound)
 {
     <BlueprintCard Class="pa-8" Style="text-align:center;">
         <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-        <MudText Typo="Typo.h6" Class="koc-heading mb-1">Competition not found</MudText>
-        <MudText Typo="Typo.body2" Class="mb-3">It may have been removed, or the link is out of date.</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/compete">Back to the arena</MudButton>
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Competition not found"]</MudText>
+        <MudText Typo="Typo.body2" Class="mb-3">@L["It may have been removed, or the link is out of date."]</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/compete">@L["Back to the arena"]</MudButton>
     </BlueprintCard>
 }
 else if (_competition is null)
@@ -38,24 +41,24 @@ else
             <div style="min-width:280px;max-width:62ch;">
                 <span class="koc-eyebrow">⚔ Competition</span>
                 <MudText Typo="Typo.h4" Class="koc-heading" Style="color:#fff;">🏆 @_competition.Title</MudText>
-                <MudText Typo="Typo.caption" Style="opacity:.85;">Hosted by @_competition.HostName</MudText>
+                <MudText Typo="Typo.caption" Style="opacity:.85;">@L["Hosted by {0}", _competition.HostName]</MudText>
                 <div class="d-flex gap-1 flex-wrap mt-2">
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(_competition.Status)">@_competition.Status</MudChip>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);">@CompetitionDisplay.TaskLabel(_competition.TaskType)</MudChip>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);">@CompetitionDisplay.MetricLabel(_competition)</MudChip>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);" Icon="@Icons.Material.Filled.Visibility">@_competition.Scope</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(_competition.Status)">@L[CompetitionDisplay.StatusLabel(_competition.Status)]</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);">@L[CompetitionDisplay.TaskLabel(_competition.TaskType)]</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);">@CompetitionDisplay.MetricLabel(_competition, L)</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Style="color:#fff;border-color:rgba(255,255,255,.4);" Icon="@Icons.Material.Filled.Visibility">@L[CompetitionDisplay.ScopeLabel(_competition.Scope)]</MudChip>
                 </div>
                 <div class="d-flex gap-5 mt-3">
-                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">competitors</MudText></div>
-                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">submissions</MudText></div>
-                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.QuotaPerDay</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">entries/day</MudText></div>
+                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">@L["competitors"]</MudText></div>
+                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">@L["submissions"]</MudText></div>
+                    <div><span class="koc-stat-value" style="font-size:26px;">@_competition.QuotaPerDay</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.8;">@L["entries/day"]</MudText></div>
                 </div>
             </div>
             <div class="d-flex flex-column gap-2" style="min-width:270px;">
                 <CountdownTimer TargetUtc="_competition.RevealUtc" />
                 @if (CompetitionDisplay.RevealProgress(_competition, DateTime.UtcNow) is { } progress)
                 {
-                    <div class="koc-deadline-bar" title="Progress toward the final reveal"><span style="width:@(((int)(progress * 100)))%"></span></div>
+                    <div class="koc-deadline-bar" title="@L["Progress toward the final reveal"]"><span style="width:@(((int)(progress * 100)))%"></span></div>
                 }
 
                 @* The one way in: takes you to your pipeline for this competition, creating it on first click. *@
@@ -64,12 +67,12 @@ else
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true"
                                StartIcon="@(_myEntry is null ? Icons.Material.Filled.RocketLaunch : Icons.Material.Filled.AccountTree)"
                                Disabled="_joining" OnClick="EnterCompetition">
-                        @(_joining ? "Opening…" : _myEntry is null ? "Join & build your pipeline" : "Continue your pipeline")
+                        @(_joining ? L["Opening…"] : _myEntry is null ? L["Join & build your pipeline"] : L["Continue your pipeline"])
                     </MudButton>
                     <MudText Typo="Typo.caption" Style="opacity:.8;color:#e8f1f8;">
                         @(_myEntry is null
-                            ? "Opens the Studio node editor on this competition's data — target, id and task are set for you."
-                            : $"Opens “{_myEntry.Name}” in the Studio node editor.")
+                            ? L["Opens the Studio node editor on this competition's data — target, id and task are set for you."]
+                            : L["Opens “{0}” in the Studio node editor.", _myEntry.Name])
                     </MudText>
                 }
             </div>
@@ -79,83 +82,83 @@ else
     <BlueprintCard Class="pa-0">
         <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true" ActivePanelIndex="_initialTab">
             <!-- 1 · Overview -->
-            <MudTabPanel Text="Overview" Icon="@Icons.Material.Filled.Description" Class="pa-5">
+            <MudTabPanel Text="@L["Overview"]" Icon="@Icons.Material.Filled.Description" Class="pa-5">
                 <MudText Typo="Typo.body1" Class="mb-4" Style="white-space:pre-wrap;max-width:80ch;">@_competition.Description</MudText>
 
                 @if (_competition.RecommendedTrackId is not null)
                 {
                     <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-4">
-                        New to this? <MudLink Href="/learn">Start with the recommended learning track →</MudLink>
+                        @L["New to this?"] <MudLink Href="/learn">@L["Start with the recommended learning track"] →</MudLink>
                     </MudAlert>
                 }
 
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">How it works</MudText>
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">@L["How it works"]</MudText>
                 <MudGrid Spacing="3" Class="mb-4">
                     <MudItem xs="12" md="4">
                         <BlueprintCard Class="pa-4" Style="height:100%;">
                             <span class="koc-stat-value" style="font-size:26px;">1</span>
-                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Get the data</MudText>
-                            <MudText Typo="Typo.caption" Style="opacity:.75;">Download the labelled training set and the evaluation set from the Data tab.</MudText>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Get the data"]</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.75;">@L["Download the labelled training set and the evaluation set from the Data tab."]</MudText>
                         </BlueprintCard>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <BlueprintCard Class="pa-4" Style="height:100%;">
                             <span class="koc-stat-value" style="font-size:26px;">2</span>
-                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Build your model</MudText>
-                            <MudText Typo="Typo.caption" Style="opacity:.75;">Design a pipeline in the Studio node editor — features, split, algorithm.</MudText>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Build your model"]</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.75;">@L["Design a pipeline in the Studio node editor — features, split, algorithm."]</MudText>
                         </BlueprintCard>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <BlueprintCard Class="pa-4" Style="height:100%;">
                             <span class="koc-stat-value" style="font-size:26px;">3</span>
-                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Submit &amp; climb</MudText>
-                            <MudText Typo="Typo.caption" Style="opacity:.75;">Scored on a hidden answer key shared by everyone — only modelling moves your rank.</MudText>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Submit & climb"]</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.75;">@L["Scored on a hidden answer key shared by everyone — only modelling moves your rank."]</MudText>
                         </BlueprintCard>
                     </MudItem>
                 </MudGrid>
 
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">What you can win</MudText>
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">@L["What you can win"]</MudText>
                 <MudGrid Spacing="3" Class="mb-4">
                     <MudItem xs="12" md="4">
                         <BlueprintCard Class="pa-4" Style="height:100%;">
                             <div class="d-flex align-center gap-2 mb-1">
                                 <img src="@KocBrand.Icon("039-oil-well.png")" alt="" width="34" height="34" />
-                                <MudText Typo="Typo.subtitle2" Class="koc-heading">🥇 Winner</MudText>
+                                <MudText Typo="Typo.subtitle2" Class="koc-heading">🥇 @L["Winner"]</MudText>
                             </div>
-                            <MudText Typo="Typo.caption" Style="opacity:.8;">The <b>@CompetitionRewards.WinnerBadge</b> gold badge + @CompetitionRewards.PodiumBarrels bbl.</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.8;">@L["The {0} gold badge + {1} bbl.", CompetitionRewards.WinnerBadge, CompetitionRewards.PodiumBarrels]</MudText>
                         </BlueprintCard>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <BlueprintCard Class="pa-4" Style="height:100%;">
                             <div class="d-flex align-center gap-2 mb-1">
                                 <img src="@KocBrand.Icon("100-goal.png")" alt="" width="34" height="34" />
-                                <MudText Typo="Typo.subtitle2" Class="koc-heading">🏅 Top 3</MudText>
+                                <MudText Typo="Typo.subtitle2" Class="koc-heading">🏅 @L["Top 3"]</MudText>
                             </div>
-                            <MudText Typo="Typo.caption" Style="opacity:.8;">The <b>@CompetitionRewards.PodiumBadge</b> badge + @CompetitionRewards.PodiumBarrels bbl on conclusion.</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.8;">@L["The {0} badge + {1} bbl on conclusion.", CompetitionRewards.PodiumBadge, CompetitionRewards.PodiumBarrels]</MudText>
                         </BlueprintCard>
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <BlueprintCard Class="pa-4" Style="height:100%;">
                             <div class="d-flex align-center gap-2 mb-1">
                                 <img src="@KocBrand.Icon("179-exploration.png")" alt="" width="34" height="34" />
-                                <MudText Typo="Typo.subtitle2" Class="koc-heading">Every entry</MudText>
+                                <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Every entry"]</MudText>
                             </div>
-                            <MudText Typo="Typo.caption" Style="opacity:.8;">@CompetitionRewards.ScoredSubmissionBarrels bbl per scored submission; your first ever earns the <b>@CompetitionRewards.FirstSubmissionBadge</b> badge (+@CompetitionRewards.FirstSubmissionBonusBarrels bbl).</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.8;">@L["{0} bbl per scored submission; your first ever earns the {1} badge (+{2} bbl).", CompetitionRewards.ScoredSubmissionBarrels, CompetitionRewards.FirstSubmissionBadge, CompetitionRewards.FirstSubmissionBonusBarrels]</MudText>
                         </BlueprintCard>
                     </MudItem>
                 </MudGrid>
 
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Evaluation</MudText>
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Evaluation"]</MudText>
                 <MudText Typo="Typo.body2" Style="max-width:75ch;">
-                    Submissions are scored with <b>@CompetitionDisplay.MetricLabel(_competition)</b> against a hidden answer key.
+                    Submissions are scored with <b>@CompetitionDisplay.MetricLabel(_competition, L)</b> against a hidden answer key.
                     @(_competition.RevealUtc is null
-                        ? "The live leaderboard reflects your best score."
-                        : "The live leaderboard shows public scores; final private standings unlock on reveal day so no one can game the last hours.")
+                        ? L["The live leaderboard reflects your best score."]
+                        : L["The live leaderboard shows public scores; final private standings unlock on reveal day so no one can game the last hours."])
                 </MudText>
             </MudTabPanel>
 
             <!-- 2 · Data -->
-            <MudTabPanel Text="Data" Icon="@Icons.Material.Filled.Dataset" Class="pa-5">
+            <MudTabPanel Text="@L["Data"]" Icon="@Icons.Material.Filled.Dataset" Class="pa-5">
                 @if (_competition.HasDatasets)
                 {
                     <MudGrid Spacing="3" Class="mb-3">
@@ -167,9 +170,9 @@ else
                                         <MudIcon Icon="@Icons.Material.Filled.TableChart" Color="Color.Primary" />
                                         <MudText Typo="Typo.subtitle2" Class="koc-heading">training.csv</MudText>
                                     </div>
-                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@RowCount(_trainingCsv) rows · <code>@_competition.IdColumn, features…, @_competition.LabelColumn</code></MudText>
+                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@L["{0} rows", RowCount(_trainingCsv)] · <code>@_competition.IdColumn, features…, @_competition.LabelColumn</code></MudText>
                                     <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
-                                               Href="@DataUri(_trainingCsv)" download="training.csv">Download</MudButton>
+                                               Href="@DataUri(_trainingCsv)" download="training.csv">@L["Download"]</MudButton>
                                 </BlueprintCard>
                             </MudItem>
                         }
@@ -181,32 +184,32 @@ else
                                         <MudIcon Icon="@Icons.Material.Filled.Quiz" Color="Color.Primary" />
                                         <MudText Typo="Typo.subtitle2" Class="koc-heading">evaluation.csv</MudText>
                                     </div>
-                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@RowCount(_evalCsv) rows · <code>@_competition.IdColumn, features…</code> — you predict <code>@_competition.LabelColumn</code></MudText>
+                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@L["{0} rows", RowCount(_evalCsv)] · <code>@_competition.IdColumn, features…</code> — @L["you predict"] <code>@_competition.LabelColumn</code></MudText>
                                     <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
-                                               Href="@DataUri(_evalCsv)" download="evaluation.csv">Download</MudButton>
+                                               Href="@DataUri(_evalCsv)" download="evaluation.csv">@L["Download"]</MudButton>
                                 </BlueprintCard>
                             </MudItem>
                         }
                     </MudGrid>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree"
                                Disabled="@(_joining || _competition.Status == "concluded")" OnClick="EnterCompetition">
-                        @(_myEntry is null ? "Build a pipeline in the Studio" : "Continue your pipeline")
+                        @(_myEntry is null ? L["Build a pipeline in the Studio"] : L["Continue your pipeline"])
                     </MudButton>
                     <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.7;">
-                        The Studio reads these files directly — no download needed unless you want to explore them yourself.
+                        @L["The Studio reads these files directly — no download needed unless you want to explore them yourself."]
                     </MudText>
                 }
                 else
                 {
                     <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
-                        No data files attached yet — this challenge currently accepts uploaded prediction files only.
-                        @(CanCreate ? "Attach the files in the Host tab." : "")
+                        @L["No data files attached yet — this challenge currently accepts uploaded prediction files only."]
+                        @(CanCreate ? L["Attach the files in the Host tab."] : "")
                     </MudAlert>
                 }
             </MudTabPanel>
 
             <!-- 3 · Leaderboard -->
-            <MudTabPanel Text="Leaderboard" Icon="@Icons.Material.Filled.Leaderboard" Class="pa-0">
+            <MudTabPanel Text="@L["Leaderboard"]" Icon="@Icons.Material.Filled.Leaderboard" Class="pa-0">
                 <div class="pa-5 pb-3">
                     <PodiumBlock Entries="_leaderboard" MyUserId="@Identity.UserId" />
                 </div>
@@ -217,11 +220,11 @@ else
                 }
                 <div class="pa-4 pb-2 d-flex align-center flex-wrap gap-2">
                     <MudIcon Icon="@(concluded ? Icons.Material.Filled.MilitaryTech : Icons.Material.Filled.Leaderboard)" />
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading">@(concluded ? "Final standings" : "Live leaderboard")</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading">@(concluded ? L["Final standings"] : L["Live leaderboard"])</MudText>
                     @if (revealPending)
                     {
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning" Icon="@Icons.Material.Filled.Lock">
-                            Final standings revealed @_competition.RevealUtc!.Value.ToLocalTime().ToString("g")
+                            @L["Final standings revealed {0}", _competition.RevealUtc!.Value.ToLocalTime().ToString("g")]
                         </MudChip>
                     }
                 </div>
@@ -236,17 +239,17 @@ else
                             var leader = _leaderboard[0];
                             var gap = Math.Abs(leader.Score - mine.Score);
                             <MudAlert Severity="@(mine.Rank == 1 ? Severity.Success : Severity.Info)" Variant="Variant.Text" Dense="true">
-                                <b>You're #@mine.Rank of @_leaderboard.Count</b> · best @mine.Score.ToString("0.###")
+                                <b>@L["You're #{0} of {1}", mine.Rank, _leaderboard.Count]</b> · @L["best {0}", mine.Score.ToString("0.###")]
                                 @(mine.Rank == 1
-                                    ? " — you're leading the board."
-                                    : $" · {gap:0.###} {(_competition.HigherIsBetter ? "behind" : "off")} the leader ({leader.Score:0.###}).")
+                                    ? L[" — you're leading the board."]
+                                    : L[" · {0} {1} the leader ({2}).", gap.ToString("0.###"), _competition.HigherIsBetter ? L["behind"] : L["off"], leader.Score.ToString("0.###")])
                             </MudAlert>
                         }
                         else if (_competition.Status != "concluded")
                         {
                             <MudAlert Severity="Severity.Normal" Variant="Variant.Text" Dense="true">
-                                You're not on the board yet — @_leaderboard.Count competitor(s) ahead of you.
-                                <MudLink OnClick="EnterCompetition" Style="cursor:pointer;">Build a pipeline and claim a rank →</MudLink>
+                                @L["You're not on the board yet — {0} competitor(s) ahead of you.", _leaderboard.Count]
+                                <MudLink OnClick="EnterCompetition" Style="cursor:pointer;">@L["Build a pipeline and claim a rank"] →</MudLink>
                             </MudAlert>
                         }
                     </div>
@@ -256,31 +259,31 @@ else
             </MudTabPanel>
 
             <!-- 4 · My submissions -->
-            <MudTabPanel Text="My submissions" Icon="@Icons.Material.Filled.UploadFile" Class="pa-5">
+            <MudTabPanel Text="@L["My submissions"]" Icon="@Icons.Material.Filled.UploadFile" Class="pa-5">
                 @if (_competition.Status == "concluded")
                 {
-                    <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-3">Submissions are closed — this challenge has concluded.</MudAlert>
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-3">@L["Submissions are closed — this challenge has concluded."]</MudAlert>
                 }
                 else
                 {
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Submit a prediction</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["Submit a prediction"]</MudText>
                     <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="opacity:.75;">
-                        CSV of <code>@_competition.IdColumn, @_competition.LabelColumn</code> — scored instantly against the hidden answer key.
+                        @L["CSV of"] <code>@_competition.IdColumn, @_competition.LabelColumn</code> — @L["scored instantly against the hidden answer key."]
                     </MudText>
                     <InputFile OnChange="OnPredictionSelected" accept=".csv" />
                     @if (_lastScore is not null)
                     {
                         <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="mt-2">
-                            Scored: <b>@_lastScore.Value.ToString("0.###")</b> (+@CompetitionRewards.ScoredSubmissionBarrels bbl) — your best result counts on the leaderboard.
+                            @L["Scored: {0} (+{1} bbl) — your best result counts on the leaderboard.", _lastScore.Value.ToString("0.###"), CompetitionRewards.ScoredSubmissionBarrels]
                         </MudAlert>
                     }
                 }
 
                 @if (_mySubmissions is { Count: > 0 })
                 {
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading mt-4 mb-1">History</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mt-4 mb-1">@L["History"]</MudText>
                     <MudSimpleTable Dense="true" Hover="true">
-                        <thead><tr><th>When</th><th>Status</th><th style="text-align:right;">Score</th></tr></thead>
+                        <thead><tr><th>@L["When"]</th><th>@L["Status"]</th><th style="text-align:end;">@L["Score"]</th></tr></thead>
                         <tbody>
                             @foreach (var sub in _mySubmissions)
                             {
@@ -295,101 +298,101 @@ else
                 }
                 else if (_competition.Status != "concluded")
                 {
-                    <MudText Typo="Typo.body2" Class="mt-4" Style="opacity:.7;">No submissions yet — your first upload puts you on the board.</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-4" Style="opacity:.7;">@L["No submissions yet — your first upload puts you on the board."]</MudText>
                 }
             </MudTabPanel>
 
             @if (CanCreate)
             {
                 <!-- 5 · Host -->
-                <MudTabPanel Text="Host" Icon="@Icons.Material.Filled.Tune" Class="pa-5">
+                <MudTabPanel Text="@L["Host"]" Icon="@Icons.Material.Filled.Tune" Class="pa-5">
                     <div class="d-flex align-center gap-2 mb-4">
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_competition.HasDatasets ? Color.Success : Color.Default)"
-                                 Icon="@(_competition.HasDatasets ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Data</MudChip>
+                                 Icon="@(_competition.HasDatasets ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">@L["Data"]</MudChip>
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_competition.HasAnswerKey ? Color.Success : Color.Default)"
-                                 Icon="@(_competition.HasAnswerKey ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">Answer key</MudChip>
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(_competition.Status)">@_competition.Status</MudChip>
+                                 Icon="@(_competition.HasAnswerKey ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">@L["Answer key"]</MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(_competition.Status)">@L[CompetitionDisplay.StatusLabel(_competition.Status)]</MudChip>
                     </div>
 
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Competition data</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Competition data"]</MudText>
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
-                        Competitors download the training data, build a model, and are scored on the evaluation set against your hidden answer key.
+                        @L["Competitors download the training data, build a model, and are scored on the evaluation set against your hidden answer key."]
                     </MudText>
                     <div class="d-flex gap-3 flex-wrap mb-3">
-                        <MudTextField @bind-Value="_dsLabel" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
-                        <MudTextField @bind-Value="_dsId" Label="Id column" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
-                        <MudSelect @bind-Value="_dsTask" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:220px;">
-                            <MudSelectItem Value="@("BinaryClassification")">Binary classification</MudSelectItem>
-                            <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
-                            <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
-                            <MudSelectItem Value="@("Forecasting")">Time-series forecasting</MudSelectItem>
-                            <MudSelectItem Value="@("AnomalyDetection")">Anomaly detection</MudSelectItem>
+                        <MudTextField @bind-Value="_dsLabel" Label="@L["Label column"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
+                        <MudTextField @bind-Value="_dsId" Label="@L["Id column"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
+                        <MudSelect @bind-Value="_dsTask" Label="@L["Task"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:220px;">
+                            <MudSelectItem Value="@("BinaryClassification")">@L["Binary classification"]</MudSelectItem>
+                            <MudSelectItem Value="@("MulticlassClassification")">@L["Multiclass classification"]</MudSelectItem>
+                            <MudSelectItem Value="@("Regression")">@L["Regression"]</MudSelectItem>
+                            <MudSelectItem Value="@("Forecasting")">@L["Time-series forecasting"]</MudSelectItem>
+                            <MudSelectItem Value="@("AnomalyDetection")">@L["Anomaly detection"]</MudSelectItem>
                         </MudSelect>
                     </div>
                     <MudGrid Spacing="3">
                         <MudItem xs="12" md="4">
-                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Training data</MudText>
-                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, features…, label</code> — public to competitors.</MudText>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Training data"]</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, features…, label</code> — @L["public to competitors."]</MudText>
                             <InputFile OnChange="OnTrainingSelected" accept=".csv" />
                             @if (_dsTraining is not null)
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="mt-1">ready</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="mt-1">@L["ready"]</MudChip>
                             }
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Evaluation set</MudText>
-                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, features…</code> — no label; what they predict.</MudText>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Evaluation set"]</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, features…</code> — @L["no label; what they predict."]</MudText>
                             <InputFile OnChange="OnEvalSelected" accept=".csv" />
                             @if (_dsEval is not null)
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="mt-1">ready</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="mt-1">@L["ready"]</MudChip>
                             }
                         </MudItem>
                         <MudItem xs="12" md="4">
-                            <MudText Typo="Typo.subtitle2" Class="koc-heading">Hidden answer key</MudText>
-                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, label</code> — kept Restricted; never exposed.</MudText>
+                            <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Hidden answer key"]</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;"><code>id, label</code> — @L["kept Restricted; never exposed."]</MudText>
                             <InputFile OnChange="OnKeySelected" accept=".csv" />
                         </MudItem>
                     </MudGrid>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" StartIcon="@Icons.Material.Filled.CloudUpload"
-                               OnClick="UploadDatasets" Disabled="_dsTraining is null || _dsEval is null">Publish training + evaluation data</MudButton>
+                               OnClick="UploadDatasets" Disabled="_dsTraining is null || _dsEval is null">@L["Publish training + evaluation data"]</MudButton>
 
                     <MudDivider Class="my-4" />
 
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Hero image</MudText>
-                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">A banner for this competition — and the landing-page hero if it's featured. PNG or JPG (max 5 MB).</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Hero image"]</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">@L["A banner for this competition — and the landing-page hero if it's featured. PNG or JPG (max 5 MB)."]</MudText>
                     <div class="d-flex align-center gap-3 flex-wrap">
                         <InputFile OnChange="OnHeroImageSelected" accept="image/*" />
                         @if (_competition.HeroImagePath is { } heroPath)
                         {
                             <img src="@($"{heroPath}?v={_heroVersion}")" alt="hero image" style="height:56px;border-radius:6px;border:1px solid var(--koc-border);" />
-                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">image set</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["image set"]</MudChip>
                         }
                     </div>
 
                     <MudDivider Class="my-4" />
 
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">Timeline</MudText>
-                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">Until the reveal, the final private standings stay concealed so no one games the last day.</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Timeline"]</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">@L["Until the reveal, the final private standings stay concealed so no one games the last day."]</MudText>
                     <div class="d-flex gap-2 align-center flex-wrap">
-                        <MudDatePicker @bind-Date="_revealDate" Label="Reveal date" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:200px;" />
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SetReveal" Disabled="_revealDate is null">Set reveal</MudButton>
+                        <MudDatePicker @bind-Date="_revealDate" Label="@L["Reveal date"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:200px;" />
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SetReveal" Disabled="_revealDate is null">@L["Set reveal"]</MudButton>
                         @if (_competition.RevealUtc is not null)
                         {
                             <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Event">@_competition.RevealUtc.Value.ToLocalTime().ToString("g")</MudChip>
-                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearReveal">Clear</MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearReveal">@L["Clear"]</MudButton>
                         }
                     </div>
 
                     <MudDivider Class="my-4" />
 
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Lifecycle</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">@L["Lifecycle"]</MudText>
                     <div class="d-flex align-center gap-1 mb-3">
                         @foreach (var (stage, index) in new[] { "draft", "active", "concluded" }.Select((x, i) => (x, i)))
                         {
                             <MudChip T="string" Size="Size.Small"
                                      Variant="@(_competition.Status == stage ? Variant.Filled : Variant.Text)"
-                                     Color="@(_competition.Status == stage ? CompetitionDisplay.StatusColor(stage) : Color.Default)">@stage</MudChip>
+                                     Color="@(_competition.Status == stage ? CompetitionDisplay.StatusColor(stage) : Color.Default)">@L[CompetitionDisplay.StatusLabel(stage)]</MudChip>
                             @if (index < 2)
                             {
                                 <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="opacity:.4;" />
@@ -400,16 +403,16 @@ else
                         @if (_competition.Status != "active")
                         {
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.RocketLaunch"
-                                       OnClick='() => SetStatus("active")'>Activate — open submissions</MudButton>
+                                       OnClick='() => SetStatus("active")'>@L["Activate — open submissions"]</MudButton>
                         }
                         @if (_competition.Status != "concluded")
                         {
                             <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.SportsScore"
-                                       OnClick='() => SetStatus("concluded")'>Conclude — close submissions</MudButton>
+                                       OnClick='() => SetStatus("concluded")'>@L["Conclude — close submissions"]</MudButton>
                         }
                         @if (_competition.Status != "draft")
                         {
-                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick='() => SetStatus("draft")'>Back to draft</MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick='() => SetStatus("draft")'>@L["Back to draft"]</MudButton>
                         }
                     </div>
                 </MudTabPanel>

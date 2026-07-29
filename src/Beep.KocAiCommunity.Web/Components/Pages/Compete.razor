@@ -4,26 +4,29 @@
 @using Beep.KocAiCommunity.Web.Components.Dialogs
 @using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
 @inject IKocApiClient Api
+@inject IStringLocalizer<Strings> L
 @inject DevIdentity Identity
 @inject IDialogService DialogService
 @inject NavigationManager Nav
 
-<PageTitle>Compete · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Compete"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="The arena" Title="Competitions"
-            Subtitle="Internal, Kaggle-style challenges on real KOC problems — get the data, build your model in the Studio, and climb the live leaderboard. Final standings stay hidden until reveal day.">
+<PageHeader Eyebrow="@L["The arena"]" Title="@L["Competitions"]"
+            Subtitle="@L["Internal, Kaggle-style challenges on real KOC problems — get the data, build your model in the Studio, and climb the live leaderboard. Final standings stay hidden until reveal day."]">
     <Actions>
         @if (CanCreate)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">Host a competition</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">@L["Host a competition"]</MudButton>
         }
     </Actions>
 </PageHeader>
 
 @if (_error is not null)
 {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">Couldn't reach the API (@_error).</MudAlert>
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">@L["Couldn't reach the API ({0}).", _error]</MudAlert>
 }
 
 @if (_competitions is null)
@@ -34,8 +37,8 @@ else if (_competitions.Count == 0)
 {
     <BlueprintCard Class="pa-8" Style="text-align:center;">
         <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-        <MudText Typo="Typo.h6" Class="koc-heading mb-1">No competitions yet</MudText>
-        <MudText Typo="Typo.body2">Ask an admin to seed the demo data, or host a competition above.</MudText>
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["No competitions yet"]</MudText>
+        <MudText Typo="Typo.body2">@L["Ask an admin to seed the demo data, or host a competition above."]</MudText>
     </BlueprintCard>
 }
 else
@@ -47,7 +50,7 @@ else
             <MudChip T="string" Size="Size.Small"
                      Variant="@(_statusFilter == status ? Variant.Filled : Variant.Outlined)"
                      Color="@(_statusFilter == status ? Color.Primary : Color.Default)"
-                     OnClick="() => _statusFilter = status">@(status == "all" ? "All" : status)</MudChip>
+                     OnClick="() => _statusFilter = status">@(status == "all" ? L["All"] : L[CompetitionDisplay.StatusLabel(status)])</MudChip>
         }
         <MudDivider Vertical="true" FlexItem="true" Class="mx-2" />
         @foreach (var (task, label) in TaskFilters)
@@ -64,11 +67,11 @@ else
         @* Which part of the business the challenge belongs to — usually what someone is actually
            looking for, more than which algorithm it happens to need. *@
         <div class="d-flex gap-1 flex-wrap align-center mb-4">
-            <MudText Typo="Typo.caption" Class="mr-1" Style="opacity:.7;">Domain</MudText>
+            <MudText Typo="Typo.caption" Class="me-1" Style="opacity:.7;">@L["Domain"]</MudText>
             <MudChip T="string" Size="Size.Small"
                      Variant="@(_categoryFilter == "all" ? Variant.Filled : Variant.Outlined)"
                      Color="@(_categoryFilter == "all" ? Color.Primary : Color.Default)"
-                     OnClick='() => _categoryFilter = "all"'>All domains</MudChip>
+                     OnClick='() => _categoryFilter = "all"'>@L["All domains"]</MudChip>
             @foreach (var category in _categories)
             {
                 <MudChip T="string" Size="Size.Small"
@@ -82,7 +85,7 @@ else
     var visible = Filtered();
     @if (visible.Count == 0)
     {
-        <MudText Typo="Typo.body2" Style="opacity:.7;">No competitions match this filter.</MudText>
+        <MudText Typo="Typo.body2" Style="opacity:.7;">@L["No competitions match this filter."]</MudText>
     }
     else
     {
@@ -116,14 +119,18 @@ else
     private string? _maxScope;
     private bool CanCreate => _maxScope is not null;
 
-    private static readonly (string Task, string Label)[] TaskFilters =
+    /// <summary>
+    /// Built on demand so the labels can go through the localizer. The task names deliberately match
+    /// what MlTaskLabels returns, so a chip on a card and the filter that selects it read identically.
+    /// </summary>
+    private (string Task, string Label)[] TaskFilters =>
     [
-        ("all", "Any task"),
-        ("BinaryClassification", "Classification"),
-        ("MulticlassClassification", "Multiclass"),
-        ("Regression", "Regression"),
-        ("Forecasting", "Forecasting"),
-        ("AnomalyDetection", "Anomaly detection"),
+        ("all", L["Any task"]),
+        ("BinaryClassification", L["Classification"]),
+        ("MulticlassClassification", L["Multiclass"]),
+        ("Regression", L["Regression"]),
+        ("Forecasting", L["Forecasting"]),
+        ("AnomalyDetection", L["Anomaly detection"]),
     ];
 
     protected override async Task OnInitializedAsync()

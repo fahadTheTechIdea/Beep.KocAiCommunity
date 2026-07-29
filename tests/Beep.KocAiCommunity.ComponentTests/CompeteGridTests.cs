@@ -35,6 +35,10 @@ public class CompeteGridTests : TestContext
     private IRenderedComponent<Compete> Render(params CompetitionDto[] comps)
     {
         Services.AddMudServices();
+        // Components take IStringLocalizer now; without the resource machinery registered
+        // every render fails on DI rather than on anything the test is about.
+        Services.AddLogging();
+        Services.AddLocalization();
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton<IKocApiClient>(new FakeApi(comps));
         Services.AddSingleton(new DevIdentity());
@@ -57,7 +61,9 @@ public class CompeteGridTests : TestContext
     {
         var cut = Render(Comp("Alpha", "active"), Comp("Gamma", "concluded"));
 
-        cut.FindAll(".mud-chip").First(c => c.TextContent.Trim() == "concluded").Click();
+        // The chip reads "Concluded", not the stored code — status codes are lowercase on the wire and
+        // words on the screen, so they can be translated like every other label.
+        cut.FindAll(".mud-chip").First(c => c.TextContent.Trim() == "Concluded").Click();
         cut.Markup.Should().Contain("Gamma").And.NotContain("Alpha");
     }
 

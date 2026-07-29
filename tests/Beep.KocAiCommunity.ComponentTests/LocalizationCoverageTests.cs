@@ -1,4 +1,7 @@
 using System.Reflection;
+using Beep.KocAiCommunity.Ui.Shared.Components;
+using Beep.KocAiCommunity.Web.Components.Shared;
+using Beep.KocAiCommunity.Web.Security;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using FluentAssertions;
@@ -59,11 +62,27 @@ public class LocalizationCoverageTests
                 d => d.Element("value")?.Value ?? string.Empty);
     }
 
-    /// <summary>(file, key) for every localized string in the markup.</summary>
+    /// <summary>
+    /// Label sets declared in C# rather than markup. <c>@L[CompetitionDisplay.StatusLabel(x)]</c> passes
+    /// a computed key, so the markup scan cannot see it — these classes declare what they can return so
+    /// it stays covered. A label added to one of those switches but not to its Translatable array is
+    /// exactly the silent gap this whole test exists to prevent.
+    /// </summary>
+    private static IEnumerable<(string File, string Key)> DeclaredLabels() =>
+        new[]
+        {
+            (nameof(MlTaskLabels), MlTaskLabels.Translatable),
+            (nameof(CompetitionDisplay), CompetitionDisplay.Translatable),
+            (nameof(SignInPrompt), SignInPrompt.Translatable),
+        }
+        .SelectMany(set => set.Item2.Select(key => (File: set.Item1 + ".cs", Key: key)));
+
+    /// <summary>(file, key) for every localized string in the markup, plus the label sets declared in code.</summary>
     private static List<(string File, string Key)> UsedKeys() =>
         [.. MarkupFiles().SelectMany(file =>
             LocalizedString.Matches(File.ReadAllText(file))
-                .Select(m => (File: Path.GetFileName(file), Key: m.Groups[1].Value.Replace("\\\"", "\""))))];
+                .Select(m => (File: Path.GetFileName(file), Key: m.Groups[1].Value.Replace("\\\"", "\"")))),
+          .. DeclaredLabels()];
 
     [Fact]
     public void The_scan_finds_the_markup_it_is_supposed_to_guard()
@@ -109,6 +128,23 @@ public class LocalizationCoverageTests
         ArabicEntries().Keys.Where(k => !used.Contains(k))
             .Should().BeEmpty("these translations no longer match any string in the markup — the English "
                             + "text was probably edited, which changes the key");
+    }
+
+    [Fact]
+    public void No_two_entries_differ_only_by_case()
+    {
+        // .resx resource names are case-insensitive. "revealed" and "Revealed" are one entry, and the
+        // build resolves the clash by dropping one with a warning nobody reads — so one of the two
+        // strings silently loses its translation. Caught once already; this stops it recurring.
+        var collisions = ArabicEntries().Keys
+            .GroupBy(k => k, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => string.Join(" / ", g))
+            .ToList();
+
+        collisions.Should().BeEmpty(
+            "these keys differ only by case, so .resx treats them as one entry: {0}",
+            string.Join(" | ", collisions));
     }
 
     [Fact]

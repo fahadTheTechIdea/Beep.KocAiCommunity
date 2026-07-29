@@ -1,6 +1,7 @@
 using Beep.KocAiCommunity.Contracts.Competitions;
 using Beep.KocAiCommunity.Web.Components.Shared;
 using Bunit;
+using Microsoft.Extensions.DependencyInjection;
 using FluentAssertions;
 using MudBlazor.Services;
 using Xunit;
@@ -13,6 +14,10 @@ public abstract class ArenaTestContext : TestContext
     protected ArenaTestContext()
     {
         Services.AddMudServices();
+        // Components take IStringLocalizer now; without the resource machinery registered
+        // every render fails on DI rather than on anything the test is about.
+        Services.AddLogging();
+        Services.AddLocalization();
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
@@ -43,7 +48,9 @@ public class CountdownTimerTests : ArenaTestContext
         var past = RenderComponent<CountdownTimer>(p => p
             .Add(x => x.TargetUtc, DateTime.UtcNow.AddMinutes(-5))
             .Add(x => x.Compact, true));
-        past.Markup.Should().Contain("revealed");
+        // One capitalization, not two: .resx names are case-insensitive, so "revealed" and "Revealed"
+        // could not both be translated — the compact and full states now share the one word.
+        past.Markup.Should().Contain("Revealed");
     }
 
     [Fact]

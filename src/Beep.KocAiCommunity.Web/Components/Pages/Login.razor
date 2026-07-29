@@ -2,19 +2,22 @@
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @layout Beep.KocAiCommunity.Web.Components.Layout.BareLayout
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
 @inject IKocApiClient Api
+@inject IStringLocalizer<Strings> L
 
 @* Static server rendering on purpose: the form posts to /account/login, which needs a real HTTP
    response to write the authentication cookie. An interactive circuit couldn't set one. *@
 
-<PageTitle>Sign in · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Sign in"] · @KocBrand.ProductName</PageTitle>
 
 <div class="koc-auth-shell">
     <BlueprintCard Class="pa-6" Style="width:100%;max-width:420px;">
         <div class="text-center mb-4">
             <img src="@KocBrand.Icon("039-oil-well.png")" alt="" width="46" height="46" />
             <MudText Typo="Typo.h5" Class="koc-heading mt-2">@KocBrand.ProductName</MudText>
-            <MudText Typo="Typo.body2" Style="opacity:.75;">Sign in to compete, build pipelines, and track your standing.</MudText>
+            <MudText Typo="Typo.body2" Style="opacity:.75;">@L["Sign in to compete, build pipelines, and track your standing."]</MudText>
         </div>
 
         @if (!string.IsNullOrEmpty(Error))
@@ -25,24 +28,24 @@
         @if (_isFirstAccount)
         {
             <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-3">
-                No accounts exist yet. <a href="@RegisterHref">Create the first one</a> — it becomes the platform administrator.
+                @L["No accounts exist yet."] <a href="@RegisterHref">@L["Create the first one"]</a> — @L["it becomes the platform administrator."]
             </MudAlert>
         }
 
         <form method="post" action="/account/login">
             <input type="hidden" name="returnUrl" value="@ReturnUrl" />
 
-            <label class="koc-field-label" for="email">Work email</label>
+            <label class="koc-field-label" for="email">@L["Work email"]</label>
             <input class="koc-field" id="email" name="email" type="email" autocomplete="username" required autofocus />
 
-            <label class="koc-field-label" for="password">Password</label>
+            <label class="koc-field-label" for="password">@L["Password"]</label>
             <input class="koc-field" id="password" name="password" type="password" autocomplete="current-password" required />
 
-            <button class="koc-submit" type="submit">Sign in</button>
+            <button class="koc-submit" type="submit">@L["Sign in"]</button>
         </form>
 
         <MudText Typo="Typo.caption" Class="d-block mt-4 text-center" Style="opacity:.75;">
-            No account yet? <a href="@RegisterHref">Register</a>
+            @L["No account yet?"] <a href="@RegisterHref">@L["Register"]</a>
         </MudText>
     </BlueprintCard>
 </div>
