@@ -19,3 +19,9 @@ public sealed record AuthTokenResponse(
 
 /// <summary>Whether this installation still needs a first account, so the UI can say "create the admin account".</summary>
 public sealed record RegistrationStateResponse(bool AcceptsRegistration, bool IsFirstAccount);
+
+/// <summary>
+/// The Web vouching for someone the KOC environment already verified (IIS checked the Windows account
+/// before the request arrived). Authenticated by a signature over the shared key, not by these fields.
+/// </summary>
+public sealed record ExchangeIdentityRequest(string UserId, string? DisplayName = null, string? Email = null);

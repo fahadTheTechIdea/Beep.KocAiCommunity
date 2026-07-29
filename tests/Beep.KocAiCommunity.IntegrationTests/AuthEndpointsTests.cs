@@ -23,7 +23,7 @@ public class AuthEndpointsTests
     [Fact]
     public async Task The_first_account_becomes_the_platform_admin_and_can_use_the_api()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
         var client = factory.CreateAnonymousClient();
 
         // A fresh install has nobody, so the UI can offer to create the administrator.
@@ -51,7 +51,7 @@ public class AuthEndpointsTests
     [Fact]
     public async Task A_registered_name_falls_back_to_the_email_when_none_is_given()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
         var registered = await Register(factory.CreateAnonymousClient(), "fahad.aldhubaib@koc.com", GoodPassword, null);
         registered.DisplayName.Should().Be("Fahad Aldhubaib", "a leaderboard shouldn't show a raw email address");
     }
@@ -59,7 +59,7 @@ public class AuthEndpointsTests
     [Fact]
     public async Task Sign_in_returns_a_working_token_and_rejects_a_wrong_password()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
         var client = factory.CreateAnonymousClient();
         await Register(client, "driller@koc.com", GoodPassword, "Driller");
 
@@ -81,7 +81,7 @@ public class AuthEndpointsTests
     [Fact]
     public async Task Registration_rejects_a_duplicate_email_and_a_weak_password()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
         var client = factory.CreateAnonymousClient();
         await Register(client, "taken@koc.com", GoodPassword, null);
 
@@ -96,7 +96,7 @@ public class AuthEndpointsTests
     [Fact]
     public async Task Without_a_token_the_api_refuses_and_ignores_the_demo_persona_headers()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
         var client = factory.CreateAnonymousClient();
 
         (await client.GetAsync("/api/v1/me")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);

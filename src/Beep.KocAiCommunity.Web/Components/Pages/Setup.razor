@@ -4,24 +4,25 @@
 @layout Beep.KocAiCommunity.Web.Components.Layout.BareLayout
 @inject KocSetupStore SetupStore
 
-@* First run only — the guard closes this page once a mode has been saved. Static server rendering,
-   because the answer is written by a plain form post before any of the app's services exist. *@
+@* First run only, and only when the answer isn't obvious: a deployment inside KOC arrives already
+   authenticated by IIS, which settles the question without asking. Static server rendering, because the
+   answer is written by a plain form post before any of the app's services exist. *@
 
 <PageTitle>Set up @KocBrand.ProductName</PageTitle>
 
 <div class="koc-auth-shell">
-    <BlueprintCard Class="pa-6" Style="width:100%;max-width:640px;">
+    <BlueprintCard Class="pa-6" Style="width:100%;max-width:600px;">
         @if (Saved)
         {
             <div class="text-center">
                 <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
                 <MudText Typo="Typo.h5" Class="koc-heading mt-2 mb-1">Setup saved</MudText>
                 <MudText Typo="Typo.body2" Class="mb-3">
-                    @KocBrand.ProductName will sign people in with <b>@ModeName(SetupStore.Mode)</b>.
+                    People will sign in with <b>@SourceName(SetupStore.SignInWith)</b>.
                 </MudText>
                 <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-3" Style="text-align:left;">
                     <b>Restart the app to apply it.</b> Sign-in is wired up when the app starts, so the web
-                    site and the API both need restarting before the new mode takes effect.
+                    site and the API both need restarting.
                 </MudAlert>
                 <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.7;">
                     Saved to <code>@SetupStore.FilePath</code>
@@ -34,8 +35,8 @@
                 <img src="@KocBrand.LogoPath" alt="Kuwait Oil Company" height="42" />
                 <MudText Typo="Typo.h5" Class="koc-heading mt-2">Welcome to @KocBrand.ProductName</MudText>
                 <MudText Typo="Typo.body2" Style="opacity:.8;">
-                    One question before you start: how should people sign in? You can change this later by
-                    editing <code>@SetupStore.FilePath</code>.
+                    One question: where do people sign in? Everything else — accounts, roles, permissions —
+                    is managed inside the site once it's running.
                 </MudText>
             </div>
 
@@ -45,34 +46,25 @@
             }
 
             <form method="post" action="/setup">
-                @foreach (var option in KocAuthModeInfo.All)
+                @foreach (var option in KocSignInSourceInfo.All)
                 {
                     <label class="koc-setup-option">
-                        <input type="radio" name="mode" value="@option.Mode" checked="@(SelectedMode == option.Mode)" />
+                        <input type="radio" name="signInWith" value="@option.Source"
+                               checked="@(option.Source == KocSignInSource.SiteAccounts)" />
                         <span>
                             <b>@option.DisplayName</b>
                             <small>@option.Summary</small>
                         </span>
                     </label>
-
-                    @if (option.Mode == KocAuthMode.EntraId)
-                    {
-                        <div class="koc-setup-detail">
-                            <label class="koc-field-label" for="entraTenantId">Directory (tenant) id</label>
-                            <input class="koc-field" id="entraTenantId" name="entraTenantId" type="text" placeholder="00000000-0000-0000-0000-000000000000" />
-
-                            <label class="koc-field-label" for="entraClientId">Application (client) id</label>
-                            <input class="koc-field" id="entraClientId" name="entraClientId" type="text" placeholder="00000000-0000-0000-0000-000000000000" />
-
-                            <label class="koc-field-label" for="entraClientSecret">Client secret <span style="font-weight:400;opacity:.7;">(optional)</span></label>
-                            <input class="koc-field" id="entraClientSecret" name="entraClientSecret" type="password" autocomplete="off" />
-                            <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.7;">Only needed if you chose Entra ID above.</MudText>
-                        </div>
-                    }
                 }
 
                 <button class="koc-submit" type="submit">Save and continue</button>
             </form>
+
+            <MudText Typo="Typo.caption" Class="d-block mt-3" Style="opacity:.7;">
+                Either way an administrator can also create accounts here for people the corporate
+                directory doesn't cover — contractors and partners, for example.
+            </MudText>
         }
     </BlueprintCard>
 </div>
@@ -80,15 +72,9 @@
 @code {
     [SupplyParameterFromQuery(Name = "error")] private string? Error { get; set; }
     [SupplyParameterFromQuery(Name = "saved")] private string? SavedFlag { get; set; }
-    [SupplyParameterFromQuery(Name = "mode")] private string? Mode { get; set; }
 
     private bool Saved => SavedFlag == "1";
 
-    /// <summary>Pre-selected option: what the user picked before a validation bounce, else local accounts.</summary>
-    private KocAuthMode SelectedMode =>
-        Enum.TryParse<KocAuthMode>(Mode, ignoreCase: true, out var m) && m != KocAuthMode.Unconfigured
-            ? m
-            : KocAuthMode.LocalAccounts;
-
-    private static string ModeName(KocAuthMode mode) => KocAuthModeInfo.Find(mode)?.DisplayName ?? mode.ToString();
+    private static string SourceName(KocSignInSource source) =>
+        KocSignInSourceInfo.Find(source)?.DisplayName ?? source.ToString();
 }

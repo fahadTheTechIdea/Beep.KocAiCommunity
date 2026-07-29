@@ -20,7 +20,7 @@ public class AppOwnedRolesTests
     [Fact]
     public async Task Roles_assigned_in_the_console_take_effect_without_re_registering()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
 
         var admin = await Register(factory, "admin@koc.com", "Admin");          // first account → PlatformAdmin
         var member = await Register(factory, "member@koc.com", "Member");       // → Employee
@@ -49,7 +49,7 @@ public class AppOwnedRolesTests
     [Fact]
     public async Task The_last_platform_admin_cannot_be_demoted()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
         var admin = await Register(factory, "only.admin@koc.com", "Only Admin");
         var client = Authenticated(factory, admin.AccessToken);
 
@@ -63,7 +63,7 @@ public class AppOwnedRolesTests
     [Fact]
     public async Task An_unknown_role_is_refused_rather_than_silently_dropped()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
         var admin = await Register(factory, "admin2@koc.com", "Admin Two");
         var client = Authenticated(factory, admin.AccessToken);
 
@@ -76,7 +76,7 @@ public class AppOwnedRolesTests
     [Fact]
     public async Task The_assignable_roles_match_the_authorization_policies()
     {
-        using var factory = new LocalAccountsApiFactory();
+        using var factory = new RealTokenApiFactory();
         var admin = await Register(factory, "admin3@koc.com", "Admin Three");
 
         var roles = await Authenticated(factory, admin.AccessToken)
@@ -86,7 +86,7 @@ public class AppOwnedRolesTests
         roles.Functions.Should().BeEquivalentTo(["PlatformAdmin", "CompetitionAdmin", "LearningAdmin", "Auditor"]);
     }
 
-    private static async Task<AuthTokenResponse> Register(LocalAccountsApiFactory factory, string email, string displayName)
+    private static async Task<AuthTokenResponse> Register(RealTokenApiFactory factory, string email, string displayName)
     {
         var response = await factory.CreateAnonymousClient()
             .PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest(email, GoodPassword, displayName));
@@ -94,7 +94,7 @@ public class AppOwnedRolesTests
         return (await response.Content.ReadFromJsonAsync<AuthTokenResponse>())!;
     }
 
-    private static HttpClient Authenticated(LocalAccountsApiFactory factory, string token)
+    private static HttpClient Authenticated(RealTokenApiFactory factory, string token)
     {
         var client = factory.CreateAnonymousClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);

@@ -14,39 +14,22 @@ public static class SetupEndpoints
 
     public static IEndpointRouteBuilder MapKocSetupEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/setup", (
-            HttpContext context,
-            [FromForm] string mode,
-            [FromForm] string? entraTenantId,
-            [FromForm] string? entraClientId,
-            [FromForm] string? entraClientSecret,
-            KocSetupStore setup) =>
+        app.MapPost("/setup", (HttpContext context, [FromForm] string signInWith, KocSetupStore setup) =>
         {
-            // Once configured, setup is closed. Re-running it would let anyone who can reach the site
-            // swap the app to demo mode and walk in as an administrator.
+            // Once settled, setup is closed. Re-running it would let anyone who can reach the site point
+            // authentication somewhere they control and walk in.
             if (setup.IsConfigured)
             {
                 return Results.Redirect("/");
             }
 
-            if (!Enum.TryParse<KocAuthMode>(mode, ignoreCase: true, out var chosen) || chosen == KocAuthMode.Unconfigured)
+            if (!Enum.TryParse<KocSignInSource>(signInWith, ignoreCase: true, out var chosen)
+                || chosen == KocSignInSource.Unconfigured)
             {
-                return Results.Redirect("/setup?error=Choose+how+people+will+sign+in.");
+                return Results.Redirect("/setup?error=Choose+where+people+will+sign+in.");
             }
 
-            if (chosen == KocAuthMode.EntraId && (string.IsNullOrWhiteSpace(entraTenantId) || string.IsNullOrWhiteSpace(entraClientId)))
-            {
-                return Results.Redirect("/setup?error=Entra+sign-in+needs+both+a+tenant+id+and+a+client+id.&mode=EntraId");
-            }
-
-            setup.Save(new KocSetupState
-            {
-                Mode = chosen,
-                EntraTenantId = entraTenantId?.Trim(),
-                EntraClientId = entraClientId?.Trim(),
-                EntraClientSecret = entraClientSecret?.Trim(),
-            });
-
+            setup.Save(new KocSetupState { SignInWith = chosen });
             return Results.Redirect("/setup?saved=1");
         })
         .AllowAnonymous()

@@ -1,3 +1,4 @@
+using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Domain.Organization;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
@@ -29,9 +30,9 @@ public class KocApiFactory : WebApplicationFactory<Program>
     /// <summary>
     /// The sign-in mode the host boots in. Demo by default — the tests install their own authentication
     /// scheme, so what matters is that the mode is <em>pinned</em> rather than read from the developer's
-    /// machine. <see cref="LocalAccountsApiFactory"/> overrides it to exercise real registration/sign-in.
+    /// machine. <see cref="RealTokenApiFactory"/> overrides it to exercise real registration/sign-in.
     /// </summary>
-    protected virtual string AuthMode => "DemoPersonas";
+    protected virtual string AuthMode => "KocEnvironment";
 
     /// <summary>A fixed signing key so issued tokens validate within the test host.</summary>
     protected const string TestSigningKey = "dGVzdC1zaWduaW5nLWtleS0zMi1ieXRlcy1sb25nISEhIQ==";
@@ -55,7 +56,7 @@ public class KocApiFactory : WebApplicationFactory<Program>
         // Pinning matters: without it the host would fall back to the first-run setup file in the
         // developer's own LocalApplicationData and the suite would depend on whichever mode that machine
         // happens to have chosen.
-        builder.UseSetting("Auth:Mode", AuthMode);
+        builder.UseSetting("Auth:SignInWith", AuthMode);
         builder.UseSetting("Auth:TokenSigningKey", TestSigningKey);
         builder.UseSetting("Setup:File", Path.Combine(Path.GetTempPath(), $"koc-tests-{Guid.NewGuid():N}", "setup.json"));
 
@@ -93,7 +94,7 @@ public class KocApiFactory : WebApplicationFactory<Program>
 
     /// <summary>
     /// Swaps in the header-driven test scheme so a test can act as any user. Overridden by
-    /// <see cref="LocalAccountsApiFactory"/>, which keeps the host's real token validation so the
+    /// <see cref="RealTokenApiFactory"/>, which keeps the host's real token validation so the
     /// register/sign-in path is exercised end to end rather than bypassed.
     /// </summary>
     protected virtual void ConfigureAuthentication(IServiceCollection services) =>
@@ -129,17 +130,52 @@ public class KocApiFactory : WebApplicationFactory<Program>
             GrantCompetitionCreator(sub, VisibilityScope.Company);
         }
 
+        // Roles live in the platform's database, not in whatever the caller asserts — so a test that wants
+        // to act as a Manager has to record that, exactly as an administrator would in the RBAC console.
+        // The header only says *who* is calling.
+        if (sub is not null)
+        {
+            GrantRoles(sub, roles.Length > 0 ? roles : [KocRoles.Employee]);
+        }
+
         var client = CreateClient();
         if (sub is not null)
         {
             client.DefaultRequestHeaders.Add("X-Test-Sub", sub);
-            if (roles.Length > 0)
-            {
-                client.DefaultRequestHeaders.Add("X-Test-Roles", string.Join(',', roles));
-            }
         }
 
         return client;
+    }
+
+    /// <summary>
+    /// A client identifying as someone the platform has <b>no record of</b> — a colleague arriving from
+    /// the corporate directory for the first time. Deliberately seeds nothing, so first-arrival behaviour
+    /// is exercised. <paramref name="claimedRoles"/> are roles the identity provider asserts, which the
+    /// platform is expected to disregard.
+    /// </summary>
+    public HttpClient CreateClientAsUnknownUser(string sub, params string[] claimedRoles)
+    {
+        EnsureSeeded();
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Sub", sub);
+        if (claimedRoles.Length > 0)
+        {
+            client.DefaultRequestHeaders.Add("X-Test-Roles", string.Join(',', claimedRoles));
+        }
+
+        return client;
+    }
+
+    /// <summary>Records a user with exactly these roles, the way the admin console would.</summary>
+    public void GrantRoles(string sub, IReadOnlyList<string> roles)
+    {
+        lock (_seedLock)
+        {
+            using var scope = Services.CreateScope();
+            var directory = scope.ServiceProvider.GetRequiredService<IKocUserDirectory>();
+            directory.EnsureUserAsync(sub, sub, null).GetAwaiter().GetResult();
+            directory.SetRolesAsync(sub, roles).GetAwaiter().GetResult();
+        }
     }
 
     /// <summary>Grants (or updates) a user's competition-creation capability at the given max scope.</summary>

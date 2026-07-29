@@ -37,21 +37,20 @@ public static class KocProductionPreflight
                 errors.Add("DevAuth:Enabled must be false in Production — it authenticates every request as a dev user.");
             }
 
-            // The setup mode is the single answer to "how does this host authenticate people".
             var setup = new Security.KocSetupStore(configuration);
-            switch (setup.Mode)
+
+            if (setup.DemoPersonasEnabled)
             {
-                case Security.KocAuthMode.DemoPersonas:
-                    errors.Add("Authentication is set to the demo persona switcher, which signs everyone in without a password — finish setup and choose accounts, intranet sign-on, or Entra.");
-                    break;
+                errors.Add("Demo personas are enabled, which lets anyone pick who to be without a password — set Auth:DemoPersonas (and DevAuth:Enabled) to false.");
+            }
 
-                case Security.KocAuthMode.Unconfigured:
-                    errors.Add("No authentication has been configured — run the first-run setup, or set Auth:Mode (LocalAccounts, WindowsIntranet, EntraId).");
-                    break;
-
-                case Security.KocAuthMode.LocalAccounts when string.IsNullOrWhiteSpace(setup.Current.TokenSigningKey):
-                    errors.Add("Local accounts are configured without a token signing key — re-run setup, or set Auth:TokenSigningKey.");
-                    break;
+            if (setup.SignInWith == Security.KocSignInSource.Unconfigured)
+            {
+                errors.Add("Nobody has said where people sign in — complete the first-run setup, or set Auth:SignInWith (KocEnvironment or SiteAccounts).");
+            }
+            else if (string.IsNullOrWhiteSpace(setup.Current.TokenSigningKey))
+            {
+                errors.Add("There is no access-token signing key — re-run setup, or set Auth:TokenSigningKey. The Web and the API must be given the same one.");
             }
         }
 

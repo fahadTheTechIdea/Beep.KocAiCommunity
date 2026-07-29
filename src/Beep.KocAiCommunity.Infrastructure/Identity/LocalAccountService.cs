@@ -116,7 +116,13 @@ public static class LocalIdentityRegistration
     {
         services.AddIdentityCore<IdentityUser>(options =>
             {
-                options.User.RequireUniqueEmail = false;   // intranet/Entra accounts may have no email
+                options.User.RequireUniqueEmail = false;   // corporate accounts may have no email
+
+                // A corporate account name is whatever the directory calls it — "KOC\aldhubaib" — and the
+                // default validator rejects the backslash, which would silently fail to record the person
+                // and leave them with no roles. The name is an identifier we are given, not user input.
+                options.User.AllowedUserNameCharacters = string.Empty;
+
                 options.Password.RequiredLength = 8;
                 options.Password.RequireNonAlphanumeric = false;
                 options.Lockout.MaxFailedAccessAttempts = 10;

@@ -6,45 +6,39 @@ using Microsoft.Extensions.Configuration;
 namespace Beep.KocAiCommunity.ServiceDefaults.Security;
 
 /// <summary>
-/// What the first-run wizard decided. Persisted as JSON so the Web and the API — separate processes —
-/// boot into the same authentication mode.
+/// The first run's single answer, persisted so the Web and the API — separate processes — agree on where
+/// people sign in. Deliberately tiny: anything that can be decided once the site is running belongs in
+/// the site's admin settings, not here.
 /// </summary>
 public sealed record KocSetupState
 {
     /// <summary>Schema version of this file, so a future release can migrate it knowingly.</summary>
-    public int Version { get; init; } = 1;
+    public int Version { get; init; } = 2;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public KocAuthMode Mode { get; init; } = KocAuthMode.Unconfigured;
+    public KocSignInSource SignInWith { get; init; } = KocSignInSource.Unconfigured;
 
     /// <summary>When setup was completed (null while unconfigured).</summary>
     public DateTime? CompletedUtc { get; init; }
 
-    /// <summary>Who completed setup, when that is known (the first admin's email).</summary>
-    public string? CompletedBy { get; init; }
-
     /// <summary>
-    /// The symmetric key the API signs its access tokens with, base64. Generated during setup and shared
-    /// with the Web through this file — the two processes must agree or every API call is rejected.
+    /// The key the API signs its access tokens with, base64 — and the shared secret the Web proves itself
+    /// with when exchanging a corporate identity for one. Not a choice; generated at setup. The two
+    /// processes must agree or every API call is rejected.
     /// </summary>
     public string? TokenSigningKey { get; init; }
 
-    // ---- Entra ID (only when Mode is EntraId) ----
-    public string? EntraTenantId { get; init; }
-    public string? EntraClientId { get; init; }
-    public string? EntraClientSecret { get; init; }
-
-    public bool IsConfigured => Mode != KocAuthMode.Unconfigured;
+    public bool IsConfigured => SignInWith != KocSignInSource.Unconfigured;
 }
 
 /// <summary>
-/// Reads and writes the first-run setup file. The path comes from <c>Setup:File</c> when set; otherwise
-/// it lands in the machine's local application data under <c>KocAiCommunity</c>, which the Web and API
-/// both resolve to the same place when they run on one host.
+/// Reads and writes the first-run answer. The path comes from <c>Setup:File</c> when set; otherwise it
+/// lands in the machine's local application data under <c>KocAiCommunity</c>, which the Web and API both
+/// resolve to the same place when they run on one host.
 /// <para>
-/// Configuration still wins: a deployment that sets <c>Auth:Mode</c> (or the legacy <c>AzureAd</c> /
-/// <c>WindowsAuth</c> / <c>DevAuth</c> keys) is already configured and never sees the wizard. That keeps
-/// existing appsettings-driven environments — including the test host — working untouched.
+/// Configuration still wins: a deployment that sets <c>Auth:SignInWith</c> (or the legacy <c>AzureAd</c> /
+/// <c>WindowsAuth</c> keys) is already configured and never sees the wizard. That keeps existing
+/// appsettings-driven environments — including the test host — working untouched.
 /// </para>
 /// </summary>
 public sealed class KocSetupStore(IConfiguration configuration)
@@ -57,11 +51,15 @@ public sealed class KocSetupStore(IConfiguration configuration)
     /// <summary>Where the setup file lives for this host.</summary>
     public string FilePath { get; } = ResolvePath(configuration);
 
+    public KocSetupState Current => _cached ??= WithConfiguredKey(Load());
+
     /// <summary>
-    /// The effective setup: explicit configuration first (so appsettings/environment deployments and the
-    /// test host bypass the wizard), then the setup file, then "unconfigured".
+    /// A signing key given in configuration always wins. Deployments that inject it (and the test host)
+    /// must not depend on a file having been written first — without this the two processes would each
+    /// invent their own key and reject every token the other issued.
     /// </summary>
-    public KocSetupState Current => _cached ??= Load();
+    private KocSetupState WithConfiguredKey(KocSetupState state) =>
+        configuration["Auth:TokenSigningKey"] is { Length: > 0 } key ? state with { TokenSigningKey = key } : state;
 
     /// <summary>Re-reads from disk — used after the wizard writes, so the same process sees the change.</summary>
     public KocSetupState Reload()
@@ -72,18 +70,24 @@ public sealed class KocSetupStore(IConfiguration configuration)
 
     public bool IsConfigured => Current.IsConfigured;
 
-    public KocAuthMode Mode => Current.Mode;
+    public KocSignInSource SignInWith => Current.SignInWith;
 
-    /// <summary>Persists the wizard's answers, filling in a fresh signing key when one is needed.</summary>
+    /// <summary>
+    /// Demo personas: no real authentication, the visitor picks who to be. A development and
+    /// demonstration convenience set in configuration — never a first-run choice, and refused in
+    /// Production. Roles still come from the database like everyone else's.
+    /// </summary>
+    public bool DemoPersonasEnabled =>
+        configuration.GetValue("Auth:DemoPersonas", false) || configuration.GetValue("DevAuth:Enabled", false);
+
+    /// <summary>Persists the wizard's answer, generating the signing key the two processes share.</summary>
     public KocSetupState Save(KocSetupState state)
     {
         var completed = state with
         {
-            Version = 1,
+            Version = 2,
             CompletedUtc = state.CompletedUtc ?? DateTime.UtcNow,
-            TokenSigningKey = state.Mode == KocAuthMode.LocalAccounts
-                ? (string.IsNullOrWhiteSpace(state.TokenSigningKey) ? NewSigningKey() : state.TokenSigningKey)
-                : state.TokenSigningKey,
+            TokenSigningKey = string.IsNullOrWhiteSpace(state.TokenSigningKey) ? NewSigningKey() : state.TokenSigningKey,
         };
 
         lock (WriteLock)
@@ -101,35 +105,25 @@ public sealed class KocSetupStore(IConfiguration configuration)
         return completed;
     }
 
-    /// <summary>A 256-bit signing key, base64 — enough for HMAC-SHA256 access tokens.</summary>
+    /// <summary>A 256-bit key, base64 — enough for HMAC-SHA256 tokens and the identity exchange.</summary>
     public static string NewSigningKey() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
     private KocSetupState Load()
     {
-        // 1. An explicit mode in configuration is authoritative and skips the wizard entirely.
-        if (Enum.TryParse<KocAuthMode>(configuration["Auth:Mode"], ignoreCase: true, out var configured)
-            && configured != KocAuthMode.Unconfigured)
+        // 1. An explicit answer in configuration is authoritative and skips the wizard entirely.
+        if (Enum.TryParse<KocSignInSource>(configuration["Auth:SignInWith"], ignoreCase: true, out var configured)
+            && configured != KocSignInSource.Unconfigured)
         {
             return FromConfiguration(configured);
         }
 
-        // 2. Legacy/explicit keys mean this deployment was configured before the wizard existed.
-        if (SecurityExtensions.IsEntraConfigured(configuration))
+        // 2. Keys from before the wizard existed mean this deployment was already configured.
+        if (SecurityExtensions.IsEntraConfigured(configuration) || SecurityExtensions.IsWindowsAuthEnabled(configuration))
         {
-            return FromConfiguration(KocAuthMode.EntraId);
+            return FromConfiguration(KocSignInSource.KocEnvironment);
         }
 
-        if (SecurityExtensions.IsWindowsAuthEnabled(configuration))
-        {
-            return FromConfiguration(KocAuthMode.WindowsIntranet);
-        }
-
-        if (configuration.GetValue("DevAuth:Enabled", false))
-        {
-            return FromConfiguration(KocAuthMode.DemoPersonas);
-        }
-
-        // 3. Otherwise the setup file decides — and its absence means "ask the user".
+        // 3. Otherwise the setup file decides — and its absence means "ask".
         try
         {
             if (File.Exists(FilePath)
@@ -147,14 +141,11 @@ public sealed class KocSetupStore(IConfiguration configuration)
         return new KocSetupState();
     }
 
-    private KocSetupState FromConfiguration(KocAuthMode mode) => new()
+    private KocSetupState FromConfiguration(KocSignInSource source) => new()
     {
-        Mode = mode,
+        SignInWith = source,
         CompletedUtc = null,
         TokenSigningKey = configuration["Auth:TokenSigningKey"],
-        EntraTenantId = configuration["AzureAd:TenantId"],
-        EntraClientId = configuration["AzureAd:ClientId"],
-        EntraClientSecret = configuration["AzureAd:ClientSecret"],
     };
 
     private static string ResolvePath(IConfiguration configuration)

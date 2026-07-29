@@ -1,51 +1,36 @@
 namespace Beep.KocAiCommunity.ServiceDefaults.Security;
 
 /// <summary>
-/// How the platform authenticates people. Chosen once in the first-run wizard and persisted by
-/// <see cref="KocSetupStore"/>; both the Web and the API read the same answer so they agree on who a
-/// caller is. Authentication schemes are wired at startup, so changing the mode needs a restart.
+/// Where people prove who they are. This is the <b>only</b> question the first run asks, because it is
+/// the only one that cannot be answered from inside a site nobody can sign in to yet. Everything else —
+/// which corporate mechanism, the Entra tenant, and every other setting — is managed in the site's admin
+/// settings at runtime.
 /// </summary>
-public enum KocAuthMode
+public enum KocSignInSource
 {
     /// <summary>Nothing chosen yet — the app sends every visitor to the setup wizard.</summary>
     Unconfigured = 0,
 
     /// <summary>
-    /// Accounts held by this app (ASP.NET Core Identity): people register with an email and password
-    /// and sign in on a login page. The default for a normal web deployment.
+    /// The KOC environment: the corporate Windows account the visitor already holds, verified by IIS
+    /// before a request reaches this app. Nothing to configure — IIS is the configuration.
     /// </summary>
-    LocalAccounts = 1,
+    KocEnvironment = 1,
 
-    /// <summary>
-    /// Intranet single sign-on (Negotiate/Kerberos). The browser hands the site the signed-in Windows
-    /// account and there is no login page — the KOC-network deployment.
-    /// </summary>
-    WindowsIntranet = 2,
-
-    /// <summary>Microsoft Entra ID (Azure AD) sign-in against the corporate tenant.</summary>
-    EntraId = 3,
-
-    /// <summary>
-    /// No real sign-in: the app runs as a switchable demo persona. For local development and
-    /// demonstrations only — <see cref="KocProductionPreflight"/> refuses to start Production on it.
-    /// </summary>
-    DemoPersonas = 4,
+    /// <summary>Accounts belonging to this site: people register and sign in with a password here.</summary>
+    SiteAccounts = 2,
 }
 
-/// <summary>Display metadata for the modes, so the wizard doesn't hardcode prose per option.</summary>
-public sealed record KocAuthModeInfo(KocAuthMode Mode, string DisplayName, string Summary, bool NeedsRestartToApply = true)
+/// <summary>Display text for the one first-run choice, so the wizard doesn't hardcode prose.</summary>
+public sealed record KocSignInSourceInfo(KocSignInSource Source, string DisplayName, string Summary)
 {
-    public static readonly IReadOnlyList<KocAuthModeInfo> All =
+    public static readonly IReadOnlyList<KocSignInSourceInfo> All =
     [
-        new(KocAuthMode.LocalAccounts, "Accounts on this site",
-            "People register with an email and password and sign in here. Choose this to run like an ordinary website."),
-        new(KocAuthMode.WindowsIntranet, "Corporate intranet sign-on (Windows)",
-            "The browser passes each visitor's signed-in Windows account through automatically — no login page. Requires the site to run on the corporate network with Windows Authentication enabled."),
-        new(KocAuthMode.EntraId, "Microsoft Entra ID",
-            "Sign in against the corporate Entra (Azure AD) tenant. Needs a tenant id and an app registration."),
-        new(KocAuthMode.DemoPersonas, "Demo — no sign-in",
-            "Skip authentication entirely and switch between sample roles from the top bar. For local exploration only; the app refuses to run this way in Production."),
+        new(KocSignInSource.KocEnvironment, "The KOC environment",
+            "People arrive already signed in with their corporate Windows account — IIS verifies them before the request reaches this site, and there is no password here to hold or configure. Choose this for a deployment inside KOC."),
+        new(KocSignInSource.SiteAccounts, "Accounts on this site",
+            "People register with an email and password here. Choose this when the site is published on the web, outside the corporate network."),
     ];
 
-    public static KocAuthModeInfo? Find(KocAuthMode mode) => All.FirstOrDefault(m => m.Mode == mode);
+    public static KocSignInSourceInfo? Find(KocSignInSource source) => All.FirstOrDefault(s => s.Source == source);
 }

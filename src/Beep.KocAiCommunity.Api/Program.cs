@@ -38,25 +38,14 @@ builder.Services.AddKocCurrentUser();
 builder.Services.AddKocAuthorization();
 builder.Services.AddKocApiAuthentication(builder.Configuration);
 
-// The platform's own user + role store. Always registered: sign-in varies by deployment, but who a
-// person is to this platform — and what they may do — is always recorded here.
-var authMode = new Beep.KocAiCommunity.ServiceDefaults.Security.KocSetupStore(builder.Configuration).Mode;
+// Nothing here varies by deployment. The API validates this platform's own access token, reads roles
+// from this platform's database, and can always hold an account for someone the corporate directory
+// doesn't cover. Where a person originally proved themselves is the Web's business.
 builder.Services.AddKocUserDirectory();
-
-// Authorization comes from that store, not from whatever the identity provider asserted. Demo mode is
-// the exception: there the switchable persona is the point.
-if (authMode != Beep.KocAiCommunity.ServiceDefaults.Security.KocAuthMode.DemoPersonas)
-{
-    builder.Services.AddScoped<Microsoft.AspNetCore.Authentication.IClaimsTransformation,
-        Beep.KocAiCommunity.Api.Security.AppDatabaseRoleClaims>();
-}
-
-// Passwords and the token issuer exist only where this app holds the credentials.
-if (authMode == Beep.KocAiCommunity.ServiceDefaults.Security.KocAuthMode.LocalAccounts)
-{
-    builder.Services.AddKocLocalAccounts();
-    builder.Services.AddScoped<Beep.KocAiCommunity.Api.Security.AccessTokenIssuer>();
-}
+builder.Services.AddKocLocalAccounts();
+builder.Services.AddScoped<Beep.KocAiCommunity.Api.Security.AccessTokenIssuer>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authentication.IClaimsTransformation,
+    Beep.KocAiCommunity.Api.Security.AppDatabaseRoleClaims>();
 
 // Global fixed-window rate limit (generous default; per-endpoint policies layer on later).
 builder.Services.AddRateLimiter(options =>
@@ -111,11 +100,7 @@ v1.MapGet("/ping", () => Results.Ok(new { message = "pong" }));
 v1.MapMetaEndpoints();
 v1.MapMeEndpoints();
 
-// Registration/sign-in exists only where this app holds the passwords.
-if (authMode == Beep.KocAiCommunity.ServiceDefaults.Security.KocAuthMode.LocalAccounts)
-{
-    v1.MapAuthEndpoints();
-}
+v1.MapAuthEndpoints();
 
 v1.MapOrgEndpoints();
 v1.MapLearningEndpoints();
@@ -156,6 +141,7 @@ if (app.Configuration.GetValue("Seed:Enabled", false))
     await Beep.KocAiCommunity.Infrastructure.Engagement.EngagementSeeder.SeedBadgesAsync(db);
     await Beep.KocAiCommunity.Infrastructure.Organization.DevOrgSeeder.SeedDevOrgAsync(db);
     await Beep.KocAiCommunity.Infrastructure.Workflow.WorkflowTemplateSeeder.SeedAsync(db);
+    await Beep.KocAiCommunity.Infrastructure.Competitions.CompetitionCategorySeeder.SeedAsync(db);
     var artifacts = scope.ServiceProvider.GetRequiredService<Beep.KocAiCommunity.Application.Storage.IArtifactService>();
     await Beep.KocAiCommunity.Infrastructure.Competitions.CompetitionSeeder.SeedDemoAsync(db, artifacts);
 }

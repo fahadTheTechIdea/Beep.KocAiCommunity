@@ -1,4 +1,5 @@
 using Beep.KocAiCommunity.Api.Security;
+using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Identity;
 using Beep.KocAiCommunity.Infrastructure.Identity;
 using Beep.KocAiCommunity.ServiceDefaults.Security;
@@ -48,6 +49,42 @@ public static class AuthEndpoints
                 : Results.Json(new { error = result.Error }, statusCode: StatusCodes.Status401Unauthorized);
         })
         .WithName("Login")
+        .AllowAnonymous()
+        .RequireRateLimiting(RateLimitPolicy);
+
+        // Inside KOC, IIS has already verified the Windows account by the time the Web sees the request.
+        // The Web vouches for that person here and receives a platform token, so the API keeps one way of
+        // authenticating a caller no matter how they originally signed in. The vouching is what gets
+        // checked: an HMAC proving the caller holds the key both processes share (see IdentityExchange).
+        group.MapPost("/auth/exchange", async (
+            ExchangeIdentityRequest request, HttpContext http, KocSetupStore setup,
+            IKocUserDirectory directory, AccessTokenIssuer tokens, CancellationToken ct) =>
+        {
+            var userId = (request.UserId ?? string.Empty).Trim();
+            if (userId.Length == 0)
+            {
+                return Results.BadRequest(new { error = "A user id is required." });
+            }
+
+            if (!IdentityExchange.IsValid(
+                    userId,
+                    http.Request.Headers[IdentityExchange.TimestampHeader],
+                    http.Request.Headers[IdentityExchange.SignatureHeader],
+                    setup.Current.TokenSigningKey,
+                    DateTimeOffset.UtcNow))
+            {
+                return Results.Json(new { error = "This caller may not vouch for a user." },
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            var roles = await directory.EnsureUserAsync(userId, request.DisplayName, request.Email, ct);
+            var displayName = string.IsNullOrWhiteSpace(request.DisplayName)
+                ? KocUserDirectory.DisplayNameFor(null, request.Email ?? userId)
+                : request.DisplayName!;
+            var (token, expires) = tokens.Issue(userId, displayName, roles);
+            return Results.Ok(new AuthTokenResponse(token, expires, userId, displayName, roles));
+        })
+        .WithName("ExchangeIdentity")
         .AllowAnonymous()
         .RequireRateLimiting(RateLimitPolicy);
 
