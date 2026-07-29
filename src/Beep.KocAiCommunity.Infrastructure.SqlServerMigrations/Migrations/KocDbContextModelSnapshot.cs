@@ -240,51 +240,6 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.ToTable("CompetitionCreatorGrants", "koc");
                 });
 
-            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Authorization.UserEntityPermission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ExpiresUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("GrantedByUserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("GrantedUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PermissionKey")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ResourceType")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "ResourceType", "ResourceId");
-
-                    b.HasIndex("UserId", "ResourceType", "ResourceId", "PermissionKey")
-                        .IsUnique();
-
-                    b.ToTable("UserEntityPermissions", "koc");
-                });
-
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Community.Discussion", b =>
                 {
                     b.Property<Guid>("Id")

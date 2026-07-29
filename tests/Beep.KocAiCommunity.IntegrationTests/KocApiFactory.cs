@@ -166,16 +166,56 @@ public class KocApiFactory : WebApplicationFactory<Program>
         return client;
     }
 
-    /// <summary>Records a user with exactly these roles, the way the admin console would.</summary>
+    /// <summary>
+    /// Records a user so they hold these roles, the way the admin console would — which means two
+    /// different places. A <b>position</b> (Employee … CEO) is the person's place in the reporting line
+    /// and lives on their org membership; a <b>function</b> role (PlatformAdmin, …) is a capability
+    /// granted against the account. Tests still just say <c>CreateClientAs("sub", "Manager")</c>.
+    /// </summary>
     public void GrantRoles(string sub, IReadOnlyList<string> roles)
     {
         lock (_seedLock)
         {
             using var scope = Services.CreateScope();
             var directory = scope.ServiceProvider.GetRequiredService<IKocUserDirectory>();
+            var db = scope.ServiceProvider.GetRequiredService<KocDbContext>();
+
             directory.EnsureUserAsync(sub, sub, null).GetAwaiter().GetResult();
-            directory.SetRolesAsync(sub, roles).GetAwaiter().GetResult();
+
+            var functions = roles.Where(r => !KocRoles.AllPositions.Contains(r, StringComparer.OrdinalIgnoreCase)).ToList();
+            directory.SetRolesAsync(sub, functions).GetAwaiter().GetResult();
+
+            var position = roles.FirstOrDefault(r => KocRoles.AllPositions.Contains(r, StringComparer.OrdinalIgnoreCase));
+            if (position is not null && Enum.TryParse<PositionLevel>(position, ignoreCase: true, out var level))
+            {
+                SetPosition(db, sub, level);
+            }
         }
+    }
+
+    /// <summary>
+    /// Puts a position on the user's primary org placement, creating one at the company root when the
+    /// test hasn't placed them itself. Users the factory already seeds into the tree keep their unit —
+    /// only the level changes — so org-scope expectations elsewhere are unaffected.
+    /// </summary>
+    private void SetPosition(KocDbContext db, string sub, PositionLevel level)
+    {
+        var membership = db.OrgMemberships.FirstOrDefault(m => m.UserId == sub && m.IsPrimary && m.ToUtc == null);
+        if (membership is null)
+        {
+            membership = new OrgMembership
+            {
+                UserId = sub,
+                OrgUnitId = Company,
+                IsPrimary = true,
+                FromUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                CreatedUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            };
+            db.OrgMemberships.Add(membership);
+        }
+
+        membership.PositionLevel = level;
+        db.SaveChanges();
     }
 
     /// <summary>Grants (or updates) a user's competition-creation capability at the given max scope.</summary>

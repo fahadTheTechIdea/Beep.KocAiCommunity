@@ -65,9 +65,25 @@ public class ExternalSignInRolesTests
         var colleague = factory.CreateClientAsUnknownUser("KOC-colleague");
         await colleague.GetAsync("/api/v1/me");                               // recorded as Employee
 
-        var granted = await admin.PutAsJsonAsync("/api/v1/admin/users/KOC-colleague/roles",
-            new SetUserRolesRequest(["Manager", "CompetitionAdmin"]));
-        granted.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        // Two different things, in two different places: a capability is granted against the account,
+        // a position is a place in the reporting line.
+        (await admin.PutAsJsonAsync("/api/v1/admin/users/KOC-colleague/roles",
+            new SetUserRolesRequest(["CompetitionAdmin"]))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // A position needs somewhere to sit, so it is refused until the person has a department —
+        // "Manager of nothing" would otherwise hand out company-wide scope by accident.
+        var premature = await admin.PutAsJsonAsync("/api/v1/admin/users/KOC-colleague/position",
+            new SetUserPositionRequest("Manager"));
+        premature.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await premature.Content.ReadAsStringAsync()).Should().Contain("department first");
+
+        // The real order: give the unit a code, place the person in it, then set their level.
+        (await admin.PutAsJsonAsync($"/api/v1/admin/org-units/{factory.T1}/code", new SetOrgUnitCodeRequest("T1")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await admin.PutAsJsonAsync("/api/v1/admin/users/KOC-colleague/profile",
+            new UpsertUserProfileRequest(null, null, "T1"))).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await admin.PutAsJsonAsync("/api/v1/admin/users/KOC-colleague/position",
+            new SetUserPositionRequest("Manager"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Effective immediately — the corporate account presents no new credential, and authorization is
         // read from the database on each request.

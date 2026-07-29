@@ -27,15 +27,21 @@ public class AppOwnedRolesTests
 
         var adminClient = Authenticated(factory, admin.AccessToken);
         var users = await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/v1/admin/users");
-        users!.Single(u => u.UserId == member.UserId).Roles.Should().BeEquivalentTo(["Employee"]);
+
+        // The console lists granted capabilities. A new member holds none — their authority comes from
+        // their position, which is reported separately because it is not granted here.
+        var listed = users!.Single(u => u.UserId == member.UserId);
+        listed.Roles.Should().BeEmpty();
+        listed.PositionLevel.Should().Be("Employee");
 
         // The member cannot reach an admin-only endpoint...
         var memberClient = Authenticated(factory, member.AccessToken);
         (await memberClient.GetAsync("/api/v1/admin/users")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        // ...until an administrator grants the role in the console.
+        // ...until an administrator grants the role in the console. Only function roles are granted here;
+        // the position comes from the org directory.
         var granted = await adminClient.PutAsJsonAsync($"/api/v1/admin/users/{member.UserId}/roles",
-            new SetUserRolesRequest(["Employee", "PlatformAdmin"]));
+            new SetUserRolesRequest(["PlatformAdmin"]));
         granted.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // The same token now carries the new role: authorization is read from the database per request,
@@ -58,6 +64,37 @@ public class AppOwnedRolesTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest, "locking everyone out would need a database edit to undo");
         (await client.GetAsync("/api/v1/admin/users")).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task A_position_cannot_be_granted_as_a_role()
+    {
+        // Position levels mirror the reporting line and come from the org directory; function roles are
+        // capabilities an admin grants. Accepting a position here would store a second copy that the
+        // next read silently overrides, which is exactly the drift this split exists to prevent.
+        using var factory = new RealTokenApiFactory();
+        var admin = await Register(factory, "position.admin@koc.com", "Position Admin");
+        var client = Authenticated(factory, admin.AccessToken);
+
+        var response = await client.PutAsJsonAsync($"/api/v1/admin/users/{admin.UserId}/roles",
+            new SetUserRolesRequest(["PlatformAdmin", "Manager"]));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("org directory");
+    }
+
+    [Fact]
+    public async Task Everyone_holds_at_least_the_base_position()
+    {
+        // Someone the org directory has not placed yet is still a member of the platform. Without a
+        // floor of Employee they would fail every position policy and see nothing at all.
+        using var factory = new RealTokenApiFactory();
+        await Register(factory, "first.admin.pos@koc.com", "First");
+        var newcomer = await Register(factory, "unplaced@koc.com", "Unplaced");
+
+        var me = await Authenticated(factory, newcomer.AccessToken).GetFromJsonAsync<MeResponse>("/api/v1/me");
+        me!.Roles.Should().Contain("Employee");
+        me.PositionLevel.Should().Be("Employee");
     }
 
     [Fact]

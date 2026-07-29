@@ -38,21 +38,6 @@ public sealed class OrgMembershipConfiguration : IEntityTypeConfiguration<OrgMem
     }
 }
 
-public sealed class UserEntityPermissionConfiguration : IEntityTypeConfiguration<UserEntityPermission>
-{
-    public void Configure(EntityTypeBuilder<UserEntityPermission> b)
-    {
-        b.ToTable("UserEntityPermissions", "koc");
-        b.HasKey(x => x.Id);
-        b.Property(x => x.UserId).HasMaxLength(450).IsRequired();
-        b.Property(x => x.ResourceType).HasMaxLength(64).IsRequired();
-        b.Property(x => x.PermissionKey).HasMaxLength(128).IsRequired();
-        b.Property(x => x.GrantedByUserId).HasMaxLength(450).IsRequired();
-        b.HasIndex(x => new { x.UserId, x.ResourceType, x.ResourceId });
-        b.HasIndex(x => new { x.UserId, x.ResourceType, x.ResourceId, x.PermissionKey }).IsUnique();
-    }
-}
-
 public sealed class CompetitionCreatorGrantConfiguration : IEntityTypeConfiguration<CompetitionCreatorGrant>
 {
     public void Configure(EntityTypeBuilder<CompetitionCreatorGrant> b)

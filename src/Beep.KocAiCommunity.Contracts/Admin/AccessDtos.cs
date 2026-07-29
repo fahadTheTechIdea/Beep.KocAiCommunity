@@ -23,10 +23,17 @@ public sealed record UpsertUserProfileRequest(string? Email, string? DisplayName
 /// <summary>Grants (or updates) a user's competition-creation capability at a maximum audience level.</summary>
 public sealed record SetCompetitionGrantRequest(string MaxScope);
 
-/// <summary>Replaces a user's platform roles with exactly this set.</summary>
+/// <summary>Replaces a user's <b>function</b> roles with exactly this set. Positions are refused.</summary>
 public sealed record SetUserRolesRequest(IReadOnlyList<string> Roles);
 
-/// <summary>The role names an administrator may assign, for the console's editor.</summary>
+/// <summary>Sets a user's position level on their primary org placement.</summary>
+public sealed record SetUserPositionRequest(string Position);
+
+/// <summary>
+/// What the console's editors offer. <paramref name="Functions"/> are assignable as roles;
+/// <paramref name="Positions"/> are the valid values for the position dropdown — they come from the org
+/// directory rather than being granted, so they are listed separately.
+/// </summary>
 public sealed record AssignableRolesDto(IReadOnlyList<string> Positions, IReadOnlyList<string> Functions);
 
 /// <summary>A learning track and the competition it points people at, for the admin linking editor.</summary>

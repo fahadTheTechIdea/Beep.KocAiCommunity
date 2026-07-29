@@ -168,6 +168,9 @@ public interface IKocApiClient
 
     /// <summary>Replaces a user's platform roles. Returns null on success, or the reason it was refused.</summary>
     Task<string?> SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default);
+
+    /// <summary>Sets a user's position level on their org placement. Returns null on success, or the reason.</summary>
+    Task<string?> SetUserPositionAsync(string userId, string position, CancellationToken ct = default);
     Task<string?> SetOrgUnitCodeAsync(Guid orgUnitId, string? code, CancellationToken ct = default);
 
     // Versioned workflow registry.
@@ -765,6 +768,9 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
     public Task<string?> SetCompetitionRecommendedTrackAsync(Guid competitionId, Guid? trackId, CancellationToken ct = default) =>
         PutVoidAsync($"/api/v1/admin/competitions/{competitionId}/recommended-track",
             new SetRecommendedTrackRequest(trackId), ct);
+
+    public Task<string?> SetUserPositionAsync(string userId, string position, CancellationToken ct = default) =>
+        PutVoidAsync($"/api/v1/admin/users/{userId}/position", new SetUserPositionRequest(position), ct);
 
     public Task<string?> SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default) =>
         PutVoidAsync($"/api/v1/admin/users/{userId}/roles", new SetUserRolesRequest(roles), ct);

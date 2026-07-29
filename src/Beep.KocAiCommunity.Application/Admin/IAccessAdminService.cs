@@ -34,11 +34,23 @@ public interface IAccessAdminService
     Task<AccessUserView> UpsertProfileAsync(string userId, string? email, string? displayName, string? departmentCode, CancellationToken ct = default);
 
     /// <summary>
-    /// Replaces a user's platform roles. These decide what every authorization policy allows, and they
-    /// live in this database whichever way the person signs in — so an administrator can grant a
-    /// corporate-intranet colleague CompetitionAdmin here without touching the directory.
+    /// Replaces a user's <b>function</b> roles — PlatformAdmin, CompetitionAdmin, LearningAdmin, Auditor.
+    /// These live in this database whichever way the person signs in, so an administrator can grant a
+    /// corporate-intranet colleague CompetitionAdmin without touching the directory.
+    /// <para>
+    /// Position levels are not set here. They mirror the reporting line and come from the person's org
+    /// placement — see <see cref="SetUserPositionAsync"/>.
+    /// </para>
     /// </summary>
     Task SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default);
+
+    /// <summary>
+    /// Sets a user's position level on their primary org placement, which is what
+    /// <c>RequireSupervisor</c> and the rest of the position policies read. Requires the user to have a
+    /// department: a position is a place in the reporting line, and without one there is nothing to
+    /// hold it.
+    /// </summary>
+    Task<AccessUserView> SetUserPositionAsync(string userId, PositionLevel position, CancellationToken ct = default);
 
     /// <summary>Grants (or updates) a user's competition-creation capability at the given max scope.</summary>
     Task SetCompetitionGrantAsync(string userId, VisibilityScope maxScope, CancellationToken ct = default);

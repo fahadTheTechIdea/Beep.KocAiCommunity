@@ -385,21 +385,26 @@ else
                                             }
                                         </MudSelect>
                                     </td>
-                                    <td><MudChip T="string" Size="Size.Small" Variant="Variant.Text">@u.PositionLevel</MudChip></td>
                                     <td>
-                                        @* One position level plus any number of function roles — the same
-                                           shape the authorization policies expect. *@
+                                        @* The position is the person's place in the reporting line, so it is
+                                           set on their org placement — not granted like a capability. *@
+                                        <MudSelect T="string" Value="@u.PositionLevel" ValueChanged="@(v => OnPositionChanged(u, v))"
+                                                   Variant="Variant.Text" Margin="Margin.Dense" Dense="true">
+                                            @foreach (var p in _positionRoles)
+                                            {
+                                                <MudSelectItem T="string" Value="@p">@p</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </td>
+                                    <td>
+                                        @* Function roles only — additive capabilities an admin grants. *@
                                         <MudSelect T="string" MultiSelection="true" SelectedValues="@RoleSet(u)"
                                                    SelectedValuesChanged="@(v => OnRolesChanged(u, v))"
-                                                   MultiSelectionTextFunc="@(sel => sel.Count == 0 ? "No access" : string.Join(", ", sel))"
+                                                   MultiSelectionTextFunc="@(sel => sel.Count == 0 ? "None" : string.Join(", ", sel))"
                                                    Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
-                                            @foreach (var r in _positionRoles)
-                                            {
-                                                <MudSelectItem T="string" Value="@r">@r</MudSelectItem>
-                                            }
                                             @foreach (var r in _functionRoles)
                                             {
-                                                <MudSelectItem T="string" Value="@r">★ @r</MudSelectItem>
+                                                <MudSelectItem T="string" Value="@r">@r</MudSelectItem>
                                             }
                                         </MudSelect>
                                     </td>
@@ -740,7 +745,19 @@ else
         }
     }
 
-    private static IReadOnlyCollection<string> RoleSet(AdminUserDto u) => u.Roles ?? [];
+    // Only function roles appear in the roles editor; the position is shown by its own dropdown, so
+    // filtering here keeps the multi-select from displaying a value it cannot change.
+    private IReadOnlyCollection<string> RoleSet(AdminUserDto u) =>
+        [.. (u.Roles ?? []).Where(r => _functionRoles.Contains(r, StringComparer.OrdinalIgnoreCase))];
+
+    private async Task OnPositionChanged(AdminUserDto u, string position)
+    {
+        var error = await Api.SetUserPositionAsync(u.UserId, position);
+        Snackbar.Add(
+            error ?? $"{u.DisplayName ?? u.UserId} is now {position}.",
+            error is null ? Severity.Success : Severity.Warning);
+        _users = await Api.GetAdminUsersAsync();
+    }
 
     private async Task OnRolesChanged(AdminUserDto u, IReadOnlyCollection<string> roles)
     {

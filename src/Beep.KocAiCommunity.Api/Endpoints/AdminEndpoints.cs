@@ -249,6 +249,24 @@ public static class AdminEndpoints
             }
         }).WithName("AdminSetUserRoles");
 
+        admin.MapPut("/users/{userId}/position", async (
+            string userId, SetUserPositionRequest req, IAccessAdminService svc, CancellationToken ct) =>
+        {
+            if (!Enum.TryParse<PositionLevel>(req.Position, ignoreCase: true, out var position))
+            {
+                return Results.BadRequest(new { error = $"Unknown position '{req.Position}'." });
+            }
+
+            try
+            {
+                return Results.Ok(ToUserDto(await svc.SetUserPositionAsync(userId, position, ct)));
+            }
+            catch (AccessAdminException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        }).WithName("AdminSetUserPosition");
+
         admin.MapPut("/users/{userId}/competition-grant", async (string userId, SetCompetitionGrantRequest req, IAccessAdminService svc, CancellationToken ct) =>
         {
             if (!Enum.TryParse<VisibilityScope>(req.MaxScope, ignoreCase: true, out var scope))

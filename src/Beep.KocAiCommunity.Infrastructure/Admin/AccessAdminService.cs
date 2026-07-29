@@ -149,6 +149,47 @@ public sealed class AccessAdminService(KocDbContext db, IAuditEnvelope audit, IK
             AfterJson: $"{{\"roles\":\"{string.Join(',', roles)}\"}}"), ct);
     }
 
+    public async Task<AccessUserView> SetUserPositionAsync(string userId, PositionLevel position, CancellationToken ct = default)
+    {
+        var membership = await db.OrgMemberships
+            .FirstOrDefaultAsync(m => m.UserId == userId && m.IsPrimary && m.ToUtc == null, ct);
+
+        if (membership is null)
+        {
+            // Create one from the department already recorded on the profile, so an administrator can do
+            // this in the order the console presents it — set the department, then the position.
+            var departmentCode = await db.UserProfiles.AsNoTracking()
+                .Where(p => p.UserId == userId).Select(p => p.DepartmentId).FirstOrDefaultAsync(ct);
+
+            if (departmentCode is null)
+            {
+                throw new AccessAdminException(
+                    "Give this person a department first — a position level is a place in the reporting line.");
+            }
+
+            var unit = await db.OrgUnits.FirstOrDefaultAsync(u => u.Code == departmentCode, ct)
+                ?? throw new AccessAdminException($"No org unit has the code '{departmentCode}'.");
+
+            membership = new OrgMembership
+            {
+                UserId = userId,
+                OrgUnitId = unit.Id,
+                IsPrimary = true,
+                FromUtc = DateTime.UtcNow,
+                CreatedByUserId = me.UserId ?? userId,
+                CreatedUtc = DateTime.UtcNow,
+            };
+            db.OrgMemberships.Add(membership);
+        }
+
+        membership.PositionLevel = position;
+        await db.SaveChangesAsync(ct);
+        await audit.WriteAsync(new AuditEntry("user-position.set", "user", userId,
+            AfterJson: $"{{\"position\":\"{position}\"}}"), ct);
+
+        return (await ListUsersAsync(ct)).First(u => u.UserId == userId);
+    }
+
     private async Task<bool> IsLastPlatformAdminAsync(string userId, CancellationToken ct)
     {
         var adminRoleId = await db.Set<Microsoft.AspNetCore.Identity.IdentityRole>().AsNoTracking()

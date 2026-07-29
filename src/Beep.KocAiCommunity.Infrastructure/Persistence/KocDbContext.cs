@@ -29,7 +29,6 @@ public class KocDbContext(DbContextOptions<KocDbContext> options)
 {
     public DbSet<OrgUnit> OrgUnits => Set<OrgUnit>();
     public DbSet<OrgMembership> OrgMemberships => Set<OrgMembership>();
-    public DbSet<UserEntityPermission> UserEntityPermissions => Set<UserEntityPermission>();
     public DbSet<CompetitionCreatorGrant> CompetitionCreatorGrants => Set<CompetitionCreatorGrant>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<ArtifactReference> ArtifactReferences => Set<ArtifactReference>();

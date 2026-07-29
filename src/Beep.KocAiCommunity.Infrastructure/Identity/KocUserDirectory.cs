@@ -1,4 +1,5 @@
 using Beep.KocAiCommunity.Application.Security;
+using Beep.KocAiCommunity.Domain.Organization;
 using Beep.KocAiCommunity.Domain.Engagement;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -25,15 +26,24 @@ public sealed class KocUserDirectory(
     KocDbContext db,
     ILogger<KocUserDirectory> logger) : IKocUserDirectory
 {
-    /// <summary>Roles granted to the first person to appear on an empty installation.</summary>
-    public static readonly string[] FirstAccountRoles = [KocRoles.Manager, KocRoles.PlatformAdmin];
+    // Two kinds of role, two different owners — as KocRoles has always documented:
+    //
+    //   Position (Employee … CEO)  mirrors the reporting line, and comes from the org directory.
+    //   Function (PlatformAdmin …) is a platform capability an administrator grants.
+    //
+    // Only function roles are stored against the account. The position is derived from the user's org
+    // membership on every read, so moving someone in the org tree moves their authority with them and
+    // there is no second copy to drift.
 
-    /// <summary>Roles granted to everyone after the first.</summary>
-    public static readonly string[] DefaultRoles = [KocRoles.Employee];
+    /// <summary>Function roles granted to the first person to appear on an empty installation.</summary>
+    public static readonly string[] FirstAccountRoles = [KocRoles.PlatformAdmin];
 
-    /// <summary>Every role name an administrator may assign.</summary>
+    /// <summary>Function roles granted to everyone after the first — none; the position carries them.</summary>
+    public static readonly string[] DefaultRoles = [];
+
+    /// <summary>The function roles an administrator may assign. Positions are not among them.</summary>
     public static readonly string[] AssignableRoles =
-        [.. KocRoles.AllPositions, KocRoles.PlatformAdmin, KocRoles.CompetitionAdmin, KocRoles.LearningAdmin, KocRoles.Auditor];
+        [KocRoles.PlatformAdmin, KocRoles.CompetitionAdmin, KocRoles.LearningAdmin, KocRoles.Auditor];
 
     public Task<bool> IsEmptyAsync(CancellationToken ct = default) => IsEmptyCoreAsync(ct);
 
@@ -42,7 +52,9 @@ public sealed class KocUserDirectory(
         var user = await users.FindByIdAsync(userId);
         if (user is not null)
         {
-            return [.. await users.GetRolesAsync(user)];
+            // The common path — every request after the first. It must include the position, or an
+            // already-known user would arrive with function roles only and fail every position policy.
+            return await GetRolesAsync(userId, ct);
         }
 
         // Decided before the insert: whoever arrives first on an empty install administers it.
@@ -65,17 +77,56 @@ public sealed class KocUserDirectory(
         await EnsureProfileAsync(userId, DisplayNameFor(displayName, email ?? userId), email, ct);
 
         logger.LogInformation("Recorded {UserId}{First}.", userId, isFirst ? " as the first account (Platform Admin)" : string.Empty);
-        return granted;
+
+        // The position comes from the org directory, so return the effective set rather than only what
+        // was just granted — otherwise a first sign-in would report no position at all.
+        return [.. granted.Append(await PositionRoleAsync(userId, ct)).Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
     public async Task<IReadOnlyList<string>> GetRolesAsync(string userId, CancellationToken ct = default)
     {
         var user = await users.FindByIdAsync(userId);
-        return user is null ? [] : [.. await users.GetRolesAsync(user)];
+        if (user is null)
+        {
+            return [];
+        }
+
+        return [.. (await users.GetRolesAsync(user)).Append(await PositionRoleAsync(userId, ct)).Distinct(StringComparer.OrdinalIgnoreCase)];
+    }
+
+    /// <summary>
+    /// The position role for a user, read from their primary org membership. Everyone gets at least
+    /// <see cref="KocRoles.Employee"/> — someone the org directory hasn't placed yet is still a member of
+    /// the platform, and without it every authenticated page would refuse them.
+    /// </summary>
+    private async Task<string> PositionRoleAsync(string userId, CancellationToken ct)
+    {
+        var position = await db.OrgMemberships.AsNoTracking()
+            .Where(m => m.UserId == userId && m.IsPrimary && m.ToUtc == null)
+            .Select(m => (PositionLevel?)m.PositionLevel)
+            .FirstOrDefaultAsync(ct);
+
+        return position switch
+        {
+            PositionLevel.CEO => KocRoles.CEO,
+            PositionLevel.DCEO => KocRoles.DCEO,
+            PositionLevel.Manager => KocRoles.Manager,
+            PositionLevel.TeamLeader => KocRoles.TeamLeader,
+            _ => KocRoles.Employee,
+        };
     }
 
     public async Task SetRolesAsync(string userId, IReadOnlyList<string> requested, CancellationToken ct = default)
     {
+        // A position is not granted here — it follows the person's place in the org directory. Saying so
+        // is better than accepting the value and having it quietly overridden on the next read.
+        var positions = requested.Where(r => KocRoles.AllPositions.Contains(r, StringComparer.OrdinalIgnoreCase)).ToList();
+        if (positions.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"{string.Join(", ", positions)} is a position level, which comes from the org directory. Set the person's position on their org placement instead.");
+        }
+
         var unknown = requested.Where(r => !AssignableRoles.Contains(r, StringComparer.OrdinalIgnoreCase)).ToList();
         if (unknown.Count > 0)
         {
