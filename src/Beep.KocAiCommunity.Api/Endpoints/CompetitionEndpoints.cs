@@ -47,10 +47,22 @@ public static class CompetitionEndpoints
         {
             var visible = await svc.BrowseVisibleAsync(me.UserId!, ct);
             var stats = await svc.GetStatsAsync([.. visible.Select(c => c.Id)], ct);
-            return Results.Ok(visible.Select(c => ToDto(c, stats.GetValueOrDefault(c.Id), scorers)).ToList());
+            var categories = await CategoryNamesAsync(svc, ct);
+            return Results.Ok(visible.Select(c => ToDto(c, stats.GetValueOrDefault(c.Id), scorers, categories)).ToList());
         })
         .WithName("BrowseCompetitions")
         .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // The arena's category filter. Enabled only — a disabled category should not even be offered.
+        group.MapGet("/competitions/categories", async (ICompetitionService svc, CancellationToken ct) =>
+        {
+            var categories = await svc.ListCategoriesAsync(includeDisabled: false, ct);
+            return Results.Ok(categories
+                .Select(c => new CompetitionCategoryDto(c.Code, c.Name, c.Description, c.Icon, c.IsEnabled, c.OrderNo, 0))
+                .ToList());
+        })
+        .WithName("BrowseCompetitionCategories")
+        .AllowAnonymous();
 
         group.MapGet("/competitions/{id:guid}", async (Guid id, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
         {
@@ -61,7 +73,7 @@ public static class CompetitionEndpoints
             }
 
             var stats = await svc.GetStatsAsync([id], ct);
-            return Results.Ok(ToDto(competition, stats.GetValueOrDefault(id), scorers));
+            return Results.Ok(ToDto(competition, stats.GetValueOrDefault(id), scorers, await CategoryNamesAsync(svc, ct)));
         })
         .WithName("GetCompetition")
         .RequireAuthorization(KocPolicies.RequireEmployee);
@@ -282,11 +294,18 @@ public static class CompetitionEndpoints
             if (featured is not null)
             {
                 var entries = await svc.GetLeaderboardNamedAsync(featured.Id, "live", ct);
-                board = entries.Take(3).Select(e => new LeaderboardEntryDto(e.Rank, e.UserId, e.DisplayName, e.Score)).ToList();
+                board = entries.Take(PublicBoardSize)
+                    .Select(e => new LeaderboardEntryDto(e.Rank, string.Empty, MaskName(e.DisplayName), e.Score))
+                    .ToList();
             }
 
             IReadOnlyList<XpLeaderboardRowDto> learners;
-            try { learners = [.. (await engagement.GetXpLeaderboardAsync(string.Empty, LeaderboardPeriod.Month, ct)).Take(5)]; }
+            try
+            {
+                learners = [.. (await engagement.GetXpLeaderboardAsync(string.Empty, LeaderboardPeriod.Month, ct))
+                    .Take(PublicBoardSize)
+                    .Select(l => l with { UserId = string.Empty, DisplayName = MaskName(l.DisplayName) })];
+            }
             catch { learners = []; }
 
             return Results.Ok(new PublicShowcaseDto(featured?.Id, dtos, board, learners));
@@ -297,7 +316,30 @@ public static class CompetitionEndpoints
         return group;
     }
 
-    private static CompetitionDto ToDto(Competition c, CompetitionStats? stats, IScorerRegistry scorers)
+    /// <summary>How many rows the anonymous showcase carries — the landing page shows a full board.</summary>
+    private const int PublicBoardSize = 10;
+
+    /// <summary>
+    /// "Fahad Al-Dhubaib" → "F. A." — the standing is public, the person is not. The showcase is served
+    /// to anyone who can reach the site, which on a web deployment is anyone at all; the leaderboard's
+    /// shape is the draw, and a colleague's name and score together are not ours to publish. Signing in
+    /// reveals the real names.
+    /// </summary>
+    private static string MaskName(string? displayName)
+    {
+        var initials = (displayName ?? string.Empty)
+            .Split([' ', '-', '.'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(part => char.IsLetter(part[0]))
+            .Take(2)
+            .Select(part => $"{char.ToUpperInvariant(part[0])}.");
+
+        var masked = string.Join(' ', initials);
+        return masked.Length == 0 ? "A competitor" : masked;
+    }
+
+    private static CompetitionDto ToDto(
+        Competition c, CompetitionStats? stats, IScorerRegistry scorers,
+        IReadOnlyDictionary<string, string>? categoryNames = null)
     {
         var scorer = scorers.Resolve(c.ScorerCode);
         var metric = scorer.Code.Equals("rmse", StringComparison.OrdinalIgnoreCase) ? "RMSE"
@@ -320,6 +362,13 @@ public static class CompetitionEndpoints
             c.SecondPrize,
             c.ThirdPrize,
             c.HeroImagePath is not null,
-            c.HeroImagePath);
+            c.HeroImagePath,
+            c.CategoryCode,
+            c.CategoryCode is { Length: > 0 } code ? categoryNames?.GetValueOrDefault(code) : null);
     }
+
+    /// <summary>Category code → display name, so the DTO carries a label the UI can show without a lookup.</summary>
+    private static async Task<IReadOnlyDictionary<string, string>> CategoryNamesAsync(ICompetitionService svc, CancellationToken ct) =>
+        (await svc.ListCategoriesAsync(includeDisabled: true, ct))
+            .ToDictionary(c => c.Code, c => c.Name, StringComparer.OrdinalIgnoreCase);
 }

@@ -542,6 +542,10 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("AnswerKeyArtifactId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CategoryCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("CreatedByUserId")
                         .HasColumnType("TEXT");
 
@@ -630,9 +634,69 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryCode");
+
                     b.HasIndex("Status", "VisibilityScope");
 
                     b.ToTable("Competitions", "koc");
+                });
+
+            modelBuilder.Entity("Beep.KocAiCommunity.Domain.Competitions.CompetitionCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastModifiedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("OrderNo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("BLOB");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("CompetitionCategories", "koc");
                 });
 
             modelBuilder.Entity("Beep.KocAiCommunity.Domain.Competitions.LeaderboardEntry", b =>

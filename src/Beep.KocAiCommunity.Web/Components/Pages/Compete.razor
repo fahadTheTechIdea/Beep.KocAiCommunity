@@ -59,6 +59,26 @@ else
         }
     </div>
 
+    @if (_categories.Count > 0)
+    {
+        @* Which part of the business the challenge belongs to — usually what someone is actually
+           looking for, more than which algorithm it happens to need. *@
+        <div class="d-flex gap-1 flex-wrap align-center mb-4">
+            <MudText Typo="Typo.caption" Class="mr-1" Style="opacity:.7;">Domain</MudText>
+            <MudChip T="string" Size="Size.Small"
+                     Variant="@(_categoryFilter == "all" ? Variant.Filled : Variant.Outlined)"
+                     Color="@(_categoryFilter == "all" ? Color.Primary : Color.Default)"
+                     OnClick='() => _categoryFilter = "all"'>All domains</MudChip>
+            @foreach (var category in _categories)
+            {
+                <MudChip T="string" Size="Size.Small"
+                         Variant="@(_categoryFilter == category.Code ? Variant.Filled : Variant.Outlined)"
+                         Color="@(_categoryFilter == category.Code ? Color.Primary : Color.Default)"
+                         OnClick="() => _categoryFilter = category.Code">@category.Name</MudChip>
+            }
+        </div>
+    }
+
     var visible = Filtered();
     @if (visible.Count == 0)
     {
@@ -85,6 +105,10 @@ else
     private string? _error;
     private string _statusFilter = "all";
     private string _taskFilter = "all";
+
+    // Only enabled categories are served, so a switched-off one never appears as a filter.
+    private string _categoryFilter = "all";
+    private IReadOnlyList<CompetitionCategoryDto> _categories = [];
 
     private Guid? _spotlightId;
     private IReadOnlyList<LeaderboardEntryDto>? _spotlightBoard;
@@ -123,6 +147,10 @@ else
             _error = null;
             _competitions = Sort(await Api.GetCompetitionsAsync());
 
+            // Filter row: enabled categories only, so a switched-off domain isn't even offered.
+            try { _categories = await Api.GetCompetitionCategoriesAsync(); }
+            catch { _categories = []; }
+
             // Spotlight: the leading active competition gets a fetched top-3 podium (one request total).
             var spotlight = _competitions.FirstOrDefault(c => c.Status == "active");
             _spotlightId = spotlight?.Id;
@@ -148,6 +176,7 @@ else
         (_competitions ?? [])
             .Where(c => _statusFilter == "all" || c.Status == _statusFilter)
             .Where(c => _taskFilter == "all" || c.TaskType == _taskFilter)
+            .Where(c => _categoryFilter == "all" || c.CategoryCode == _categoryFilter)
             .ToList();
 
     private async Task OpenCreate()

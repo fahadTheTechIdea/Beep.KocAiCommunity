@@ -218,6 +218,51 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
+    public async Task The_public_showcase_never_reveals_who_the_competitors_are()
+    {
+        // The showcase is served to anyone who can reach the site. On a web deployment that is anyone at
+        // all, so a colleague's name beside their score is not ours to publish — the standings are the
+        // draw, the identities are not.
+        var host = _factory.CreateClientAs("mask-host", "Employee");
+        var competitionId = await CreateCompetition(host, revealUtc: null, quota: 5);
+        (await host.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .EnsureSuccessStatusCode();
+
+        (await host.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,1\n2,0\n")))
+            .EnsureSuccessStatusCode();
+        var competitor = _factory.CreateClientAs("Fahad Al-Dhubaib", "Employee");
+        (await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,1\n2,0\n")))
+            .EnsureSuccessStatusCode();
+
+        var showcase = (await _factory.CreateClientAs(sub: null)
+            .GetFromJsonAsync<PublicShowcaseDto>("/api/v1/public/showcase"))!;
+
+        foreach (var entry in showcase.FeaturedBoard)
+        {
+            entry.DisplayName.Should().NotContain("Fahad", "a full name must not leave the host anonymously");
+            entry.DisplayName.Should().MatchRegex("^([A-Z]\\.( [A-Z]\\.)?|A competitor)$", "initials only");
+            entry.UserId.Should().BeEmpty("masking the name while shipping the id would defeat the point");
+        }
+
+        foreach (var learner in showcase.TopLearners)
+        {
+            learner.UserId.Should().BeEmpty();
+            learner.DisplayName.Should().NotContain(" Al-", "a full name must not leave the host anonymously");
+        }
+    }
+
+    [Fact]
+    public async Task The_public_showcase_carries_a_full_board_not_a_podium()
+    {
+        // The landing page shows the standings at full size, so three rows is no longer enough.
+        var showcase = (await _factory.CreateClientAs(sub: null)
+            .GetFromJsonAsync<PublicShowcaseDto>("/api/v1/public/showcase"))!;
+
+        showcase.FeaturedBoard.Count.Should().BeLessThanOrEqualTo(10);
+        showcase.TopLearners.Count.Should().BeLessThanOrEqualTo(10);
+    }
+
+    [Fact]
     public async Task A_non_creator_non_admin_cannot_set_the_hero_image()
     {
         var creator = _factory.CreateClientAs("hero-owner", "Employee");

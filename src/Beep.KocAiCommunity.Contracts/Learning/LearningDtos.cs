@@ -1,7 +1,11 @@
 namespace Beep.KocAiCommunity.Contracts.Learning;
 
 /// <summary>A learning track summary card.</summary>
-public sealed record TrackDto(Guid Id, string Title, string Summary, string Level, int OrderNo, string Domain, int LessonCount);
+public sealed record TrackDto(
+    Guid Id, string Title, string Summary, string Level, int OrderNo, string Domain, int LessonCount,
+    /// <summary>The competition this track prepares you for, when an admin has linked one.</summary>
+    Guid? RecommendedCompetitionId = null,
+    string? RecommendedCompetitionTitle = null);
 
 /// <summary>A lesson within a track.</summary>
 public sealed record LessonDto(Guid Id, int OrderNo, string Title, int EstimatedMinutes, string? HandsOnKind, string? Content);

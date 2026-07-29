@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Beep.KocAiCommunity.Application.Audit;
 using Beep.KocAiCommunity.Application.Authorization;
 using Beep.KocAiCommunity.Application.Common;
 using Beep.KocAiCommunity.Application.Competitions;
@@ -31,7 +32,8 @@ public sealed class CompetitionService(
     INotificationService notifications,
     IOutboxWriter outbox,
     IEngagementService engagement,
-    IDatasetService datasetsSvc) : ICompetitionService
+    IDatasetService datasetsSvc,
+    IAuditEnvelope audit) : ICompetitionService
 {
     // Hard wall-clock budget for training + scoring a submitted pipeline (enforced at node boundaries).
     private const int PipelineSubmitBudgetSeconds = 120;
@@ -396,6 +398,30 @@ public sealed class CompetitionService(
         return competition;
     }
 
+    // ---- Category gating ----
+    //
+    // A competition in a switched-off category is hidden from everyone. Enforced here rather than in the
+    // endpoints because six routes reach a competition — browse, detail, leaderboard, data download,
+    // submissions, and submitting — and filtering only the browse list would leave a direct link, and
+    // the host's training data behind it, wide open. Nothing is deleted: re-enabling the category
+    // restores every challenge and leaderboard untouched.
+
+    /// <summary>Codes of the categories an administrator has switched off.</summary>
+    private async Task<HashSet<string>> DisabledCategoryCodesAsync(CancellationToken ct) =>
+        new(await db.CompetitionCategories.AsNoTracking()
+                .Where(c => !c.IsEnabled)
+                .Select(c => c.Code)
+                .ToListAsync(ct),
+            StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>An uncategorised competition is never hidden — only an explicit disabled code hides one.</summary>
+    private static bool IsHidden(Competition competition, HashSet<string> disabledCodes) =>
+        competition.CategoryCode is { Length: > 0 } code && disabledCodes.Contains(code);
+
+    private async Task<bool> IsHiddenAsync(Competition competition, CancellationToken ct) =>
+        competition.CategoryCode is { Length: > 0 } code
+        && await db.CompetitionCategories.AsNoTracking().AnyAsync(c => c.Code == code && !c.IsEnabled, ct);
+
     public async Task<IReadOnlyList<Competition>> BrowseVisibleAsync(string userId, CancellationToken ct = default)
     {
         var open = await db.Set<Competition>().AsNoTracking()
@@ -403,10 +429,12 @@ public sealed class CompetitionService(
             .OrderByDescending(c => c.CreatedUtc)
             .ToListAsync(ct);
 
+        var disabled = await DisabledCategoryCodesAsync(ct);
         var visible = new List<Competition>(open.Count);
         foreach (var competition in open)
         {
-            if (await visibility.CanSeeAsync(userId, competition.VisibilityScope, competition.VisibilityOrgUnitId, ct))
+            if (!IsHidden(competition, disabled)
+                && await visibility.CanSeeAsync(userId, competition.VisibilityScope, competition.VisibilityOrgUnitId, ct))
             {
                 visible.Add(competition);
             }
@@ -415,15 +443,102 @@ public sealed class CompetitionService(
         return visible;
     }
 
-    public async Task<IReadOnlyList<Competition>> BrowsePublicAsync(CancellationToken ct = default) =>
-        await db.Set<Competition>().AsNoTracking()
+    public async Task<IReadOnlyList<Competition>> BrowsePublicAsync(CancellationToken ct = default)
+    {
+        var open = await db.Set<Competition>().AsNoTracking()
             .Where(c => c.Status == "active" && c.VisibilityScope == VisibilityScope.Company)
             .OrderByDescending(c => c.IsFeatured)
             .ThenByDescending(c => c.CreatedUtc)
             .ToListAsync(ct);
 
-    public Task<Competition?> GetAsync(Guid competitionId, CancellationToken ct = default) =>
-        db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.Id == competitionId, ct);
+        var disabled = await DisabledCategoryCodesAsync(ct);
+        return [.. open.Where(c => !IsHidden(c, disabled))];
+    }
+
+    public async Task<IReadOnlyList<CompetitionCategory>> ListCategoriesAsync(bool includeDisabled, CancellationToken ct = default) =>
+        await db.CompetitionCategories.AsNoTracking()
+            .Where(c => includeDisabled || c.IsEnabled)
+            .OrderBy(c => c.OrderNo).ThenBy(c => c.Name)
+            .ToListAsync(ct);
+
+    public async Task<CompetitionCategory> UpsertCategoryAsync(
+        string actorUserId, string code, string name, string description, string icon, bool isEnabled, int orderNo, CancellationToken ct = default)
+    {
+        code = (code ?? string.Empty).Trim().ToLowerInvariant();
+        if (code.Length == 0)
+        {
+            throw new CompetitionException("A category needs a code.");
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new CompetitionException("A category needs a name.");
+        }
+
+        var category = await db.CompetitionCategories.FirstOrDefaultAsync(c => c.Code == code, ct);
+        if (category is null)
+        {
+            category = new CompetitionCategory { Code = code, CreatedUtc = DateTime.UtcNow, CreatedByUserId = actorUserId };
+            db.CompetitionCategories.Add(category);
+        }
+
+        category.Name = name.Trim();
+        category.Description = (description ?? string.Empty).Trim();
+        category.Icon = (icon ?? string.Empty).Trim();
+        category.IsEnabled = isEnabled;
+        category.OrderNo = orderNo;
+
+        await db.SaveChangesAsync(ct);
+        await audit.WriteAsync(new AuditEntry("competition-category.upsert", "competition-category", code,
+            AfterJson: $"{{\"name\":\"{category.Name}\",\"enabled\":{isEnabled.ToString().ToLowerInvariant()}}}"), ct);
+
+        return category;
+    }
+
+    public async Task DeleteCategoryAsync(string actorUserId, string code, CancellationToken ct = default)
+    {
+        var category = await db.CompetitionCategories.FirstOrDefaultAsync(c => c.Code == code, ct)
+            ?? throw new CompetitionException($"No category with the code '{code}'.");
+
+        // Deleting a category in use would leave competitions pointing at a code nothing resolves —
+        // neither hidden nor grouped, just quietly wrong. Disabling is the reversible alternative.
+        var inUse = await db.Set<Competition>().CountAsync(c => c.CategoryCode == code, ct);
+        if (inUse > 0)
+        {
+            throw new CompetitionException(
+                $"{inUse} competition(s) are still in '{category.Name}'. Move them to another category, or disable this one instead.");
+        }
+
+        db.CompetitionCategories.Remove(category);
+        await db.SaveChangesAsync(ct);
+        await audit.WriteAsync(new AuditEntry("competition-category.delete", "competition-category", code), ct);
+    }
+
+    public async Task SetCompetitionCategoryAsync(string actorUserId, Guid competitionId, string? code, CancellationToken ct = default)
+    {
+        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
+            ?? throw new CompetitionException("Competition not found.");
+
+        code = string.IsNullOrWhiteSpace(code) ? null : code.Trim().ToLowerInvariant();
+        if (code is not null && !await db.CompetitionCategories.AnyAsync(c => c.Code == code, ct))
+        {
+            throw new CompetitionException($"No category with the code '{code}'.");
+        }
+
+        competition.CategoryCode = code;
+        await db.SaveChangesAsync(ct);
+        await audit.WriteAsync(new AuditEntry("competition.category", "competition", competitionId.ToString(),
+            AfterJson: $"{{\"category\":\"{code ?? "none"}\"}}"), ct);
+    }
+
+    public async Task<Competition?> GetAsync(Guid competitionId, CancellationToken ct = default)
+    {
+        var competition = await db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.Id == competitionId, ct);
+
+        // Returning null here is what makes the detail and leaderboard endpoints answer 404 — they
+        // already null-check, so a hidden competition reads as one that isn't there.
+        return competition is not null && await IsHiddenAsync(competition, ct) ? null : competition;
+    }
 
     public async Task SetFeaturedAsync(Guid competitionId, CancellationToken ct = default)
     {
@@ -564,6 +679,12 @@ public sealed class CompetitionService(
 
     private async Task EnsureSubmittableAsync(Competition competition, string userId, CancellationToken ct)
     {
+        // Covers both submit paths (file upload and pipeline), which both funnel through here.
+        if (await IsHiddenAsync(competition, ct))
+        {
+            throw new CompetitionException("Competition not found.");
+        }
+
         if (!await visibility.CanSeeAsync(userId, competition.VisibilityScope, competition.VisibilityOrgUnitId, ct))
         {
             throw new CompetitionException("This competition is not visible to you.");
@@ -786,16 +907,32 @@ public sealed class CompetitionService(
                 names.GetValueOrDefault(h.HostId, h.HostId)));
     }
 
-    public async Task<IReadOnlyList<Submission>> GetMySubmissionsAsync(string userId, Guid competitionId, CancellationToken ct = default) =>
-        await db.Set<Submission>().AsNoTracking()
+    public async Task<IReadOnlyList<Submission>> GetMySubmissionsAsync(string userId, Guid competitionId, CancellationToken ct = default)
+    {
+        // A hidden competition reveals nothing, including your own history in it.
+        var competition = await db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.Id == competitionId, ct);
+        if (competition is null || await IsHiddenAsync(competition, ct))
+        {
+            return [];
+        }
+
+        return await db.Set<Submission>().AsNoTracking()
             .Where(s => s.CompetitionId == competitionId && s.SubmitterUserId == userId)
             .OrderByDescending(s => s.SubmittedUtc)
             .ToListAsync(ct);
+    }
 
     public async Task<Stream?> OpenDatasetAsync(string userId, Guid competitionId, string which, CancellationToken ct = default)
     {
         var competition = await db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
             ?? throw new CompetitionException("Competition not found.");
+
+        // The host's training data is the most sensitive thing behind a competition — check the category
+        // before the org scope, and answer as though the competition doesn't exist.
+        if (await IsHiddenAsync(competition, ct))
+        {
+            throw new CompetitionException("Competition not found.");
+        }
 
         if (!await visibility.CanSeeAsync(userId, competition.VisibilityScope, competition.VisibilityOrgUnitId, ct))
         {

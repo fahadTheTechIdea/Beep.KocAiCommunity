@@ -40,6 +40,7 @@ public class KocDbContext(DbContextOptions<KocDbContext> options)
     public DbSet<LessonProgress> LessonProgress => Set<LessonProgress>();
     public DbSet<TrackCompletion> TrackCompletions => Set<TrackCompletion>();
     public DbSet<Competition> Competitions => Set<Competition>();
+    public DbSet<CompetitionCategory> CompetitionCategories => Set<CompetitionCategory>();
     public DbSet<Submission> Submissions => Set<Submission>();
     public DbSet<LeaderboardEntry> LeaderboardEntries => Set<LeaderboardEntry>();
     public DbSet<Dataset> Datasets => Set<Dataset>();

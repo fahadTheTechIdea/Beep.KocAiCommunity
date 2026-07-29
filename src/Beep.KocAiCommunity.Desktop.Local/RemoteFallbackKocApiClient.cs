@@ -34,6 +34,14 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient remote) : IKocApi
     public virtual Task<PlatformMetaDto?> GetPlatformMetaAsync(CancellationToken ct = default) => remote.GetPlatformMetaAsync(ct);
     public virtual Task<MeResponse?> GetMeAsync(CancellationToken ct = default) => remote.GetMeAsync(ct);
     public virtual Task<AssignableRolesDto?> GetAssignableRolesAsync(CancellationToken ct = default) => remote.GetAssignableRolesAsync(ct);
+    public virtual Task<IReadOnlyList<CompetitionCategoryDto>> GetCompetitionCategoriesAsync(CancellationToken ct = default) => remote.GetCompetitionCategoriesAsync(ct);
+    public virtual Task<IReadOnlyList<CompetitionCategoryDto>> GetAdminCompetitionCategoriesAsync(CancellationToken ct = default) => remote.GetAdminCompetitionCategoriesAsync(ct);
+    public virtual Task<string?> UpsertCompetitionCategoryAsync(UpsertCompetitionCategoryRequest request, CancellationToken ct = default) => remote.UpsertCompetitionCategoryAsync(request, ct);
+    public virtual Task<string?> DeleteCompetitionCategoryAsync(string code, CancellationToken ct = default) => remote.DeleteCompetitionCategoryAsync(code, ct);
+    public virtual Task<string?> SetCompetitionCategoryAsync(Guid competitionId, string? code, CancellationToken ct = default) => remote.SetCompetitionCategoryAsync(competitionId, code, ct);
+    public virtual Task<IReadOnlyList<LearningLinkDto>> GetLearningLinksAsync(CancellationToken ct = default) => remote.GetLearningLinksAsync(ct);
+    public virtual Task<string?> SetTrackRecommendedCompetitionAsync(Guid trackId, Guid? competitionId, CancellationToken ct = default) => remote.SetTrackRecommendedCompetitionAsync(trackId, competitionId, ct);
+    public virtual Task<string?> SetCompetitionRecommendedTrackAsync(Guid competitionId, Guid? trackId, CancellationToken ct = default) => remote.SetCompetitionRecommendedTrackAsync(competitionId, trackId, ct);
     public virtual Task<string?> SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default) => remote.SetUserRolesAsync(userId, roles, ct);
     public virtual Task<(AuthTokenResponse? Auth, string? Error)> RegisterAsync(RegisterRequest request, CancellationToken ct = default) => remote.RegisterAsync(request, ct);
     public virtual Task<(AuthTokenResponse? Auth, string? Error)> LoginAsync(LoginRequest request, CancellationToken ct = default) => remote.LoginAsync(request, ct);

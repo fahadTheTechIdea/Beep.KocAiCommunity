@@ -1,7 +1,12 @@
 using Beep.KocAiCommunity.Application.Admin;
+using Beep.KocAiCommunity.Application.Audit;
+using Beep.KocAiCommunity.Application.Competitions;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Admin;
+using Beep.KocAiCommunity.Contracts.Competitions;
 using Beep.KocAiCommunity.Domain.Organization;
+using Beep.KocAiCommunity.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace Beep.KocAiCommunity.Api.Endpoints;
 
@@ -103,6 +108,128 @@ public static class AdminEndpoints
                 return Results.BadRequest(new { error = ex.Message });
             }
         }).WithName("AdminUpsertUserProfile");
+
+        // ---- Competition categories ----
+        // Grouping the catalogue by KOC operational domain. Disabling one hides its competitions from
+        // everyone (enforced in CompetitionService, not here) without deleting anything.
+
+        admin.MapGet("/competition-categories", async (ICompetitionService svc, KocDbContext db, CancellationToken ct) =>
+        {
+            var categories = await svc.ListCategoriesAsync(includeDisabled: true, ct);
+
+            // The count is what makes "you can't delete this" understandable before the admin tries.
+            var counts = await db.Competitions.AsNoTracking()
+                .Where(c => c.CategoryCode != null)
+                .GroupBy(c => c.CategoryCode!)
+                .Select(g => new { Code = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Code, x => x.Count, StringComparer.OrdinalIgnoreCase, ct);
+
+            return Results.Ok(categories
+                .Select(c => new CompetitionCategoryDto(
+                    c.Code, c.Name, c.Description, c.Icon, c.IsEnabled, c.OrderNo, counts.GetValueOrDefault(c.Code)))
+                .ToList());
+        }).WithName("AdminListCompetitionCategories");
+
+        admin.MapPut("/competition-categories/{code}", async (
+            string code, UpsertCompetitionCategoryRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                var saved = await svc.UpsertCategoryAsync(
+                    me.UserId!, code, req.Name, req.Description, req.Icon, req.IsEnabled, req.OrderNo, ct);
+                return Results.Ok(new CompetitionCategoryDto(
+                    saved.Code, saved.Name, saved.Description, saved.Icon, saved.IsEnabled, saved.OrderNo, 0));
+            }
+            catch (CompetitionException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        }).WithName("AdminUpsertCompetitionCategory");
+
+        admin.MapDelete("/competition-categories/{code}", async (
+            string code, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.DeleteCategoryAsync(me.UserId!, code, ct);
+                return Results.NoContent();
+            }
+            catch (CompetitionException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        }).WithName("AdminDeleteCompetitionCategory");
+
+        admin.MapPut("/competitions/{id:guid}/category", async (
+            Guid id, SetCompetitionCategoryRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.SetCompetitionCategoryAsync(me.UserId!, id, req.Code, ct);
+                return Results.NoContent();
+            }
+            catch (CompetitionException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        }).WithName("AdminSetCompetitionCategory");
+
+        // ---- Learn ↔ compete ----
+        // Both directions, because only the seeder has ever set either: a track points at the competition
+        // where its lesson gets used, and a competition points back at the track that prepares you for it.
+
+        admin.MapGet("/learning-links", async (KocDbContext db, CancellationToken ct) =>
+        {
+            var tracks = await db.LearningTracks.AsNoTracking()
+                .OrderBy(t => t.OrderNo)
+                .Select(t => new LearningLinkDto(t.Id, t.Title, t.RecommendedCompetitionId))
+                .ToListAsync(ct);
+            return Results.Ok(tracks);
+        }).WithName("AdminListLearningLinks");
+
+        admin.MapPut("/learning-tracks/{id:guid}/recommended-competition", async (
+            Guid id, SetRecommendedCompetitionRequest req, IKocCurrentUser me, KocDbContext db, IAuditEnvelope audit, CancellationToken ct) =>
+        {
+            var track = await db.LearningTracks.FirstOrDefaultAsync(t => t.Id == id, ct);
+            if (track is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (req.CompetitionId is { } competitionId && !await db.Competitions.AnyAsync(c => c.Id == competitionId, ct))
+            {
+                return Results.BadRequest(new { error = "No competition with that id." });
+            }
+
+            track.RecommendedCompetitionId = req.CompetitionId;
+            await db.SaveChangesAsync(ct);
+            await audit.WriteAsync(new AuditEntry("learning-track.recommended-competition", "learning-track", id.ToString(),
+                AfterJson: $"{{\"competition\":\"{req.CompetitionId?.ToString() ?? "none"}\"}}"), ct);
+
+            return Results.NoContent();
+        }).WithName("AdminSetTrackRecommendedCompetition");
+
+        admin.MapPut("/competitions/{id:guid}/recommended-track", async (
+            Guid id, SetRecommendedTrackRequest req, IKocCurrentUser me, KocDbContext db, IAuditEnvelope audit, CancellationToken ct) =>
+        {
+            var competition = await db.Competitions.FirstOrDefaultAsync(c => c.Id == id, ct);
+            if (competition is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (req.TrackId is { } trackId && !await db.LearningTracks.AnyAsync(t => t.Id == trackId, ct))
+            {
+                return Results.BadRequest(new { error = "No learning track with that id." });
+            }
+
+            competition.RecommendedTrackId = req.TrackId;
+            await db.SaveChangesAsync(ct);
+            await audit.WriteAsync(new AuditEntry("competition.recommended-track", "competition", id.ToString(),
+                AfterJson: $"{{\"track\":\"{req.TrackId?.ToString() ?? "none"}\"}}"), ct);
+
+            return Results.NoContent();
+        }).WithName("AdminSetCompetitionRecommendedTrack");
 
         admin.MapGet("/roles", () => Results.Ok(new AssignableRolesDto(
             KocRoles.AllPositions,

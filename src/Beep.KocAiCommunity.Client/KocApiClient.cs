@@ -151,6 +151,21 @@ public interface IKocApiClient
     /// <summary>The role names an administrator may assign, split into position levels and function roles.</summary>
     Task<AssignableRolesDto?> GetAssignableRolesAsync(CancellationToken ct = default);
 
+    /// <summary>Enabled competition categories, for the arena's filter row.</summary>
+    Task<IReadOnlyList<CompetitionCategoryDto>> GetCompetitionCategoriesAsync(CancellationToken ct = default);
+
+    /// <summary>Every category including disabled ones, with how many competitions use each. Admin only.</summary>
+    Task<IReadOnlyList<CompetitionCategoryDto>> GetAdminCompetitionCategoriesAsync(CancellationToken ct = default);
+
+    Task<string?> UpsertCompetitionCategoryAsync(UpsertCompetitionCategoryRequest request, CancellationToken ct = default);
+    Task<string?> DeleteCompetitionCategoryAsync(string code, CancellationToken ct = default);
+    Task<string?> SetCompetitionCategoryAsync(Guid competitionId, string? code, CancellationToken ct = default);
+
+    /// <summary>Learning tracks and the competition each points at, for the admin linking editor.</summary>
+    Task<IReadOnlyList<LearningLinkDto>> GetLearningLinksAsync(CancellationToken ct = default);
+    Task<string?> SetTrackRecommendedCompetitionAsync(Guid trackId, Guid? competitionId, CancellationToken ct = default);
+    Task<string?> SetCompetitionRecommendedTrackAsync(Guid competitionId, Guid? trackId, CancellationToken ct = default);
+
     /// <summary>Replaces a user's platform roles. Returns null on success, or the reason it was refused.</summary>
     Task<string?> SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default);
     Task<string?> SetOrgUnitCodeAsync(Guid orgUnitId, string? code, CancellationToken ct = default);
@@ -724,6 +739,32 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public Task<AssignableRolesDto?> GetAssignableRolesAsync(CancellationToken ct = default) =>
         http.GetFromJsonAsync<AssignableRolesDto>("/api/v1/admin/roles", ct);
+
+    public async Task<IReadOnlyList<CompetitionCategoryDto>> GetCompetitionCategoriesAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<CompetitionCategoryDto>>("/api/v1/competitions/categories", ct) ?? [];
+
+    public async Task<IReadOnlyList<CompetitionCategoryDto>> GetAdminCompetitionCategoriesAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<CompetitionCategoryDto>>("/api/v1/admin/competition-categories", ct) ?? [];
+
+    public Task<string?> UpsertCompetitionCategoryAsync(UpsertCompetitionCategoryRequest request, CancellationToken ct = default) =>
+        PutVoidAsync($"/api/v1/admin/competition-categories/{Uri.EscapeDataString(request.Code)}", request, ct);
+
+    public Task<string?> DeleteCompetitionCategoryAsync(string code, CancellationToken ct = default) =>
+        DeleteVoidAsync($"/api/v1/admin/competition-categories/{Uri.EscapeDataString(code)}", ct);
+
+    public Task<string?> SetCompetitionCategoryAsync(Guid competitionId, string? code, CancellationToken ct = default) =>
+        PutVoidAsync($"/api/v1/admin/competitions/{competitionId}/category", new SetCompetitionCategoryRequest(code), ct);
+
+    public async Task<IReadOnlyList<LearningLinkDto>> GetLearningLinksAsync(CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<LearningLinkDto>>("/api/v1/admin/learning-links", ct) ?? [];
+
+    public Task<string?> SetTrackRecommendedCompetitionAsync(Guid trackId, Guid? competitionId, CancellationToken ct = default) =>
+        PutVoidAsync($"/api/v1/admin/learning-tracks/{trackId}/recommended-competition",
+            new SetRecommendedCompetitionRequest(competitionId), ct);
+
+    public Task<string?> SetCompetitionRecommendedTrackAsync(Guid competitionId, Guid? trackId, CancellationToken ct = default) =>
+        PutVoidAsync($"/api/v1/admin/competitions/{competitionId}/recommended-track",
+            new SetRecommendedTrackRequest(trackId), ct);
 
     public Task<string?> SetUserRolesAsync(string userId, IReadOnlyList<string> roles, CancellationToken ct = default) =>
         PutVoidAsync($"/api/v1/admin/users/{userId}/roles", new SetUserRolesRequest(roles), ct);

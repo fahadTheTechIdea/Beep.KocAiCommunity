@@ -231,6 +231,107 @@ else
             }
         </MudTabPanel>
 
+        <MudTabPanel Text="Catalogue" Icon="@Icons.Material.Filled.Category" OnClick="EnsureCatalogue">
+            <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:80ch;">
+                Group competitions by KOC operational domain, and decide which groups are open. Switching a
+                category <b>off</b> hides every competition in it — from the arena, the landing page and
+                direct links — without deleting anything. Switch it back on and the challenges and their
+                leaderboards return exactly as they were.
+            </MudText>
+
+            @if (_categories is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                <BlueprintCard Class="pa-0 mb-4">
+                    <MudSimpleTable Dense="true" Hover="true" Style="overflow-x:auto;">
+                        <thead>
+                            <tr>
+                                <th style="width:90px;">Open</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th style="width:110px;">In use</th>
+                                <th style="width:60px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in _categories)
+                            {
+                                <tr style="@(c.IsEnabled ? null : "opacity:.55;")">
+                                    <td>
+                                        <MudSwitch T="bool" Value="@c.IsEnabled" Color="Color.Primary"
+                                                   ValueChanged="@(on => ToggleCategory(c, on))" />
+                                    </td>
+                                    <td>
+                                        <b>@c.Name</b>
+                                        <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.6;">@c.Code</MudText>
+                                    </td>
+                                    <td><MudText Typo="Typo.caption">@c.Description</MudText></td>
+                                    <td>
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@c.CompetitionCount</MudChip>
+                                    </td>
+                                    <td>
+                                        <MudTooltip Text="@(c.CompetitionCount > 0 ? "Move its competitions elsewhere first, or switch it off" : "Delete")">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Default"
+                                                           Disabled="@(c.CompetitionCount > 0)" OnClick="() => DeleteCategory(c)" />
+                                        </MudTooltip>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </BlueprintCard>
+
+                <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">Add a category</MudText>
+                <div class="d-flex gap-3 flex-wrap align-center mb-6">
+                    <MudTextField @bind-Value="_newCategoryName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:220px;" />
+                    <MudTextField @bind-Value="_newCategoryDescription" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:380px;" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                               Disabled="@string.IsNullOrWhiteSpace(_newCategoryName)" OnClick="AddCategory">Add</MudButton>
+                </div>
+
+                <MudText Typo="Typo.h6" Class="koc-heading mb-1">Which competition does each track lead to?</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:80ch;">
+                    A track that ends by telling someone to enter a competition should say <em>which</em> one.
+                    Setting it here puts a link on the track in <b>Learn</b>.
+                </MudText>
+
+                @if (_learningLinks is null)
+                {
+                    <MudProgressCircular Indeterminate="true" />
+                }
+                else
+                {
+                    <BlueprintCard Class="pa-0">
+                        <MudSimpleTable Dense="true" Hover="true" Style="overflow-x:auto;">
+                            <thead><tr><th>Learning track</th><th style="min-width:280px;">Leads to competition</th></tr></thead>
+                            <tbody>
+                                @foreach (var link in _learningLinks)
+                                {
+                                    <tr>
+                                        <td><b>@link.Title</b></td>
+                                        <td>
+                                            <MudSelect T="string" Value="@(link.RecommendedCompetitionId?.ToString() ?? "")"
+                                                       ValueChanged="@(v => LinkTrack(link, v))"
+                                                       Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
+                                                <MudSelectItem T="string" Value="@("")">— none —</MudSelectItem>
+                                                @foreach (var comp in _linkableCompetitions ?? [])
+                                                {
+                                                    <MudSelectItem T="string" Value="@comp.Id.ToString()">@comp.Title</MudSelectItem>
+                                                }
+                                            </MudSelect>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </BlueprintCard>
+                }
+            }
+        </MudTabPanel>
+
         <MudTabPanel Text="RBAC / Users" Icon="@Icons.Material.Filled.ManageAccounts" OnClick="EnsureRbac">
             <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:80ch;">
                 Manage each user's <b>roles</b>, who can <b>create competitions</b> and at what level, and
@@ -555,6 +656,76 @@ else
 
     private IReadOnlyList<string> _positionRoles = [];
     private IReadOnlyList<string> _functionRoles = [];
+
+    // ---- Catalogue: categories + learn ↔ compete links ----
+
+    private IReadOnlyList<CompetitionCategoryDto>? _categories;
+    private IReadOnlyList<LearningLinkDto>? _learningLinks;
+    private IReadOnlyList<CompetitionDto>? _linkableCompetitions;
+    private string _newCategoryName = "";
+    private string _newCategoryDescription = "";
+
+    private async Task EnsureCatalogue()
+    {
+        _categories ??= await Api.GetAdminCompetitionCategoriesAsync();
+        _learningLinks ??= await Api.GetLearningLinksAsync();
+        _linkableCompetitions ??= await Api.GetCompetitionsAsync();
+    }
+
+    private async Task ToggleCategory(CompetitionCategoryDto category, bool isEnabled)
+    {
+        var error = await Api.UpsertCompetitionCategoryAsync(new UpsertCompetitionCategoryRequest(
+            category.Code, category.Name, category.Description, category.Icon, isEnabled, category.OrderNo));
+
+        Snackbar.Add(
+            error ?? (isEnabled
+                ? $"{category.Name} is open — its competitions are visible again."
+                : $"{category.Name} is off — its {category.CompetitionCount} competition(s) are hidden from everyone."),
+            error is null ? Severity.Success : Severity.Warning);
+
+        _categories = await Api.GetAdminCompetitionCategoriesAsync();
+    }
+
+    private async Task AddCategory()
+    {
+        // The code is derived from the name so an admin never has to invent a slug; it is what
+        // competitions store, so it is lowercase and punctuation-free.
+        var code = new string(_newCategoryName.Trim().ToLowerInvariant()
+            .Select(ch => char.IsLetterOrDigit(ch) ? ch : '-').ToArray()).Trim('-');
+
+        var error = await Api.UpsertCompetitionCategoryAsync(new UpsertCompetitionCategoryRequest(
+            code, _newCategoryName.Trim(), _newCategoryDescription.Trim(), "Category", true,
+            (_categories?.Count ?? 0)));
+
+        Snackbar.Add(error ?? $"Added {_newCategoryName.Trim()}.", error is null ? Severity.Success : Severity.Warning);
+        if (error is null)
+        {
+            _newCategoryName = _newCategoryDescription = "";
+        }
+
+        _categories = await Api.GetAdminCompetitionCategoriesAsync();
+    }
+
+    private async Task DeleteCategory(CompetitionCategoryDto category)
+    {
+        var error = await Api.DeleteCompetitionCategoryAsync(category.Code);
+        Snackbar.Add(error ?? $"Deleted {category.Name}.", error is null ? Severity.Success : Severity.Warning);
+        _categories = await Api.GetAdminCompetitionCategoriesAsync();
+    }
+
+    private async Task LinkTrack(LearningLinkDto link, string? competitionId)
+    {
+        var target = Guid.TryParse(competitionId, out var parsed) ? parsed : (Guid?)null;
+        var error = await Api.SetTrackRecommendedCompetitionAsync(link.TrackId, target);
+
+        Snackbar.Add(
+            error ?? (target is null
+                ? $"'{link.Title}' no longer points at a competition."
+                : $"'{link.Title}' now leads to {_linkableCompetitions?.FirstOrDefault(c => c.Id == target)?.Title}."),
+            error is null ? Severity.Success : Severity.Warning);
+
+        _learningLinks = await Api.GetLearningLinksAsync();
+    }
 
     private async Task EnsureRbac()
     {

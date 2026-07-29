@@ -14,7 +14,25 @@ public sealed class CompetitionConfiguration : IEntityTypeConfiguration<Competit
         b.Property(x => x.Description).HasMaxLength(2048).IsRequired();
         b.Property(x => x.Status).HasMaxLength(32).IsRequired();
         b.Property(x => x.ScorerCode).HasMaxLength(64).IsRequired();
+        b.Property(x => x.CategoryCode).HasMaxLength(64);
         b.HasIndex(x => new { x.Status, x.VisibilityScope });
+        b.HasIndex(x => x.CategoryCode);
+    }
+}
+
+public sealed class CompetitionCategoryConfiguration : IEntityTypeConfiguration<CompetitionCategory>
+{
+    public void Configure(EntityTypeBuilder<CompetitionCategory> b)
+    {
+        b.ToTable("CompetitionCategories", "koc");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Code).HasMaxLength(64).IsRequired();
+        b.Property(x => x.Name).HasMaxLength(128).IsRequired();
+        b.Property(x => x.Description).HasMaxLength(512);
+        b.Property(x => x.Icon).HasMaxLength(128);
+
+        // Competitions reference the code, so two categories may not share one.
+        b.HasIndex(x => x.Code).IsUnique();
     }
 }
 

@@ -15,6 +15,10 @@
     </MudText>
 
     <div class="d-flex gap-1 flex-wrap mb-2">
+        @if (Competition.CategoryName is { Length: > 0 } category)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">@category</MudChip>
+        }
         <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@CompetitionDisplay.TaskLabel(Competition.TaskType)</MudChip>
         <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@CompetitionDisplay.MetricLabel(Competition)</MudChip>
         <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Visibility">@Competition.Scope</MudChip>

@@ -93,6 +93,27 @@ public interface ICompetitionService
     Task<IReadOnlyList<Competition>> BrowsePublicAsync(CancellationToken ct = default);
     Task<Competition?> GetAsync(Guid competitionId, CancellationToken ct = default);
 
+    // ---- Categories ----
+    // Grouping by KOC operational domain. The list is data, owned by the platform admin: disabling a
+    // category hides every competition in it from browsing and from direct links, without deleting
+    // anything, so a theme can be staged before launch or retired afterwards.
+
+    /// <summary>Categories, ordered. <paramref name="includeDisabled"/> is for the admin console only.</summary>
+    Task<IReadOnlyList<CompetitionCategory>> ListCategoriesAsync(bool includeDisabled, CancellationToken ct = default);
+
+    /// <summary>Creates or updates a category by its code, returning the saved row.</summary>
+    Task<CompetitionCategory> UpsertCategoryAsync(
+        string actorUserId, string code, string name, string description, string icon, bool isEnabled, int orderNo, CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes a category. Refused while competitions still reference it — reassign or disable instead,
+    /// so a delete can never orphan a challenge into an unrecognised code.
+    /// </summary>
+    Task DeleteCategoryAsync(string actorUserId, string code, CancellationToken ct = default);
+
+    /// <summary>Assigns a competition to a category, or clears it when <paramref name="code"/> is null.</summary>
+    Task SetCompetitionCategoryAsync(string actorUserId, Guid competitionId, string? code, CancellationToken ct = default);
+
     /// <summary>Arena stats for a set of competitions, computed in one pass (no per-competition queries).</summary>
     Task<IReadOnlyDictionary<Guid, CompetitionStats>> GetStatsAsync(IReadOnlyCollection<Guid> competitionIds, CancellationToken ct = default);
 

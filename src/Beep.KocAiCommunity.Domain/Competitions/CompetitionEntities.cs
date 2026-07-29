@@ -38,6 +38,39 @@ public class Competition : AuditableEntity
     // Optional hero image shown as the competition's banner background. The image file is served as a
     // static asset from the web app's wwwroot; this is just its web-relative path (e.g. "/uploads/competitions/{id}.png").
     public string? HeroImagePath { get; set; }
+
+    /// <summary>
+    /// The <see cref="CompetitionCategory.Code"/> this challenge belongs to, or null for uncategorised.
+    /// Nullable on purpose: competitions created before categories existed keep working, and only an
+    /// explicitly disabled category hides anything.
+    /// </summary>
+    public string? CategoryCode { get; set; }
+}
+
+/// <summary>
+/// A grouping of competitions by KOC operational domain — Subsurface, Production, HSE and so on. The
+/// list is data rather than an enum, so the platform admin shapes the catalogue without a release.
+/// <para>
+/// Disabling a category hides every competition in it from browsing, from the landing page, and from
+/// direct links. Nothing is deleted: re-enabling restores the challenges and their leaderboards
+/// exactly as they were, which is what makes it safe to use for staging a season or retiring a theme.
+/// </para>
+/// </summary>
+public class CompetitionCategory : AuditableEntity
+{
+    /// <summary>Stable slug referenced by <see cref="Competition.CategoryCode"/>. Unique.</summary>
+    public string Code { get; set; } = default!;
+
+    public string Name { get; set; } = default!;
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>A MudBlazor icon name shown on the filter chip and the competition card.</summary>
+    public string Icon { get; set; } = string.Empty;
+
+    /// <summary>When false the category and its competitions are hidden from everyone.</summary>
+    public bool IsEnabled { get; set; } = true;
+
+    public int OrderNo { get; set; }
 }
 
 /// <summary>One scored attempt by a participant.</summary>

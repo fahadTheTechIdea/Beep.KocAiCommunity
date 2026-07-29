@@ -1,3 +1,5 @@
+using Beep.KocAiCommunity.Application.Authorization;
+using Beep.KocAiCommunity.Application.Competitions;
 using Beep.KocAiCommunity.Application.Learning;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Learning;
@@ -8,25 +10,48 @@ public static class LearningEndpoints
 {
     public static RouteGroupBuilder MapLearningEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/tracks", async (IKocCurrentUser me, ILearningService learning, CancellationToken ct) =>
+        // Browsing the catalogue is open to everyone. Learning what the platform teaches is the reason
+        // someone signs in — putting it behind sign-in asks people to commit before they can see what
+        // they are committing to. Visibility still applies: an anonymous reader resolves to no org
+        // membership, so they see company-wide tracks and nothing narrower.
+        group.MapGet("/tracks", async (
+            IKocCurrentUser me, ILearningService learning, ICompetitionService competitions, CancellationToken ct) =>
         {
-            var tracks = await learning.BrowseVisibleAsync(me.UserId!, ct);
+            var tracks = await learning.BrowseVisibleAsync(me.UserId ?? string.Empty, ct);
+
+            // Titles for the linked competitions, so a track can say where it leads without the page
+            // making a request per card. A link into a hidden competition resolves to nothing and the
+            // track simply shows no destination.
+            var visible = (await competitions.BrowseVisibleAsync(me.UserId ?? string.Empty, ct))
+                .ToDictionary(c => c.Id, c => c.Title);
+
             var result = new List<TrackDto>(tracks.Count);
             foreach (var track in tracks)
             {
                 var lessons = await learning.GetLessonsAsync(track.Id, ct);
-                result.Add(new TrackDto(track.Id, track.Title, track.Summary, track.Level.ToString(), track.OrderNo, track.Domain, lessons.Count));
+                var linked = track.RecommendedCompetitionId is { } id && visible.TryGetValue(id, out var title)
+                    ? (Id: (Guid?)id, Title: title)
+                    : (Id: null, Title: null);
+
+                result.Add(new TrackDto(
+                    track.Id, track.Title, track.Summary, track.Level.ToString(), track.OrderNo, track.Domain,
+                    lessons.Count, linked.Id, linked.Title));
             }
 
             return Results.Ok(result);
         })
         .WithName("BrowseTracks")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
-        group.MapGet("/tracks/{id:guid}", async (Guid id, ILearningService learning, CancellationToken ct) =>
+        group.MapGet("/tracks/{id:guid}", async (
+            Guid id, IKocCurrentUser me, ILearningService learning, IVisibilityEvaluator visibility, CancellationToken ct) =>
         {
             var track = await learning.GetAsync(id, ct);
-            if (track is null)
+
+            // The scope check belongs here, not only on the listing: fetching by id used to return any
+            // track to any signed-in caller, so a narrower-than-company track leaked to anyone who knew
+            // its id. "Not visible" answers the same as "not there" — no probing for what exists.
+            if (track is null || !await visibility.CanSeeAsync(me.UserId ?? string.Empty, track.VisibilityScope, track.VisibilityOrgUnitId, ct))
             {
                 return Results.NotFound();
             }
@@ -37,7 +62,7 @@ public static class LearningEndpoints
                 [.. lessons.Select(l => new LessonDto(l.Id, l.OrderNo, l.Title, l.EstimatedMinutes, l.HandsOnKind, l.Content))]));
         })
         .WithName("GetTrack")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         group.MapPost("/tracks/{id:guid}/enroll", async (Guid id, IKocCurrentUser me, ILearningService learning, CancellationToken ct) =>
         {

@@ -29,6 +29,15 @@ public sealed record SetUserRolesRequest(IReadOnlyList<string> Roles);
 /// <summary>The role names an administrator may assign, for the console's editor.</summary>
 public sealed record AssignableRolesDto(IReadOnlyList<string> Positions, IReadOnlyList<string> Functions);
 
+/// <summary>A learning track and the competition it points people at, for the admin linking editor.</summary>
+public sealed record LearningLinkDto(Guid TrackId, string Title, Guid? RecommendedCompetitionId);
+
+/// <summary>Points a learning track at a competition, or clears it when null.</summary>
+public sealed record SetRecommendedCompetitionRequest(Guid? CompetitionId);
+
+/// <summary>Points a competition at a learning track, or clears it when null.</summary>
+public sealed record SetRecommendedTrackRequest(Guid? TrackId);
+
 /// <summary>An org unit and its assignable business code, for the code editor.</summary>
 public sealed record OrgUnitCodeDto(Guid Id, string Name, string Type, string Path, string? Code);
 
