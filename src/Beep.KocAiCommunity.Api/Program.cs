@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using Beep.KocAiCommunity.Api.Endpoints;
 using Beep.KocAiCommunity.Api.RealTime;
+using Beep.KocAiCommunity.Api.Security;
 using Beep.KocAiCommunity.Infrastructure;
 using Beep.KocAiCommunity.Infrastructure.Identity;
 using Beep.KocAiCommunity.Infrastructure.Learning;
@@ -34,6 +35,9 @@ builder.Services.AddSingleton<Beep.KocAiCommunity.Application.ML.IPredictionPool
 // Data Protection + the ISecretProtector used to encrypt secret platform settings.
 builder.Services.AddKocSecretProtection();
 builder.Services.AddKocSetup();
+
+// The caller says which language it wants its content in, via Accept-Language.
+builder.Services.AddKocApiLocalization();
 builder.Services.AddKocCurrentUser();
 builder.Services.AddKocAuthorization();
 builder.Services.AddKocApiAuthentication(builder.Configuration);
@@ -87,6 +91,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseRateLimiter();
+
+// Before anything reads content: the request language decides which translations are served.
+app.UseRequestLocalization();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -142,6 +149,8 @@ if (app.Configuration.GetValue("Seed:Enabled", false))
     await Beep.KocAiCommunity.Infrastructure.Organization.DevOrgSeeder.SeedDevOrgAsync(db);
     await Beep.KocAiCommunity.Infrastructure.Workflow.WorkflowTemplateSeeder.SeedAsync(db);
     await Beep.KocAiCommunity.Infrastructure.Competitions.CompetitionCategorySeeder.SeedAsync(db);
+    // After the rows it translates exist, so a fresh install has both from the first request.
+    await Beep.KocAiCommunity.Infrastructure.Localization.ContentTranslationSeeder.SeedAsync(db);
     var artifacts = scope.ServiceProvider.GetRequiredService<Beep.KocAiCommunity.Application.Storage.IArtifactService>();
     await Beep.KocAiCommunity.Infrastructure.Competitions.CompetitionSeeder.SeedDemoAsync(db, artifacts);
 }

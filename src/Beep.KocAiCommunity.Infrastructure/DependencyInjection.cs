@@ -62,6 +62,7 @@ public static class DependencyInjection
 
         // Learning tracks.
         services.AddScoped<ILearningService, Learning.LearningService>();
+        services.AddScoped<Application.Localization.IContentTranslator, Localization.ContentTranslator>();
 
         // Competitions + trusted scorers.
         services.AddSingleton<IScoringPlugin, Competitions.AccuracyScorer>();

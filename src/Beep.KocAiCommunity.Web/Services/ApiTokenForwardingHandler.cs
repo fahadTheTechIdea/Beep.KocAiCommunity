@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using Beep.KocAiCommunity.Web.Security;
@@ -27,6 +28,12 @@ public sealed class ApiTokenForwardingHandler(
         // Never let a stale persona header ride along — the token is the only identity that counts here.
         request.Headers.Remove("X-Dev-User");
         request.Headers.Remove("X-Dev-Roles");
+
+        // The language the reader chose, so the content the API returns matches the chrome around it.
+        // Without this a page could render Arabic headings over English category names.
+        request.Headers.AcceptLanguage.Clear();
+        request.Headers.AcceptLanguage.Add(
+            new StringWithQualityHeaderValue(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName));
 
         if (await TokenAsync() is { Length: > 0 } token)
         {

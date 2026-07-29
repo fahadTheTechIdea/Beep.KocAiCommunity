@@ -1,3 +1,6 @@
+using Beep.KocAiCommunity.Domain.Localization;
+using Beep.KocAiCommunity.Application.Localization;
+using Beep.KocAiCommunity.Api.Security;
 using Beep.KocAiCommunity.Application.Authorization;
 using Beep.KocAiCommunity.Application.Competitions;
 using Beep.KocAiCommunity.Application.Engagement;
@@ -54,11 +57,23 @@ public static class CompetitionEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         // The arena's category filter. Enabled only — a disabled category should not even be offered.
-        group.MapGet("/competitions/categories", async (ICompetitionService svc, CancellationToken ct) =>
+        group.MapGet("/competitions/categories", async (
+            HttpContext http, ICompetitionService svc, IContentTranslator translator, CancellationToken ct) =>
         {
             var categories = await svc.ListCategoriesAsync(includeDisabled: false, ct);
+
+            // Two lookups for the whole list, not one per row. An untranslated category keeps its
+            // English name rather than showing a blank chip.
+            var language = http.RequestLanguage();
+            var names = await translator.LookupAsync(TranslatedContent.CompetitionCategory, TranslatedContent.Name, language, ct);
+            var descriptions = await translator.LookupAsync(TranslatedContent.CompetitionCategory, TranslatedContent.Description, language, ct);
+
             return Results.Ok(categories
-                .Select(c => new CompetitionCategoryDto(c.Code, c.Name, c.Description, c.Icon, c.IsEnabled, c.OrderNo, 0))
+                .Select(c => new CompetitionCategoryDto(
+                    c.Code,
+                    names.GetValueOrDefault(c.Code, c.Name),
+                    descriptions.GetValueOrDefault(c.Code, c.Description),
+                    c.Icon, c.IsEnabled, c.OrderNo, 0))
                 .ToList());
         })
         .WithName("BrowseCompetitionCategories")

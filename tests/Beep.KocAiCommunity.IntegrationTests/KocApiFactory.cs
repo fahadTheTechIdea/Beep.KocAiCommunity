@@ -280,6 +280,12 @@ public class KocApiFactory : WebApplicationFactory<Program>
                 db.SaveChanges();
 
                 Beep.KocAiCommunity.Infrastructure.Learning.LearningSeeder.SeedTracksAsync(db).GetAwaiter().GetResult();
+
+                // The seeded catalogue, so tests see what a real install serves. The translations go
+                // last, after the rows they translate exist.
+                Beep.KocAiCommunity.Infrastructure.Engagement.EngagementSeeder.SeedBadgesAsync(db).GetAwaiter().GetResult();
+                Beep.KocAiCommunity.Infrastructure.Competitions.CompetitionCategorySeeder.SeedAsync(db).GetAwaiter().GetResult();
+                Beep.KocAiCommunity.Infrastructure.Localization.ContentTranslationSeeder.SeedAsync(db).GetAwaiter().GetResult();
             }
 
             // Resolve ids by path so they always match the persisted rows.

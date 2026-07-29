@@ -1,3 +1,6 @@
+using Beep.KocAiCommunity.Domain.Localization;
+using Beep.KocAiCommunity.Application.Localization;
+using Beep.KocAiCommunity.Api.Security;
 using Beep.KocAiCommunity.Application.Engagement;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Engagement;
@@ -45,8 +48,22 @@ public static class EngagementEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         // ---- Badges + avatars ----
-        group.MapGet("/engagement/badges/catalog", async (IEngagementService svc, CancellationToken ct) =>
-            Results.Ok(await svc.GetBadgeCatalogAsync(ct)))
+        group.MapGet("/engagement/badges/catalog", async (
+            HttpContext http, IEngagementService svc, IContentTranslator translator, CancellationToken ct) =>
+        {
+            var badges = await svc.GetBadgeCatalogAsync(ct);
+            var language = http.RequestLanguage();
+            var names = await translator.LookupAsync(TranslatedContent.Badge, TranslatedContent.Name, language, ct);
+            var descriptions = await translator.LookupAsync(TranslatedContent.Badge, TranslatedContent.Description, language, ct);
+
+            return Results.Ok(badges
+                .Select(b => b with
+                {
+                    Name = names.GetValueOrDefault(b.Code, b.Name),
+                    Description = descriptions.GetValueOrDefault(b.Code, b.Description),
+                })
+                .ToList());
+        })
         .WithName("GetBadgeCatalog")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 

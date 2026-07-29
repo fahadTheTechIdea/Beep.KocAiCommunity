@@ -40,6 +40,10 @@ public class KocDbContext(DbContextOptions<KocDbContext> options)
     public DbSet<TrackCompletion> TrackCompletions => Set<TrackCompletion>();
     public DbSet<Competition> Competitions => Set<Competition>();
     public DbSet<CompetitionCategory> CompetitionCategories => Set<CompetitionCategory>();
+
+    /// <summary>Translated names and descriptions for the content KOC ships. See ContentTranslation.</summary>
+    public DbSet<Beep.KocAiCommunity.Domain.Localization.ContentTranslation> ContentTranslations =>
+        Set<Beep.KocAiCommunity.Domain.Localization.ContentTranslation>();
     public DbSet<Submission> Submissions => Set<Submission>();
     public DbSet<LeaderboardEntry> LeaderboardEntries => Set<LeaderboardEntry>();
     public DbSet<Dataset> Datasets => Set<Dataset>();
