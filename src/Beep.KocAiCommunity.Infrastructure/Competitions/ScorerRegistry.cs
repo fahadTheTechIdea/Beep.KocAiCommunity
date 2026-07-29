@@ -13,5 +13,5 @@ public sealed class ScorerRegistry : IScorerRegistry
     public IScoringPlugin Resolve(string scorerCode) =>
         _byCode.TryGetValue(scorerCode, out var plugin)
             ? plugin
-            : throw new CompetitionException($"No trusted scorer registered for '{scorerCode}'.");
+            : throw new CompetitionException("No trusted scorer registered for '{0}'.", scorerCode);
 }

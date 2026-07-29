@@ -12,7 +12,11 @@ public static class EngagementEndpoints
 {
     public static RouteGroupBuilder MapEngagementEndpoints(this RouteGroupBuilder group)
     {
-        // ---- Profiles ----
+        // One localizer for the whole group: it reads the request culture on every call,
+        // so a singleton captured here still answers each request in its own language.
+        var messages = group.ServiceMessages();
+
+// ---- Profiles ----
         group.MapGet("/profiles/me", async (IKocCurrentUser me, IEngagementService svc, CancellationToken ct) =>
             Results.Ok(await svc.GetProfileAsync(me.UserId!, me.DisplayName, ct)))
         .WithName("GetMyProfile")
@@ -81,7 +85,7 @@ public static class EngagementEndpoints
             }
             catch (EngagementException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("GiveKudos")

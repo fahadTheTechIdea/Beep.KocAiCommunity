@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Localization;
+using Beep.KocAiCommunity.Application.Localization;
+using Beep.KocAiCommunity.Api.Security;
 using Beep.KocAiCommunity.Application.Community;
 using Beep.KocAiCommunity.Application.Security;
 using Beep.KocAiCommunity.Contracts.Community;
@@ -10,7 +13,11 @@ public static class DiscussionEndpoints
 {
     public static RouteGroupBuilder MapDiscussionEndpoints(this RouteGroupBuilder group)
     {
-        group.MapPost("/discussions", async (CreateDiscussionRequest req, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
+        // One localizer for the whole group: it reads the request culture on every call,
+        // so a singleton captured here still answers each request in its own language.
+        var messages = group.ServiceMessages();
+
+group.MapPost("/discussions", async (CreateDiscussionRequest req, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
         {
             if (!Enum.TryParse<VisibilityScope>(req.Scope, ignoreCase: true, out var scope))
             {
@@ -26,7 +33,7 @@ public static class DiscussionEndpoints
             }
             catch (CommunityException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("CreateDiscussion")
@@ -78,44 +85,44 @@ public static class DiscussionEndpoints
             }
             catch (CommunityException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("AddReply")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapPost("/discussions/{id:guid}/react", (Guid id, ReactRequest req, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
-            React(svc, me.UserId!, ReactionTargets.Discussion, id, req.Emoji, ct))
+            React(messages, svc, me.UserId!, ReactionTargets.Discussion, id, req.Emoji, ct))
         .WithName("ReactToDiscussion")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapPost("/discussions/{id:guid}/replies/{replyId:guid}/react", (Guid id, Guid replyId, ReactRequest req, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
-            React(svc, me.UserId!, ReactionTargets.Reply, replyId, req.Emoji, ct))
+            React(messages, svc, me.UserId!, ReactionTargets.Reply, replyId, req.Emoji, ct))
         .WithName("ReactToReply")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapPost("/discussions/{id:guid}/lock", (Guid id, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
-            Moderate(() => svc.SetLockAsync(me.UserId!, IsModerator(me), id, true, ct)))
+            Moderate(messages, () => svc.SetLockAsync(me.UserId!, IsModerator(me), id, true, ct)))
         .WithName("LockDiscussion").RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapPost("/discussions/{id:guid}/unlock", (Guid id, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
-            Moderate(() => svc.SetLockAsync(me.UserId!, IsModerator(me), id, false, ct)))
+            Moderate(messages, () => svc.SetLockAsync(me.UserId!, IsModerator(me), id, false, ct)))
         .WithName("UnlockDiscussion").RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapPost("/discussions/{id:guid}/pin", (Guid id, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
-            Moderate(() => svc.SetPinAsync(me.UserId!, IsModerator(me), id, true, ct)))
+            Moderate(messages, () => svc.SetPinAsync(me.UserId!, IsModerator(me), id, true, ct)))
         .WithName("PinDiscussion").RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapPost("/discussions/{id:guid}/unpin", (Guid id, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
-            Moderate(() => svc.SetPinAsync(me.UserId!, IsModerator(me), id, false, ct)))
+            Moderate(messages, () => svc.SetPinAsync(me.UserId!, IsModerator(me), id, false, ct)))
         .WithName("UnpinDiscussion").RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapDelete("/discussions/{id:guid}", (Guid id, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
-            Moderate(() => svc.DeleteDiscussionAsync(me.UserId!, IsModerator(me), id, ct)))
+            Moderate(messages, () => svc.DeleteDiscussionAsync(me.UserId!, IsModerator(me), id, ct)))
         .WithName("DeleteDiscussion").RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapDelete("/discussions/{id:guid}/replies/{replyId:guid}", (Guid id, Guid replyId, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
-            Moderate(() => svc.DeleteReplyAsync(me.UserId!, IsModerator(me), replyId, ct)))
+            Moderate(messages, () => svc.DeleteReplyAsync(me.UserId!, IsModerator(me), replyId, ct)))
         .WithName("DeleteReply").RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapGet("/community/mention-candidates", async (string? q, IKocCurrentUser me, ICommunityService svc, CancellationToken ct) =>
@@ -136,7 +143,7 @@ public static class DiscussionEndpoints
             }
             catch (CommunityException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("AddAttachment")
@@ -152,7 +159,7 @@ public static class DiscussionEndpoints
             }
             catch (CommunityException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("DownloadAttachment")
@@ -166,7 +173,7 @@ public static class DiscussionEndpoints
     // A moderator is a platform admin or an org-unit leader.
     private static bool IsModerator(IKocCurrentUser me) => me.IsInRole(KocRoles.PlatformAdmin) || me.LedOrgUnitId is not null;
 
-    private static async Task<IResult> React(ICommunityService svc, string userId, string targetType, Guid targetId, string emoji, CancellationToken ct)
+    private static async Task<IResult> React(IStringLocalizer<ServiceMessages> messages, ICommunityService svc, string userId, string targetType, Guid targetId, string emoji, CancellationToken ct)
     {
         try
         {
@@ -175,11 +182,11 @@ public static class DiscussionEndpoints
         }
         catch (CommunityException ex)
         {
-            return Results.BadRequest(new { error = ex.Message });
+            return Results.BadRequest(new { error = messages.For(ex) });
         }
     }
 
-    private static async Task<IResult> Moderate(Func<Task> action)
+    private static async Task<IResult> Moderate(IStringLocalizer<ServiceMessages> messages, Func<Task> action)
     {
         try
         {
@@ -188,7 +195,7 @@ public static class DiscussionEndpoints
         }
         catch (CommunityException ex)
         {
-            return Results.BadRequest(new { error = ex.Message });
+            return Results.BadRequest(new { error = messages.For(ex) });
         }
     }
 

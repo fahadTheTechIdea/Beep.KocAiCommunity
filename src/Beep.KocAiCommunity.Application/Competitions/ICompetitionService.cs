@@ -1,3 +1,4 @@
+using Beep.KocAiCommunity.Application.Localization;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Beep.KocAiCommunity.Domain.Competitions;
 using Beep.KocAiCommunity.Domain.Organization;
@@ -5,13 +6,45 @@ using Beep.KocAiCommunity.Domain.Organization;
 namespace Beep.KocAiCommunity.Application.Competitions;
 
 /// <summary>Raised when a competition action is not permitted (visibility, quota, state).</summary>
-public sealed class CompetitionException(string message) : Exception(message);
+public sealed class CompetitionException : Exception, IUserFacingMessage
+{
+    /// <summary>
+    /// A message the member will read. Pass the English with <c>{0}</c> placeholders and the values
+    /// separately — never an interpolated string, or the sentence cannot be looked up for translation.
+    /// </summary>
+    public CompetitionException(string template, params object[] args)
+        : base(UserFacingMessage.Format(template, args))
+    {
+        Template = template;
+        TemplateArgs = args;
+    }
+
+    public string Template { get; }
+
+    public object[] TemplateArgs { get; }
+}
 
 /// <summary>
 /// Raised when a user is not authorized to create a competition at the requested level
 /// (no creator grant, or the requested scope exceeds their granted maximum). Maps to HTTP 403.
 /// </summary>
-public sealed class CompetitionAccessException(string message) : Exception(message);
+public sealed class CompetitionAccessException : Exception, IUserFacingMessage
+{
+    /// <summary>
+    /// A message the member will read. Pass the English with <c>{0}</c> placeholders and the values
+    /// separately — never an interpolated string, or the sentence cannot be looked up for translation.
+    /// </summary>
+    public CompetitionAccessException(string template, params object[] args)
+        : base(UserFacingMessage.Format(template, args))
+    {
+        Template = template;
+        TemplateArgs = args;
+    }
+
+    public string Template { get; }
+
+    public object[] TemplateArgs { get; }
+}
 
 /// <summary>A leaderboard row with the entrant's display name resolved for UI use.</summary>
 public sealed record NamedLeaderboardEntry(int Rank, string UserId, string DisplayName, double Score);

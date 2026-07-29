@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Arabic for the sentences a member reads when something they tried could not be done.
+
+    The name of each entry is the exact English template passed to the exception, placeholders and all.
+    {0} must survive translation: the values are applied after the lookup, so a number stays a number
+    in either language.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="A category needs a code." xml:space="preserve">
+    <value>الفئة تحتاج رمزًا.</value>
+  </data>
+  <data name="A category needs a name." xml:space="preserve">
+    <value>الفئة تحتاج اسمًا.</value>
+  </data>
+  <data name="A concluded competition's answer key is locked; its results are final." xml:space="preserve">
+    <value>مفتاح إجابات المسابقة المنتهية مقفل؛ ونتائجها نهائية.</value>
+  </data>
+  <data name="A file name is required." xml:space="preserve">
+    <value>اسم الملف مطلوب.</value>
+  </data>
+  <data name="Add a short message so your kudos means something." xml:space="preserve">
+    <value>أضف رسالة قصيرة حتى يكون لتحيتك معنى.</value>
+  </data>
+  <data name="Attachment content is missing." xml:space="preserve">
+    <value>محتوى المرفق مفقود.</value>
+  </data>
+  <data name="Attachment not found." xml:space="preserve">
+    <value>لم يُعثر على المرفق.</value>
+  </data>
+  <data name="Choose a colleague other than yourself to thank." xml:space="preserve">
+    <value>اختر زميلًا غيرك لتشكره.</value>
+  </data>
+  <data name="Competition not found." xml:space="preserve">
+    <value>لم يُعثر على المسابقة.</value>
+  </data>
+  <data name="Daily submission quota ({0}) reached." xml:space="preserve">
+    <value>بلغت الحد اليومي للمشاركات ({0}).</value>
+  </data>
+  <data name="Discussion not found." xml:space="preserve">
+    <value>لم يُعثر على النقاش.</value>
+  </data>
+  <data name="No category with the code '{0}'." xml:space="preserve">
+    <value>لا توجد فئة بالرمز '{0}'.</value>
+  </data>
+  <data name="No trusted scorer registered for '{0}'." xml:space="preserve">
+    <value>لا يوجد مُقيِّم موثوق مسجَّل لـ'{0}'.</value>
+  </data>
+  <data name="Only the author or a moderator can delete this discussion." xml:space="preserve">
+    <value>لا يستطيع حذف هذا النقاش سوى صاحبه أو مشرف.</value>
+  </data>
+  <data name="Only the author or a moderator can delete this reply." xml:space="preserve">
+    <value>لا يستطيع حذف هذا الرد سوى صاحبه أو مشرف.</value>
+  </data>
+  <data name="Only the competition creator can change its lifecycle." xml:space="preserve">
+    <value>لا يستطيع تغيير دورة حياة المسابقة سوى منشئها.</value>
+  </data>
+  <data name="Only the competition creator can set the answer key." xml:space="preserve">
+    <value>لا يستطيع ضبط مفتاح الإجابات سوى منشئ المسابقة.</value>
+  </data>
+  <data name="Only the competition creator can set the datasets." xml:space="preserve">
+    <value>لا يستطيع ضبط مجموعات البيانات سوى منشئ المسابقة.</value>
+  </data>
+  <data name="Only the competition creator or a platform admin can set the hero image." xml:space="preserve">
+    <value>لا يستطيع ضبط صورة الغلاف سوى منشئ المسابقة أو مشرف المنصة.</value>
+  </data>
+  <data name="Reply not found." xml:space="preserve">
+    <value>لم يُعثر على الرد.</value>
+  </data>
+  <data name="That item no longer exists." xml:space="preserve">
+    <value>لم يعد هذا العنصر موجودًا.</value>
+  </data>
+  <data name="That reaction isn't available." xml:space="preserve">
+    <value>هذا التفاعل غير متاح.</value>
+  </data>
+  <data name="The answer key has duplicate ids: {0}." xml:space="preserve">
+    <value>يحتوي مفتاح الإجابات على معرّفات مكرّرة: {0}.</value>
+  </data>
+  <data name="The answer key has ids not in the evaluation set: {0}." xml:space="preserve">
+    <value>يحتوي مفتاح الإجابات على معرّفات ليست في مجموعة التقييم: {0}.</value>
+  </data>
+  <data name="The answer key has no scorable rows; it may be empty or malformed." xml:space="preserve">
+    <value>لا يحتوي مفتاح الإجابات على صفوف قابلة للتقييم؛ قد يكون فارغًا أو تالفًا.</value>
+  </data>
+  <data name="The answer key has non-numeric values for a regression competition (ids: {0})." xml:space="preserve">
+    <value>يحتوي مفتاح الإجابات على قيم غير رقمية لمسابقة انحدار (المعرّفات: {0}).</value>
+  </data>
+  <data name="The answer key is empty (expected a header plus one row per evaluation id)." xml:space="preserve">
+    <value>مفتاح الإجابات فارغ (المتوقع ترويسة وصف لكل معرّف تقييم).</value>
+  </data>
+  <data name="The answer key is missing evaluation ids: {0}." xml:space="preserve">
+    <value>ينقص مفتاح الإجابات معرّفات تقييم: {0}.</value>
+  </data>
+  <data name="The pipeline took longer than {0}s to train and score. Simplify it and try again." xml:space="preserve">
+    <value>استغرق المسار أكثر من {0} ثانية للتدريب والتقييم. بسّطه ثم أعد المحاولة.</value>
+  </data>
+  <data name="This attachment is not visible to you." xml:space="preserve">
+    <value>هذا المرفق غير ظاهر لك.</value>
+  </data>
+  <data name="This competition has no training/evaluation data for pipeline submissions." xml:space="preserve">
+    <value>لا تحتوي هذه المسابقة على بيانات تدريب أو تقييم لمشاركات المسارات.</value>
+  </data>
+  <data name="This competition is not open for submissions." xml:space="preserve">
+    <value>هذه المسابقة غير مفتوحة للمشاركات.</value>
+  </data>
+  <data name="This competition is not visible to you." xml:space="preserve">
+    <value>هذه المسابقة غير ظاهرة لك.</value>
+  </data>
+  <data name="This discussion is locked." xml:space="preserve">
+    <value>هذا النقاش مقفل.</value>
+  </data>
+  <data name="This discussion is not visible to you." xml:space="preserve">
+    <value>هذا النقاش غير ظاهر لك.</value>
+  </data>
+  <data name="This item is not visible to you." xml:space="preserve">
+    <value>هذا العنصر غير ظاهر لك.</value>
+  </data>
+  <data name="Unknown dataset. Use 'training' or 'evaluation'." xml:space="preserve">
+    <value>مجموعة بيانات غير معروفة. استخدم 'training' أو 'evaluation'.</value>
+  </data>
+  <data name="Unknown reaction target." xml:space="preserve">
+    <value>هدف تفاعل غير معروف.</value>
+  </data>
+  <data name="Unknown status '{0}'. Use draft, active, or concluded." xml:space="preserve">
+    <value>حالة غير معروفة '{0}'. استخدم draft أو active أو concluded.</value>
+  </data>
+  <data name="You are not authorized to create competitions. Ask an admin for access." xml:space="preserve">
+    <value>لا تملك صلاحية إنشاء المسابقات. اطلب الصلاحية من المشرف.</value>
+  </data>
+  <data name="You are not part of an org unit at the '{0}' level." xml:space="preserve">
+    <value>لست ضمن وحدة تنظيمية على مستوى '{0}'.</value>
+  </data>
+  <data name="You can only create competitions up to {0} scope." xml:space="preserve">
+    <value>لا يمكنك إنشاء مسابقات إلا حتى نطاق {0}.</value>
+  </data>
+  <data name="You don't have moderator permission." xml:space="preserve">
+    <value>لا تملك صلاحية الإشراف.</value>
+  </data>
+  <data name="You've reached today's limit of 10 kudos. Save some for tomorrow!" xml:space="preserve">
+    <value>بلغت حد اليوم وهو عشر تحيات. أبقِ بعضها للغد!</value>
+  </data>
+</root>

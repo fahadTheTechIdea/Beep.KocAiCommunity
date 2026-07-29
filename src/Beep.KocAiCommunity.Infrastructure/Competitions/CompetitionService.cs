@@ -52,7 +52,7 @@ public sealed class CompetitionService(
 
         if ((int)scope > (int)max.Value)
         {
-            throw new CompetitionAccessException($"You can only create competitions up to {max} scope.");
+            throw new CompetitionAccessException("You can only create competitions up to {0} scope.", max);
         }
 
         // Fail fast if the scorer code is unknown.
@@ -212,7 +212,7 @@ public sealed class CompetitionService(
             .Where(g => g.Count() > 1).Select(g => g.Key).Take(5).ToList();
         if (duplicates.Count > 0)
         {
-            throw new CompetitionException($"The answer key has duplicate ids: {string.Join(", ", duplicates)}.");
+            throw new CompetitionException("The answer key has duplicate ids: {0}.", string.Join(", ", duplicates));
         }
 
         // When an evaluation set exists (a Studio-pipeline competition), the key must cover it exactly.
@@ -226,13 +226,13 @@ public sealed class CompetitionService(
             var missing = evalIds.Except(keyIds).Take(5).ToList();
             if (missing.Count > 0)
             {
-                throw new CompetitionException($"The answer key is missing evaluation ids: {string.Join(", ", missing)}.");
+                throw new CompetitionException("The answer key is missing evaluation ids: {0}.", string.Join(", ", missing));
             }
 
             var extra = keyIds.Except(evalIds).Take(5).ToList();
             if (extra.Count > 0)
             {
-                throw new CompetitionException($"The answer key has ids not in the evaluation set: {string.Join(", ", extra)}.");
+                throw new CompetitionException("The answer key has ids not in the evaluation set: {0}.", string.Join(", ", extra));
             }
         }
 
@@ -242,7 +242,7 @@ public sealed class CompetitionService(
                 .Select(r => r.Id).Take(5).ToList();
             if (bad.Count > 0)
             {
-                throw new CompetitionException($"The answer key has non-numeric values for a regression competition (ids: {string.Join(", ", bad)}).");
+                throw new CompetitionException("The answer key has non-numeric values for a regression competition (ids: {0}).", string.Join(", ", bad));
             }
         }
     }
@@ -319,7 +319,7 @@ public sealed class CompetitionService(
         var normalized = (status ?? string.Empty).Trim().ToLowerInvariant();
         if (!LifecycleStatuses.Contains(normalized))
         {
-            throw new CompetitionException($"Unknown status '{status}'. Use draft, active, or concluded.");
+            throw new CompetitionException("Unknown status '{0}'. Use draft, active, or concluded.", status ?? string.Empty);
         }
 
         var competition = await RequireCreatorAsync(userId, competitionId, ct);
@@ -498,7 +498,7 @@ public sealed class CompetitionService(
     public async Task DeleteCategoryAsync(string actorUserId, string code, CancellationToken ct = default)
     {
         var category = await db.CompetitionCategories.FirstOrDefaultAsync(c => c.Code == code, ct)
-            ?? throw new CompetitionException($"No category with the code '{code}'.");
+            ?? throw new CompetitionException("No category with the code '{0}'.", code);
 
         // Deleting a category in use would leave competitions pointing at a code nothing resolves —
         // neither hidden nor grouped, just quietly wrong. Disabling is the reversible alternative.
@@ -522,7 +522,7 @@ public sealed class CompetitionService(
         code = string.IsNullOrWhiteSpace(code) ? null : code.Trim().ToLowerInvariant();
         if (code is not null && !await db.CompetitionCategories.AnyAsync(c => c.Code == code, ct))
         {
-            throw new CompetitionException($"No category with the code '{code}'.");
+            throw new CompetitionException("No category with the code '{0}'.", code);
         }
 
         competition.CategoryCode = code;
@@ -637,7 +637,7 @@ public sealed class CompetitionService(
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested && !ct.IsCancellationRequested)
         {
-            throw new CompetitionException($"The pipeline took longer than {PipelineSubmitBudgetSeconds}s to train and score. Simplify it and try again.");
+            throw new CompetitionException("The pipeline took longer than {0}s to train and score. Simplify it and try again.", PipelineSubmitBudgetSeconds);
         }
 
         foreach (var s in secondary.Values)
@@ -700,7 +700,7 @@ public sealed class CompetitionService(
             .CountAsync(s => s.CompetitionId == competition.Id && s.SubmitterUserId == userId && s.SubmittedUtc >= sinceUtc, ct);
         if (todayCount >= competition.SubmissionQuotaPerDay)
         {
-            throw new CompetitionException($"Daily submission quota ({competition.SubmissionQuotaPerDay}) reached.");
+            throw new CompetitionException("Daily submission quota ({0}) reached.", competition.SubmissionQuotaPerDay);
         }
     }
 
@@ -737,7 +737,7 @@ public sealed class CompetitionService(
                 .CountAsync(s => s.CompetitionId == competition.Id && s.SubmitterUserId == userId && s.SubmittedUtc >= sinceUtc, ct);
             if (todayCount >= competition.SubmissionQuotaPerDay)
             {
-                throw new CompetitionException($"Daily submission quota ({competition.SubmissionQuotaPerDay}) reached.");
+                throw new CompetitionException("Daily submission quota ({0}) reached.", competition.SubmissionQuotaPerDay);
             }
 
             db.Set<Submission>().Add(submission);

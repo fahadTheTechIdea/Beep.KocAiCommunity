@@ -17,7 +17,11 @@ public static class CompetitionEndpoints
 {
     public static RouteGroupBuilder MapCompetitionEndpoints(this RouteGroupBuilder group)
     {
-        group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
+        // One localizer for the whole group: it reads the request culture on every call,
+        // so a singleton captured here still answers each request in its own language.
+        var messages = group.ServiceMessages();
+
+group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
         {
             if (!Enum.TryParse<VisibilityScope>(req.Scope, ignoreCase: true, out var scope))
             {
@@ -36,11 +40,11 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionAccessException ex)
             {
-                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+                return Results.Json(new { error = messages.For(ex) }, statusCode: StatusCodes.Status403Forbidden);
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("CreateCompetition")
@@ -103,7 +107,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("SetAnswerKey")
@@ -125,7 +129,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("SetCompetitionDatasets")
@@ -142,7 +146,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
             catch (InvalidOperationException ex)
             {
@@ -162,7 +166,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("Submit")
@@ -178,7 +182,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("SetCompetitionStatus")
@@ -194,7 +198,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("SetFeaturedCompetition")
@@ -210,7 +214,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("SetCompetitionPrizes")
@@ -227,7 +231,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("SetCompetitionHeroImage")
@@ -242,7 +246,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("SetCompetitionReveal")
@@ -259,7 +263,7 @@ public static class CompetitionEndpoints
             }
             catch (CompetitionException ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return Results.BadRequest(new { error = messages.For(ex) });
             }
         })
         .WithName("DownloadCompetitionData")

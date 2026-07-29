@@ -37,7 +37,7 @@ public sealed partial class CommunityService(
         var unitId = await directory.ResolveScopeUnitAsync(userId, scope, ct);
         if (scope != VisibilityScope.Company && unitId is null)
         {
-            throw new CommunityException($"You are not part of an org unit at the '{scope}' level.");
+            throw new CommunityException("You are not part of an org unit at the '{0}' level.", scope);
         }
 
         var discussion = new Discussion

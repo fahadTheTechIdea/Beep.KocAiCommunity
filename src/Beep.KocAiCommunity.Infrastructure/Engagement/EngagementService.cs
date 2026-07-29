@@ -1,3 +1,4 @@
+using Beep.KocAiCommunity.Application.Localization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -16,7 +17,23 @@ using Microsoft.EntityFrameworkCore;
 namespace Beep.KocAiCommunity.Infrastructure.Engagement;
 
 /// <summary>Thrown for expected engagement errors (bad kudos, quota reached) surfaced to the caller.</summary>
-public sealed class EngagementException(string message) : Exception(message);
+public sealed class EngagementException : Exception, IUserFacingMessage
+{
+    /// <summary>
+    /// A message the member will read. Pass the English with <c>{0}</c> placeholders and the values
+    /// separately — never an interpolated string, or the sentence cannot be looked up for translation.
+    /// </summary>
+    public EngagementException(string template, params object[] args)
+        : base(UserFacingMessage.Format(template, args))
+    {
+        Template = template;
+        TemplateArgs = args;
+    }
+
+    public string Template { get; }
+
+    public object[] TemplateArgs { get; }
+}
 
 public sealed class EngagementService(
     KocDbContext db,

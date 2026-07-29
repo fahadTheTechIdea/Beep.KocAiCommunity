@@ -1,10 +1,27 @@
+using Beep.KocAiCommunity.Application.Localization;
 using Beep.KocAiCommunity.Domain.Community;
 using Beep.KocAiCommunity.Domain.Organization;
 
 namespace Beep.KocAiCommunity.Application.Community;
 
 /// <summary>Raised when a discussion action is not permitted (visibility, missing thread, locked).</summary>
-public sealed class CommunityException(string message) : Exception(message);
+public sealed class CommunityException : Exception, IUserFacingMessage
+{
+    /// <summary>
+    /// A message the member will read. Pass the English with <c>{0}</c> placeholders and the values
+    /// separately — never an interpolated string, or the sentence cannot be looked up for translation.
+    /// </summary>
+    public CommunityException(string template, params object[] args)
+        : base(UserFacingMessage.Format(template, args))
+    {
+        Template = template;
+        TemplateArgs = args;
+    }
+
+    public string Template { get; }
+
+    public object[] TemplateArgs { get; }
+}
 
 /// <summary>The curated emoji reactions employees can leave on discussions and replies.</summary>
 public static class CommunityEmojis
