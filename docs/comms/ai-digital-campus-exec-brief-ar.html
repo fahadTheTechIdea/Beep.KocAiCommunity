@@ -1,0 +1,201 @@
+<title>الحرم الرقمي للذكاء الاصطناعي — موجز تنفيذي</title>
+
+<style>
+  :root{
+    /* Arabic-first stacks. The Latin serif used in the English brief carries no Arabic glyphs, so
+       headings would silently fall back to a mismatched face; these name Arabic faces explicitly. */
+    --serif: 'Noto Naskh Arabic', 'Traditional Arabic', 'Amiri', Georgia, serif;
+    --sans: 'Segoe UI', 'Noto Sans Arabic', Tahoma, 'Dubai', system-ui, -apple-system, Arial, sans-serif;
+    --mono: ui-monospace, 'Segoe UI Mono', Menlo, Consolas, monospace;
+    --accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9; --gold:#a9761a;
+    --ink:#17212b; --muted:#586a7b; --border:#e3e9ef; --bg:#ffffff; --panel:#f6f9fc;
+    --shadow:0 1px 2px rgba(16,32,48,.05), 0 10px 28px rgba(16,32,48,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--accent:#5aa8e0; --accent-deep:#8ac6ee; --accent-tint:#12263699; --gold:#d6ac5c;
+      --ink:#e9eff5; --muted:#a2b2c3; --border:#26323f; --bg:#0e161f; --panel:#151f2a;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 30px rgba(0,0,0,.45);}
+  }
+  :root[data-theme="dark"]{--accent:#5aa8e0; --accent-deep:#8ac6ee; --accent-tint:#12263699; --gold:#d6ac5c;
+    --ink:#e9eff5; --muted:#a2b2c3; --border:#26323f; --bg:#0e161f; --panel:#151f2a;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 30px rgba(0,0,0,.45);}
+  :root[data-theme="light"]{--accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9; --gold:#a9761a;
+    --ink:#17212b; --muted:#586a7b; --border:#e3e9ef; --bg:#ffffff; --panel:#f6f9fc;
+    --shadow:0 1px 2px rgba(16,32,48,.05), 0 10px 28px rgba(16,32,48,.08);}
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+
+  /* The page runs right-to-left; every directional rule below is mirrored to match. */
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    direction:rtl;text-align:right;
+    font-size:18px;line-height:1.9;-webkit-font-smoothing:antialiased}
+
+  .cover{color:#fff;background:linear-gradient(225deg,var(--accent-deep),var(--accent) 82%);
+    border-bottom:3px solid var(--gold);position:relative;overflow:hidden}
+  .cover::after{content:"";position:absolute;inset:0;opacity:.14;
+    background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);
+    background-size:30px 30px;mask-image:linear-gradient(240deg,#000,transparent 70%)}
+  .cover .in{position:relative;max-width:760px;margin:0 auto;padding:34px clamp(22px,5vw,40px) 38px}
+  .brand{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    color:rgba(255,255,255,.85);display:flex;align-items:center;gap:11px}
+  .brand .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .cover h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,7vw,58px);line-height:1.25;
+    margin:16px 0 10px}
+  .cover .sub{font-size:clamp(16px,2.4vw,21px);color:rgba(255,255,255,.94);margin:0}
+  .cover .who{margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.22);
+    font-size:13.5px;color:rgba(255,255,255,.85)}
+
+  main{max-width:760px;margin:0 auto;padding:8px clamp(22px,5vw,40px) 40px}
+  section{margin-top:38px}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(22px,3.4vw,28px);line-height:1.5;
+    margin:0 0 10px;color:var(--ink);text-wrap:balance}
+  p{margin:0 0 14px}
+  strong{font-weight:700}
+  .lead{font-size:19.5px}
+
+  ul{list-style:none;margin:6px 0 14px;padding:0}
+  ul li{position:relative;padding-right:26px;margin:10px 0}
+  ul li::before{content:"";position:absolute;right:4px;top:14px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  ol.steps{counter-reset:a;list-style:none;margin:6px 0 0;padding:0}
+  ol.steps li{counter-increment:a;position:relative;padding-right:40px;margin:12px 0}
+  ol.steps li::before{content:counter(a);position:absolute;right:0;top:4px;width:26px;height:26px;border-radius:50%;
+    background:var(--accent);color:#fff;font-weight:700;font-size:14px;text-align:center;line-height:26px}
+
+  .hook{margin:30px 0 4px;padding:4px 0}
+  .hook p{font-family:var(--serif);font-size:clamp(21px,3.6vw,31px);line-height:1.6;color:var(--ink);
+    margin:0;max-width:none;text-wrap:balance}
+  .hook .big{color:var(--accent);display:block;margin-bottom:8px}
+  .hook .rule{width:64px;height:4px;background:var(--gold);border-radius:3px;margin:20px 0 0}
+
+  .whatis{border:1px solid var(--border);border-right:4px solid var(--gold);background:var(--panel);
+    border-radius:16px 0 0 16px;padding:22px 24px;box-shadow:var(--shadow)}
+  .whatis .tag{font-family:var(--sans);font-size:12px;letter-spacing:.04em;color:var(--gold);
+    display:block;margin-bottom:10px;font-weight:700}
+  .whatis p{margin:0 0 12px}.whatis p:last-child{margin:0}
+
+  .journey{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0 4px}
+  .journey .step{background:var(--accent-tint);color:var(--accent-deep);border:1px solid var(--border);
+    border-radius:999px;padding:9px 18px;font-weight:700;font-size:15.5px}
+  .journey .arw{color:var(--gold);font-weight:700}
+  @media (prefers-color-scheme:dark){.journey .step{color:#dbeafe}}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:6px}
+  .card{border:1px solid var(--border);border-radius:14px;padding:16px 18px;background:var(--bg);box-shadow:var(--shadow)}
+  .card b{display:block;color:var(--accent);font-size:16.5px;margin-bottom:3px}
+  .card span{color:var(--muted);font-size:15px}
+
+  .bottom{border-top:3px solid var(--gold);background:var(--panel);border-radius:16px;padding:22px 24px;margin-top:22px}
+  .bottom h2{margin-top:0}
+  .foot{max-width:760px;margin:34px auto 56px;padding:18px clamp(22px,5vw,40px) 0;border-top:1px solid var(--border);
+    color:var(--muted);font-size:13.5px}
+  .pill{display:inline-block;font-family:var(--sans);font-size:11.5px;letter-spacing:.04em;font-weight:700;
+    color:var(--accent);border:1px solid var(--border);border-radius:20px;padding:3px 11px;background:var(--panel)}
+
+  @media print{
+    :root{--bg:#fff;--ink:#111;--muted:#333;--border:#bbb;--accent:#0E4F80;--accent-tint:#eef4f8}
+    .cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    section{page-break-inside:avoid}
+  }
+</style>
+
+<header class="cover">
+  <div class="in">
+    <div class="brand"><span>شركة نفط الكويت</span><span class="dot"></span><span>موجز تنفيذي · بلغة مبسّطة</span></div>
+    <h1>الحرم الرقمي للذكاء الاصطناعي</h1>
+    <p class="sub">بناء مهارات كوادرنا للمستقبل — بشرحٍ مبسّط لا يتطلّب أي خلفية تقنية.</p>
+    <div class="who"><span dir="ltr">Fahad Al-Dhubaib</span> — رئيس فريق عمل الحرم الرقمي للذكاء الاصطناعي · [التاريخ] · للاستخدام الداخلي</div>
+  </div>
+</header>
+
+<main>
+  <section class="hook">
+    <p><span class="big">العقد القادم في صناعة الطاقة سيصوغه الذكاء الاصطناعي.</span>والسؤال أمام الشركة بسيط: هل نبني هذه المهارات في <strong>كوادرنا الوطنية</strong> — أم نعتمد على غيرنا؟ الحرم الرقمي للذكاء الاصطناعي هو الطريق إلى الريادة، من الداخل.</p>
+    <div class="rule"></div>
+  </section>
+
+  <section>
+    <h2>في دقيقة واحدة</h2>
+    <p class="lead">مستقبل شركة نفط الكويت مرهون بقدرة موظفينا على استخدام التقنيات الحديثة — وفي مقدّمتها <strong>الذكاء الاصطناعي</strong> — للعمل بذكاء أكبر وأمان أعلى. و<strong>الحرم الرقمي للذكاء الاصطناعي</strong> وسيلة داخلية وبسيطة لبناء هذه المهارات على مستوى القوى العاملة، عبر تمكين الموظفين من التعلّم ثم المشاركة في <strong>مسابقات ودّية على تحديات حقيقية من واقع الشركة</strong>.</p>
+    <p class="lead">وقد تمّ بالفعل بناء نسخة عاملة منه بجهود داخلية. <strong>ويشرح هذا الموجز، بلغة مبسّطة، ماهيته وأهميته للشركة.</strong></p>
+  </section>
+
+  <section>
+    <h2>ما هو الحرم الرقمي للذكاء الاصطناعي؟</h2>
+    <p>تخيّله <strong>أكاديمية داخلية مقترنة بمسابقة ودّية</strong>. فموظفونا:</p>
+    <ul>
+      <li><strong>يتعلّمون</strong> مهارات حديثة عبر دروس قصيرة وموجّهة،</li>
+      <li><strong>يتدرّبون</strong> ببناء حلول بسيطة بأدوات سهلة — <strong>دون الحاجة إلى البرمجة</strong>،</li>
+      <li><strong>ويتنافسون</strong> على تحديات حقيقية من الشركة، مع لوحة نتائج مباشرة وتقدير للمتميّزين.</li>
+    </ul>
+    <p>وهو يعمل أشبه بـ<strong>دوري رياضي لحلّ المشكلات</strong>: يبذل المشاركون جهدهم رغبةً في التميّز، وكل تحدٍّ مسألة حقيقية تواجه الشركة — فيكون التعلّم مفيدًا من اليوم الأول.</p>
+  </section>
+
+  <section>
+    <h2>ما هو "الذكاء الاصطناعي" ببساطة؟</h2>
+    <div class="whatis">
+      <span class="tag">في جملة واحدة</span>
+      <p>الذكاء الاصطناعي يعني تعليم الحاسوب أن <strong>يتعلّم من أمثلة سابقة</strong> ليتمكّن من تقديم <strong>تنبّؤات مفيدة</strong>.</p>
+      <p><strong>مثال من واقع الشركة:</strong> بالتعلّم من تاريخ تشغيل مضخّاتنا، يستطيع الحاسوب أن <strong>ينبّهنا إلى احتمال تعطّل مضخّة قبل وقوعه</strong>، فنُصلحها ضمن الصيانة المجدولة بدلًا من عطل طارئ مكلف.</p>
+      <p style="color:var(--muted)">هذه هي الفكرة. ولا يحتاج الاستفادة منها إلى خلفية علمية.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>لماذا يهمّ الشركة؟</h2>
+    <div class="cards">
+      <div class="card"><b>كفاءات مؤهَّلة من الداخل</b><span>بناء مهارات قيّمة لدى موظفينا بدلًا من الاعتماد على شركات خارجية.</span></div>
+      <div class="card"><b>وفورات وسلامة ملموسة</b><span>التحديات التي تدرّب كوادرنا قد تتنبّأ أيضًا بأعطال المعدات وتُجنّبنا تكاليف التوقّف.</span></div>
+      <div class="card"><b>معرفتنا تبقى ملكًا لنا</b><span>جميع البيانات والنتائج تبقى داخل الشركة.</span></div>
+      <div class="card"><b>موظفون أكثر حماسًا</b><span>أسلوب حديث وجاذب ومُجزٍ للتطوّر — ينعكس على الروح المعنوية والاحتفاظ بالكفاءات.</span></div>
+      <div class="card"><b>كلفة منخفضة</b><span>يعتمد على أنظمة نملكها أصلًا، دون رسوم برمجيات باهظة لكل مستخدم.</span></div>
+      <div class="card"><b>جاهزية للمستقبل</b><span>مع ترسّخ الذكاء الاصطناعي في صناعة الطاقة، تبني الشركة مهارات الريادة — من الداخل.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>لماذا الآن؟</h2>
+    <p>يتحوّل الذكاء الاصطناعي بسرعة إلى جزء من طريقة عمل كبرى شركات الطاقة في العالم. ومهارات إتقانه <strong>نادرة ومطلوبة بشدّة</strong> — والمؤسسات التي تبنيها اليوم هي التي ستقود العقد القادم. وشركة نفط الكويت تملك <strong>سبقًا</strong> بالفعل: منصّة عاملة، بُنيت داخليًا وجاهزة لتطوير كوادرنا على تحدياتنا الحقيقية. إنها لحظة تقدّم من الصفوف الأولى، لا لحاق بالركب.</p>
+  </section>
+
+  <section>
+    <h2>كيف يعمل بالنسبة للموظف؟</h2>
+    <div class="journey">
+      <span class="step">تعلَّم</span><span class="arw">←</span>
+      <span class="step">جرِّب</span><span class="arw">←</span>
+      <span class="step">نافِس</span><span class="arw">←</span>
+      <span class="step">احصد التقدير</span>
+    </div>
+    <ol class="steps">
+      <li>تسجيل الدخول بحساب العمل المعتاد — دون تثبيت أي برنامج.</li>
+      <li>اجتياز درس قصير لتعلّم الأساسيات.</li>
+      <li>الدخول في تحدٍّ وبناء حلّ بسيط بأدوات موجَّهة.</li>
+      <li>الصعود في لوحة النتائج ونيل التقدير بين الزملاء.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>هل هو آمن ويحفظ الخصوصية؟</h2>
+    <p><strong>نعم.</strong> يسجّل الجميع الدخول بحساباتهم في الشركة، ولا يرى أحد إلا ما هو مخوَّل له، و<strong>تبقى كل البيانات والنتائج داخل الشركة</strong> — لا شيء يغادرها.</p>
+  </section>
+
+  <section>
+    <h2>ما هي الكلفة؟</h2>
+    <p><strong>زهيدة جدًا.</strong> يعمل على أنظمة نملكها أصلًا، دون رسوم برمجيات لكل مستخدم. والاستثمار الأساسي هو وقت محدود من فريق مخصّص لإدارته على النحو الأمثل.</p>
+  </section>
+
+  <section>
+    <h2>أين وصلنا اليوم؟</h2>
+    <p>تمّ <strong>بالفعل بناء نسخة عاملة</strong> من الحرم الرقمي للذكاء الاصطناعي بجهود داخلية، وهي جاهزة للعرض. ويدرس فريق عمل مخصّص أفضل السبل لإتاحته لموظفينا في عموم الشركة.</p>
+  </section>
+
+  <section class="bottom">
+    <h2>الخلاصة</h2>
+    <p style="margin-bottom:0">الحرم الرقمي للذكاء الاصطناعي وسيلة <strong>بسيطة ومنخفضة الكلفة</strong> لبناء قوى عاملة جاهزة للمستقبل — بكوادرنا وعلى تحدياتنا، <strong>وبأمان داخل الشركة</strong>. ومع ترسّخ الذكاء الاصطناعي في صناعة الطاقة، هكذا تبني شركة نفط الكويت مهارات الريادة: <strong>من الداخل، على بياناتنا، وبسواعد أبنائها.</strong></p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p><span class="pill">للاستخدام الداخلي</span></p>
+  <p>أُعِدَّ بواسطة فريق عمل الحرم الرقمي للذكاء الاصطناعي — شركة نفط الكويت. العناصر الواردة بين قوسين معقوفين حقول يجب استكمالها قبل الاستخدام. وتتوفّر دراسة تفصيلية أوسع عند الطلب.</p>
+</footer>
