@@ -361,3 +361,60 @@
     font: inherit; color: inherit; background: none; border: none; cursor: pointer;
 }
 .koc-menu-form-button:hover { background: rgba(128,128,128,.12); }
+
+/* ---- Standings board ----
+   Sized to be looked at, not glanced past: the leaderboard is the platform's proof that people are
+   actually competing, so it gets real row height, a podium tint, and figures that line up. */
+.koc-board { display: flex; flex-direction: column; }
+.koc-board-row {
+    display: grid;
+    grid-template-columns: 46px 44px 1fr auto;
+    align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 10px;
+    border-bottom: 1px solid var(--koc-divider);
+}
+.koc-board-row:last-child { border-bottom: none; }
+.koc-board-main { display: flex; flex-direction: column; min-width: 0; }
+.koc-board-main b { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.koc-board-main small { opacity: .65; font-size: .8rem; }
+.koc-board-rank { text-align: center; font-weight: 700; }
+.koc-board-score {
+    font-weight: 700; font-size: 1.05rem;
+    /* Scores are compared down a column — they must not dance as digits change. */
+    font-variant-numeric: tabular-nums;
+}
+.koc-board-podium { background: color-mix(in srgb, var(--koc-accent-300) 10%, transparent); }
+.koc-board-me { outline: 1px solid var(--koc-accent-500); }
+.koc-board-actionable { cursor: pointer; transition: transform .12s ease, background .12s ease; }
+.koc-board-actionable:hover { background: color-mix(in srgb, var(--koc-accent-300) 16%, transparent); transform: translateX(2px); }
+.koc-board-actionable:focus-visible { outline: 2px solid var(--koc-accent-500); outline-offset: 2px; }
+.koc-board-empty { opacity: .7; margin: 8px 2px; }
+
+/* Skeleton rows hold the section's height while the board loads. */
+.koc-board-skeleton > * {
+    background: color-mix(in srgb, var(--koc-divider) 60%, transparent);
+    border-radius: 6px; height: 12px;
+    animation: koc-skeleton 1.4s ease-in-out infinite;
+}
+.koc-board-skeleton .koc-board-avatar { height: 36px; border-radius: 50%; }
+.koc-board-skeleton .koc-board-main { height: 34px; }
+.koc-board-skeleton .koc-board-score { width: 68px; }
+@keyframes koc-skeleton { 0%,100% { opacity: .45; } 50% { opacity: .9; } }
+
+/* Headline figures under the hero: the platform's pulse in three numbers. */
+.koc-stat-strip { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 22px; }
+.koc-stat-strip .koc-stat { display: flex; flex-direction: column; }
+.koc-stat-strip .koc-stat b { font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.koc-stat-strip .koc-stat span { font-size: .85rem; opacity: .7; letter-spacing: .02em; }
+
+@media (max-width: 600px) {
+    .koc-board-row { grid-template-columns: 38px 36px 1fr auto; gap: 8px; padding: 9px 6px; }
+    .koc-stat-strip { gap: 18px; }
+    .koc-stat-strip .koc-stat b { font-size: 1.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .koc-board-skeleton > * { animation: none; }
+    .koc-board-actionable { transition: none; }
+    .koc-board-actionable:hover { transform: none; }
+}

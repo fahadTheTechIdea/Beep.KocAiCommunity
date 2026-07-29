@@ -5,6 +5,7 @@
 @using Microsoft.Extensions.Hosting
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.KocAiCommunity.ServiceDefaults.Security
+@using Beep.KocAiCommunity.Web.Security
 @inject DevIdentity Identity
 @inject IHostEnvironment Env
 @inject NavigationManager Nav
@@ -99,7 +100,7 @@
         {
             @* Real sign-in: local accounts get a login page; intranet/Entra sign the visitor in themselves. *@
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" Class="ml-2"
-                       Href="@LoginHref">@(HasLoginPage ? "Sign in" : "Sign in with KOC")</MudButton>
+                       Href="@LoginHref">@SignInPrompt.ButtonText(SetupStore)</MudButton>
         }
         else
         {
@@ -142,8 +143,15 @@
                     @if (Identity.IsGuest)
                     {
                         <MudText Typo="Typo.h6" Class="koc-heading mb-1">Sign in to continue</MudText>
-                        <MudText Typo="Typo.body2" Class="mb-4">This area is for signed-in KOC employees. Use <b>Sign in with KOC</b> (top right) to pick a persona.</MudText>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Switch("employee"))">Sign in as Employee</MudButton>
+                        <MudText Typo="Typo.body2" Class="mb-4">This area is for signed-in members. @SignInPrompt.HowToSignIn(SetupStore)</MudText>
+                        @if (IsDemoMode)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Switch("employee"))">View as Employee</MudButton>
+                        }
+                        else if (HasLoginPage)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@LoginHref">@SignInPrompt.ButtonText(SetupStore)</MudButton>
+                        }
                     }
                     else
                     {
@@ -162,10 +170,14 @@
     private bool _drawerOpen = true;
 
     /// <summary>True when nobody really signs in and the persona switcher stands in for an identity.</summary>
-    private bool IsDemoMode => SetupStore.Mode is KocAuthMode.DemoPersonas or KocAuthMode.Unconfigured;
+    private bool IsDemoMode => SetupStore.DemoPersonasEnabled;
 
-    /// <summary>True when this app owns the sign-in page (and therefore a sign-out to offer).</summary>
-    private bool HasLoginPage => SetupStore.Mode == KocAuthMode.LocalAccounts;
+    /// <summary>
+    /// True when this site holds the credentials, so there is a login page to send people to and a
+    /// session of ours to end. Inside KOC the corporate account is the session — signing out here would
+    /// only be re-established by the next request.
+    /// </summary>
+    private bool HasLoginPage => SetupStore.SignInWith == KocSignInSource.SiteAccounts;
 
     private string LoginHref => HasLoginPage ? "/account/login" : "/";
 

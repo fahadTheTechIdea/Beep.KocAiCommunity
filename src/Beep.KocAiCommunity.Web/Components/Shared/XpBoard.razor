@@ -1,0 +1,97 @@
+@using Beep.KocAiCommunity.Contracts.Engagement
+@using Beep.KocAiCommunity.Ui.Shared.Components
+
+@* A standings board at a size worth looking at. The landing page previously drew this inline, twice,
+   five rows deep in a third-width column — the most compelling content on the page, rendered as an
+   afterthought. One component now serves the learner and team boards on Home and anywhere else. *@
+
+<div class="koc-board" role="table" aria-label="@Caption">
+    @if (Loading)
+    {
+        @* A skeleton, not a spinner: the section keeps its height while data arrives, so the page
+           below it doesn't jump once the rows land. *@
+        @for (var i = 0; i < Math.Min(Rows, 5); i++)
+        {
+            <div class="koc-board-row koc-board-skeleton" aria-hidden="true">
+                <span class="koc-board-rank"></span>
+                <span class="koc-board-avatar"></span>
+                <span class="koc-board-main"><b></b><small></small></span>
+                <span class="koc-board-score"></span>
+            </div>
+        }
+    }
+    else if (Entries is null or { Count: 0 })
+    {
+        <p class="koc-board-empty">@EmptyMessage</p>
+    }
+    else
+    {
+        @foreach (var row in Entries.Take(Rows))
+        {
+            <div role="row" class="@RowClass(row)" @onclick="@(() => OnSelect.InvokeAsync(row))"
+                 tabindex="@(OnSelect.HasDelegate ? 0 : -1)"
+                 @onkeydown="@(e => OnRowKey(e, row))">
+                <span class="koc-board-rank" role="cell"><RankMedal Rank="row.Rank" /></span>
+                <span class="koc-board-avatar" role="cell">
+                    <MudAvatar Size="Size.Medium" Style="background:#fff;">
+                        <MudImage Src="@KocBrand.Icon(row.AvatarIcon)" Alt="" />
+                    </MudAvatar>
+                </span>
+                <span class="koc-board-main" role="cell">
+                    <b>@row.DisplayName@(row.IsMe ? " (you)" : "")</b>
+                    <small>Level @row.Level · @row.LevelTitle</small>
+                </span>
+                <span class="koc-board-score" role="cell">🛢️ @row.XpTotal.ToString("N0")</span>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>The rows to show. Null means still loading — see <see cref="Loading"/>.</summary>
+    [Parameter] public IReadOnlyList<XpLeaderboardRowDto>? Entries { get; set; }
+
+    /// <summary>How many rows to draw. Ten is enough to feel like a real standings table.</summary>
+    [Parameter] public int Rows { get; set; } = 10;
+
+    /// <summary>Shown when nobody is on the board yet — say what would put them there.</summary>
+    [Parameter] public string EmptyMessage { get; set; } = "Earn the first Barrels of the month and this board is yours.";
+
+    /// <summary>Accessible name for the board.</summary>
+    [Parameter] public string Caption { get; set; } = "Leaderboard";
+
+    /// <summary>Raised when a row is chosen, if the host wants rows to be actionable.</summary>
+    [Parameter] public EventCallback<XpLeaderboardRowDto> OnSelect { get; set; }
+
+    private bool Loading => Entries is null;
+
+    private string RowClass(XpLeaderboardRowDto row)
+    {
+        var classes = new List<string> { "koc-board-row" };
+        if (row.Rank <= 3)
+        {
+            classes.Add("koc-board-podium");
+        }
+
+        if (row.IsMe)
+        {
+            classes.Add("koc-board-me");
+        }
+
+        if (OnSelect.HasDelegate)
+        {
+            classes.Add("koc-board-actionable");
+        }
+
+        return string.Join(' ', classes);
+    }
+
+    // A clickable row has to be reachable without a mouse.
+    private async Task OnRowKey(KeyboardEventArgs e, XpLeaderboardRowDto row)
+    {
+        if (OnSelect.HasDelegate && e.Key is "Enter" or " ")
+        {
+            await OnSelect.InvokeAsync(row);
+        }
+    }
+}
