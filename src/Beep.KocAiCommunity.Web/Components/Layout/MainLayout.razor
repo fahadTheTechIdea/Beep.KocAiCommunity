@@ -6,6 +6,8 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.KocAiCommunity.ServiceDefaults.Security
 @using Beep.KocAiCommunity.Web.Security
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Beep.KocAiCommunity.Contracts.Localization
 @inject DevIdentity Identity
 @inject IHostEnvironment Env
 @inject NavigationManager Nav
@@ -36,6 +38,11 @@
             <StandingChip @key="Identity.UserId" />
             <NotificationBell />
         }
+
+        @* Beside Help, and visible to everyone including a visitor with no account: the pages that most
+           need Arabic are the ones open without signing in. Switching posts to /culture/set, because a
+           circuit can neither set a cookie nor change the culture it is already running under. *@
+        <LanguageSwitcher Language="@_language" OnSwitch="SwitchLanguage" />
 
         @* These items moved off the left drawer and sit directly on the top-right, always visible. *@
         <MudTooltip Text="Help & guides">
@@ -177,12 +184,28 @@
     /// session of ours to end. Inside KOC the corporate account is the session — signing out here would
     /// only be re-established by the next request.
     /// </summary>
+    private string _language = KocLanguages.English;
+
+    /// <summary>
+    /// A full round trip on purpose. The cookie has to be written by a real response, and the culture
+    /// has to be in force before the next circuit starts — changing CultureInfo on the running circuit
+    /// would translate nothing already rendered and leave the page half in each language.
+    /// </summary>
+    private void SwitchLanguage(string language)
+    {
+        var returnUrl = Uri.EscapeDataString(new Uri(Nav.Uri).PathAndQuery);
+        Nav.NavigateTo($"{KocLocalization.SetCulturePath}?language={language}&returnUrl={returnUrl}", forceLoad: true);
+    }
+
     private bool HasLoginPage => SetupStore.SignInWith == KocSignInSource.SiteAccounts;
 
     private string LoginHref => HasLoginPage ? "/account/login" : "/";
 
     protected override void OnInitialized()
     {
+        // The circuit inherits the culture the initial request resolved to, so this is the live answer.
+        _language = KocLanguages.Normalize(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+
         Identity.Changed += OnIdentityChanged;
         Nav.LocationChanged += OnLocationChanged;
     }

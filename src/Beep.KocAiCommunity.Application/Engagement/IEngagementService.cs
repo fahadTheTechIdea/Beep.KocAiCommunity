@@ -19,6 +19,9 @@ public interface IEngagementService
     Task<ProfileDto> GetProfileAsync(string userId, string? displayNameIfNew = null, CancellationToken ct = default);
     Task<ProfileDto> UpdateProfileAsync(string userId, UpdateProfileRequest request, CancellationToken ct = default);
 
+    /// <summary>Remember this person's interface language. Unrecognised values fall back to English.</summary>
+    Task SetLanguageAsync(string userId, string language, CancellationToken ct = default);
+
     /// <summary>
     /// Awards Barrels. Idempotent per (userId, source, refId); applies per-source daily caps; rolls up
     /// the profile total, recomputes the level, touches the streak, evaluates badge rules, and emits

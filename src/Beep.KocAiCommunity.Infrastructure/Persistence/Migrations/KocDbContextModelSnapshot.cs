@@ -1533,6 +1533,10 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Language")
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly?>("LastActiveDate")
                         .HasColumnType("TEXT");
 

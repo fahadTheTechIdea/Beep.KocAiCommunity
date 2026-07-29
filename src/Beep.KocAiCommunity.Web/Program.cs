@@ -53,6 +53,10 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddMudServices();
 
+// English and Arabic. The cookie is the primary store because the pages that most need Arabic are open
+// to people with no account; see KocLocalization for how the choice is resolved and remembered.
+builder.Services.AddKocLocalization();
+
 // Writes competition hero images into wwwroot so they are served as ordinary static files.
 builder.Services.AddScoped<Beep.KocAiCommunity.Web.Services.HeroImageStorage>();
 
@@ -73,6 +77,9 @@ if (!app.Environment.IsDevelopment())
 // MapStaticAssets only serves build-time assets, so this handles files added while the app runs.
 app.UseStaticFiles();
 
+// Before anything renders: the page shell reads the resolved language to set <html lang> and <dir>.
+app.UseRequestLocalization();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
@@ -90,6 +97,7 @@ app.MapStaticAssets();
 // Sign-in form posts (they set the auth cookie, which a Blazor circuit cannot do) and the wizard's save.
 app.MapKocAccountEndpoints();
 app.MapKocSetupEndpoints();
+app.MapKocCultureEndpoints();
 
 // /health and /alive (Phase 01 acceptance gate). Entra auth arrives in Phase 02.
 app.MapDefaultEndpoints();

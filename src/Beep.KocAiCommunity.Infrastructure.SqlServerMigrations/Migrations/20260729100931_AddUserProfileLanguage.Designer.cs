@@ -4,6 +4,7 @@ using Beep.KocAiCommunity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
 {
     [DbContext(typeof(KocDbContext))]
-    partial class KocDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260729100931_AddUserProfileLanguage")]
+    partial class AddUserProfileLanguage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

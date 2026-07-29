@@ -45,6 +45,7 @@
     border: 1px solid var(--koc-accent);
 }
 
+/* Physical on purpose: the four marks form a symmetric frame, so mirroring it changes nothing. */
 .koc-blueprint .koc-corner.tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
 .koc-blueprint .koc-corner.tr { top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
 .koc-blueprint .koc-corner.bl { bottom: -1px; left: -1px; border-right: 0; border-top: 0; }
@@ -82,15 +83,15 @@
 
 /* Notification feed items */
 .koc-notif:hover { background: var(--koc-surface); }
-.koc-notif-unread { border-left: 3px solid var(--koc-accent-500); }
+.koc-notif-unread { border-inline-start: 3px solid var(--koc-accent-500); }
 
 /* Rendered lesson markdown */
 .koc-lesson h1 { font-size: 1.4rem; margin: .2rem 0 .6rem; color: var(--koc-accent-900); }
 .koc-lesson h2 { font-size: 1.1rem; margin: 1rem 0 .4rem; color: var(--koc-accent-700); }
 .koc-lesson p { margin: .5rem 0; line-height: 1.6; }
-.koc-lesson ul { margin: .4rem 0 .4rem 1.2rem; }
+.koc-lesson ul { margin-block: .4rem; margin-inline: 1.2rem 0; }
 .koc-lesson li { margin: .2rem 0; }
-.koc-lesson blockquote { border-left: 3px solid var(--koc-accent-300); margin: .6rem 0; padding: .2rem .8rem; background: var(--koc-surface); }
+.koc-lesson blockquote { border-inline-start: 3px solid var(--koc-accent-300); margin: .6rem 0; padding: .2rem .8rem; background: var(--koc-surface); }
 .koc-lesson pre { background: var(--koc-accent-900); color: #dfeaf3; padding: .7rem; border-radius: 6px; overflow-x: auto; }
 .koc-lesson code { font-family: ui-monospace, monospace; }
 /* Rich lesson media: images, inline diagrams (SVG), and embedded/placeholder video. */
@@ -109,8 +110,10 @@
     background: radial-gradient(circle at 50% 40%, var(--koc-accent-700), var(--koc-accent-900)); }
 .koc-lesson .koc-video-ph .play { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,.15);
     border: 2px solid rgba(255,255,255,.6); display: grid; place-items: center; font-size: 26px; }
-.koc-lesson .koc-callout { border: 1px solid var(--koc-border); border-left: 4px solid var(--koc-accent-500);
-    background: var(--koc-surface); border-radius: 0 10px 10px 0; padding: .7rem 1rem; margin: 1rem 0; }
+.koc-lesson .koc-callout { border: 1px solid var(--koc-border); border-inline-start: 4px solid var(--koc-accent-500);
+    background: var(--koc-surface); padding: .7rem 1rem; margin: 1rem 0;
+    border-start-start-radius: 0; border-end-start-radius: 0;
+    border-start-end-radius: 10px; border-end-end-radius: 10px; }
 
 /* Leaderboard rank medals (gold/silver/bronze) */
 .koc-rank {
@@ -353,11 +356,11 @@
 .koc-setup-option input { margin-top: 4px; }
 .koc-setup-option span { display: block; }
 .koc-setup-option small { display: block; margin-top: 2px; opacity: .78; line-height: 1.45; }
-.koc-setup-detail { margin: -4px 0 14px 34px; }
+.koc-setup-detail { margin: -4px 0 14px; margin-inline-start: 34px; }
 
 /* A form-post button that reads as a normal menu item (sign-out must be a POST, not a link). */
 .koc-menu-form-button {
-    display: block; width: 100%; padding: 6px 16px; text-align: left;
+    display: block; width: 100%; padding: 6px 16px; text-align: start;
     font: inherit; color: inherit; background: none; border: none; cursor: pointer;
 }
 .koc-menu-form-button:hover { background: rgba(128,128,128,.12); }

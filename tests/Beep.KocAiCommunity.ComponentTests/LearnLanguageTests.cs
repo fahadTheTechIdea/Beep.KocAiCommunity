@@ -1,10 +1,13 @@
+using System.Globalization;
 using Beep.KocAiCommunity.Client;
 using Beep.KocAiCommunity.Contracts.Learning;
+using Beep.KocAiCommunity.Contracts.Localization;
 using Beep.KocAiCommunity.Desktop.Local;
 using Beep.KocAiCommunity.Web.Components.Pages;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using MudBlazor.Services;
 using Xunit;
 
@@ -12,8 +15,9 @@ namespace Beep.KocAiCommunity.ComponentTests;
 
 /// <summary>
 /// Learning is the half of the platform open to everyone, so it is the half that most needs to be
-/// readable in both of KOC's working languages. These check the reader can actually get to the Arabic —
-/// the API can serve a translation perfectly and it counts for nothing if no control reaches it.
+/// readable in both of KOC's working languages. These check the two halves meet: the interface language
+/// chosen in the app bar is also the language the catalogue is asked for, and a track that has no
+/// translation is still offered rather than hidden.
 /// </summary>
 public class LearnLanguageTests : TestContext
 {
@@ -30,7 +34,7 @@ public class LearnLanguageTests : TestContext
         {
             LastRequestedLanguage = language;
 
-            var translated = language == "ar"
+            var translated = language == KocLanguages.Arabic
                 ? new TrackDto(Guid.NewGuid(), ArabicTitle, "اعثر على القراءات التي لا تنتمي.", "Advanced", 7, "upstream", 8, Language: "ar")
                 : new TrackDto(Guid.NewGuid(), "Flag the abnormal", "Find the readings that don't belong.", "Advanced", 7, "upstream", 8, Language: "en");
 
@@ -45,56 +49,83 @@ public class LearnLanguageTests : TestContext
             Task.FromResult<IReadOnlyList<MyLearningDto>>([]);
     }
 
-    private (IRenderedComponent<Learn> Page, FakeApi Api) Render()
+    /// <summary>
+    /// Renders the page as it renders for real: the circuit inherits the culture the request resolved
+    /// to, and the page reads it from there rather than owning a toggle of its own.
+    /// </summary>
+    private (IRenderedComponent<Learn> Page, FakeApi Api) RenderIn(string language)
     {
         Services.AddMudServices();
+        Services.AddLogging();
+        Services.AddLocalization();
         JSInterop.Mode = JSRuntimeMode.Loose;
 
         var api = new FakeApi();
         Services.AddSingleton<IKocApiClient>(api);
         Services.AddSingleton(new DevIdentity());
 
-        return (RenderComponent<Learn>(), api);
+        var previous = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = new CultureInfo(language);
+            return (RenderComponent<Learn>(), api);
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = previous;
+        }
     }
 
     [Fact]
-    public void The_page_opens_in_english_and_offers_arabic_by_name()
+    public void The_page_reads_in_english_by_default()
     {
-        var (page, api) = Render();
+        var (page, api) = RenderIn(KocLanguages.English);
 
-        api.LastRequestedLanguage.Should().Be("en");
-        page.Markup.Should().Contain("Flag the abnormal");
-
-        // Each language is named in itself. Someone looking for Arabic looks for العربية, not for the
-        // word "Arabic" written in the script they came here to leave.
-        page.Markup.Should().Contain("العربية").And.Contain("English");
+        api.LastRequestedLanguage.Should().Be(KocLanguages.English);
+        page.Markup.Should().Contain("Learning tracks").And.Contain("Flag the abnormal");
     }
 
     [Fact]
-    public void Choosing_arabic_reloads_the_catalogue_in_arabic_and_reads_right_to_left()
+    public void Under_arabic_the_chrome_and_the_catalogue_are_both_arabic()
     {
-        var (page, api) = Render();
+        // The bug this guards against is a half-translated page: an Arabic lesson under an English
+        // heading, or the reverse. One language choice has to reach both.
+        var (page, api) = RenderIn(KocLanguages.Arabic);
 
-        var arabicButton = page.FindAll("button").Single(b => b.TextContent.Contains("العربية"));
-        arabicButton.Click();
+        api.LastRequestedLanguage.Should().Be(KocLanguages.Arabic, "the catalogue follows the interface");
 
-        api.LastRequestedLanguage.Should().Be("ar");
-        page.Markup.Should().Contain(ArabicTitle).And.NotContain("Flag the abnormal");
+        page.Markup.Should().Contain("المسارات التعليمية", "the heading comes from the shared resource");
+        page.Markup.Should().Contain(ArabicTitle, "and the track comes from the catalogue");
+        page.Markup.Should().NotContain("Learning tracks");
+    }
 
-        // Direction is not cosmetic: Arabic prose rendered left-to-right puts punctuation and any
-        // embedded Latin term in the wrong place, and the paragraph stops making sense.
+    [Fact]
+    public void An_arabic_track_renders_right_to_left()
+    {
+        // Not cosmetic: Arabic prose laid out left-to-right puts punctuation and any embedded Latin
+        // term in the wrong place, and the paragraph stops making sense.
+        var (page, _) = RenderIn(KocLanguages.Arabic);
+
         page.Markup.Should().Contain("dir=\"rtl\"");
     }
 
     [Fact]
     public void A_track_with_no_translation_is_still_offered_and_says_which_language_it_is_in()
     {
-        var (page, _) = Render();
-
-        page.FindAll("button").Single(b => b.TextContent.Contains("العربية")).Click();
-
         // Hiding the untranslated half would make a partly translated catalogue read as a broken page.
+        var (page, _) = RenderIn(KocLanguages.Arabic);
+
         page.Markup.Should().Contain("Getting started with data");
-        page.Markup.Should().Contain("Only in English");
+        page.Markup.Should().Contain("متاح بـEnglish فقط");
+    }
+
+    [Fact]
+    public void An_english_track_still_reads_left_to_right_inside_an_arabic_page()
+    {
+        // A track's language is independent of the interface language. The untranslated one must keep
+        // its own direction, or its English text mirrors and reads as nonsense.
+        var (page, _) = RenderIn(KocLanguages.Arabic);
+
+        page.Markup.Should().Contain("dir=\"ltr\"", "the English track keeps its own direction");
     }
 }

@@ -1,39 +1,28 @@
 @page "/learn"
 @using Beep.KocAiCommunity.Contracts.Learning
-@using Beep.KocAiCommunity.Domain.Learning
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @using Markdig
+@using Beep.KocAiCommunity.Contracts.Localization
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@using System.Globalization
 @inject IKocApiClient Api
 @inject DevIdentity Identity
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Learn · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Learn"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Learn &amp; compete" Title="Learning tracks"
-            Subtitle="Guided tracks from your first look at data to a model your team can rely on. Enroll, work through the lessons, and watch your progress." />
+<PageHeader Eyebrow="@L["Learn & compete"]" Title="@L["Learning tracks"]"
+            Subtitle="@L["Guided tracks from your first look at data to a model your team can rely on. Enroll, work through the lessons, and watch your progress."]" />
 
-@* Reading the material is the part of the platform open to everyone, so it is the part that most needs
-   to be readable in both of KOC's working languages. Each language is named in itself — someone looking
-   for Arabic looks for العربية, not for the word "Arabic" written in a script they came here to leave. *@
-<div class="d-flex align-center gap-2 mb-6">
-    <MudIcon Icon="@Icons.Material.Filled.Translate" Size="Size.Small" />
-    <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
-        @foreach (var language in TrackLanguages.All)
-        {
-            var isCurrent = language == _language;
-            <MudButton Color="@(isCurrent ? Color.Primary : Color.Default)"
-                       Variant="@(isCurrent ? Variant.Filled : Variant.Outlined)"
-                       OnClick="() => SwitchLanguage(language)">
-                @TrackLanguages.NativeName(language)
-            </MudButton>
-        }
-    </MudButtonGroup>
-</div>
-
+@* The catalogue follows the interface language chosen in the app bar. There is no toggle of its own
+   any more: two language controls on one page, one of which changed only that page, was a worse
+   answer than one control that changes everything. *@
 @if (_error is not null)
 {
     <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">
-        The learning catalogue couldn't be loaded (@_error).
+        @L["The learning catalogue couldn't be loaded ({0}).", _error]
     </MudAlert>
 }
 else if (_tracks is null)
@@ -46,19 +35,19 @@ else
         @foreach (var track in _tracks)
         {
             var progress = _mine.GetValueOrDefault(track.Id);
-            var rtl = TrackLanguages.IsRightToLeft(track.Language);
+            var rtl = KocLanguages.IsRightToLeft(track.Language);
             <MudItem xs="12" md="4">
                 <BlueprintCard Class="pa-6" Style="height:100%;display:flex;flex-direction:column;">
                     <div class="d-flex justify-space-between align-center">
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@track.Level</MudChip>
-                        <MudText Typo="Typo.caption">@track.LessonCount lessons</MudText>
+                        <MudText Typo="Typo.caption">@L["{0} lessons", track.LessonCount]</MudText>
                     </div>
                     @* A catalogue that is only partly translated says so on the card rather than
                        quietly serving English under an Arabic heading. *@
                     @if (track.Language != _language)
                     {
                         <MudText Typo="Typo.caption" Class="mt-2 mud-text-secondary">
-                            Only in @TrackLanguages.NativeName(track.Language)
+                            @L["Only in {0}", KocLanguages.NativeName(track.Language)]
                         </MudText>
                     }
                     <MudText Typo="Typo.h6" Class="koc-heading mt-3 mb-2" dir="@(rtl ? "rtl" : "ltr")">@track.Title</MudText>
@@ -68,10 +57,10 @@ else
                     {
                         <MudProgressLinear Color="Color.Primary" Value="@Percent(progress)" Class="my-2" />
                         <MudText Typo="Typo.caption" Class="mb-2">
-                            @progress.CompletedLessons / @progress.TotalLessons complete
+                            @L["{0} / {1} complete", progress.CompletedLessons, progress.TotalLessons]
                             @if (progress.Status == "completed")
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">Completed</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["Completed"]</MudChip>
                             }
                         </MudText>
                     }
@@ -80,18 +69,18 @@ else
                     {
                         @* Where the track leads. Set by an admin in the catalogue console. *@
                         <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-2">
-                            Put it to work in
+                            @L["Put it to work in"]
                             <MudLink Href="@($"/compete/{track.RecommendedCompetitionId}")"><b>@competitionTitle</b></MudLink>
                         </MudAlert>
                     }
 
                     <div class="mt-auto d-flex gap-2 align-center">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenTrack(track.Id)">Open</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="() => OpenTrack(track.Id)">@L["Open"]</MudButton>
                         @* Enrolling records progress against a person, so it appears once there is one —
                            silently, with no prompt. Reading the material is never gated or nagged. *@
                         @if (!Identity.IsGuest && progress is null)
                         {
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => Enroll(track.Id)">Enroll</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => Enroll(track.Id)">@L["Enroll"]</MudButton>
                         }
                     </div>
                 </BlueprintCard>
@@ -101,7 +90,7 @@ else
 
     @if (_selected is not null)
     {
-        var selectedRtl = TrackLanguages.IsRightToLeft(_selected.Language);
+        var selectedRtl = KocLanguages.IsRightToLeft(_selected.Language);
         <MudDivider Class="my-8" />
 
         @* The whole track — heading, summary, and every lesson body — reads in the direction its own
@@ -115,11 +104,11 @@ else
         @if (OtherTranslations(_selected) is { Count: > 0 } others)
         {
             <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-4">
-                Also available in
+                @L["Also available in"]
                 @foreach (var other in others)
                 {
                     <MudLink Class="mx-1" @onclick="() => OpenTrack(other.Value)" Style="cursor:pointer;">
-                        <b>@TrackLanguages.NativeName(other.Key)</b>
+                        <b>@KocLanguages.NativeName(other.Key)</b>
                     </MudLink>
                 }
             </MudAlert>
@@ -142,12 +131,12 @@ else
                         }
                         else
                         {
-                            <MudText Typo="Typo.body2">Content coming soon.</MudText>
+                            <MudText Typo="Typo.body2">@L["Content coming soon."]</MudText>
                         }
                         @if (!Identity.IsGuest)
                         {
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="mt-2"
-                                       OnClick="() => Complete(_selected.Id, lesson.Id)">Mark complete</MudButton>
+                                       OnClick="() => Complete(_selected.Id, lesson.Id)">@L["Mark complete"]</MudButton>
                         }
                     </ChildContent>
                 </MudExpansionPanel>
@@ -162,13 +151,21 @@ else
     private Dictionary<Guid, MyLearningDto> _mine = [];
     private TrackDetailDto? _selected;
     private string? _error;
-    private string _language = TrackLanguages.English;
+    /// <summary>
+    /// The interface language, which is also the catalogue language asked of the API. A track with no
+    /// translation still comes back in the language it was written in, marked as such on the card.
+    /// </summary>
+    private string _language = KocLanguages.English;
 
     private static readonly MarkdownPipeline _md = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
     private static MarkupString Md(string markdown) => (MarkupString)Markdown.ToHtml(markdown, _md);
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _language = KocLanguages.Normalize(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -204,21 +201,6 @@ else
     }
 
     private async Task OpenTrack(Guid trackId) => _selected = await Api.GetTrackAsync(trackId);
-
-    private async Task SwitchLanguage(string language)
-    {
-        if (language == _language)
-        {
-            return;
-        }
-
-        _language = language;
-
-        // Close the open track: it is in the language the reader just left. Whether the same material
-        // exists in the new one is the catalogue's answer to give, not something to guess at here.
-        _selected = null;
-        await LoadAsync();
-    }
 
     /// <summary>The same material in every language except the one being read.</summary>
     private static IReadOnlyList<KeyValuePair<string, Guid>> OtherTranslations(TrackDetailDto track) =>

@@ -206,6 +206,9 @@ public interface IKocApiClient
 
     // Engagement: Barrels, career ladder, badges, streaks, kudos, leaderboards, activity.
     Task<ProfileDto?> GetMyProfileAsync(CancellationToken ct = default);
+
+    /// <summary>Remember the interface language against the account, so it follows to another device.</summary>
+    Task SetMyLanguageAsync(string language, CancellationToken ct = default);
     Task<ProfileDto?> GetProfileAsync(string userId, CancellationToken ct = default);
     Task<ProfileDto?> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<XpLeaderboardRowDto>> GetXpLeaderboardAsync(string period, CancellationToken ct = default);
@@ -916,6 +919,10 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public Task<ProfileDto?> GetMyProfileAsync(CancellationToken ct = default) =>
         http.GetFromJsonAsync<ProfileDto>("/api/v1/profiles/me", ct);
+
+    public async Task SetMyLanguageAsync(string language, CancellationToken ct = default) =>
+        (await http.PutAsJsonAsync("/api/v1/profiles/me/language", new SetLanguageRequest(language), ct))
+            .EnsureSuccessStatusCode();
 
     public Task<ProfileDto?> GetProfileAsync(string userId, CancellationToken ct = default) =>
         http.GetFromJsonAsync<ProfileDto>($"/api/v1/profiles/{Uri.EscapeDataString(userId)}", ct);

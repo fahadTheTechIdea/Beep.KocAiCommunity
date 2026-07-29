@@ -1,0 +1,45 @@
+@using Beep.KocAiCommunity.Contracts.Localization
+@using Microsoft.Extensions.Localization
+@using System.Globalization
+@inject IStringLocalizer<Strings> L
+
+@* Each language is named in itself. Someone looking for Arabic is looking for العربية, not for the
+   word "Arabic" written in the script they came here to leave. *@
+<MudTooltip Text="@L["Language"]">
+    <MudMenu Icon="@Icons.Material.Filled.Translate" Dense="true" AriaLabel="@L["Language"]">
+        @foreach (var language in KocLanguages.All)
+        {
+            var isCurrent = language == Current;
+            <MudMenuItem OnClick="@(() => Switch(language))">
+                <div class="d-flex align-center gap-2">
+                    @if (isCurrent)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary" />
+                    }
+                    else
+                    {
+                        <span style="display:inline-block;width:20px;"></span>
+                    }
+                    <span dir="@KocLanguages.Direction(language)">@KocLanguages.NativeName(language)</span>
+                </div>
+            </MudMenuItem>
+        }
+    </MudMenu>
+</MudTooltip>
+
+@code {
+    /// <summary>
+    /// What switching does. The web host posts to an endpoint so the cookie can actually be written and
+    /// the page reloaded — a Blazor circuit cannot change its own culture, and cannot set a cookie. The
+    /// desktop host has no request at all and just saves a setting and re-renders.
+    /// </summary>
+    [Parameter, EditorRequired] public EventCallback<string> OnSwitch { get; set; }
+
+    /// <summary>The language in force, so the menu can tick it.</summary>
+    [Parameter] public string? Language { get; set; }
+
+    private string Current => KocLanguages.Normalize(Language ?? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+
+    private Task Switch(string language) =>
+        language == Current ? Task.CompletedTask : OnSwitch.InvokeAsync(language);
+}

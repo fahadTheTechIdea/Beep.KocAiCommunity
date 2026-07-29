@@ -25,6 +25,14 @@ public static class EngagementEndpoints
         .WithName("UpdateMyProfile")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
+        group.MapPut("/profiles/me/language", async (SetLanguageRequest req, IKocCurrentUser me, IEngagementService svc, CancellationToken ct) =>
+        {
+            await svc.SetLanguageAsync(me.UserId!, req.Language, ct);
+            return Results.NoContent();
+        })
+        .WithName("SetMyLanguage")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
         // ---- Leaderboards ----
         group.MapGet("/engagement/leaderboard", async (string? period, IKocCurrentUser me, IEngagementService svc, CancellationToken ct) =>
             Results.Ok(await svc.GetXpLeaderboardAsync(me.UserId!, ParsePeriod(period), ct)))

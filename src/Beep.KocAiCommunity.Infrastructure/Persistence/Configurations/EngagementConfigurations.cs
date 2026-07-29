@@ -15,6 +15,7 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
         b.Property(x => x.Email).HasMaxLength(256);
         b.Property(x => x.CompanyId).HasMaxLength(32);
         b.Property(x => x.DepartmentId).HasMaxLength(32);
+        b.Property(x => x.Language).HasMaxLength(8);
         b.Property(x => x.Bio).HasMaxLength(280);
         b.Property(x => x.AvatarIcon).HasMaxLength(128).IsRequired();
         b.Property(x => x.SkillsCsv).HasMaxLength(512);

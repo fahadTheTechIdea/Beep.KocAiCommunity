@@ -6,6 +6,7 @@ using Beep.KocAiCommunity.Application.Engagement;
 using Beep.KocAiCommunity.Application.Organization;
 using Beep.KocAiCommunity.Application.RealTime;
 using Beep.KocAiCommunity.Contracts.Engagement;
+using Beep.KocAiCommunity.Contracts.Localization;
 using Beep.KocAiCommunity.Domain.Engagement;
 using Beep.KocAiCommunity.Domain.Notifications;
 using Beep.KocAiCommunity.Domain.Organization;
@@ -43,6 +44,14 @@ public sealed class EngagementService(
         }
 
         return await BuildProfileDtoAsync(profile, ct);
+    }
+
+    public async Task SetLanguageAsync(string userId, string language, CancellationToken ct = default)
+    {
+        var profile = await GetOrCreateProfileAsync(userId, null, ct);
+        profile.Language = KocLanguages.Normalize(language);
+        profile.LastModifiedUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
     }
 
     public async Task<ProfileDto> UpdateProfileAsync(string userId, UpdateProfileRequest request, CancellationToken ct = default)
@@ -422,7 +431,8 @@ public sealed class EngagementService(
             : profile.SkillsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         return new ProfileDto(profile.UserId, profile.DisplayName, profile.Bio, profile.AvatarIcon, skills,
-            profile.XpTotal, level, title, nextXp, profile.CurrentStreakDays, profile.LongestStreakDays, badges);
+            profile.XpTotal, level, title, nextXp, profile.CurrentStreakDays, profile.LongestStreakDays, badges,
+            profile.Language);
     }
 
     /// <summary>Per-user bbl for the period: the profile total for all-time, otherwise a windowed ledger sum.</summary>

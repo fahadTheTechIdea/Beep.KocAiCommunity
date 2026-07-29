@@ -13,12 +13,21 @@ public sealed record ProfileDto(
     int? NextLevelXp,
     int CurrentStreakDays,
     int LongestStreakDays,
-    IReadOnlyList<BadgeDto> Badges);
+    IReadOnlyList<BadgeDto> Badges,
+    /// <summary>The interface language this person chose, or null if they never did.</summary>
+    string? Language = null);
 
 /// <summary>An earned or catalog badge. <paramref name="EarnedUtc"/> is null for catalog-only rows.</summary>
 public sealed record BadgeDto(string Code, string Name, string Description, string IconFile, string Tier, DateTime? EarnedUtc);
 
 public sealed record UpdateProfileRequest(string? Bio, string? AvatarIcon, string? SkillsCsv);
+
+/// <summary>
+/// The interface language, saved against the account so it follows someone to another device. Its own
+/// request rather than a field on <see cref="UpdateProfileRequest"/>: switching language should not
+/// have to send a bio and an avatar back, nor risk overwriting them.
+/// </summary>
+public sealed record SetLanguageRequest(string Language);
 
 /// <summary>One row on the individual Barrels leaderboard.</summary>
 public sealed record XpLeaderboardRowDto(int Rank, string UserId, string DisplayName, string AvatarIcon, int Level, string LevelTitle, int XpTotal, bool IsMe);

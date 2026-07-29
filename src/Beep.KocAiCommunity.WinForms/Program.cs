@@ -1,4 +1,6 @@
+using System.Globalization;
 using Beep.KocAiCommunity.Client;
+using Beep.KocAiCommunity.Contracts.Localization;
 using Beep.KocAiCommunity.Desktop.Local;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -19,9 +21,19 @@ internal static class Program
 #endif
         services.AddMudServices();
 
+        // The shared components take IStringLocalizer, so the desktop host needs the same resource
+        // machinery the web host has — without it every shared label throws rather than falling back.
+        services.AddLogging();
+        services.AddLocalization();
+
         // Local-first: the Studio designer + runs execute in-process (offline). Competition
         // calls fall through to this API base URL when the KOC network is reachable.
         var settings = AppSettings.Load();
+
+        // No request pipeline here, so the culture is set once for the process. Numbers and dates stay
+        // pinned exactly as they are on the web, so a score reads the same in both.
+        CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo(KocLanguages.Normalize(settings.Language));
+        CultureInfo.DefaultThreadCurrentCulture = new CultureInfo(KocLanguages.FormattingCulture);
         var apiBaseUrl = Environment.GetEnvironmentVariable("KOC_API_BASEURL") ?? settings.ApiBaseUrl;
         services.AddSingleton(settings);
         // The signed-in user comes from the intranet session (no extra login). Swap this provider

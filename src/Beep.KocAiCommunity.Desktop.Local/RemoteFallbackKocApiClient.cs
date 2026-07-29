@@ -157,6 +157,7 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient remote) : IKocApi
     public virtual Task<IReadOnlyList<InferenceLogDto>> GetInferenceLogsAsync(Guid versionId, CancellationToken ct = default) => remote.GetInferenceLogsAsync(versionId, ct);
     public virtual Task<(DriftReportDto? Report, string? Error)> ComputeDriftAsync(Guid versionId, IReadOnlyList<IReadOnlyDictionary<string, string>> rows, CancellationToken ct = default) => remote.ComputeDriftAsync(versionId, rows, ct);
     public virtual Task<ProfileDto?> GetMyProfileAsync(CancellationToken ct = default) => remote.GetMyProfileAsync(ct);
+    public virtual Task SetMyLanguageAsync(string language, CancellationToken ct = default) => remote.SetMyLanguageAsync(language, ct);
     public virtual Task<ProfileDto?> GetProfileAsync(string userId, CancellationToken ct = default) => remote.GetProfileAsync(userId, ct);
     public virtual Task<ProfileDto?> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default) => remote.UpdateProfileAsync(request, ct);
     public virtual Task<IReadOnlyList<XpLeaderboardRowDto>> GetXpLeaderboardAsync(string period, CancellationToken ct = default) => remote.GetXpLeaderboardAsync(period, ct);

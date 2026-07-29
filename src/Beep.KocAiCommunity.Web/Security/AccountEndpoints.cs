@@ -31,6 +31,7 @@ public static class AccountEndpoints
             }
 
             await SignInAsync(context, auth);
+            await RestoreLanguageAsync(context, api);
             return Results.Redirect(SafeReturnUrl(returnUrl));
         })
         .AllowAnonymous()
@@ -79,6 +80,23 @@ public static class AccountEndpoints
             // The cookie must not outlive the API token it carries, or the user appears signed in while
             // every API call returns 401.
             new AuthenticationProperties { IsPersistent = true, ExpiresUtc = auth.ExpiresUtc });
+    }
+
+    /// <summary>
+    /// After the session exists, put the member's saved interface language back — this browser may
+    /// never have seen them before. Best effort, and never at the cost of the sign-in itself.
+    /// </summary>
+    private static async Task RestoreLanguageAsync(HttpContext context, IKocApiClient api)
+    {
+        try
+        {
+            var profile = await api.GetMyProfileAsync(context.RequestAborted);
+            KocLocalization.RestoreLanguageOnSignIn(context, profile?.Language);
+        }
+        catch (Exception)
+        {
+            // They are signed in; the interface simply stays in whatever language it was.
+        }
     }
 
     /// <summary>Back to the form with the failure to show, preserving where the user was headed.</summary>

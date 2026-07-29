@@ -16,6 +16,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- LocalizationCoverageTests reads the .razor sources and the .resx, so it needs the repository
+         root. Baked in at compile time rather than walked up from the test binary, because the output
+         path is redirected when tests run out of tree and the walk would find nothing. -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryRoot</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Ui.Shared\Beep.KocAiCommunity.Ui.Shared.csproj" />
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Web\Beep.KocAiCommunity.Web.csproj" />
     <!-- RemoteFallbackKocApiClient doubles as a convenient IKocApiClient fake base for page tests. -->

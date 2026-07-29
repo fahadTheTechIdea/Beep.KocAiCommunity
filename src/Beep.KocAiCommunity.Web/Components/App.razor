@@ -1,5 +1,12 @@
+@using Beep.KocAiCommunity.Contracts.Localization
+@using Beep.KocAiCommunity.Web.Security
+@inject IHttpContextAccessor Http
+
+@* App.razor renders as static SSR, so it can read the language the request resolved to. Setting dir
+   here rather than on an inner element is what makes MudBlazor mirror: its CSS is built on logical
+   properties (margin-inline, padding-inline), which follow the document direction on their own. *@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@_language" dir="@KocLanguages.Direction(_language)">
 
 <head>
     <meta charset="utf-8" />
@@ -23,3 +30,9 @@
 </body>
 
 </html>
+
+@code {
+    private string _language = KocLanguages.English;
+
+    protected override void OnInitialized() => _language = Http.HttpContext.CurrentLanguage();
+}

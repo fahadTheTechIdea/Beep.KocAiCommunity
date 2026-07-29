@@ -26,6 +26,16 @@ public class UserProfile : AuditableEntity
     /// </summary>
     public string? DepartmentId { get; set; }
 
+    /// <summary>
+    /// The interface language this person chose, so the choice follows them to another device.
+    /// <para>
+    /// The cookie, not this, is what each request reads — the pages that most need Arabic are open to
+    /// people with no account, and a preference nobody can store yet still has to work. This is the
+    /// copy that outlives the cookie; sign-in puts it back.
+    /// </para>
+    /// </summary>
+    public string? Language { get; set; }
+
     public string? Bio { get; set; }                            // max 280
     public string AvatarIcon { get; set; } = "185-worker.png";  // file name resolved via KocBrand.Icon()
     public string? SkillsCsv { get; set; }                      // "ML.NET,Python,Reservoir"

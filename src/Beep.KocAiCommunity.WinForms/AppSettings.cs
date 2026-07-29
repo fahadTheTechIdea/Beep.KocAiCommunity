@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Beep.KocAiCommunity.Contracts.Localization;
 
 namespace Beep.KocAiCommunity.WinForms;
 
@@ -9,6 +10,12 @@ public sealed class AppSettings
 
     /// <summary>Which identity to act as: "__me" (the real signed-in Windows user, default) or a dev persona key.</summary>
     public string PersonaKey { get; set; } = "__me";
+
+    /// <summary>
+    /// Interface language, "en" or "ar". The desktop has no request and no cookie, so the choice lives
+    /// here — this file is the equivalent of the browser's culture cookie.
+    /// </summary>
+    public string Language { get; set; } = KocLanguages.English;
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KocStudio", "settings.json");
