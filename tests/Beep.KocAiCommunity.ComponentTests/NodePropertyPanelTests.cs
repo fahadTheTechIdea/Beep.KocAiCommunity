@@ -233,15 +233,20 @@ public class NodePropertyPanelTests : TestContext
         var l2 = Param("l2", "Number") with { VisibleWhen = new VisibleWhenDto("algorithm", ["sdca"]) };
         var rank = Param("rank", "Integer") with { VisibleWhen = new VisibleWhenDto("algorithm", ["randomized-pca"]) };
 
+        // Asserted on the field's own label, not a bare substring of the whole markup: MudBlazor mints
+        // random element ids, and one of them ("mudinput1h805l2o") happened to contain "l2" — a test
+        // that fails once in a while for a reason nobody can reproduce is worse than no test.
         var supervised = Render(Descriptor(task, algo, l2, rank), new Dictionary<string, string>());
-        supervised.Markup.Should().Contain("l2");
-        supervised.Markup.Should().NotContain("rank");
+        Labels(supervised).Should().Contain("l2").And.NotContain("rank");
 
         var anomaly = Render(Descriptor(task, algo, l2, rank),
             new Dictionary<string, string> { ["task"] = "AnomalyDetection", ["algorithm"] = "sdca" });
-        anomaly.Markup.Should().Contain("rank");
-        anomaly.Markup.Should().NotContain("l2");
+        Labels(anomaly).Should().Contain("rank").And.NotContain("l2");
     }
+
+    /// <summary>The parameter labels the panel actually rendered — what "the field is shown" means.</summary>
+    private static IReadOnlyList<string> Labels(IRenderedFragment panel) =>
+        [.. panel.FindAll("legend").Select(e => e.TextContent.Trim())];
 
     [Fact]
     public void Lookup_shows_only_options_that_apply_to_the_active_task()

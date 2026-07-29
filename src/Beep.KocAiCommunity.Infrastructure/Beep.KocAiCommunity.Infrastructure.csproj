@@ -25,6 +25,10 @@
          catalogue with nothing to say why. These are content keyed by language in the database, not
          .NET localization, so the heuristic is wrong for every file here. -->
     <EmbeddedResource Include="Learning\Content\*.md" WithCulture="false" />
+
+    <!-- Translated help articles. Same WithCulture=false for the same reason: `faq.ar.md` would
+         otherwise be read as a localized resource and moved into an ar/ satellite assembly. -->
+    <EmbeddedResource Include="Help\Content\*.md" WithCulture="false" />
   </ItemGroup>
 
 </Project>
