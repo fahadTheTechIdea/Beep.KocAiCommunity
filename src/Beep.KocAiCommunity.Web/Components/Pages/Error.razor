@@ -1,8 +1,11 @@
 @page "/Error"
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Error · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Error"] · @KocBrand.ProductName</PageTitle>
 
-<MudText Typo="Typo.h5" Class="koc-heading mb-2">Something went wrong</MudText>
+<MudText Typo="Typo.h5" Class="koc-heading mb-2">@L["Something went wrong"]</MudText>
 <MudText Typo="Typo.body1">
     An error occurred while processing your request. If it persists, contact the platform team.
 </MudText>

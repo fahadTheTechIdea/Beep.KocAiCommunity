@@ -2,6 +2,9 @@
 @using Beep.KocAiCommunity.Client
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <DialogContent>
@@ -13,8 +16,8 @@
         }
         else
         {
-            <MudTextField @bind-Value="_name" Label="Model name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" Placeholder="ESP failure model" />
-            <MudSelect T="Guid?" @bind-Value="_runId" Label="From training run" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudTextField @bind-Value="_name" Label="@L["Model name"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" Placeholder="ESP failure model" />
+            <MudSelect T="Guid?" @bind-Value="_runId" Label="@L["From training run"]" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (var r in _runs)
                 {
                     <MudSelectItem T="Guid?" Value="@r.Id">@r.DatasetName · @r.Task · @r.PrimaryValue.ToString("0.###") @r.PrimaryMetric</MudSelectItem>
@@ -23,9 +26,9 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_name) || _runId is null)">Register version</MudButton>
+                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_name) || _runId is null)">@L["Register version"]</MudButton>
     </DialogActions>
 </MudDialog>
 

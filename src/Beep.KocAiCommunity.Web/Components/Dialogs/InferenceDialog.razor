@@ -1,6 +1,9 @@
 @using Beep.KocAiCommunity.Contracts.Studio
 @using Beep.KocAiCommunity.Client
 @inject IKocApiClient Api
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <TitleContent>
@@ -11,14 +14,14 @@
             Enter one row of feature values, one <code>column=value</code> per line. The label column is
             optional — it's ignored during scoring.
         </MudText>
-        <MudTextField @bind-Value="_input" Label="Features" Variant="Variant.Outlined" Lines="5"
+        <MudTextField @bind-Value="_input" Label="@L["Features"]" Variant="Variant.Outlined" Lines="5"
                       Placeholder="x1=9&#10;x2=8" Class="mb-3" />
 
         <div class="d-flex gap-2 mb-3">
             <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow"
-                       Disabled="@_busy" OnClick="Predict">Predict</MudButton>
+                       Disabled="@_busy" OnClick="Predict">@L["Predict"]</MudButton>
             <MudButton Color="Color.Secondary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ShowChart"
-                       Disabled="@_busy" OnClick="CheckDrift">Drift check</MudButton>
+                       Disabled="@_busy" OnClick="CheckDrift">@L["Drift check"]</MudButton>
         </div>
 
         @if (_error is not null)
@@ -29,7 +32,7 @@
         @if (_prediction is not null)
         {
             <MudPaper Class="pa-3 mb-2" Elevation="0" Outlined="true">
-                <MudText Typo="Typo.subtitle2" Class="mb-1">Prediction</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Prediction"]</MudText>
                 @if (_prediction.PredictedLabel is not null)
                 {
                     <MudText Typo="Typo.body2"><b>Predicted label:</b> @_prediction.PredictedLabel</MudText>
@@ -64,7 +67,7 @@
                     }
                 </MudText>
                 <MudSimpleTable Dense="true">
-                    <thead><tr><th>Feature</th><th>Baseline mean</th><th>Batch mean</th><th>Shift</th></tr></thead>
+                    <thead><tr><th>@L["Feature"]</th><th>@L["Baseline mean"]</th><th>@L["Batch mean"]</th><th>@L["Shift"]</th></tr></thead>
                     <tbody>
                         @foreach (var f in _drift.Features)
                         {
@@ -81,7 +84,7 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => Dialog.Close()">Close</MudButton>
+        <MudButton OnClick="() => Dialog.Close()">@L["Close"]</MudButton>
     </DialogActions>
 </MudDialog>
 

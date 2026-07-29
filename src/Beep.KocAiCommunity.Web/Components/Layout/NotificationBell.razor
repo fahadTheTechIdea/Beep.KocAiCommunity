@@ -6,6 +6,9 @@
 @inject NavigationManager Nav
 @inject DevIdentity Identity
 @inject RealtimeOptions Realtime
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true">
     <ActivatorContent>
@@ -18,17 +21,17 @@
     <ChildContent>
         <div style="min-width:320px;max-width:380px;">
             <div class="d-flex align-center px-3 py-2">
-                <MudText Typo="Typo.subtitle2" Class="koc-heading">Notifications</MudText>
+                <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Notifications"]</MudText>
                 <MudSpacer />
                 @if (_unread > 0)
                 {
-                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="MarkAll">Mark all read</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="MarkAll">@L["Mark all read"]</MudButton>
                 }
             </div>
             <MudDivider />
             @if (_items.Count == 0)
             {
-                <MudText Typo="Typo.body2" Class="pa-3">You're all caught up.</MudText>
+                <MudText Typo="Typo.body2" Class="pa-3">@L["You're all caught up."]</MudText>
             }
             else
             {

@@ -1,6 +1,9 @@
 @using System.Globalization
 @using Beep.KocAiCommunity.Contracts.ML
 @using Beep.KocAiCommunity.Contracts.Datasets
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 @* The one property panel for every node. It binds to the node's parameter descriptor (one NodeParameter
    contract) and renders each parameter by its declared Type, getting/setting the node's Config through the
@@ -20,7 +23,7 @@
 
 @if (Descriptor is null || Descriptor.Parameters.Count == 0)
 {
-    <MudText Typo="Typo.body2">No options — this step acts on the columns flowing into it.</MudText>
+    <MudText Typo="Typo.body2">@L["No options — this step acts on the columns flowing into it."]</MudText>
 }
 else
 {
@@ -55,7 +58,7 @@ else
                     </MudSelect>
                     @if (Datasets.Count == 0)
                     {
-                        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">No datasets with a file are visible to you — add one under <b>Datasets</b> to join or append it.</MudText>
+                        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">@L["No datasets with a file are visible to you — add one under Datasets to join or append it."]</MudText>
                     }
                     break;
 

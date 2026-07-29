@@ -4,6 +4,9 @@
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <TitleContent>
@@ -12,7 +15,7 @@
     <DialogContent>
         <MudText Typo="Typo.body2" Class="mb-3">
             Trains this published workflow on a dataset in the background. It creates a tracked
-            <b>Experiment</b> (with trials) and a <b>model run</b> you can register in the model registry.
+            <b>@L["Experiment"]</b> (with trials) and a <b>model run</b> you can register in the model registry.
         </MudText>
 
         @if (_datasets.Count == 0)
@@ -31,14 +34,14 @@
             </MudSelect>
             <MudTextField @bind-Value="_labelColumn" Label="Label column" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
             <MudSelect @bind-Value="_task" Label="Task" Variant="Variant.Outlined" Margin="Margin.Dense">
-                <MudSelectItem Value="@("BinaryClassification")">Binary classification</MudSelectItem>
-                <MudSelectItem Value="@("MulticlassClassification")">Multiclass classification</MudSelectItem>
+                <MudSelectItem Value="@("BinaryClassification")">@L["Binary classification"]</MudSelectItem>
+                <MudSelectItem Value="@("MulticlassClassification")">@L["Multiclass classification"]</MudSelectItem>
                 <MudSelectItem Value="@("Regression")">Regression</MudSelectItem>
             </MudSelect>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton OnClick="() => Dialog.Cancel()">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PlayArrow"
                    Disabled="@(_busy || _datasetId is null)" OnClick="Run">Run</MudButton>
     </DialogActions>

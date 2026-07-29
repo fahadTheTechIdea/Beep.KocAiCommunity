@@ -3,44 +3,47 @@
 @using Beep.KocAiCommunity.Client
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <TitleContent>
         <div class="d-flex align-center gap-2">
             <MudIcon Icon="@Icons.Material.Filled.Schema" Color="Color.Primary" />
-            <MudText Typo="Typo.h6" Class="koc-heading">New workflow</MudText>
+            <MudText Typo="Typo.h6" Class="koc-heading">@L["New workflow"]</MudText>
         </div>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="_name" Label="Workflow name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
-        <MudSelect @bind-Value="_classification" Label="Classification" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
+        <MudTextField @bind-Value="_name" Label="@L["Workflow name"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+        <MudSelect @bind-Value="_classification" Label="@L["Security classification"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
             @foreach (var c in Classifications)
             {
                 <MudSelectItem Value="@c">@c</MudSelectItem>
             }
         </MudSelect>
 
-        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Purpose</MudText>
+        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["Purpose"]</MudText>
         <MudRadioGroup @bind-Value="_target">
-            <MudRadio Value="@("personal")" Color="Color.Primary" Dense="true">Personal — explore your own data</MudRadio>
-            <MudRadio Value="@("competition")" Color="Color.Primary" Dense="true" Disabled="@(_competitions.Count == 0)">Target a competition — submit your pipeline</MudRadio>
+            <MudRadio Value="@("personal")" Color="Color.Primary" Dense="true">@L["Personal — explore your own data"]</MudRadio>
+            <MudRadio Value="@("competition")" Color="Color.Primary" Dense="true" Disabled="@(_competitions.Count == 0)">@L["Target a competition — submit your pipeline"]</MudRadio>
         </MudRadioGroup>
 
         @if (_target == "competition")
         {
-            <MudSelect T="Guid?" @bind-Value="_competitionId" Label="Competition" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2">
+            <MudSelect T="Guid?" @bind-Value="_competitionId" Label="@L["Competition"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2">
                 @foreach (var c in _competitions)
                 {
                     <MudSelectItem T="Guid?" Value="@c.Id">🏆 @c.Title</MudSelectItem>
                 }
             </MudSelect>
-            <MudText Typo="Typo.caption" Style="opacity:.7;">You'll build a pipeline and submit it — scored on the competition's hidden test set.</MudText>
+            <MudText Typo="Typo.caption" Style="opacity:.7;">@L["You'll build a pipeline and submit it — scored on the competition's hidden test set."]</MudText>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => Dialog.Cancel()">Cancel</MudButton>
+        <MudButton OnClick="() => Dialog.Cancel()">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add"
-                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_name) || (_target == "competition" && _competitionId is null))" OnClick="Create">Create &amp; open</MudButton>
+                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_name) || (_target == "competition" && _competitionId is null))" OnClick="Create">@L["Create & open"]</MudButton>
     </DialogActions>
 </MudDialog>
 

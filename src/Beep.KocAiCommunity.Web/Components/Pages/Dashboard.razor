@@ -8,15 +8,18 @@
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
 @inject DevIdentity Identity
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Dashboard · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Dashboard"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Your KOC AI journey" Title="Dashboard"
-            Subtitle="Where you stand across learning and competitions — and, if you lead a team, how your people are doing." />
+<PageHeader Eyebrow="@L["Your KOC AI journey"]" Title="@L["Dashboard"]"
+            Subtitle="@L["Where you stand across learning and competitions — and, if you lead a team, how your people are doing."]" />
 
 <div class="d-flex align-center gap-2 mb-4">
-    <MudText Typo="Typo.caption" Style="opacity:.7;">Viewing as <b>@Identity.Current.Label</b> — switch persona from the top-right menu.</MudText>
-    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
+    <MudText Typo="Typo.caption" Style="opacity:.7;">@L["Viewing as {0} — switch persona from the top-right menu.", Identity.Current.Label]</MudText>
+    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">@L["Refresh"]</MudButton>
 </div>
 
 @if (_me is null)
@@ -26,25 +29,25 @@
 else
 {
     <MudGrid Spacing="4" Class="mb-2">
-        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Tracks completed</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.TracksCompleted<span style="font-size:1rem;opacity:.5;">/@_me.TracksAvailable</span></MudText></BlueprintCard></MudItem>
-        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Competitions entered</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.CompetitionsEntered</MudText></BlueprintCard></MudItem>
-        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Submissions</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.Submissions</MudText></BlueprintCard></MudItem>
-        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Best rank</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@(_me.BestRank is { } r ? $"#{r}" : "—")</MudText></BlueprintCard></MudItem>
+        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">@L["Tracks completed"]</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.TracksCompleted<span style="font-size:1rem;opacity:.5;">/@_me.TracksAvailable</span></MudText></BlueprintCard></MudItem>
+        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">@L["Competitions entered"]</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.CompetitionsEntered</MudText></BlueprintCard></MudItem>
+        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">@L["Submissions made"]</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_me.Submissions</MudText></BlueprintCard></MudItem>
+        <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">@L["Best rank"]</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@(_me.BestRank is { } r ? $"#{r}" : "—")</MudText></BlueprintCard></MudItem>
     </MudGrid>
 
     <BlueprintCard Class="pa-5 mb-6">
-        <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">At a glance</MudText>
+        <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">@L["At a glance"]</MudText>
         @if (_me.TracksAvailable > 0 || _me.Standings.Count > 0)
         {
             <div class="d-flex gap-10 flex-wrap align-center">
                 @KocCharts.Donut(
-                    [new KocCharts.Seg("Completed", _me.TracksCompleted, "var(--koc-accent-700)"),
-                     new KocCharts.Seg("Remaining", Math.Max(0, _me.TracksAvailable - _me.TracksCompleted), "#dbe4ec")],
-                    $"{_me.TracksCompleted}/{_me.TracksAvailable}", "Learning tracks")
+                    [new KocCharts.Seg(L["Completed"], _me.TracksCompleted, "var(--koc-accent-700)"),
+                     new KocCharts.Seg(L["Remaining"], Math.Max(0, _me.TracksAvailable - _me.TracksCompleted), "#dbe4ec")],
+                    $"{_me.TracksCompleted}/{_me.TracksAvailable}", L["Learning tracks"])
                 @if (_me.Standings.Count > 0)
                 {
                     <div style="flex:1;min-width:280px;">
-                        <MudText Typo="Typo.caption" Class="d-block mb-2">Your best score per competition</MudText>
+                        <MudText Typo="Typo.caption" Class="d-block mb-2">@L["Your best score per competition"]</MudText>
                         @foreach (var s in _me.Standings)
                         {
                             @KocCharts.Bar(s.Title, s.BestScore ?? 0, _me.Standings.Max(x => x.BestScore ?? 0), "var(--koc-accent-500)")
@@ -55,14 +58,14 @@ else
         }
         else
         {
-            <MudText Typo="Typo.body2">Start a track or enter a competition to see your progress charted here.</MudText>
+            <MudText Typo="Typo.body2">@L["Start a track or enter a competition to see your progress charted here."]</MudText>
         }
     </BlueprintCard>
 
     <MudGrid Spacing="4" Class="mb-4">
         <MudItem xs="12" md="6">
             <BlueprintCard Class="pa-5" Style="height:100%;">
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">🏆 Top learners (this month)</MudText>
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">🏆 @L["Top learners (this month)"]</MudText>
                 @if (_xpBoard is { Count: > 0 })
                 {
                     @foreach (var p in _xpBoard.Take(8))
@@ -71,8 +74,8 @@ else
                             <span style="width:28px;text-align:center;">@Medal(p.Rank)</span>
                             <MudAvatar Size="Size.Small" Style="background:#fff;"><MudImage Src="@KocBrand.Icon(p.AvatarIcon)" /></MudAvatar>
                             <div class="flex-grow-1">
-                                <MudText Typo="Typo.body2"><b>@p.DisplayName</b> @(p.IsMe ? "(you)" : "")</MudText>
-                                <MudText Typo="Typo.caption" Style="opacity:.65;">Lvl @p.Level · @p.LevelTitle</MudText>
+                                <MudText Typo="Typo.body2"><b>@p.DisplayName</b> @(p.IsMe ? $"({L["you"]})" : "")</MudText>
+                                <MudText Typo="Typo.caption" Style="opacity:.65;">@L["Lvl {0}", p.Level] · @p.LevelTitle</MudText>
                             </div>
                             <MudText Typo="Typo.body2"><b>🛢️ @p.XpTotal</b></MudText>
                         </div>
@@ -80,13 +83,13 @@ else
                 }
                 else
                 {
-                    <MudText Typo="Typo.body2" Style="opacity:.7;">No Barrels earned this month yet.</MudText>
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">@L["No Barrels earned this month yet."]</MudText>
                 }
             </BlueprintCard>
         </MudItem>
         <MudItem xs="12" md="6">
             <BlueprintCard Class="pa-5" Style="height:100%;">
-                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">🛢️ Team standings (this month)</MudText>
+                <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">🛢️ @L["Team standings (this month)"]</MudText>
                 @if (_teamBoard is { Count: > 0 })
                 {
                     @foreach (var t in _teamBoard.Take(8))
@@ -94,16 +97,16 @@ else
                         <div class="d-flex align-center gap-2 py-1" style="border-bottom:1px solid var(--koc-divider);">
                             <span style="width:28px;text-align:center;">@Medal(t.Rank)</span>
                             <div class="flex-grow-1">
-                                <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b> @(t.IsMyTeam ? "(your team)" : "")</MudText>
-                                <MudText Typo="Typo.caption" Style="opacity:.65;">@t.MemberCount people · @t.TotalXp bbl total</MudText>
+                                <MudText Typo="Typo.body2"><b>@t.OrgUnitName</b> @(t.IsMyTeam ? $"({L["your team"]})" : "")</MudText>
+                                <MudText Typo="Typo.caption" Style="opacity:.65;">@L["{0} people · {1} bbl total", t.MemberCount, t.TotalXp]</MudText>
                             </div>
-                            <MudText Typo="Typo.body2"><b>@t.AverageXp</b> avg</MudText>
+                            <MudText Typo="Typo.body2">@L["{0} avg", t.AverageXp]</MudText>
                         </div>
                     }
                 }
                 else
                 {
-                    <MudText Typo="Typo.body2" Style="opacity:.7;">Team standings appear once colleagues start earning Barrels.</MudText>
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">@L["Team standings appear once colleagues start earning Barrels."]</MudText>
                 }
             </BlueprintCard>
         </MudItem>
@@ -113,8 +116,8 @@ else
         <MudItem xs="12" md="6">
             <BlueprintCard Class="pa-5" Style="height:100%;">
                 <div class="d-flex align-center justify-space-between mb-3">
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading">My learning</MudText>
-                    <MudLink Href="/learn" Typo="Typo.caption">All tracks →</MudLink>
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading">@L["My learning"]</MudText>
+                    <MudLink Href="/learn" Typo="Typo.caption">@L["All tracks"] →</MudLink>
                 </div>
                 @if (_learning is null)
                 {
@@ -122,7 +125,7 @@ else
                 }
                 else if (_learning.Count == 0)
                 {
-                    <MudText Typo="Typo.body2">You're not enrolled in a track yet. <MudLink Href="/learn">Start one →</MudLink></MudText>
+                    <MudText Typo="Typo.body2">@L["You're not enrolled in a track yet."] <MudLink Href="/learn">@L["Start one"] →</MudLink></MudText>
                 }
                 else
                 {
@@ -132,10 +135,10 @@ else
                         <div class="mb-3">
                             <div class="d-flex justify-space-between align-center">
                                 <MudText Typo="Typo.body2"><b>@t.Title</b></MudText>
-                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(t.Status == "completed" ? Color.Success : Color.Info)">@t.Status</MudChip>
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(t.Status == "completed" ? Color.Success : Color.Info)">@(t.Status == "completed" ? L["Completed"] : L["In progress"])</MudChip>
                             </div>
                             <MudProgressLinear Value="@(t.Status == "completed" ? 100 : pct)" Color="Color.Primary" Rounded="true" Size="Size.Medium" Class="mt-1">
-                                <MudText Typo="Typo.caption" Style="color:#fff;">@t.CompletedLessons/@t.TotalLessons lessons</MudText>
+                                <MudText Typo="Typo.caption" Style="color:#fff;">@L["{0}/{1} lessons", t.CompletedLessons, t.TotalLessons]</MudText>
                             </MudProgressLinear>
                         </div>
                     }
@@ -146,8 +149,8 @@ else
         <MudItem xs="12" md="6">
             <BlueprintCard Class="pa-5" Style="height:100%;">
                 <div class="d-flex align-center justify-space-between mb-3">
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading">What's happening</MudText>
-                    <MudLink Href="/community" Typo="Typo.caption">Community →</MudLink>
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading">@L["What's happening"]</MudText>
+                    <MudLink Href="/community" Typo="Typo.caption">@L["Community"] →</MudLink>
                 </div>
                 @if (_activity is null)
                 {
@@ -155,7 +158,7 @@ else
                 }
                 else if (_activity.Count == 0)
                 {
-                    <MudText Typo="Typo.body2">Quiet so far — earn a badge or give kudos to get things moving.</MudText>
+                    <MudText Typo="Typo.body2">@L["Quiet so far — earn a badge or give kudos to get things moving."]</MudText>
                 }
                 else
                 {
@@ -182,15 +185,15 @@ else
     </MudGrid>
 
     <BlueprintCard Class="pa-0 mb-6">
-        <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">My competition standings</MudText></div>
+        <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">@L["My competition standings"]</MudText></div>
         @if (_me.Standings.Count == 0)
         {
-            <MudText Typo="Typo.body2" Class="pa-4">No competition entries yet. <MudLink Href="/compete">Find a competition →</MudLink></MudText>
+            <MudText Typo="Typo.body2" Class="pa-4">@L["No competition entries yet."] <MudLink Href="/compete">@L["Find a competition"] →</MudLink></MudText>
         }
         else
         {
             <MudSimpleTable Dense="true" Hover="true">
-                <thead><tr><th>Competition</th><th>Submissions</th><th>Best score</th><th style="text-align:right;">Rank</th></tr></thead>
+                <thead><tr><th>@L["Competition"]</th><th>@L["Submissions made"]</th><th>@L["Best score"]</th><th style="text-align:end;">@L["Rank"]</th></tr></thead>
                 <tbody>
                     @foreach (var s in _me.Standings)
                     {
@@ -211,18 +214,18 @@ else
         <MudDivider Class="my-6" />
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Filled.SupervisorAccount" />
-            <MudText Typo="Typo.h5" Class="koc-heading">Team overview — @_rollup.ScopeLabel</MudText>
+            <MudText Typo="Typo.h5" Class="koc-heading">@L["Team overview — {0}", _rollup.ScopeLabel]</MudText>
         </div>
 
         <MudGrid Spacing="4" Class="mb-2">
-            <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">People</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.MemberCount</MudText></BlueprintCard></MudItem>
-            <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Active learners</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.ActiveLearners</MudText></BlueprintCard></MudItem>
+            <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">@L["People"]</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.MemberCount</MudText></BlueprintCard></MudItem>
+            <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">@L["Active learners"]</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.ActiveLearners</MudText></BlueprintCard></MudItem>
             <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Tracks completed</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.TracksCompleted</MudText></BlueprintCard></MudItem>
             <MudItem xs="6" md="3"><BlueprintCard Class="pa-4"><MudText Typo="Typo.overline">Competitions entered</MudText><MudText Typo="Typo.h4" Class="koc-stat-value">@_rollup.CompetitionsEntered</MudText></BlueprintCard></MudItem>
         </MudGrid>
 
         <BlueprintCard Class="pa-5 mb-4">
-            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">Team at a glance</MudText>
+            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-3">@L["Team at a glance"]</MudText>
             <div class="d-flex gap-10 flex-wrap align-center">
                 @{
                     var completed = _rollup.Members.Count(m => m.TracksCompleted > 0);
@@ -232,17 +235,17 @@ else
                     var maxSubs = Math.Max(1, _rollup.Members.Count == 0 ? 0 : _rollup.Members.Max(x => x.Submissions));
                 }
                 @KocCharts.Donut(
-                    [new KocCharts.Seg("Completed", completed, "var(--koc-accent-700)"),
-                     new KocCharts.Seg("In progress", inProgress, "var(--koc-accent-300)"),
-                     new KocCharts.Seg("Not started", notStarted, "#dbe4ec")],
-                    _rollup.MemberCount.ToString(), "Learning status")
+                    [new KocCharts.Seg(L["Completed"], completed, "var(--koc-accent-700)"),
+                     new KocCharts.Seg(L["In progress"], inProgress, "var(--koc-accent-300)"),
+                     new KocCharts.Seg(L["Not started"], notStarted, "#dbe4ec")],
+                    _rollup.MemberCount.ToString(), L["learning status"])
                 <div style="flex:1;min-width:320px;">
-                    <MudText Typo="Typo.caption" Class="d-block mb-2">Tracks completed per person</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mb-2">@L["Tracks completed per person"]</MudText>
                     @foreach (var m in _rollup.Members)
                     {
                         @KocCharts.Bar(m.DisplayName, m.TracksCompleted, maxDone, "var(--koc-accent-700)")
                     }
-                    <MudText Typo="Typo.caption" Class="d-block mt-3 mb-2">Competition submissions per person</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mt-3 mb-2">@L["Competition submissions per person"]</MudText>
                     @foreach (var m in _rollup.Members)
                     {
                         @KocCharts.Bar(m.DisplayName, m.Submissions, maxSubs, "var(--koc-accent-500)")
@@ -252,9 +255,9 @@ else
         </BlueprintCard>
 
         <BlueprintCard Class="pa-0">
-            <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">People</MudText></div>
+            <div class="pa-4"><MudText Typo="Typo.subtitle1" Class="koc-heading">@L["People"]</MudText></div>
             <MudSimpleTable Dense="true" Hover="true">
-                <thead><tr><th>Person</th><th>Enrolled</th><th>Completed</th><th>Submissions</th><th style="text-align:right;">Best score</th></tr></thead>
+                <thead><tr><th>@L["Person"]</th><th>@L["Enrolled"]</th><th>@L["Completed"]</th><th>@L["Submissions made"]</th><th style="text-align:end;">@L["Best score"]</th></tr></thead>
                 <tbody>
                     @foreach (var m in _rollup.Members)
                     {

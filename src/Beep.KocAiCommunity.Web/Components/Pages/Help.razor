@@ -7,15 +7,18 @@
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
 @inject NavigationManager Nav
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Help · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Help"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Support" Title="Help &amp; guides"
+<PageHeader Eyebrow="@L["Support"]" Title="@L["Help & guides"]"
             Subtitle="How the platform works — Barrels, competitions, workflows, datasets — plus an FAQ. Everything stays inside KOC." />
 
 <MudGrid Spacing="6">
     <MudItem xs="12" md="4">
-        <MudTextField @bind-Value="_query" Label="Search help" Variant="Variant.Outlined" Margin="Margin.Dense"
+        <MudTextField @bind-Value="_query" Label="@L["Search help"]" Variant="Variant.Outlined" Margin="Margin.Dense"
                       Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                       Immediate="true" DebounceInterval="250" OnDebounceIntervalElapsed="Reload" Class="mb-3" />
 

@@ -1,13 +1,16 @@
 @using Beep.KocAiCommunity.Contracts.Admin
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 @if (Rows.Count == 0)
 {
-    <MudText Typo="Typo.body2" Style="opacity:.7;">No audit events yet.</MudText>
+    <MudText Typo="Typo.body2" Style="opacity:.7;">@L["No audit events yet."]</MudText>
 }
 else
 {
     <MudSimpleTable Dense="true" Hover="true">
-        <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Resource</th></tr></thead>
+        <thead><tr><th>When</th><th>@L["Actor"]</th><th>@L["Action"]</th><th>@L["Resource"]</th></tr></thead>
         <tbody>
             @foreach (var a in Rows)
             {

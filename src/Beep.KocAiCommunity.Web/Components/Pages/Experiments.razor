@@ -4,13 +4,16 @@
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Experiments · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Experiments"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Studio" Title="Experiments"
-            Subtitle="Every training run is tracked here — live trial metrics, the leading model, side-by-side comparison, and the lineage to reproduce it.">
+<PageHeader Eyebrow="@L["Studio"]" Title="@L["Experiments"]"
+            Subtitle="@L["Every training run is tracked here — live trial metrics, the leading model, side-by-side comparison, and the lineage to reproduce it."]">
     <Actions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">@L["Refresh"]</MudButton>
     </Actions>
 </PageHeader>
 
@@ -22,9 +25,9 @@
 <MudGrid Spacing="6">
     <MudItem xs="12" md="4">
         <BlueprintCard Class="pa-4 mb-4">
-            <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">New experiment</MudText>
-            <MudTextField @bind-Value="_newName" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Create" Disabled="@(string.IsNullOrWhiteSpace(_newName) || _busy)">Create</MudButton>
+            <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">@L["New experiment"]</MudText>
+            <MudTextField @bind-Value="_newName" Label="@L["Name"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Create" Disabled="@(string.IsNullOrWhiteSpace(_newName) || _busy)">@L["Create"]</MudButton>
         </BlueprintCard>
 
         @if (_experiments is null)
@@ -33,7 +36,7 @@
         }
         else if (_experiments.Count == 0)
         {
-            <MudText Typo="Typo.body2">No experiments yet.</MudText>
+            <MudText Typo="Typo.body2">@L["No experiments yet."]</MudText>
         }
         else
         {
@@ -52,7 +55,7 @@
     <MudItem xs="12" md="8">
         @if (_selected is null)
         {
-            <MudText Typo="Typo.body2" Class="mt-4">Select an experiment to see its runs.</MudText>
+            <MudText Typo="Typo.body2" Class="mt-4">@L["Select an experiment to see its runs."]</MudText>
         }
         else
         {
@@ -70,14 +73,14 @@
             else if (_runs.Count == 0)
             {
                 <BlueprintCard Class="pa-6" Style="text-align:center;">
-                    <MudText Typo="Typo.body2">No runs yet. Training into this experiment records runs here.</MudText>
+                    <MudText Typo="Typo.body2">@L["No runs yet. Training into this experiment records runs here."]</MudText>
                 </BlueprintCard>
             }
             else if (_showCompare)
             {
                 <MudSimpleTable Dense="true" Hover="true" Elevation="0">
                     <thead>
-                        <tr><th>Run</th><th>Algorithm</th><th>Metric</th><th>Score</th><th>Secondary</th><th></th></tr>
+                        <tr><th>@L["Run"]</th><th>@L["Algorithm"]</th><th>@L["Metric"]</th><th>@L["Score"]</th><th>@L["Secondary"]</th><th></th></tr>
                     </thead>
                     <tbody>
                         @foreach (var c in _compare)
@@ -114,7 +117,7 @@
                                     }
                                     @if (r.ModelRunId is not null)
                                     {
-                                        <MudTooltip Text="Register this run's model in the registry">
+                                        <MudTooltip Text="@L["Register this run's model in the registry"]">
                                             <MudIconButton Icon="@Icons.Material.Filled.Inventory2" Color="Color.Primary" Size="Size.Small" OnClick="@(() => RegisterRun(r))" />
                                         </MudTooltip>
                                     }
@@ -132,7 +135,7 @@
                         <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">Trial metrics — @_openRun.PrimaryMetric</MudText>
                         @if (_metricSeries.Length == 0)
                         {
-                            <MudText Typo="Typo.body2">No per-trial metrics recorded.</MudText>
+                            <MudText Typo="Typo.body2">@L["No per-trial metrics recorded."]</MudText>
                         }
                         else
                         {

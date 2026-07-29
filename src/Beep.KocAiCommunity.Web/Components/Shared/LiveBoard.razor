@@ -1,4 +1,7 @@
 @using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 @* Leaderboard table with live rank movement. Movement is computed client-side by diffing the
    previous snapshot against the current one on every refresh (the hub event carries no deltas);
@@ -10,13 +13,13 @@
 }
 else if (Entries.Count == 0)
 {
-    <MudText Typo="Typo.body2">No submissions yet — be the first on the board!</MudText>
+    <MudText Typo="Typo.body2">@L["No submissions yet — be the first on the board!"]</MudText>
 }
 else
 {
     <MudSimpleTable Dense="true" Hover="true">
         <thead>
-            <tr><th style="width:56px;">Rank</th><th style="width:64px;"></th><th>Competitor</th><th style="text-align:right;">Score</th></tr>
+            <tr><th style="width:56px;">@L["Rank"]</th><th style="width:64px;"></th><th>@L["Competitor"]</th><th style="text-align:end;">@L["Score"]</th></tr>
         </thead>
         <tbody>
             @foreach (var e in Entries)

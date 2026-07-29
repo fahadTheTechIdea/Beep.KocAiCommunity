@@ -9,11 +9,14 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 @if (_profile is not null)
 {
-    <MudTooltip Text="@($"Level {_profile.Level} · {_profile.LevelTitle}")">
-        <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="mr-1" OnClick="@(() => Nav.NavigateTo("/profile"))">
+    <MudTooltip Text="@L["Level {0} · {1}", _profile.Level, _profile.LevelTitle]">
+        <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="me-1" OnClick="@(() => Nav.NavigateTo("/profile"))">
             <span style="font-weight:700;">🛢️ @_profile.XpTotal</span>
             @if (_profile.CurrentStreakDays > 0)
             {

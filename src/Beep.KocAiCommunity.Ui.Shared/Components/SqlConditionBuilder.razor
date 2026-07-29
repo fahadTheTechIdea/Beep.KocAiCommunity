@@ -1,3 +1,6 @@
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 @* Friendly builder for the sql-filter node's `where` predicate. Each row is column + operator + value,
    AND-joined (e.g. "pressure" > 3000 AND "zone" = 'north'). Numeric values pass through raw; text values are
    single-quoted; IS NULL / IS NOT NULL take no value. Reports the predicate via OnGenerated. *@
@@ -6,13 +9,13 @@
 @foreach (var row in _rows)
 {
     <div class="d-flex gap-1 mb-1 align-center" @key="row.Id">
-        <MudSelect T="string" Value="row.Column" ValueChanged="@(v => { row.Column = v; return Regenerate(); })" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="flex:1;" Label="Column">
+        <MudSelect T="string" Value="row.Column" ValueChanged="@(v => { row.Column = v; return Regenerate(); })" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="flex:1;" Label="@L["Column"]">
             @foreach (var c in AvailableColumns)
             {
                 <MudSelectItem Value="@c">@c</MudSelectItem>
             }
         </MudSelect>
-        <MudSelect T="string" Value="row.Op" ValueChanged="@(v => { row.Op = v; return Regenerate(); })" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="width:120px;" Label="Operator">
+        <MudSelect T="string" Value="row.Op" ValueChanged="@(v => { row.Op = v; return Regenerate(); })" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="width:120px;" Label="@L["Operator"]">
             @foreach (var o in _operators)
             {
                 <MudSelectItem Value="@o">@o</MudSelectItem>
@@ -20,7 +23,7 @@
         </MudSelect>
         @if (row.Op is not ("IS NULL" or "IS NOT NULL"))
         {
-            <MudTextField T="string" Value="row.Value" ValueChanged="@(v => { row.Value = v; return Regenerate(); })" Margin="Margin.Dense" Variant="Variant.Outlined" Style="width:130px;" Label="Value" />
+            <MudTextField T="string" Value="row.Value" ValueChanged="@(v => { row.Value = v; return Regenerate(); })" Margin="Margin.Dense" Variant="Variant.Outlined" Style="width:130px;" Label="@L["Value"]" />
         }
         <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline" Size="Size.Small" Color="Color.Error" OnClick="@(() => Remove(row))" aria-label="Remove condition" />
     </div>

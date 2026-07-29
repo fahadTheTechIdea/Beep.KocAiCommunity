@@ -3,6 +3,9 @@
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @layout Beep.KocAiCommunity.Web.Components.Layout.BareLayout
 @inject KocSetupStore SetupStore
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 @* First run only, and only when the answer isn't obvious: a deployment inside KOC arrives already
    authenticated by IIS, which settles the question without asking. Static server rendering, because the
@@ -16,12 +19,12 @@
         {
             <div class="text-center">
                 <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
-                <MudText Typo="Typo.h5" Class="koc-heading mt-2 mb-1">Setup saved</MudText>
+                <MudText Typo="Typo.h5" Class="koc-heading mt-2 mb-1">@L["Setup saved"]</MudText>
                 <MudText Typo="Typo.body2" Class="mb-3">
                     People will sign in with <b>@SourceName(SetupStore.SignInWith)</b>.
                 </MudText>
                 <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-3" Style="text-align:left;">
-                    <b>Restart the app to apply it.</b> Sign-in is wired up when the app starts, so the web
+                    <b>@L["Restart the app to apply it."]</b> Sign-in is wired up when the app starts, so the web
                     site and the API both need restarting.
                 </MudAlert>
                 <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.7;">
@@ -58,7 +61,7 @@
                     </label>
                 }
 
-                <button class="koc-submit" type="submit">Save and continue</button>
+                <button class="koc-submit" type="submit">@L["Save and continue"]</button>
             </form>
 
             <MudText Typo="Typo.caption" Class="d-block mt-3" Style="opacity:.7;">

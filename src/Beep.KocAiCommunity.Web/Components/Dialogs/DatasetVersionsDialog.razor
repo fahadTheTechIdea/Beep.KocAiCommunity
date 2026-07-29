@@ -3,6 +3,9 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <TitleContent>
@@ -14,13 +17,13 @@
                 <MudIcon Icon="@Icons.Material.Filled.UploadFile" Size="Size.Small" Class="mr-1" /> Upload CSV
                 <InputFile OnChange="Upload" accept=".csv" style="display:none;" />
             </label>
-            <MudTextField @bind-Value="_url" Label="…or import from URL" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:320px;" />
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ImportUrl" Disabled="@(_busy || string.IsNullOrWhiteSpace(_url))">Import</MudButton>
+            <MudTextField @bind-Value="_url" Label="@L["…or import from URL"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:320px;" />
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ImportUrl" Disabled="@(_busy || string.IsNullOrWhiteSpace(_url))">@L["Import"]</MudButton>
         </div>
 
         @if (_versions.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="opacity:.7;">No versions yet — upload a CSV to create draft v1.</MudText>
+            <MudText Typo="Typo.body2" Style="opacity:.7;">@L["No versions yet — upload a CSV to create draft v1."]</MudText>
         }
         else
         {
@@ -38,7 +41,7 @@
                     <MudChip T="string" Size="Size.Small" Color="@(v.Status == "published" ? Color.Success : Color.Info)" Variant="Variant.Text">@v.Status</MudChip>
                     @if (v.Status == "draft")
                     {
-                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="Publish">Publish</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="Publish">@L["Publish"]</MudButton>
                     }
                     @foreach (var f in _detail.Files)
                     {
@@ -50,7 +53,7 @@
                 {
                     <MudText Typo="Typo.subtitle2" Class="koc-heading mt-2 mb-1">Profile · @_detail.Profile.TotalRows rows (@_detail.Profile.SampledRows sampled)</MudText>
                     <MudSimpleTable Dense="true" Hover="true">
-                        <thead><tr><th>Column</th><th>Type</th><th>Nulls</th><th>Distinct</th><th>Min</th><th>Max</th><th>Mean</th></tr></thead>
+                        <thead><tr><th>@L["Column"]</th><th>@L["Type"]</th><th>@L["Nulls"]</th><th>@L["Distinct"]</th><th>Min</th><th>Max</th><th>@L["Mean"]</th></tr></thead>
                         <tbody>
                             @foreach (var s in _detail.Schema)
                             {
@@ -72,7 +75,7 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="() => Dialog.Close()">Close</MudButton>
+        <MudButton OnClick="() => Dialog.Close()">@L["Close"]</MudButton>
     </DialogActions>
 </MudDialog>
 

@@ -7,14 +7,17 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Workflows · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Workflows"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Studio · registry" Title="Workflows"
-            Subtitle="Version your ML pipelines: save drafts, publish an immutable snapshot once it compiles, then export or roll a new draft. Start from an O&G template.">
+<PageHeader Eyebrow="@L["Studio · registry"]" Title="@L["Workflows"]"
+            Subtitle="@L["Version your ML pipelines: save drafts, publish an immutable snapshot once it compiles, then export or roll a new draft. Start from an O&G template."]">
     <Actions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Upload" OnClick="Import" Class="mr-2">Import</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="Create">New workflow</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Upload" OnClick="Import" Class="me-2">@L["Import"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="Create">@L["New workflow"]</MudButton>
     </Actions>
 </PageHeader>
 
@@ -28,8 +31,8 @@
         {
             <BlueprintCard Class="pa-8" Style="text-align:center;">
                 <MudIcon Icon="@Icons.Material.Filled.Schema" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-                <MudText Typo="Typo.h6" Class="koc-heading mb-1">No workflows yet</MudText>
-                <MudText Typo="Typo.body2">Create one, or instantiate a template on the right.</MudText>
+                <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["No workflows yet"]</MudText>
+                <MudText Typo="Typo.body2">@L["Create one, or instantiate a template on the right."]</MudText>
             </BlueprintCard>
         }
         else
@@ -50,7 +53,7 @@
                         </div>
                         <div class="d-flex gap-1">
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                                       Href="@($"/workflow/{w.Id}")">Open</MudButton>
+                                       Href="@($"/workflow/{w.Id}")">@L["Open"]</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Toggle(w.Id)">@(_expanded == w.Id ? "Hide" : "Versions")</MudButton>
                             <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Default" OnClick="() => Delete(w.Id)" />
                         </div>
@@ -70,14 +73,14 @@
                                 <div class="d-flex gap-1">
                                     @if (v.Status == "draft")
                                     {
-                                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Publish(w.Id, v.VersionNumber)">Publish</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="() => Publish(w.Id, v.VersionNumber)">@L["Publish"]</MudButton>
                                     }
                                     @if (v.Status == "published")
                                     {
                                         <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="() => Run(w, v.VersionNumber)">Run</MudButton>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => Archive(w.Id, v.VersionNumber)">Archive</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => Archive(w.Id, v.VersionNumber)">@L["Archive"]</MudButton>
                                     }
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Download" OnClick="() => Export(w.Id, v.VersionNumber)">Export</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Download" OnClick="() => Export(w.Id, v.VersionNumber)">@L["Export"]</MudButton>
                                 </div>
                             </div>
                         }
@@ -89,7 +92,7 @@
 
     <MudItem xs="12" md="4">
         <BlueprintCard Class="pa-4">
-            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Templates</MudText>
+            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">@L["Templates"]</MudText>
             @if (_templates is null)
             {
                 <MudProgressCircular Indeterminate="true" />
@@ -102,7 +105,7 @@
                         <MudText Typo="Typo.body2"><b>@t.DisplayName</b> <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@t.Domain</MudChip></MudText>
                         <MudText Typo="Typo.caption" Style="opacity:.75;">@t.Description</MudText>
                         <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
-                                   OnClick="() => Instantiate(t)">Use this template</MudButton>
+                                   OnClick="() => Instantiate(t)">@L["Use this template"]</MudButton>
                     </div>
                 }
             }

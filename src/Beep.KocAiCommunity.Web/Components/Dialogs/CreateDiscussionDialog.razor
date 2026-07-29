@@ -3,13 +3,16 @@
 @using Beep.KocAiCommunity.Client
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <DialogContent>
         <MudTextField @bind-Value="_title" Label="Title" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
-        <MudTextField @bind-Value="_body" Label="What's on your mind?" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4" Class="mb-2" />
+        <MudTextField @bind-Value="_body" Label="@L["What's on your mind?"]" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4" Class="mb-2" />
 
-        <MudText Typo="Typo.subtitle2" Class="mb-1">Who can see this?</MudText>
+        <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Who can see this?"]</MudText>
         <MudRadioGroup T="string" @bind-Value="_scope">
             @foreach (var scope in _scopeOrder)
             {
@@ -26,8 +29,8 @@
         </MudRadioGroup>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(string.IsNullOrWhiteSpace(_title) || _busy)">Post discussion</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(string.IsNullOrWhiteSpace(_title) || _busy)">@L["Post discussion"]</MudButton>
     </DialogActions>
 </MudDialog>
 

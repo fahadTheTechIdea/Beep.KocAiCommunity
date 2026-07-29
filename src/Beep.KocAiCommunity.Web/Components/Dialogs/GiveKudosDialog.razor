@@ -2,6 +2,9 @@
 @using Beep.KocAiCommunity.Client
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <DialogContent>
@@ -15,13 +18,13 @@
             }
         </div>
 
-        <MudTextField @bind-Value="_message" Label="Say why (they'll see this)" Variant="Variant.Outlined"
+        <MudTextField @bind-Value="_message" Label="@L["Say why (they'll see this)"]" Variant="Variant.Outlined"
                       Margin="Margin.Dense" Lines="3" MaxLength="200" Counter="200" Immediate="true" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Celebration"
-                   OnClick="Submit" Disabled="@(string.IsNullOrWhiteSpace(_message) || _busy)">Send kudos</MudButton>
+                   OnClick="Submit" Disabled="@(string.IsNullOrWhiteSpace(_message) || _busy)">@L["Send kudos"]</MudButton>
     </DialogActions>
 </MudDialog>
 

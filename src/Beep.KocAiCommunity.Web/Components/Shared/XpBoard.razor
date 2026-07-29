@@ -1,11 +1,14 @@
 @using Beep.KocAiCommunity.Contracts.Engagement
 @using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 @* A standings board at a size worth looking at. The landing page previously drew this inline, twice,
    five rows deep in a third-width column — the most compelling content on the page, rendered as an
    afterthought. One component now serves the learner and team boards on Home and anywhere else. *@
 
-<div class="koc-board" role="table" aria-label="@Caption">
+<div class="koc-board" role="table" aria-label="@CaptionText">
     @if (Loading)
     {
         @* A skeleton, not a spinner: the section keeps its height while data arrives, so the page
@@ -22,7 +25,7 @@
     }
     else if (Entries is null or { Count: 0 })
     {
-        <p class="koc-board-empty">@EmptyMessage</p>
+        <p class="koc-board-empty">@EmptyText</p>
     }
     else
     {
@@ -55,10 +58,15 @@
     [Parameter] public int Rows { get; set; } = 10;
 
     /// <summary>Shown when nobody is on the board yet — say what would put them there.</summary>
-    [Parameter] public string EmptyMessage { get; set; } = "Earn the first Barrels of the month and this board is yours.";
+    [Parameter] public string? EmptyMessage { get; set; }
+
+    /// <summary>Resolved at render because a parameter initializer runs before injection.</summary>
+    private string EmptyText => EmptyMessage ?? L["Earn the first Barrels of the month and this board is yours."];
 
     /// <summary>Accessible name for the board.</summary>
-    [Parameter] public string Caption { get; set; } = "Leaderboard";
+    [Parameter] public string? Caption { get; set; }
+
+    private string CaptionText => Caption ?? L["Leaderboard"];
 
     /// <summary>Raised when a row is chosen, if the host wants rows to be actionable.</summary>
     [Parameter] public EventCallback<XpLeaderboardRowDto> OnSelect { get; set; }

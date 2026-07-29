@@ -3,10 +3,13 @@
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Node catalog · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Node catalog"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Studio · reference" Title="ML node catalog"
+<PageHeader Eyebrow="Studio · reference" Title="@L["ML node catalog"]"
             Subtitle="The building blocks of a workflow — sources, transforms, the train/test split, models, and evaluation — plus the O&G tasks the runtime supports." />
 
 @if (_tasks is not null)

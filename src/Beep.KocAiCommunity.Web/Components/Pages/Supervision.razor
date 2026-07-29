@@ -3,10 +3,13 @@
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Supervision · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Supervision"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Management view" Title="Supervision"
+<PageHeader Eyebrow="Management view" Title="@L["Supervision"]"
             Subtitle="A read-only view of how your people are doing — learning progress and competition participation across the part of KOC you lead. You supervise; the employees do the work." />
 
 @if (_error is not null)

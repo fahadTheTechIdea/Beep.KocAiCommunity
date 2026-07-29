@@ -6,15 +6,18 @@
 @inject IKocApiClient Api
 @inject IDialogService DialogService
 @inject DevIdentity Identity
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Datasets · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Datasets"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Community" Title="Datasets"
-            Subtitle="Share KOC data inside KOC. Every dataset shows who can see it — team, group, directorate, or the whole company — and its information-security classification.">
+<PageHeader Eyebrow="@L["Community"]" Title="@L["Datasets"]"
+            Subtitle="@L["Share KOC data inside KOC. Every dataset shows who can see it — team, group, directorate, or the whole company — and its information-security classification."]">
     <Actions>
         @if (Identity.HasAnyPosition)
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">Create dataset</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">@L["Create dataset"]</MudButton>
         }
     </Actions>
 </PageHeader>
@@ -32,7 +35,7 @@ else if (_datasets.Count == 0)
 {
     <BlueprintCard Class="pa-8" Style="text-align:center;">
         <MudIcon Icon="@Icons.Material.Filled.Dataset" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-        <MudText Typo="Typo.h6" Class="koc-heading mb-1">No datasets yet</MudText>
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["No datasets yet"]</MudText>
         <MudText Typo="Typo.body2">No datasets are visible to you. @(Identity.HasAnyPosition ? "Create the first one with the button above." : "Sign in to add one.")</MudText>
     </BlueprintCard>
 }
@@ -53,7 +56,7 @@ else
                     </MudText>
                     <div class="mt-2">
                         <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.Storage" OnClick="() => ManageData(d)">Manage data</MudButton>
+                                   StartIcon="@Icons.Material.Filled.Storage" OnClick="() => ManageData(d)">@L["Manage data"]</MudButton>
                     </div>
                 </BlueprintCard>
             </MudItem>

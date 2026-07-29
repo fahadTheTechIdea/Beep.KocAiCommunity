@@ -7,8 +7,11 @@
 @inject IKocApiClient Api
 @inject DevIdentity Identity
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Profile · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Profile"] · @KocBrand.ProductName</PageTitle>
 
 @if (_error is not null)
 {
@@ -34,7 +37,7 @@ else
                 <div class="d-flex justify-center gap-6 mt-4">
                     <div>
                         <div class="koc-stat-value" style="font-size:26px;">@_profile.XpTotal</div>
-                        <MudText Typo="Typo.caption">Barrels</MudText>
+                        <MudText Typo="Typo.caption">@L["Barrels"]</MudText>
                     </div>
                     <div>
                         <div class="koc-stat-value" style="font-size:26px;">🔥 @_profile.CurrentStreakDays</div>
@@ -59,14 +62,14 @@ else
                 else if (Identity.HasAnyPosition)
                 {
                     <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.Celebration" OnClick="GiveKudos">Give kudos</MudButton>
+                               StartIcon="@Icons.Material.Filled.Celebration" OnClick="GiveKudos">@L["Give kudos"]</MudButton>
                 }
             </BlueprintCard>
 
             @if (!string.IsNullOrWhiteSpace(_profile.Bio) && !_editing)
             {
                 <BlueprintCard Class="pa-5 mt-4">
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">About</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["About"]</MudText>
                     <MudText Typo="Typo.body2">@_profile.Bio</MudText>
                 </BlueprintCard>
             }
@@ -74,7 +77,7 @@ else
             @if (_profile.Skills.Count > 0 && !_editing)
             {
                 <BlueprintCard Class="pa-5 mt-4">
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">Skills</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">@L["Skills"]</MudText>
                     <div class="d-flex gap-1 flex-wrap">
                         @foreach (var s in _profile.Skills)
                         {
@@ -87,7 +90,7 @@ else
             @if (_editing && IsMe)
             {
                 <BlueprintCard Class="pa-5 mt-4">
-                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">Pick an avatar</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">@L["Pick an avatar"]</MudText>
                     <div class="d-flex gap-2 flex-wrap mb-4">
                         @foreach (var icon in _avatars)
                         {
@@ -96,19 +99,19 @@ else
                             </div>
                         }
                     </div>
-                    <MudTextField @bind-Value="_draftBio" Label="About you" Variant="Variant.Outlined" Margin="Margin.Dense"
+                    <MudTextField @bind-Value="_draftBio" Label="@L["About you"]" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Lines="3" MaxLength="280" Counter="280" Class="mb-2" />
-                    <MudTextField @bind-Value="_draftSkills" Label="Skills (comma-separated)" Variant="Variant.Outlined"
+                    <MudTextField @bind-Value="_draftSkills" Label="@L["Skills (comma-separated)"]" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" Class="mb-3" />
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveProfile" Disabled="@_busy">Save</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveProfile" Disabled="@_busy">@L["Save"]</MudButton>
                 </BlueprintCard>
             }
         </MudItem>
 
         <!-- Badges + kudos -->
         <MudItem xs="12" md="8">
-            <PageHeader Eyebrow="Achievements" Title="Badge wall"
-                        Subtitle="Earn badges by learning, competing, and helping colleagues. Locked badges show what's next." />
+            <PageHeader Eyebrow="@L["Achievements"]" Title="@L["Badge wall"]"
+                        Subtitle="@L["Earn badges by learning, competing, and helping colleagues. Locked badges show what's next."]" />
 
             @if (_catalog is null)
             {
@@ -128,7 +131,7 @@ else
                 </div>
             }
 
-            <MudText Typo="Typo.h6" Class="koc-heading mb-3">Kudos wall</MudText>
+            <MudText Typo="Typo.h6" Class="koc-heading mb-3">@L["Kudos wall"]</MudText>
             @if (_kudos is null)
             {
                 <MudProgressCircular Indeterminate="true" />
@@ -136,7 +139,7 @@ else
             else if (_kudos.Count == 0)
             {
                 <BlueprintCard Class="pa-5" Style="text-align:center;">
-                    <MudText Typo="Typo.body2">No kudos yet. Great work gets noticed — keep going!</MudText>
+                    <MudText Typo="Typo.body2">@L["No kudos yet. Great work gets noticed — keep going!"]</MudText>
                 </BlueprintCard>
             }
             else

@@ -4,10 +4,13 @@
 @using Beep.KocAiCommunity.Ui.Shared.Components
 @inject IKocApiClient Api
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Connectors · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Connectors"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Platform · admin" Title="Enterprise connectors"
+<PageHeader Eyebrow="Platform · admin" Title="@L["Enterprise connectors"]"
             Subtitle="Configure read-only links to KOC systems — PPDM, OpenWells, EcoSys, SAP, AVEVA PI, ADLS Gen2. Credentials are encrypted at rest. Requires PlatformAdmin." />
 
 @if (_forbidden)

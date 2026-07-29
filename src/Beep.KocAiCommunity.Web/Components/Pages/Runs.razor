@@ -7,13 +7,16 @@
 @inject IKocApiClient Api
 @inject RealtimeOptions Realtime
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Runs · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Runs"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Studio" Title="Runs"
-            Subtitle="Background training and workflow runs execute durably in the Worker — they survive restarts, retry on failure, and stream progress here live.">
+<PageHeader Eyebrow="@L["Studio"]" Title="@L["Runs"]"
+            Subtitle="@L["Background training and workflow runs execute durably in the Worker — they survive restarts, retry on failure, and stream progress here live."]">
     <Actions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">Refresh</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">@L["Refresh"]</MudButton>
     </Actions>
 </PageHeader>
 
@@ -32,7 +35,7 @@
         {
             <BlueprintCard Class="pa-6" Style="text-align:center;">
                 <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-                <MudText Typo="Typo.body2">No runs yet. Training a model from the Studio queues a run here.</MudText>
+                <MudText Typo="Typo.body2">@L["No runs yet. Training a model from the Studio queues a run here."]</MudText>
             </BlueprintCard>
         }
         else
@@ -55,7 +58,7 @@
     <MudItem xs="12" md="7">
         @if (_open is null)
         {
-            <MudText Typo="Typo.body2" Class="mt-4">Select a run to watch its progress.</MudText>
+            <MudText Typo="Typo.body2" Class="mt-4">@L["Select a run to watch its progress."]</MudText>
         }
         else
         {
@@ -68,7 +71,7 @@
                     @if (!IsTerminal(_open.Status))
                     {
                         <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
-                                   StartIcon="@Icons.Material.Filled.Cancel" OnClick="Cancel">Cancel</MudButton>
+                                   StartIcon="@Icons.Material.Filled.Cancel" OnClick="Cancel">@L["Cancel"]</MudButton>
                     }
                 </div>
 
@@ -77,11 +80,11 @@
                     <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">@_open.LastError</MudAlert>
                 }
 
-                <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Live log</MudText>
+                <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["Live log"]</MudText>
                 <div style="background:#0B2E4C;color:#D6E6F2;font-family:monospace;font-size:12px;border-radius:4px;padding:12px;max-height:340px;overflow:auto;">
                     @if (_logs.Count == 0)
                     {
-                        <div style="opacity:.6;">Waiting for output…</div>
+                        <div style="opacity:.6;">@L["Waiting for output…"]</div>
                     }
                     else
                     {

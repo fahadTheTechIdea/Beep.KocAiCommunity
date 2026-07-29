@@ -7,18 +7,21 @@
 @inject IDialogService DialogService
 @inject DevIdentity Identity
 @inject ISnackbar Snackbar
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Models · @KocBrand.ProductName</PageTitle>
+<PageTitle>@L["Models"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="Studio · registry" Title="Model registry"
-            Subtitle="Register a trained model, get it reviewed, and promote it with two approvals — then deploy it, or roll back in one click. Every version keeps its metric and source run.">
+<PageHeader Eyebrow="@L["Studio · registry"]" Title="@L["Model registry"]"
+            Subtitle="@L["Register a trained model, get it reviewed, and promote it with two approvals — then deploy it, or roll back in one click. Every version keeps its metric and source run."]">
     <Actions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenRegister">Register model</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenRegister">@L["Register model"]</MudButton>
     </Actions>
 </PageHeader>
 
-<MudTextField @bind-Value="Identity.UserId" Label="Acting as (dev user)" Variant="Variant.Outlined" Margin="Margin.Dense"
-              HelperText="Approvals must come from two different people — switch to approve as someone else." Class="mb-4" Style="max-width:340px;" />
+<MudTextField @bind-Value="Identity.UserId" Label="@L["Acting as (dev user)"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+              HelperText="@L["Approvals must come from two different people — switch to approve as someone else."]" Class="mb-4" Style="max-width:340px;" />
 
 <MudGrid Spacing="6">
     <MudItem xs="12">
@@ -30,8 +33,8 @@
         {
             <BlueprintCard Class="pa-8" Style="text-align:center;">
                 <MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
-                <MudText Typo="Typo.h6" Class="koc-heading mb-1">No models registered yet</MudText>
-                <MudText Typo="Typo.body2">Train a model in <b>AutoML</b>, then register it with the button above.</MudText>
+                <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["No models registered yet"]</MudText>
+                <MudText Typo="Typo.body2">@L["Train a model in AutoML, then register it with the button above."]</MudText>
             </BlueprintCard>
         }
         else
@@ -49,17 +52,17 @@
                                 <MudText Typo="Typo.caption" Class="d-inline">@v.MetricValue.ToString("0.###") @v.MetricName · @v.Approvals/2 approvals</MudText>
                             </div>
                             <div class="d-flex gap-1">
-                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Approve(v.Id)">Approve</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Approve(v.Id)">@L["Approve"]</MudButton>
                                 <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary"
-                                           Disabled="@(v.Approvals < 2 || v.Status == "production")" OnClick="() => Promote(v.Id)">Promote</MudButton>
+                                           Disabled="@(v.Approvals < 2 || v.Status == "production")" OnClick="() => Promote(v.Id)">@L["Promote"]</MudButton>
                                 @if (v.Status == "production")
                                 {
-                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" OnClick="() => Deploy(v.Id)">Deploy</MudButton>
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="() => Predict(m.Name, v)">Predict</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success" OnClick="() => Deploy(v.Id)">@L["Deploy"]</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="() => Predict(m.Name, v)">@L["Predict"]</MudButton>
                                 }
                                 @if (v.Status == "archived")
                                 {
-                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => Rollback(v.Id)">Roll back</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => Rollback(v.Id)">@L["Roll back"]</MudButton>
                                 }
                             </div>
                         </div>
@@ -69,15 +72,15 @@
         }
 
         <BlueprintCard Class="pa-4 mt-2">
-            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">Deployments</MudText>
+            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-2">@L["Deployments"]</MudText>
             @if (_deployments.Count == 0)
             {
-                <MudText Typo="Typo.body2">No deployments yet. Promote a version to production, then deploy it.</MudText>
+                <MudText Typo="Typo.body2">@L["No deployments yet. Promote a version to production, then deploy it."]</MudText>
             }
             else
             {
                 <MudSimpleTable Dense="true" Hover="true">
-                    <thead><tr><th>Model</th><th>Version</th><th>Env</th><th>Status</th><th>Deployed</th><th></th></tr></thead>
+                    <thead><tr><th>@L["Model"]</th><th>@L["Version"]</th><th>@L["Env"]</th><th>@L["Status"]</th><th>@L["Deployed"]</th><th></th></tr></thead>
                     <tbody>
                         @foreach (var d in _deployments)
                         {
@@ -90,7 +93,7 @@
                                 <td style="text-align:right;">
                                     @if (d.Status == "active")
                                     {
-                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="() => Retire(d.Id)">Retire</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="() => Retire(d.Id)">@L["Retire"]</MudButton>
                                     }
                                 </td>
                             </tr>

@@ -4,6 +4,9 @@
 @using Beep.KocAiCommunity.Client
 @inject IKocApiClient Api
 @inject IJSRuntime JS
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
 
 @if (_show)
 {
@@ -12,31 +15,20 @@
             <div class="d-flex align-center gap-3 mb-4">
                 <MudIcon Icon="@Icons.Material.Outlined.Info" Color="Color.Primary" Size="Size.Large" />
                 <div>
-                    <MudText Typo="Typo.h6" Class="koc-heading" Style="line-height:1.2;">Demonstration environment</MudText>
-                    <MudText Typo="Typo.subtitle2" Style="opacity:.7;" dir="rtl">بيئة عرض تجريبية</MudText>
+                    <MudText Typo="Typo.h6" Class="koc-heading" Style="line-height:1.2;">@L["Demonstration environment"]</MudText>
                 </div>
             </div>
 
+            @* One language, the reader's own. This said everything twice because there was no
+               language switch; now there is, and repeating it would only be noise. *@
             <MudText Typo="Typo.body2" Class="mb-1">
-                You're exploring a demonstration of the <b>@KocBrand.ProductName</b> platform. The colleagues,
-                competitions, leaderboards, discussions, and datasets shown here are illustrative sample data —
-                <b>not real @KocBrand.Company records</b> — provided to show how the platform works. Nothing here
-                represents actual employees, results, or official company information.
-            </MudText>
-
-            <MudDivider Class="my-4" />
-
-            <MudText Typo="Typo.body2" dir="rtl" Style="text-align:right;line-height:1.9;">
-                أنت تستعرض نسخةً تجريبيةً من منصة شركة نفط الكويت للتدريب والتطوير الوظيفي. جميع ما يظهر من زملاء
-                ومسابقات ولوحات صدارة ونقاشات ومجموعات بيانات هو <b>محتوى توضيحي افتراضي</b> أُعِدّ لعرض إمكانات
-                المنصة، <b>وليس بيانات حقيقية لشركة نفط الكويت</b>. ولا يمثّل أيٌّ من هذا المحتوى موظفين فعليين أو
-                نتائج أو معلومات رسمية للشركة.
+                @L["You're exploring a demonstration of the {0} platform. The colleagues, competitions, leaderboards, discussions, and datasets shown here are illustrative sample data — not real {1} records — provided to show how the platform works. Nothing here represents actual employees, results, or official company information.", KocBrand.ProductName, KocBrand.Company]
             </MudText>
 
             <div class="d-flex justify-end mt-6">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
                            StartIcon="@Icons.Material.Filled.Check" OnClick="Acknowledge">
-                    I understand · أفهم
+                    @L["I understand"]
                 </MudButton>
             </div>
         </MudPaper>
