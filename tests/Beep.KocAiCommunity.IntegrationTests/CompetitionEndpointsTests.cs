@@ -218,12 +218,12 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
     }
 
     [Fact]
-    public async Task The_public_showcase_never_reveals_who_the_competitors_are()
+    public async Task The_public_showcase_shows_the_same_names_a_member_sees()
     {
-        // The showcase is served to anyone who can reach the site. On a web deployment that is anyone at
-        // all, so a colleague's name beside their score is not ours to publish — the standings are the
-        // draw, the identities are not.
-        var host = _factory.CreateClientAs("mask-host", "Employee");
+        // The showcase used to mask names to initials. It no longer does: the platform shows a visitor
+        // the same company data any employee sees, and a leaderboard whose names are hidden is not much
+        // of a leaderboard. Signing in is for taking part, not for reading.
+        var host = _factory.CreateClientAs("showcase-host", "Employee");
         var competitionId = await CreateCompetition(host, revealUtc: null, quota: 5);
         (await host.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
             .EnsureSuccessStatusCode();
@@ -237,18 +237,14 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var showcase = (await _factory.CreateClientAs(sub: null)
             .GetFromJsonAsync<PublicShowcaseDto>("/api/v1/public/showcase"))!;
 
-        foreach (var entry in showcase.FeaturedBoard)
-        {
-            entry.DisplayName.Should().NotContain("Fahad", "a full name must not leave the host anonymously");
-            entry.DisplayName.Should().MatchRegex("^([A-Z]\\.( [A-Z]\\.)?|A competitor)$", "initials only");
-            entry.UserId.Should().BeEmpty("masking the name while shipping the id would defeat the point");
-        }
-
-        foreach (var learner in showcase.TopLearners)
-        {
-            learner.UserId.Should().BeEmpty();
-            learner.DisplayName.Should().NotContain(" Al-", "a full name must not leave the host anonymously");
-        }
+        // Asserted on the learners board rather than the featured one: which competition is featured
+        // depends on the seed, and the previous version of this test looped over a board that was empty
+        // — passing without checking anything at all.
+        showcase.TopLearners.Should().NotBeEmpty("the submission above earns Barrels");
+        showcase.TopLearners.Should().Contain(l => l.DisplayName.Contains("Al-Dhubaib"),
+            "the visitor sees the same name a signed-in colleague sees");
+        showcase.TopLearners.Should().OnlyContain(l => !string.IsNullOrEmpty(l.UserId),
+            "and the id, so their profile can be opened");
     }
 
     [Fact]

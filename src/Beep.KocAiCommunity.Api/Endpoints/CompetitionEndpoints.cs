@@ -314,7 +314,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             {
                 var entries = await svc.GetLeaderboardNamedAsync(featured.Id, "live", ct);
                 board = entries.Take(PublicBoardSize)
-                    .Select(e => new LeaderboardEntryDto(e.Rank, string.Empty, MaskName(e.DisplayName), e.Score))
+                    .Select(e => new LeaderboardEntryDto(e.Rank, e.UserId, e.DisplayName, e.Score))
                     .ToList();
             }
 
@@ -322,8 +322,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             try
             {
                 learners = [.. (await engagement.GetXpLeaderboardAsync(string.Empty, LeaderboardPeriod.Month, ct))
-                    .Take(PublicBoardSize)
-                    .Select(l => l with { UserId = string.Empty, DisplayName = MaskName(l.DisplayName) })];
+                    .Take(PublicBoardSize)];
             }
             catch { learners = []; }
 
@@ -337,24 +336,6 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
 
     /// <summary>How many rows the anonymous showcase carries — the landing page shows a full board.</summary>
     private const int PublicBoardSize = 10;
-
-    /// <summary>
-    /// "Fahad Al-Dhubaib" → "F. A." — the standing is public, the person is not. The showcase is served
-    /// to anyone who can reach the site, which on a web deployment is anyone at all; the leaderboard's
-    /// shape is the draw, and a colleague's name and score together are not ours to publish. Signing in
-    /// reveals the real names.
-    /// </summary>
-    private static string MaskName(string? displayName)
-    {
-        var initials = (displayName ?? string.Empty)
-            .Split([' ', '-', '.'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(part => char.IsLetter(part[0]))
-            .Take(2)
-            .Select(part => $"{char.ToUpperInvariant(part[0])}.");
-
-        var masked = string.Join(' ', initials);
-        return masked.Length == 0 ? "A competitor" : masked;
-    }
 
     private static CompetitionDto ToDto(
         Competition c, CompetitionStats? stats, IScorerRegistry scorers,

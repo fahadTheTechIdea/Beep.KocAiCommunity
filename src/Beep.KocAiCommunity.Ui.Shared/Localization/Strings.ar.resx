@@ -340,9 +340,6 @@
   <data name="Competitor" xml:space="preserve">
     <value>المتنافس</value>
   </data>
-  <data name="Competitors are shown by initials until you sign in." xml:space="preserve">
-    <value>تظهر أسماء المتنافسين بالأحرف الأولى حتى تسجّل الدخول.</value>
-  </data>
   <data name="Competitors download the training data, build a model, and are scored on the evaluation set against your hidden answer key." xml:space="preserve">
     <value>ينزّل المتنافسون بيانات التدريب، ويبنون نموذجًا، ويُقيَّمون على مجموعة التقييم مقابل مفتاح إجاباتك المخفي.</value>
   </data>
@@ -1240,9 +1237,6 @@
   <data name="Team standings appear once colleagues start earning Barrels." xml:space="preserve">
     <value>يظهر ترتيب الفرق عندما يبدأ الزملاء في كسب البراميل.</value>
   </data>
-  <data name="Team standings appear once you sign in." xml:space="preserve">
-    <value>يظهر ترتيب الفرق بعد تسجيل الدخول.</value>
-  </data>
   <data name="Templates" xml:space="preserve">
     <value>القوالب</value>
   </data>
@@ -1507,6 +1501,9 @@
   <data name="badges earned" xml:space="preserve">
     <value>وسام مكتسب</value>
   </data>
+  <data name="badges to earn" xml:space="preserve">
+    <value>وسام يمكن كسبه</value>
+  </data>
   <data name="behind" xml:space="preserve">
     <value>خلف</value>
   </data>
@@ -1620,6 +1617,9 @@
   </data>
   <data name="{0} avg" xml:space="preserve">
     <value>{0} متوسط</value>
+  </data>
+  <data name="{0} badges to collect — by learning, competing, and helping colleagues." xml:space="preserve">
+    <value>{0} وسامًا يمكن جمعها — بالتعلُّم والتنافس ومساعدة الزملاء.</value>
   </data>
   <data name="{0} bbl per scored submission; your first ever earns the {1} badge (+{2} bbl)." xml:space="preserve">
     <value>{0} برميل لكل مشاركة مُقيَّمة؛ وأول مشاركة لك تمنحك وسام {1} (+{2} برميل).</value>

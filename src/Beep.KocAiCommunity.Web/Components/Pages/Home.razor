@@ -126,12 +126,6 @@
                 <MudText Typo="Typo.h6" HtmlTag="h3" Class="koc-heading">🏁 @L["Live standings — {0}", featured.Title]</MudText>
                 <MudLink Href="@($"/compete/{featured.Id}?tab=leaderboard")" Typo="Typo.body2">@L["Full leaderboard"] →</MudLink>
             </div>
-            @if (Identity.IsGuest)
-            {
-                <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">
-                    @L["Competitors are shown by initials until you sign in."]
-                </MudText>
-            }
             <div style="overflow-x:auto;">
                 <LiveBoard Entries="_featuredBoard" MyUserId="@Identity.UserId" BoardKey="home-featured" />
             </div>
@@ -159,11 +153,7 @@
         <MudItem xs="12" md="6">
             <BlueprintCard Class="pa-5" Style="height:100%;">
                 <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="koc-heading mb-3">@L["Team standings"]</MudText>
-                @if (Identity.IsGuest)
-                {
-                    <p class="koc-board-empty">@L["Team standings appear once you sign in."]</p>
-                }
-                else if (_teamBoard is null)
+                @if (_teamBoard is null)
                 {
                     <div class="koc-board">
                         @for (var i = 0; i < 5; i++)
@@ -360,12 +350,8 @@
         _rollup = null;
         _teamBoard = null;
         _xpBoard = null;
-        if (Identity.IsGuest)
-        {
-            // Top learners come from the public showcase, which masks who they are.
-            _xpBoard = _showcase?.TopLearners ?? [];
-            return;
-        }
+        // The boards are open to everyone now, so a visitor with no account fetches the same ones a
+        // member does. Only the supervisor rollup below still depends on who is asking.
 
         // Caught separately: these are two independent boards, and one of them failing is no reason to
         // blank the other.

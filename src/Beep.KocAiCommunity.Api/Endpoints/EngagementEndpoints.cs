@@ -41,15 +41,17 @@ public static class EngagementEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         // ---- Leaderboards ----
+        // Readable without an account, like the discussions. Earning a place on one still needs a
+        // person; "IsMe" is simply false for a reader who isn't anybody yet.
         group.MapGet("/engagement/leaderboard", async (string? period, IKocCurrentUser me, IEngagementService svc, CancellationToken ct) =>
-            Results.Ok(await svc.GetXpLeaderboardAsync(me.UserId!, ParsePeriod(period), ct)))
+            Results.Ok(await svc.GetXpLeaderboardAsync(me.UserId ?? string.Empty, ParsePeriod(period), ct)))
         .WithName("GetXpLeaderboard")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         group.MapGet("/engagement/teams", async (string? period, IKocCurrentUser me, IEngagementService svc, CancellationToken ct) =>
-            Results.Ok(await svc.GetTeamLeaderboardAsync(me.UserId!, ParsePeriod(period), ct)))
+            Results.Ok(await svc.GetTeamLeaderboardAsync(me.UserId ?? string.Empty, ParsePeriod(period), ct)))
         .WithName("GetTeamLeaderboard")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         // ---- Badges + avatars ----
         group.MapGet("/engagement/badges/catalog", async (
@@ -69,7 +71,8 @@ public static class EngagementEndpoints
                 .ToList());
         })
         .WithName("GetBadgeCatalog")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        // The catalogue is what the platform offers, not what anyone has earned — nothing personal in it.
+        .AllowAnonymous();
 
         group.MapGet("/engagement/avatars", () => Results.Ok(IconLibrary.Avatars))
         .WithName("GetAvatarIcons")
@@ -97,10 +100,12 @@ public static class EngagementEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         // ---- Activity feed ----
+        // Open too. The feed is already filtered by each event's visibility scope, and a reader with no
+        // account resolves to no org membership — so they see company-wide activity and nothing narrower.
         group.MapGet("/engagement/activity", async (int? take, IKocCurrentUser me, IEngagementService svc, CancellationToken ct) =>
-            Results.Ok(await svc.GetActivityFeedAsync(me.UserId!, take ?? 40, ct)))
+            Results.Ok(await svc.GetActivityFeedAsync(me.UserId ?? string.Empty, take ?? 40, ct)))
         .WithName("GetActivityFeed")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         return group;
     }

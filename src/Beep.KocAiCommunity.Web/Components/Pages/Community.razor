@@ -35,10 +35,9 @@
     <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">@L["Couldn't reach the API ({0}).", _error]</MudAlert>
 }
 
-@* ---- Community pulse: stats + champions podium (real data only) ---- *@
-@if (!Identity.IsGuest)
-{
-    <MudGrid Spacing="4" Class="mb-2">
+@* ---- Community pulse: stats + champions podium (real data only) ----
+   Shown to everyone. The two figures that are about *you* are the only part that needs a you. *@
+<MudGrid Spacing="4" Class="mb-2">
         <MudItem xs="12" md="5">
             <BlueprintCard Class="pa-4" Style="height:100%;">
                 <MudText Typo="Typo.overline" Class="mb-2">@L["Community pulse"]</MudText>
@@ -48,13 +47,20 @@
                         <MudText Typo="Typo.caption">@L["open discussions"]</MudText>
                     </div>
                     <div>
-                        <div class="koc-stat-value" style="font-size:26px;">@_earnedBadges<span style="font-size:14px;opacity:.5;">/@_totalBadges</span></div>
-                        <MudText Typo="Typo.caption">@L["badges earned"]</MudText>
+                        <div class="koc-stat-value" style="font-size:26px;">@_totalBadges</div>
+                        <MudText Typo="Typo.caption">@L["badges to earn"]</MudText>
                     </div>
-                    <div>
-                        <div class="koc-stat-value" style="font-size:26px;">@(_myRank is { } r ? $"#{r}" : "—")</div>
-                        <MudText Typo="Typo.caption">@L["your rank (month)"]</MudText>
-                    </div>
+                    @if (!Identity.IsGuest)
+                    {
+                        <div>
+                            <div class="koc-stat-value" style="font-size:26px;">@_earnedBadges<span style="font-size:14px;opacity:.5;">/@_totalBadges</span></div>
+                            <MudText Typo="Typo.caption">@L["badges earned"]</MudText>
+                        </div>
+                        <div>
+                            <div class="koc-stat-value" style="font-size:26px;">@(_myRank is { } r ? $"#{r}" : "—")</div>
+                            <MudText Typo="Typo.caption">@L["your rank (month)"]</MudText>
+                        </div>
+                    }
                     @if (_profile is not null)
                     {
                         <div>
@@ -98,9 +104,8 @@
                     </div>
                 }
             </BlueprintCard>
-        </MudItem>
-    </MudGrid>
-}
+    </MudItem>
+</MudGrid>
 
 <MudTabs @bind-ActivePanelIndex="_tab" Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="pt-2">
     @* ============ FEED ============ *@
@@ -369,7 +374,14 @@
         else
         {
             <MudText Typo="Typo.body2" Class="mb-4">
-                @L["You've earned {0} of {1} badges. Keep learning, competing, and helping colleagues to collect them all.", _earnedBadges, _totalBadges]
+                @if (Identity.IsGuest)
+                {
+                    @L["{0} badges to collect — by learning, competing, and helping colleagues.", _totalBadges]
+                }
+                else
+                {
+                    @L["You've earned {0} of {1} badges. Keep learning, competing, and helping colleagues to collect them all.", _earnedBadges, _totalBadges]
+                }
             </MudText>
             <MudGrid Spacing="4">
                 @foreach (var b in _badges.OrderByDescending(x => x.EarnedUtc.HasValue).ThenBy(x => x.Name))
@@ -475,15 +487,15 @@
         await LoadPulseAsync();
     }
 
-    // Real, cheap data for the hero — profile, monthly champions, and badge counts.
+    // Real, cheap data for the hero — monthly champions and badge counts, for anyone reading. Only the
+    // profile is skipped for a visitor with no account: there is no profile to fetch.
     private async Task LoadPulseAsync()
     {
-        if (Identity.IsGuest)
+        if (!Identity.IsGuest)
         {
-            return;
+            try { _profile = await Api.GetMyProfileAsync(); } catch { _profile = null; }
         }
 
-        try { _profile = await Api.GetMyProfileAsync(); } catch { _profile = null; }
         try
         {
             var monthly = await Api.GetXpLeaderboardAsync("month");
@@ -491,6 +503,7 @@
             _myRank = monthly.FirstOrDefault(r => r.IsMe)?.Rank;
         }
         catch { _champions = []; }
+
         try
         {
             var catalog = await Api.GetBadgeCatalogAsync();

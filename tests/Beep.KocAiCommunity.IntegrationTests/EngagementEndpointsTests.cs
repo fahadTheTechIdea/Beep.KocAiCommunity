@@ -55,12 +55,30 @@ public class EngagementEndpointsTests(KocApiFactory factory) : IClassFixture<Koc
     }
 
     [Fact]
-    public async Task Leaderboards_require_authentication()
+    public async Task Anyone_can_read_the_boards_but_only_a_person_has_a_profile()
     {
+        // The community is readable without an account — the standings, the badge wall, the feed. What
+        // needs a person is anything that is about a person: your profile, your rank, your kudos.
         var anon = _factory.CreateClientAs(null);
 
-        (await anon.GetAsync("/api/v1/engagement/leaderboard")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await anon.GetAsync("/api/v1/engagement/leaderboard")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await anon.GetAsync("/api/v1/engagement/teams")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await anon.GetAsync("/api/v1/engagement/badges/catalog")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await anon.GetAsync("/api/v1/engagement/activity")).StatusCode.Should().Be(HttpStatusCode.OK);
+
         (await anon.GetAsync("/api/v1/profiles/me")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task A_reader_with_no_account_is_nobody_on_the_board()
+    {
+        // "IsMe" is computed against the caller. With no caller it must be false everywhere rather than
+        // matching some row by accident.
+        var anon = _factory.CreateClientAs(null);
+
+        var board = (await anon.GetFromJsonAsync<List<XpLeaderboardRowDto>>("/api/v1/engagement/leaderboard"))!;
+
+        board.Should().OnlyContain(r => !r.IsMe);
     }
 
     [Fact]
