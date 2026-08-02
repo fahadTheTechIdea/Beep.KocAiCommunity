@@ -61,18 +61,15 @@ else
                     <div class="koc-deadline-bar" title="@L["Progress toward the final reveal"]"><span style="width:@(((int)(progress * 100)))%"></span></div>
                 }
 
-                @* The one way in: takes you to your pipeline for this competition, creating it on first click. *@
+                @* Pipelines are built in KOC Studio on the desktop. Saying so here beats a button that
+                   opens an editor this site no longer has. *@
                 @if (_competition.Status != "concluded" && _competition.HasDatasets)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true"
-                               StartIcon="@(_myEntry is null ? Icons.Material.Filled.RocketLaunch : Icons.Material.Filled.AccountTree)"
-                               Disabled="_joining" OnClick="EnterCompetition">
-                        @(_joining ? L["Opening…"] : _myEntry is null ? L["Join & build your pipeline"] : L["Continue your pipeline"])
-                    </MudButton>
+                    <MudText Typo="Typo.body2" Style="color:#e8f1f8;">
+                        @L["Build your pipeline in KOC Studio, the desktop app — it reads this competition's data directly and submits your entry when you are on the KOC network."]
+                    </MudText>
                     <MudText Typo="Typo.caption" Style="opacity:.8;color:#e8f1f8;">
-                        @(_myEntry is null
-                            ? L["Opens the Studio node editor on this competition's data — target, id and task are set for you."]
-                            : L["Opens “{0}” in the Studio node editor.", _myEntry.Name])
+                        @L["You can also submit a predictions file from this page at any time."]
                     </MudText>
                 }
             </div>
@@ -191,12 +188,8 @@ else
                             </MudItem>
                         }
                     </MudGrid>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree"
-                               Disabled="@(_joining || _competition.Status == "concluded")" OnClick="EnterCompetition">
-                        @(_myEntry is null ? L["Build a pipeline in the Studio"] : L["Continue your pipeline"])
-                    </MudButton>
                     <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.7;">
-                        @L["The Studio reads these files directly — no download needed unless you want to explore them yourself."]
+                        @L["KOC Studio reads these files directly — download them only if you want to explore them yourself."]
                     </MudText>
                 }
                 else
@@ -249,7 +242,7 @@ else
                         {
                             <MudAlert Severity="Severity.Normal" Variant="Variant.Text" Dense="true">
                                 @L["You're not on the board yet — {0} competitor(s) ahead of you.", _leaderboard.Count]
-                                <MudLink OnClick="EnterCompetition" Style="cursor:pointer;">@L["Build a pipeline and claim a rank"] →</MudLink>
+                                @L["Build a pipeline in KOC Studio, or submit a predictions file below."]
                             </MudAlert>
                         }
                     </div>
@@ -453,8 +446,6 @@ else
     private Guid? _joinedCompetition;
 
     // My workflow targeting this competition (null until I join), and the in-flight join.
-    private WorkflowSummaryDto? _myEntry;
-    private bool _joining;
 
     protected override async Task OnInitializedAsync()
     {
@@ -510,70 +501,6 @@ else
         await LoadLeaderboard();
         await LoadMySubmissions();
         await LoadData();
-        await LoadMyEntryAsync();
-    }
-
-    /// <summary>My workflow for this competition, if I've already joined — decides "Join" vs "Continue".</summary>
-    private async Task LoadMyEntryAsync()
-    {
-        try
-        {
-            _myEntry = (await Api.GetWorkflowsAsync()).FirstOrDefault(w => w.CompetitionId == Id);
-        }
-        catch
-        {
-            _myEntry = null; // the button still works; it just offers to create one
-        }
-    }
-
-    /// <summary>
-    /// Joining is one click: open my pipeline for this competition, creating it the first time. The workflow
-    /// carries the competition id, which is what makes the designer competition-aware — it loads the host's
-    /// data, locks the target/id/task, and shows the Submit action.
-    /// </summary>
-    private async Task EnterCompetition()
-    {
-        if (_competition is null || _joining)
-        {
-            return;
-        }
-
-        _joining = true;
-        try
-        {
-            if (_myEntry is null)
-            {
-                await LoadMyEntryAsync(); // another tab/session may have joined already
-            }
-
-            if (_myEntry is null)
-            {
-                var request = new CreateWorkflowRequest(
-                    $"{_competition.Title} — my pipeline",
-                    $"Competition entry for “{_competition.Title}”.",
-                    "Internal",
-                    Id);
-                var (workflow, error) = await Api.CreateWorkflowAsync(request);
-                if (workflow is null)
-                {
-                    Snackbar.Add(error ?? "Couldn't create your pipeline.", Severity.Warning);
-                    return;
-                }
-
-                _myEntry = workflow;
-                Snackbar.Add("You're in — build your pipeline and submit it.", Severity.Success);
-            }
-
-            Nav.NavigateTo($"/workflow/{_myEntry.Id}");
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-        finally
-        {
-            _joining = false;
-        }
     }
 
     private async Task LoadLeaderboard()

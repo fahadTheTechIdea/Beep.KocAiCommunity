@@ -25,7 +25,6 @@
     <ProjectReference Include="..\Beep.KocAiCommunity.Client\Beep.KocAiCommunity.Client.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Shared\Beep.KocAiCommunity.Ui.Shared.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Community\Beep.KocAiCommunity.Ui.Community.csproj" />
-    <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Studio\Beep.KocAiCommunity.Ui.Studio.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Admin\Beep.KocAiCommunity.Ui.Admin.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
   </ItemGroup>

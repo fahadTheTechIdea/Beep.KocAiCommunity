@@ -7,6 +7,12 @@
 
 ---
 
+> **2026-08-02 — the Studio left the website.** Everything used to build and train a model now lives
+> only in this app; the website keeps Learn, Community, Compete, Dashboard and Admin. See
+> `docs/STUDIO_IS_A_DESKTOP_APP.md`. **This makes Phase 07 the gate on competing at all** — until there
+> is an installer, the people who can build a pipeline are the people who can build the solution, and
+> the browser no longer offers a second way in.
+
 ## Why this plan exists
 
 The desktop Studio was built to prove one thing: that a KOC engineer can design and run an ML pipeline

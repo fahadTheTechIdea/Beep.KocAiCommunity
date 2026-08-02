@@ -25,6 +25,14 @@
         <MudButton Href="/automl" StartIcon="@Icons.Material.Filled.AutoAwesome" Color="Color.Inherit">@L["Train"]</MudButton>
         <MudButton Href="/runs" StartIcon="@Icons.Material.Filled.History" Color="Color.Inherit">@L["Runs"]</MudButton>
         <MudButton Href="/models" StartIcon="@Icons.Material.Filled.Inventory2" Color="Color.Inherit">@L["Models"]</MudButton>
+
+        @* Reference and online-only pages live behind one menu. They arrived when the Studio moved off
+           the website, and eight more buttons would have made the bar unreadable. *@
+        <MudMenu Icon="@Icons.Material.Filled.MoreHoriz" Color="Color.Inherit" Dense="true"
+                 AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" aria-label="@L["More"]">
+            <MudMenuItem Href="/nodes" Icon="@Icons.Material.Filled.Widgets">@L["Node catalog"]</MudMenuItem>
+            <MudMenuItem Href="/experiments" Icon="@Icons.Material.Filled.Science">@L["Experiments"]</MudMenuItem>
+        </MudMenu>
         <MudButton Href="/competitions" StartIcon="@Icons.Material.Filled.EmojiEvents" Color="Color.Inherit">@L["Compete"]</MudButton>
         @* One answer to "am I connected", in the app bar. It used to be discovered per page, by a
            call failing — which gives three pages three opinions and tells you only after you tried. *@

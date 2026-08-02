@@ -14,16 +14,6 @@
     {
         <MudNavLink Href="/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">@L["Dashboard"]</MudNavLink>
         <MudNavLink Href="/compete" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiEvents">@L["Compete"]</MudNavLink>
-
-        <MudNavGroup Title="Studio" Icon="@Icons.Material.Filled.Build" Expanded="true">
-            <MudNavLink Href="/datasets" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dataset">@L["Datasets"]</MudNavLink>
-            <MudNavLink Href="/workflows" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Schema">@L["Workflows"]</MudNavLink>
-            <MudNavLink Href="/studio" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Hub">@L["AutoML"]</MudNavLink>
-            <MudNavLink Href="/nodes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Widgets">@L["Node catalog"]</MudNavLink>
-            <MudNavLink Href="/runs" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PlayCircle">@L["Runs"]</MudNavLink>
-            <MudNavLink Href="/experiments" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Science">@L["Experiments"]</MudNavLink>
-            <MudNavLink Href="/models" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2">@L["Models"]</MudNavLink>
-        </MudNavGroup>
     }
 
     @if (Identity.IsSupervisor)

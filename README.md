@@ -12,7 +12,7 @@ Built on **.NET 10**, **ASP.NET Core**, **Blazor (MudBlazor)**, **EF Core**, **M
 ### 📚 Manuals
 
 - **[User Guide](docs/USER_GUIDE.md)** — for employees: signing in, learning, building & running models in
-  the Studio, competing, and your profile.
+  competing, and your profile.
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** — architecture, running locally, the node engine, the
   desktop app, testing, and how to extend the platform.
 - **[Administrator Guide](docs/ADMIN_GUIDE.md)** — the admin console, RBAC / users, competition-creation
@@ -23,7 +23,7 @@ Built on **.NET 10**, **ASP.NET Core**, **Blazor (MudBlazor)**, **EF Core**, **M
 
 ## The loop
 
-**Dashboard → Learn → Build in the Studio → Compete → Model registry → Deploy** — with live notifications and
+**Dashboard → Learn → Build in KOC Studio (desktop) → Compete → Model registry → Deploy** — with live notifications and
 management supervision over all of it.
 
 ## Surfaces
@@ -33,15 +33,15 @@ management supervision over all of it.
 | **Home** | `/` | Role switcher (Employee → CEO), KOC "blueprint" theme, brand assets |
 | **Dashboard** | `/dashboard` | Your learning + competition standings; a team overview if you lead people |
 | **Learn** | `/learn` | Guided tracks with real markdown lessons → enroll → complete → progress/completion |
-| **Compete** | `/compete` | Create a challenge (lifecycle + reveal day) → download data → **submit a Studio pipeline** → **live** leaderboard |
-| **Studio** | `/studio` | AutoML training over a CSV (binary / multiclass / regression) → runs feed the registry |
-| **Workflow** | `/workflow` | Visual **node editor** (Z.Blazor.Diagrams) — build an ML pipeline and run it node by node |
-| **Models** | `/models` | Registry: register → 2-approval promote → **deploy** / retire, with a deployments table |
-| **Datasets** | `/datasets` | Create datasets with a **"who can see this"** picker (Team/Group/Directorate/Company) + audience counts |
+| **Compete** | `/compete` | Create a challenge (lifecycle + reveal day) → download data → submit predictions → **live** leaderboard |
 | **Community** | `/community` | Discussions and replies |
 | **Supervision** | `/supervision` | A supervisor's read-only rollup of their people's learning + competition activity |
 
 A **notification bell** (live, per-user) sits in the app bar across every surface.
+
+> **Building and training happen in KOC Studio, the desktop app** — datasets, the node designer, AutoML,
+> run history, the local model registry and the node catalogue all live there, not on the website. See
+> [`docs/STUDIO_IS_A_DESKTOP_APP.md`](docs/STUDIO_IS_A_DESKTOP_APP.md).
 
 ## Machine learning
 
@@ -82,7 +82,7 @@ src/
   Beep.KocAiCommunity.Infrastructure     EF Core (DbContext, configs, migrations), services, storage, seeders
   Beep.KocAiCommunity.Infrastructure.SqlServerMigrations   Provider-specific SQL Server migrations
   Beep.KocAiCommunity.Ui.Shared          MudBlazor theme + shared components (KOC blueprint)
-  Beep.KocAiCommunity.Ui.Community/Studio/Admin   Feature RCLs (Ui.Studio holds the workflow designer)
+  Beep.KocAiCommunity.Ui.Community/Studio/Admin   Feature RCLs (Ui.Studio is desktop-only)
   Beep.KocAiCommunity.Client             Framework-agnostic HTTP API client + dev identity (Web + desktop)
   Beep.KocAiCommunity.ServiceDefaults    Aspire defaults + shared security wiring
   Beep.KocAiCommunity.Web                Blazor Web App (Interactive Server) — calls the API, live via SignalR

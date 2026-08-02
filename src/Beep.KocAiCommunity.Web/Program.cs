@@ -1,6 +1,5 @@
 using Beep.KocAiCommunity.Client;
 using Beep.KocAiCommunity.ServiceDefaults;
-using Beep.KocAiCommunity.Ui.Studio;
 using Beep.KocAiCommunity.ServiceDefaults.Security;
 using Beep.KocAiCommunity.Web.Components;
 using Beep.KocAiCommunity.Web.Security;
@@ -20,7 +19,6 @@ builder.AddServiceDefaults();
 
 // Where people sign in — the one thing the first run settles, read by both hosts.
 builder.Services.AddKocSetup();
-builder.Services.AddKocStudioUi();
 var setup = new KocSetupStore(builder.Configuration);
 var demoPersonas = setup.DemoPersonasEnabled;
 
@@ -108,7 +106,6 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddAdditionalAssemblies(
         typeof(Beep.KocAiCommunity.Ui.Community.UiCommunityAssembly).Assembly,
-        typeof(Beep.KocAiCommunity.Ui.Studio.UiStudioAssembly).Assembly,
         typeof(Beep.KocAiCommunity.Ui.Admin.UiAdminAssembly).Assembly);
 
 app.Run();

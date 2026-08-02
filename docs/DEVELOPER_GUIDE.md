@@ -37,10 +37,11 @@ src/
   Infrastructure.SqlServerMigrations   Provider-specific SQL Server migrations.
   Client            Framework-agnostic HTTP API client (IKocApiClient) + dev identity. Web + desktop.
   Ui.Shared         MudBlazor theme + shared components (the "KOC blueprint" look).
-  Ui.Studio         The workflow designer RCL (shared by Web and desktop).
+  Ui.Studio         The designer + Studio pages. Desktop only since 2026-08-02.
   Ui.Community/Admin Feature RCLs.
   ServiceDefaults   Aspire defaults + shared security wiring (auth, policies, current user).
-  Web               Blazor Web App (Interactive Server). Calls the API; never the DB directly.
+  Web               Blazor Web App (Interactive Server). Learn/Community/Compete/Admin —
+                    no Studio; building and training are the desktop app.
   Api               Minimal API (/api/v1) + SignalR hub + transactional-outbox dispatcher.
   Worker            Background worker (durable jobs: training runs, etc.).
   Desktop.Local     Offline in-process Studio engine for the desktop (LocalKocApiClient).

@@ -112,9 +112,6 @@
   <data name="Act as (dev override)" xml:space="preserve">
     <value>التصرّف بصفة (تجاوز للتطوير)</value>
   </data>
-  <data name="Acting as (dev user)" xml:space="preserve">
-    <value>تعمل بصفة (مستخدم تطوير)</value>
-  </data>
   <data name="Action" xml:space="preserve">
     <value>الإجراء</value>
   </data>
@@ -178,12 +175,6 @@
   <data name="Any task" xml:space="preserve">
     <value>أي مهمة</value>
   </data>
-  <data name="Approvals must come from two different people — switch to approve as someone else." xml:space="preserve">
-    <value>يجب أن تأتي الموافقتان من شخصين مختلفين — بدّل المستخدم للموافقة بصفة شخص آخر.</value>
-  </data>
-  <data name="Approve" xml:space="preserve">
-    <value>موافقة</value>
-  </data>
   <data name="Arabic (Windows-1256)" xml:space="preserve">
     <value>عربي (Windows-1256)</value>
   </data>
@@ -217,12 +208,6 @@
   <data name="Attempts" xml:space="preserve">
     <value>المحاولات</value>
   </data>
-  <data name="AutoML" xml:space="preserve">
-    <value>التعلُّم الآلي التلقائي</value>
-  </data>
-  <data name="AutoML training" xml:space="preserve">
-    <value>تدريب تلقائي AutoML</value>
-  </data>
   <data name="Average" xml:space="preserve">
     <value>المتوسط</value>
   </data>
@@ -237,9 +222,6 @@
   </data>
   <data name="Back to the arena" xml:space="preserve">
     <value>العودة إلى الحلبة</value>
-  </data>
-  <data name="Background training and workflow runs execute durably in the Worker — they survive restarts, retry on failure, and stream progress here live." xml:space="preserve">
-    <value>تنفَّذ تشغيلات التدريب ومسارات العمل في الخلفية داخل الـWorker بشكل معتمد — تصمد أمام إعادة التشغيل، وتعيد المحاولة عند الفشل، وتبثّ تقدّمها هنا مباشرة.</value>
   </data>
   <data name="Badge wall" xml:space="preserve">
     <value>جدار الأوسمة</value>
@@ -274,29 +256,23 @@
   <data name="Binary classification" xml:space="preserve">
     <value>تصنيف ثنائي</value>
   </data>
-  <data name="Binary classification (true/false)" xml:space="preserve">
-    <value>تصنيف ثنائي (صح/خطأ)</value>
-  </data>
   <data name="Browse competitions" xml:space="preserve">
     <value>تصفّح المسابقات</value>
   </data>
   <data name="Browse learning tracks" xml:space="preserve">
     <value>تصفّح المسارات التعليمية</value>
   </data>
-  <data name="Build a model" xml:space="preserve">
-    <value>ابنِ نموذجًا</value>
-  </data>
   <data name="Build a pipeline" xml:space="preserve">
     <value>ابنِ مسارًا</value>
   </data>
-  <data name="Build a pipeline and claim a rank" xml:space="preserve">
-    <value>ابنِ مسارًا واحجز ترتيبك</value>
-  </data>
-  <data name="Build a pipeline in the Studio" xml:space="preserve">
-    <value>ابنِ مسارًا في الاستوديو</value>
+  <data name="Build a pipeline in KOC Studio, or submit a predictions file below." xml:space="preserve">
+    <value>ابنِ مسارًا في استوديو KOC، أو أرسل ملف تنبؤات أدناه.</value>
   </data>
   <data name="Build your model" xml:space="preserve">
     <value>ابنِ نموذجك</value>
+  </data>
+  <data name="Build your pipeline in KOC Studio, the desktop app — it reads this competition's data directly and submits your entry when you are on the KOC network." xml:space="preserve">
+    <value>ابنِ مسارك في استوديو KOC، تطبيق سطح المكتب — فهو يقرأ بيانات هذه المسابقة مباشرة ويُرسل مشاركتك عندما تكون على شبكة شركة نفط الكويت.</value>
   </data>
   <data name="Built with" xml:space="preserve">
     <value>بُني بـ</value>
@@ -430,9 +406,6 @@
   <data name="Continue where you left off" xml:space="preserve">
     <value>تابع من حيث توقّفت</value>
   </data>
-  <data name="Continue your pipeline" xml:space="preserve">
-    <value>تابع مسارك</value>
-  </data>
   <data name="Couldn't open the folder: {0}" xml:space="preserve">
     <value>تعذّر فتح المجلد: {0}</value>
   </data>
@@ -453,9 +426,6 @@
   </data>
   <data name="Create an account" xml:space="preserve">
     <value>إنشاء حساب</value>
-  </data>
-  <data name="Create dataset" xml:space="preserve">
-    <value>أنشئ مجموعة بيانات</value>
   </data>
   <data name="Create draft" xml:space="preserve">
     <value>أنشئ مسودة</value>
@@ -516,15 +486,6 @@
   </data>
   <data name="Department and profile details load from the KOC directory once its API is configured." xml:space="preserve">
     <value>تُحمَّل تفاصيل الدائرة والملف الشخصي من دليل شركة نفط الكويت بمجرد إعداد واجهته البرمجية.</value>
-  </data>
-  <data name="Deploy" xml:space="preserve">
-    <value>نشر</value>
-  </data>
-  <data name="Deployed" xml:space="preserve">
-    <value>تاريخ النشر</value>
-  </data>
-  <data name="Deployments" xml:space="preserve">
-    <value>عمليات النشر</value>
   </data>
   <data name="Describe the business problem, what the target column means, and what a strong solution looks like. This is the first thing competitors read." xml:space="preserve">
     <value>صِف المسألة التشغيلية، ومعنى العمود الهدف، وكيف يبدو الحل القوي. هذا أول ما يقرأه المتنافسون.</value>
@@ -606,9 +567,6 @@
   </data>
   <data name="Enterprise connectors" xml:space="preserve">
     <value>موصلات المؤسسة</value>
-  </data>
-  <data name="Env" xml:space="preserve">
-    <value>البيئة</value>
   </data>
   <data name="Error" xml:space="preserve">
     <value>خطأ</value>
@@ -808,8 +766,8 @@
   <data name="Insert a starter template" xml:space="preserve">
     <value>أدرج قالبًا مبدئيًا</value>
   </data>
-  <data name="Internal, Kaggle-style challenges on real KOC problems — get the data, build your model in the Studio, and climb the live leaderboard. Final standings stay hidden until reveal day." xml:space="preserve">
-    <value>تحديات داخلية على غرار Kaggle مبنية على مسائل KOC الحقيقية — احصل على البيانات، وابنِ نموذجك في الاستوديو، وارتقِ في لوحة الصدارة المباشرة. يبقى الترتيب النهائي محجوبًا حتى يوم الكشف.</value>
+  <data name="Internal, Kaggle-style challenges on real KOC problems — get the data, build your model in KOC Studio on the desktop, and climb the live leaderboard. Final standings stay hidden until reveal day." xml:space="preserve">
+    <value>تحديات داخلية على غرار Kaggle حول مشكلات حقيقية في شركة نفط الكويت — احصل على البيانات، وابنِ نموذجك في استوديو KOC على سطح المكتب، وتسلّق لوحة الصدارة الحيّة. تبقى الترتيبات النهائية مخفية حتى يوم الكشف.</value>
   </data>
   <data name="It may have been removed, or the link is out of date." xml:space="preserve">
     <value>ربما حُذفت، أو أن الرابط قديم.</value>
@@ -820,14 +778,14 @@
   <data name="Its metrics and saved model are removed from this machine." xml:space="preserve">
     <value>ستُحذف مقاييسه ونموذجه المحفوظ من هذا الجهاز.</value>
   </data>
-  <data name="Join &amp; build your pipeline" xml:space="preserve">
-    <value>انضم وابنِ مسارك</value>
-  </data>
   <data name="Join the community, enter competitions, and build pipelines." xml:space="preserve">
     <value>انضم إلى المجتمع، وادخل المسابقات، وابنِ المسارات.</value>
   </data>
   <data name="KOC Studio" xml:space="preserve">
     <value>استوديو KOC</value>
+  </data>
+  <data name="KOC Studio reads these files directly — download them only if you want to explore them yourself." xml:space="preserve">
+    <value>يقرأ استوديو KOC هذه الملفات مباشرة — نزّلها فقط إن أردت استكشافها بنفسك.</value>
   </data>
   <data name="KOC Studio {0} · WebView2 {1}" xml:space="preserve">
     <value>استوديو KOC {0} · WebView2 {1}</value>
@@ -922,9 +880,6 @@
   <data name="Live leaderboard" xml:space="preserve">
     <value>لوحة الصدارة المباشرة</value>
   </data>
-  <data name="Live log" xml:space="preserve">
-    <value>السجل المباشر</value>
-  </data>
   <data name="Live standings — {0}" xml:space="preserve">
     <value>الترتيب المباشر — {0}</value>
   </data>
@@ -946,9 +901,6 @@
   <data name="ML.NET {0}" xml:space="preserve">
     <value>ML.NET {0}</value>
   </data>
-  <data name="Manage data" xml:space="preserve">
-    <value>إدارة البيانات</value>
-  </data>
   <data name="Mark all read" xml:space="preserve">
     <value>تعليم الكل كمقروء</value>
   </data>
@@ -967,14 +919,8 @@
   <data name="Metric" xml:space="preserve">
     <value>المقياس</value>
   </data>
-  <data name="Model" xml:space="preserve">
-    <value>النموذج</value>
-  </data>
   <data name="Model name" xml:space="preserve">
     <value>اسم النموذج</value>
-  </data>
-  <data name="Model registry" xml:space="preserve">
-    <value>سجل النماذج</value>
   </data>
   <data name="Model saved" xml:space="preserve">
     <value>حُفظ النموذج</value>
@@ -985,13 +931,13 @@
   <data name="Models kept on this machine. These are local drafts — they have not been through the platform's review, and nothing here is deployed." xml:space="preserve">
     <value>نماذج محفوظة على هذا الجهاز. هذه مسودات محلية — لم تمرّ بمراجعة المنصّة، ولا شيء منها منشور للتشغيل.</value>
   </data>
+  <data name="More" xml:space="preserve">
+    <value>المزيد</value>
+  </data>
   <data name="Multiclass" xml:space="preserve">
     <value>تصنيف متعدد</value>
   </data>
   <data name="Multiclass classification" xml:space="preserve">
-    <value>تصنيف متعدد الفئات</value>
-  </data>
-  <data name="Multiclass classification (categories)" xml:space="preserve">
     <value>تصنيف متعدد الفئات</value>
   </data>
   <data name="My competition standings" xml:space="preserve">
@@ -1072,17 +1018,11 @@
   <data name="No data files attached yet — this challenge currently accepts uploaded prediction files only." xml:space="preserve">
     <value>لا توجد ملفات بيانات مرفقة بعد — تقبل هذه المسابقة حاليًا ملفات التنبؤ المرفوعة فقط.</value>
   </data>
-  <data name="No datasets with a file are visible to you yet — add one under Datasets, or switch to Upload CSV." xml:space="preserve">
-    <value>لا توجد مجموعات بيانات بملفات ظاهرة لك بعد — أضف واحدة من مجموعات البيانات، أو انتقل إلى رفع ملف CSV.</value>
-  </data>
   <data name="No datasets with a file are visible to you — add one under Datasets to join or append it." xml:space="preserve">
     <value>لا توجد مجموعات بيانات بملفات ظاهرة لك — أضف واحدة من مجموعات البيانات لدمجها أو إلحاقها.</value>
   </data>
   <data name="No datasets yet" xml:space="preserve">
     <value>لا مجموعات بيانات بعد</value>
-  </data>
-  <data name="No deployments yet. Promote a version to production, then deploy it." xml:space="preserve">
-    <value>لا عمليات نشر بعد. رقِّ إصدارًا إلى الإنتاج، ثم انشره.</value>
   </data>
   <data name="No discussions yet — share a question, a tip, or a win." xml:space="preserve">
     <value>لا نقاشات بعد — شارك سؤالًا أو نصيحة أو إنجازًا.</value>
@@ -1096,9 +1036,6 @@
   <data name="No models kept yet" xml:space="preserve">
     <value>لا نماذج محفوظة بعد</value>
   </data>
-  <data name="No models registered yet" xml:space="preserve">
-    <value>لا نماذج مسجَّلة بعد</value>
-  </data>
   <data name="No options — this step acts on the columns flowing into it." xml:space="preserve">
     <value>لا خيارات — تعمل هذه الخطوة على الأعمدة الواردة إليها.</value>
   </data>
@@ -1111,14 +1048,8 @@
   <data name="No runs yet" xml:space="preserve">
     <value>لا تشغيلات بعد</value>
   </data>
-  <data name="No runs yet. Training a model from the Studio queues a run here." xml:space="preserve">
-    <value>لا تشغيلات بعد. تدريب نموذج من الاستوديو يضع تشغيلة هنا.</value>
-  </data>
   <data name="No runs yet. Training into this experiment records runs here." xml:space="preserve">
     <value>لا تشغيلات بعد. التدريب ضمن هذه التجربة يسجّل التشغيلات هنا.</value>
-  </data>
-  <data name="No runs yet. Upload a CSV to train your first model." xml:space="preserve">
-    <value>لا تشغيلات بعد. ارفع ملف CSV لتدريب أول نموذج لك.</value>
   </data>
   <data name="No submissions yet — be the first on the board!" xml:space="preserve">
     <value>لا مشاركات بعد — كن الأول على اللوحة!</value>
@@ -1195,15 +1126,6 @@
   <data name="Open workspace" xml:space="preserve">
     <value>افتح مساحة العمل</value>
   </data>
-  <data name="Opening…" xml:space="preserve">
-    <value>جارٍ الفتح…</value>
-  </data>
-  <data name="Opens the Studio node editor on this competition's data — target, id and task are set for you." xml:space="preserve">
-    <value>يفتح محرّر العقد في الاستوديو على بيانات هذه المسابقة — الهدف والمعرّف والمهمة مضبوطة لك.</value>
-  </data>
-  <data name="Opens “{0}” in the Studio node editor." xml:space="preserve">
-    <value>يفتح “{0}” في محرّر العقد بالاستوديو.</value>
-  </data>
   <data name="Operator" xml:space="preserve">
     <value>المُعامل</value>
   </data>
@@ -1267,9 +1189,6 @@
   <data name="Progress toward the final reveal" xml:space="preserve">
     <value>ما تبقّى حتى الكشف النهائي</value>
   </data>
-  <data name="Promote" xml:space="preserve">
-    <value>ترقية</value>
-  </data>
   <data name="Publish" xml:space="preserve">
     <value>نشر</value>
   </data>
@@ -1309,12 +1228,6 @@
   <data name="Register" xml:space="preserve">
     <value>سجِّل</value>
   </data>
-  <data name="Register a trained model, get it reviewed, and promote it with two approvals — then deploy it, or roll back in one click. Every version keeps its metric and source run." xml:space="preserve">
-    <value>سجّل نموذجًا مدرَّبًا، واعرضه للمراجعة، ورقِّه بموافقتين — ثم انشره، أو تراجع بنقرة واحدة. وكل إصدار يحتفظ بمقياسه وتشغيلته المصدر.</value>
-  </data>
-  <data name="Register model" xml:space="preserve">
-    <value>سجّل نموذجًا</value>
-  </data>
   <data name="Register this run's model in the registry" xml:space="preserve">
     <value>سجّل نموذج هذه التشغيلة في السجل</value>
   </data>
@@ -1323,9 +1236,6 @@
   </data>
   <data name="Regression" xml:space="preserve">
     <value>انحدار</value>
-  </data>
-  <data name="Regression (numeric)" xml:space="preserve">
-    <value>انحدار (قيمة رقمية)</value>
   </data>
   <data name="Remaining" xml:space="preserve">
     <value>متبقٍ</value>
@@ -1345,9 +1255,6 @@
   <data name="Restart the app to apply it." xml:space="preserve">
     <value>أعد تشغيل التطبيق لتطبيقها.</value>
   </data>
-  <data name="Retire" xml:space="preserve">
-    <value>إيقاف</value>
-  </data>
   <data name="Reuse a name to save this as the next version of it." xml:space="preserve">
     <value>أعد استخدام اسم لحفظ هذا بوصفه إصداره التالي.</value>
   </data>
@@ -1363,9 +1270,6 @@
   <data name="Review reads exactly what competitors will see." xml:space="preserve">
     <value>تعرض المراجعة ما سيراه المتنافسون بالضبط.</value>
   </data>
-  <data name="Roll back" xml:space="preserve">
-    <value>تراجع</value>
-  </data>
   <data name="Rows" xml:space="preserve">
     <value>الصفوف</value>
   </data>
@@ -1380,9 +1284,6 @@
   </data>
   <data name="Run history is using {0} MB." xml:space="preserve">
     <value>يستهلك سجل التشغيلات {0} ميجابايت.</value>
-  </data>
-  <data name="Run name" xml:space="preserve">
-    <value>اسم التشغيلة</value>
   </data>
   <data name="Runs" xml:space="preserve">
     <value>التشغيلات</value>
@@ -1444,9 +1345,6 @@
   <data name="Select a run to see its details." xml:space="preserve">
     <value>اختر تشغيلًا لعرض تفاصيله.</value>
   </data>
-  <data name="Select a run to watch its progress." xml:space="preserve">
-    <value>اختر تشغيلة لمتابعة تقدّمها.</value>
-  </data>
   <data name="Select an experiment to see its runs." xml:space="preserve">
     <value>اختر تجربة لعرض تشغيلاتها.</value>
   </data>
@@ -1476,9 +1374,6 @@
   </data>
   <data name="Setup saved" xml:space="preserve">
     <value>حُفظت الإعدادات</value>
-  </data>
-  <data name="Share KOC data inside KOC. Every dataset shows who can see it — team, group, directorate, or the whole company — and its information-security classification." xml:space="preserve">
-    <value>شارك بيانات KOC داخل KOC. تُظهر كل مجموعة بيانات من يستطيع رؤيتها — الفريق أو المجموعة أو الإدارة أو الشركة كاملة — وتصنيفها الأمني.</value>
   </data>
   <data name="Shift" xml:space="preserve">
     <value>الإزاحة</value>
@@ -1648,17 +1543,11 @@
   <data name="The KOC AI community" xml:space="preserve">
     <value>مجتمع الذكاء الاصطناعي في KOC</value>
   </data>
-  <data name="The Studio reads these files directly — no download needed unless you want to explore them yourself." xml:space="preserve">
-    <value>يقرأ الاستوديو هذه الملفات مباشرة — لا حاجة للتنزيل إلا إن أردت استكشافها بنفسك.</value>
-  </data>
   <data name="The answer key stays Restricted and is never returned by the API." xml:space="preserve">
     <value>يبقى مفتاح الإجابات مقيَّدًا ولا تُرجعه الواجهة البرمجية أبدًا.</value>
   </data>
   <data name="The arena" xml:space="preserve">
     <value>الحلبة</value>
-  </data>
-  <data name="The column ML.NET should learn to predict." xml:space="preserve">
-    <value>العمود الذي يتعلّم ML.NET التنبؤ به.</value>
   </data>
   <data name="The copy kept here is saved as UTF-8 with commas. Your original file is not changed." xml:space="preserve">
     <value>النسخة المحفوظة هنا تُحفظ بترميز UTF-8 وبفواصل. ملفك الأصلي لا يتغيّر.</value>
@@ -1756,9 +1645,6 @@
   <data name="Train a model and it will be recorded here." xml:space="preserve">
     <value>درِّب نموذجًا وسيُسجَّل هنا.</value>
   </data>
-  <data name="Train a model in AutoML, then register it with the button above." xml:space="preserve">
-    <value>درّب نموذجًا في AutoML، ثم سجّله بالزر أعلاه.</value>
-  </data>
   <data name="Train a model, then choose “Keep this model” to save it here." xml:space="preserve">
     <value>درِّب نموذجًا ثم اختر «احتفظ بهذا النموذج» لحفظه هنا.</value>
   </data>
@@ -1780,17 +1666,11 @@
   <data name="Training limits" xml:space="preserve">
     <value>حدود التدريب</value>
   </data>
-  <data name="Training… (AutoML searches for the best algorithm)" xml:space="preserve">
-    <value>جارٍ التدريب… (يبحث AutoML عن أفضل خوارزمية)</value>
-  </data>
   <data name="Try now" xml:space="preserve">
     <value>جرّب الآن</value>
   </data>
   <data name="Try one row" xml:space="preserve">
     <value>جرّب صفًا واحدًا</value>
-  </data>
-  <data name="Turn a CSV into a working prediction with ML.NET AutoML — no code. Upload a dataset, tell it which column to predict, pick the task, and it finds and evaluates the best model. For a step-by-step pipeline, use the Studio node editor." xml:space="preserve">
-    <value>حوّل ملف CSV إلى تنبؤ عامل باستخدام ML.NET AutoML — بلا برمجة. ارفع مجموعة بيانات، وحدّد العمود المراد التنبؤ به، واختر المهمة، وسيجد أفضل نموذج ويقيّمه. ولمسار خطوة بخطوة، استخدم محرّر العقد في الاستوديو.</value>
   </data>
   <data name="Type" xml:space="preserve">
     <value>النوع</value>
@@ -1807,12 +1687,6 @@
   <data name="Until the reveal, the final private standings stay concealed so no one games the last day." xml:space="preserve">
     <value>حتى موعد الكشف يبقى الترتيب النهائي الخاص محجوبًا حتى لا يستغل أحد اليوم الأخير.</value>
   </data>
-  <data name="Upload CSV" xml:space="preserve">
-    <value>ارفع ملف CSV</value>
-  </data>
-  <data name="Use a dataset" xml:space="preserve">
-    <value>استخدم مجموعة بيانات</value>
-  </data>
   <data name="Use the persona picker in the top right to view the app as different roles." xml:space="preserve">
     <value>استخدم منتقي الشخصيات أعلى اليمين لعرض التطبيق بأدوار مختلفة.</value>
   </data>
@@ -1824,9 +1698,6 @@
   </data>
   <data name="Value" xml:space="preserve">
     <value>القيمة</value>
-  </data>
-  <data name="Version" xml:space="preserve">
-    <value>الإصدار</value>
   </data>
   <data name="Version your ML pipelines: save drafts, publish an immutable snapshot once it compiles, then export or roll a new draft. Start from an O&amp;G template." xml:space="preserve">
     <value>أصدِر نسخًا من مسارات تعلُّم الآلة: احفظ المسودات، وانشر لقطة ثابتة بمجرد نجاح البناء، ثم صدّرها أو ابدأ مسودة جديدة. وابدأ من قالب للنفط والغاز.</value>
@@ -1845,9 +1716,6 @@
   </data>
   <data name="Viewing as {0} — switch persona from the top-right menu." xml:space="preserve">
     <value>تعرض بصفة {0} — بدّل الشخصية من القائمة أعلى اليمين.</value>
-  </data>
-  <data name="Waiting for output…" xml:space="preserve">
-    <value>في انتظار المخرجات…</value>
   </data>
   <data name="Waiting to send" xml:space="preserve">
     <value>في انتظار الإرسال</value>
@@ -1912,6 +1780,9 @@
   <data name="You are signed in automatically with your KOC account — if you are seeing this, contact the platform team." xml:space="preserve">
     <value>يتم تسجيل دخولك تلقائيًا بحساب KOC — إن ظهرت لك هذه الرسالة فتواصل مع فريق المنصة.</value>
   </data>
+  <data name="You can also submit a predictions file from this page at any time." xml:space="preserve">
+    <value>يمكنك أيضًا إرسال ملف تنبؤات من هذه الصفحة في أي وقت.</value>
+  </data>
   <data name="You can edit the draft from the Host tab afterwards." xml:space="preserve">
     <value>يمكنك تعديل المسودة لاحقًا من تبويب الاستضافة.</value>
   </data>
@@ -1968,9 +1839,6 @@
   </data>
   <data name="Your team's AI &amp; ML workspace." xml:space="preserve">
     <value>مساحة فريقك للذكاء الاصطناعي وتعلُّم الآلة.</value>
-  </data>
-  <data name="Your training runs" xml:space="preserve">
-    <value>تشغيلات التدريب لديك</value>
   </data>
   <data name="about {0} rows" xml:space="preserve">
     <value>نحو {0} صف</value>
