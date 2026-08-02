@@ -12,11 +12,16 @@ namespace Beep.KocAiCommunity.Application.Common;
 public static class KocCsv
 {
     /// <summary>
-    /// Streams records from a reader, honouring quoted fields (embedded commas, escaped <c>""</c>, and
-    /// embedded newlines). Fully-empty lines (a single zero-length field) are skipped, matching CSV
+    /// Streams records from a reader, honouring quoted fields (embedded delimiters, escaped <c>""</c>,
+    /// and embedded newlines). Fully-empty lines (a single zero-length field) are skipped, matching CSV
     /// convention. Field values are returned verbatim (quotes removed, content preserved — not trimmed).
+    /// <para>
+    /// <paramref name="delimiter"/> is a comma for everything the platform writes. It exists for reading
+    /// files the platform did not write — Excel in an Arabic or European locale exports semicolons — so
+    /// that those are parsed by this codec on the way in rather than by a second parser somewhere else.
+    /// </para>
     /// </summary>
-    public static IEnumerable<string[]> ParseRecords(TextReader reader)
+    public static IEnumerable<string[]> ParseRecords(TextReader reader, char delimiter = ',')
     {
         var field = new StringBuilder();
         var record = new List<string>();
@@ -48,37 +53,38 @@ public static class KocCsv
                 continue;
             }
 
-            switch (ch)
+            // Not a switch: the delimiter is a parameter, and a case label has to be constant.
+            if (ch == '"')
             {
-                case '"':
-                    inQuotes = true;
-                    break;
-                case ',':
-                    record.Add(field.ToString());
-                    field.Clear();
-                    break;
-                case '\r':
-                    if (reader.Peek() == '\n')
-                    {
-                        reader.Read();
-                    }
+                inQuotes = true;
+            }
+            else if (ch == delimiter)
+            {
+                record.Add(field.ToString());
+                field.Clear();
+            }
+            else if (ch == '\r')
+            {
+                if (reader.Peek() == '\n')
+                {
+                    reader.Read();
+                }
 
-                    if (EmitRecord(record, field, out var crRow))
-                    {
-                        yield return crRow!;
-                    }
-
-                    break;
-                case '\n':
-                    if (EmitRecord(record, field, out var lfRow))
-                    {
-                        yield return lfRow!;
-                    }
-
-                    break;
-                default:
-                    field.Append(ch);
-                    break;
+                if (EmitRecord(record, field, out var crRow))
+                {
+                    yield return crRow!;
+                }
+            }
+            else if (ch == '\n')
+            {
+                if (EmitRecord(record, field, out var lfRow))
+                {
+                    yield return lfRow!;
+                }
+            }
+            else
+            {
+                field.Append(ch);
             }
         }
 
@@ -89,10 +95,10 @@ public static class KocCsv
     }
 
     /// <summary>Parses records from an in-memory string.</summary>
-    public static IEnumerable<string[]> ParseRecords(string text)
+    public static IEnumerable<string[]> ParseRecords(string text, char delimiter = ',')
     {
         using var reader = new StringReader(text);
-        foreach (var record in ParseRecords(reader))
+        foreach (var record in ParseRecords(reader, delimiter))
         {
             yield return record;
         }

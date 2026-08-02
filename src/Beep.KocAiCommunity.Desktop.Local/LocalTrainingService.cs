@@ -87,6 +87,8 @@ public sealed class LocalTrainingService(
         var csvPath = datasets.PathFor(datasetId)
                       ?? throw new InvalidOperationException("The dataset's file is missing.");
 
+        datasets.MarkUsed(datasetId);
+
         var run = new LocalRun
         {
             Id = LocalRunStore.NewId(started),

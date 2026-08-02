@@ -218,7 +218,7 @@ against a fake `IMlTrainer`, and verify actual training by hand.
 | Model files fill the disk | Report workspace size in Settings; offer retention |
 | A user expects server-grade results on a laptop | Say what the limits are, in the UI, in plain words |
 
-## Known flakiness — the API's training budget, not this phase
+## ~~Known flakiness~~ — fixed 2026-08-02
 
 `POST /api/v1/studio/train` trains with `maxSeconds: 8`. When the whole test suite runs, the unit and
 integration assemblies run in parallel and both do AutoML; on a contended machine an 8-second experiment
@@ -237,14 +237,24 @@ passes on its own. Roughly one full-suite run in two is clean.
 unit tests that made it more likely; those three now share one trained model through
 `TrainedModelFixture` rather than training one each, which cut the unit assembly from ~3m50 to ~1m50.
 
-Two candidate fixes, neither taken here because both reach outside the desktop:
+### What was done about it
 
-1. Raise the endpoint's budget. 8 seconds is short for a training call that a person waits on, so this
-   may be right on its own merits — but it is a change to server behaviour, made for a test.
-2. Stop the assemblies training concurrently — an xUnit assembly-level lock, or running the ML-heavy
-   assemblies in sequence in CI.
+It got worse as Phases 04 and 05 added tests — one run reached eight failures — and a suite that fails
+half the time stops being evidence of anything, so it was fixed rather than documented again.
 
-Until one is done, **a single AutoML failure in a full-suite run should be re-run before being believed**.
+- `POST /api/v1/studio/*` now reads its budget from **`Studio:TrainingSeconds`**, defaulting to the same
+  8 seconds as before. **Production behaviour is unchanged**; there is now a knob for a loaded host,
+  which is worth having on its own merits — the failure mode it addresses is a real one that a KOC
+  engineer would hit as "Training failed" on a busy server.
+- `KocApiFactory` sets it to 25 for the integration suite, and the AutoML unit tests went from 5–6
+  seconds to 20. The headroom is for the contention, not for the model.
+
+**The trade is wall-clock.** The unit assembly went from ~1m50 to ~4m and integration from ~2m30 to
+~4m15, because a time-boxed experiment spends its whole box. Determinism is worth it; if the suite
+becomes too slow to run, the better fix is stopping the two assemblies from training at the same time,
+not shrinking the budgets back.
+
+Verified with two consecutive full-suite runs, 614 tests, no failures.
 
 ## Note on the pilot
 

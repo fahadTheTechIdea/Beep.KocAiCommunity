@@ -1,7 +1,7 @@
 using System.Globalization;
 using Beep.KocAiCommunity.Application.Common;
 
-namespace Beep.KocAiCommunity.Infrastructure.Datasets;
+namespace Beep.KocAiCommunity.Application.Datasets;
 
 /// <summary>One profiled column: inferred type, nullability, and sampled summary statistics.</summary>
 public sealed record CsvColumn(

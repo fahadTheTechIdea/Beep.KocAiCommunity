@@ -22,7 +22,7 @@ public class AutoMlTrainerTests
             sb.Append($"{i % 3},{(i / 3) % 3},false\n");
         }
 
-        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.BinaryClassification, Csv(sb.ToString()), "label", 5);
+        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.BinaryClassification, Csv(sb.ToString()), "label", 20);
 
         result.Task.Should().Be("BinaryClassification");
         result.PrimaryMetric.Should().Be("Accuracy");
@@ -44,7 +44,7 @@ public class AutoMlTrainerTests
             sb.Append($"{id},1,1,{(label ? "true" : "false")}\n");
         }
 
-        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.BinaryClassification, Csv(sb.ToString()), "label", 5);
+        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.BinaryClassification, Csv(sb.ToString()), "label", 20);
 
         result.PrimaryValue.Should().BeLessThan(0.7, "the id must be excluded, leaving only signal-free features");
     }
@@ -61,7 +61,7 @@ public class AutoMlTrainerTests
             sb.Append(string.Create(CultureInfo.InvariantCulture, $"{x1},{x2},{(2 * x1) + x2}\n"));
         }
 
-        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.Regression, Csv(sb.ToString()), "y", 6);
+        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.Regression, Csv(sb.ToString()), "y", 20);
 
         result.Task.Should().Be("Regression");
         result.PrimaryMetric.Should().Be("RSquared");
@@ -80,7 +80,7 @@ public class AutoMlTrainerTests
             sb.Append($"{x1},{i % 4},{cls}\n");
         }
 
-        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.MulticlassClassification, Csv(sb.ToString()), "label", 6);
+        var result = await new AutoMlTrainer().TrainAsync(MlTaskType.MulticlassClassification, Csv(sb.ToString()), "label", 20);
 
         result.Task.Should().Be("MulticlassClassification");
         result.PrimaryMetric.Should().Be("MicroAccuracy");

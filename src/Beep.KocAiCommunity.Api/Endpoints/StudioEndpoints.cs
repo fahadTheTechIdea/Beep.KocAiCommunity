@@ -16,10 +16,25 @@ namespace Beep.KocAiCommunity.Api.Endpoints;
 
 public static class StudioEndpoints
 {
+    /// <summary>
+    /// Seconds AutoML gets per training request, unless configuration says otherwise.
+    /// <para>
+    /// Short on purpose: this is a call a person waits on with a spinner in front of them. It is a
+    /// floor, not a target — AutoML returns the best trial it finished, and eight seconds is enough for
+    /// several on a machine that is not busy. On one that is, no trial finishes and ML.NET throws
+    /// <c>TimeoutException</c>, which surfaces as "Training failed". Raise
+    /// <c>Studio:TrainingSeconds</c> on a loaded host.
+    /// </para>
+    /// </summary>
+    private const int DefaultTrainingSeconds = 8;
+
+    private static int TrainingSeconds(IConfiguration configuration) =>
+        Math.Clamp(configuration.GetValue("Studio:TrainingSeconds", DefaultTrainingSeconds), 1, 600);
+
     public static RouteGroupBuilder MapStudioEndpoints(this RouteGroupBuilder group)
     {
         // Upload a CSV and train a binary classifier via ML.NET AutoML.
-        group.MapPost("/studio/train", async (IFormFile file, string labelColumn, string? datasetName, string? task, IKocCurrentUser me, IStudioService studio, CancellationToken ct) =>
+        group.MapPost("/studio/train", async (IFormFile file, string labelColumn, string? datasetName, string? task, IKocCurrentUser me, IStudioService studio, IConfiguration configuration, CancellationToken ct) =>
         {
             if (!Enum.TryParse<MlTaskType>(task, ignoreCase: true, out var taskType))
             {
@@ -29,7 +44,7 @@ public static class StudioEndpoints
             try
             {
                 await using var stream = file.OpenReadStream();
-                var run = await studio.TrainAsync(me.UserId!, string.IsNullOrWhiteSpace(datasetName) ? file.FileName : datasetName, labelColumn, taskType, stream, maxSeconds: 8, ct: ct);
+                var run = await studio.TrainAsync(me.UserId!, string.IsNullOrWhiteSpace(datasetName) ? file.FileName : datasetName, labelColumn, taskType, stream, maxSeconds: TrainingSeconds(configuration), ct: ct);
                 return Results.Ok(ToDto(run));
             }
             catch (Exception ex)
@@ -41,7 +56,7 @@ public static class StudioEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee)
         .DisableAntiforgery();
 
-        group.MapGet("/studio/runs", async (IKocCurrentUser me, IStudioService studio, CancellationToken ct) =>
+        group.MapGet("/studio/runs", async (IKocCurrentUser me, IStudioService studio, IConfiguration configuration, CancellationToken ct) =>
         {
             var runs = await studio.GetMyRunsAsync(me.UserId!, ct);
             return Results.Ok(runs.Select(ToDto).ToList());
@@ -56,7 +71,7 @@ public static class StudioEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         // Execute a workflow node by node (real ML.NET pipeline: load → transforms → split → train → evaluate).
-        group.MapPost("/studio/workflows/execute", async (IFormFile file, [FromForm] string definition, string labelColumn, string? task, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IPipelineExecutor executor, CancellationToken ct) =>
+        group.MapPost("/studio/workflows/execute", async (IFormFile file, [FromForm] string definition, string labelColumn, string? task, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IPipelineExecutor executor, IConfiguration configuration, CancellationToken ct) =>
         {
             if (!Enum.TryParse<MlTaskType>(task, ignoreCase: true, out var taskType) || taskType == MlTaskType.MulticlassClassification)
             {
@@ -68,7 +83,7 @@ public static class StudioEndpoints
                 var def = JsonSerializer.Deserialize<WorkflowDefinition>(definition, JsonOptions) ?? new WorkflowDefinition();
                 var secondary = await ResolveSecondaryDatasetsAsync(me, datasets, artifacts, def, ct);
                 await using var stream = file.OpenReadStream();
-                var result = await executor.ExecuteAsync(def, labelColumn, taskType, stream, maxSeconds: 8, secondaryDatasets: secondary, ct: ct);
+                var result = await executor.ExecuteAsync(def, labelColumn, taskType, stream, maxSeconds: TrainingSeconds(configuration), secondaryDatasets: secondary, ct: ct);
                 return Results.Ok(result);
             }
             catch (Exception ex)
@@ -82,7 +97,7 @@ public static class StudioEndpoints
 
         // Run a workflow: validates the graph, then executes it node by node (the same engine a
         // competition submission is scored against) and records the run's headline metric.
-        group.MapPost("/studio/workflows/run", async (IFormFile file, [FromForm] string definition, string labelColumn, string? task, IKocCurrentUser me, IWorkflowService workflow, IDatasetService datasets, IArtifactService artifacts, CancellationToken ct) =>
+        group.MapPost("/studio/workflows/run", async (IFormFile file, [FromForm] string definition, string labelColumn, string? task, IKocCurrentUser me, IWorkflowService workflow, IDatasetService datasets, IArtifactService artifacts, IConfiguration configuration, CancellationToken ct) =>
         {
             if (!Enum.TryParse<MlTaskType>(task, ignoreCase: true, out var taskType))
             {
@@ -94,7 +109,7 @@ public static class StudioEndpoints
                 var def = JsonSerializer.Deserialize<WorkflowDefinition>(definition, JsonOptions) ?? new WorkflowDefinition();
                 var secondary = await ResolveSecondaryDatasetsAsync(me, datasets, artifacts, def, ct);
                 await using var stream = file.OpenReadStream();
-                var run = await workflow.RunAsync(me.UserId!, def, labelColumn, taskType, stream, maxSeconds: 8, secondaryDatasets: secondary, ct: ct);
+                var run = await workflow.RunAsync(me.UserId!, def, labelColumn, taskType, stream, maxSeconds: TrainingSeconds(configuration), secondaryDatasets: secondary, ct: ct);
                 return Results.Ok(ToDto(run));
             }
             catch (WorkflowException ex)
@@ -111,7 +126,7 @@ public static class StudioEndpoints
         .DisableAntiforgery();
 
         // Train AutoML directly from a catalog dataset (no re-upload).
-        group.MapPost("/studio/train/dataset", async (TrainFromDatasetRequest req, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IStudioService studio, CancellationToken ct) =>
+        group.MapPost("/studio/train/dataset", async (TrainFromDatasetRequest req, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IStudioService studio, IConfiguration configuration, CancellationToken ct) =>
         {
             if (!Enum.TryParse<MlTaskType>(req.Task, ignoreCase: true, out var taskType))
             {
@@ -127,7 +142,7 @@ public static class StudioEndpoints
             try
             {
                 await using var csv = await artifacts.OpenReadAsync(access.Dataset!.FileArtifactId!.Value, ct);
-                var run = await studio.TrainAsync(me.UserId!, access.Dataset.Name, req.LabelColumn, taskType, csv, maxSeconds: 8, ct: ct);
+                var run = await studio.TrainAsync(me.UserId!, access.Dataset.Name, req.LabelColumn, taskType, csv, maxSeconds: TrainingSeconds(configuration), ct: ct);
                 return Results.Ok(ToDto(run));
             }
             catch (Exception ex)
@@ -139,7 +154,7 @@ public static class StudioEndpoints
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         // Run a workflow pipeline node-by-node against a catalog dataset.
-        group.MapPost("/studio/workflows/execute/dataset", async (ExecuteFromDatasetRequest req, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IPipelineExecutor executor, CancellationToken ct) =>
+        group.MapPost("/studio/workflows/execute/dataset", async (ExecuteFromDatasetRequest req, IKocCurrentUser me, IDatasetService datasets, IArtifactService artifacts, IPipelineExecutor executor, IConfiguration configuration, CancellationToken ct) =>
         {
             if (!Enum.TryParse<MlTaskType>(req.Task, ignoreCase: true, out var taskType) || taskType == MlTaskType.MulticlassClassification)
             {
@@ -156,7 +171,7 @@ public static class StudioEndpoints
             {
                 var secondary = await ResolveSecondaryDatasetsAsync(me, datasets, artifacts, req.Definition, ct);
                 await using var csv = await artifacts.OpenReadAsync(access.Dataset!.FileArtifactId!.Value, ct);
-                var result = await executor.ExecuteAsync(req.Definition, req.LabelColumn, taskType, csv, maxSeconds: 8, secondaryDatasets: secondary, ct: ct);
+                var result = await executor.ExecuteAsync(req.Definition, req.LabelColumn, taskType, csv, maxSeconds: TrainingSeconds(configuration), secondaryDatasets: secondary, ct: ct);
                 return Results.Ok(result);
             }
             catch (Exception ex)

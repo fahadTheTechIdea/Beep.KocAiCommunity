@@ -111,17 +111,47 @@ instead of sorting alphabetically away from them.
 | `WinForms/Components/Datasets.razor` | Detection result with override; profile panel; rename; column cap |
 | `Desktop.Local/LocalDatasetIndex.cs` | New — the index becomes a record, not a `Dictionary<string, Guid>` |
 
+## What implementation changed
+
+**Two-step import.** The design said to show the detection and allow an override "before the file is
+committed", which the old one-shot `ImportAsync` could not do. So import is now `StageAsync` → confirm →
+`CommitAsync`: the file is parked in `temp/`, the detected format is shown with the columns it produces,
+and the delimiter and encoding can be changed and re-previewed before anything is kept. `ImportAsync`
+remains as the no-UI path.
+
+**Files are converted, not annotated.** A staged file is rewritten as UTF-8 with commas on commit. The
+alternative — recording each dataset's delimiter and encoding — means teaching the node engine, AutoML
+and every scorer about them, and getting one of them wrong. The dialog says the stored copy is
+converted and the original is untouched.
+
+**The system ANSI fallback was not enough.** This document specified "on decode failure fall back to the
+system ANSI page". Implemented exactly, and it failed its own acceptance criterion: an English-configured
+laptop has code page 1252, so a genuine Windows-1256 export decoded to `ÇáÈÆÑ` — mojibake column names,
+on precisely the file this detector exists for. The detector now lets the bytes vote: Arabic text is
+mostly non-ASCII and lands in the Unicode Arabic block under 1256, whereas Western text is mostly ASCII
+with the occasional accent. The two are not perfectly separable — a 1252 file heavy with accented Latin
+reads as Arabic here — which is one more reason the guess is confirmed by a person before anything is kept.
+
+**`CsvProfiler` moved** from `Infrastructure/Datasets` to `Application/Datasets`. It depended only on
+`KocCsv`, so the move was clean and avoided giving the desktop a reference to EF Core. `KocCsv.ParseRecords`
+gained an optional delimiter, so there is still exactly one CSV codec in the platform.
+
+**Empty files are now refused.** Importing one used to produce a dataset with no columns that looked
+fine in the list and failed in the designer. This is a deliberate behaviour change and an existing test
+was updated to pin it.
+
 ## Acceptance criteria
 
-- [ ] A semicolon-separated file imports with the right columns
-- [ ] A Windows-1256 file imports with readable Arabic column names
-- [ ] The detected encoding and delimiter are shown, and can be overridden before committing
-- [ ] A 200 MB CSV imports without the UI freezing and without the process exceeding ~300 MB
-- [ ] Selecting it shows a profile within a few seconds; the second selection is instant (cached)
-- [ ] A 500-column file previews the first 50 with a clear indicator
-- [ ] A malformed single-line file reports as malformed rather than exhausting memory
-- [ ] Rename keeps the id, and a workflow referencing it still resolves
-- [ ] The list orders by recent use
+- [x] A semicolon-separated file imports with the right columns
+- [x] A Windows-1256 file imports with readable Arabic column names
+- [x] The detected encoding and delimiter are shown, and can be overridden before committing
+- [ ] A 200 MB CSV imports without the UI freezing and without the process exceeding ~300 MB —
+      **the streaming is in place and the memory ceiling has not been measured**; needs a real file
+- [x] Selecting it shows a profile within a few seconds; the second selection is instant (cached)
+- [x] A 500-column file previews the first 50 with a clear indicator
+- [x] A malformed single-line file reports as malformed rather than exhausting memory
+- [x] Rename keeps the id, and a workflow referencing it still resolves
+- [x] The list orders by recent use
 
 ## Tests
 

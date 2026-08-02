@@ -23,7 +23,7 @@ public class PredictionPoolTests
         }
 
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
-        var captured = await new AutoMlTrainer().TrainAndCaptureAsync(MlTaskType.BinaryClassification, stream, "label", maxSeconds: 5);
+        var captured = await new AutoMlTrainer().TrainAndCaptureAsync(MlTaskType.BinaryClassification, stream, "label", maxSeconds: 20);
         captured.FeatureStatsJson.Should().Contain("x1").And.Contain("x2");
         captured.ModelBytes.Should().NotBeEmpty();
         return captured.ModelBytes;

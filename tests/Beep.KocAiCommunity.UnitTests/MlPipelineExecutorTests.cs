@@ -46,7 +46,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 20);
 
         result.Success.Should().BeFalse();
         result.Nodes.Should().Contain(n => n.Kind == "train" && n.Status != "done");
@@ -78,7 +78,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 20);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is not "done" and not "skipped");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' {failed?.Status}: {failed?.Detail}");
@@ -120,7 +120,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 20);
 
         var failed = result.Nodes.FirstOrDefault(n => n.Status is not "done" and not "skipped");
         result.Success.Should().BeTrue($"but node '{failed?.Kind}' {failed?.Status}: {failed?.Detail}");
@@ -242,7 +242,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 20);
 
         result.Success.Should().BeFalse();
         var failed = result.Nodes.Single(n => n.Kind == "select-columns");
@@ -702,7 +702,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 20);
 
         result.Success.Should().BeFalse();
         var train = result.Nodes.Single(n => n.Kind == "train");
@@ -771,7 +771,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 20);
 
         result.Success.Should().BeFalse();
         var cc = result.Nodes.Single(n => n.Kind == "compute-column");
@@ -805,7 +805,7 @@ public class MlPipelineExecutorTests
         }
         using var csv = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
 
-        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 5);
+        var result = await NewExecutor().ExecuteAsync(def, "label", MlTaskType.BinaryClassification, csv, 20);
 
         result.Success.Should().BeFalse();
         var tk = result.Nodes.Single(n => n.Kind == "take-rows");

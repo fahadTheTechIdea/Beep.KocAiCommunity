@@ -60,6 +60,12 @@ public class KocApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Auth:TokenSigningKey", TestSigningKey);
         builder.UseSetting("Setup:File", Path.Combine(Path.GetTempPath(), $"koc-tests-{Guid.NewGuid():N}", "setup.json"));
 
+        // The production default is 8 seconds, which is fine on an idle machine and not on this one:
+        // the test assemblies run in parallel and both train, so an 8-second AutoML experiment can
+        // finish without completing a single trial — ML.NET then throws and every training test in
+        // flight fails. This buys headroom for the contention, not for the model.
+        builder.UseSetting("Studio:TrainingSeconds", "25");
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>

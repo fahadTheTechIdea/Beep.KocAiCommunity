@@ -1,0 +1,33 @@
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
+
+@* One field, asked for in the two places something gets named. The helper text belongs to the caller,
+   because what a name means differs: reusing one here makes a new version, and there it moves a file. *@
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Name" Label="@Label" Variant="Variant.Outlined"
+                      Margin="Margin.Dense" Immediate="true" HelperText="@HelperText" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Confirm"
+                   Disabled="@string.IsNullOrWhiteSpace(Name)">@ConfirmLabel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    [Parameter] public string Name { get; set; } = "";
+
+    [Parameter] public string Label { get; set; } = "";
+
+    [Parameter] public string HelperText { get; set; } = "";
+
+    [Parameter] public string ConfirmLabel { get; set; } = "";
+
+    private void Confirm() => Dialog.Close(DialogResult.Ok(Name.Trim()));
+
+    private void Cancel() => Dialog.Cancel();
+}

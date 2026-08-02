@@ -1,7 +1,7 @@
 # KOC Studio (WinForms Desktop) — Master Todo Tracker
 
 **Plan folder:** `plans/winforms-studio/`
-**Status:** 🟢 BUILDING — Phases 01, 04 and 05 code complete (2026-08-02), Phase 02 partly shipped; 03, 06–08 design-only
+**Status:** 🟢 BUILDING — Phases 01, 02, 04 and 05 code complete (2026-08-02); 03, 06–08 design-only
 **Baseline audited:** 2026-08-02 against `src/Beep.KocAiCommunity.WinForms`, `src/Beep.KocAiCommunity.Desktop.Local`, `src/Beep.KocAiCommunity.Ui.Studio` at commit `e3ae815`
 **Related plans:** `plans/koc-ai-community-platform/19_WINFORMS_DESKTOP_STUDIO.md` and `19a–19d` — those describe the *original* desktop build. This folder is its evolution into a product an engineer can live in.
 
@@ -54,13 +54,16 @@ do a day's work in it without hitting a wall".
   - [ ] **Hand-verification outstanding** — the crash dialog, the WebView2 message and the first-run
         experience have not been exercised in a running window. See "Definition of done" item 3
 
-- [ ] **Phase 02 — Data: import, profiling, preview** (`02_DATA_IMPORT_PROFILING_PREVIEW.md`) — 🟡 PART SHIPPED
+- [ ] **Phase 02 — Data: import, profiling, preview** (`02_DATA_IMPORT_PROFILING_PREVIEW.md`) — 🟡 CODE COMPLETE
   - [x] Import CSV, preview header + rows, delete, open folder *(shipped 2026-08-02)*
   - [x] Name collision handling, path-traversal guard, stable ids across restart
-  - [ ] Encoding and delimiter detection (semicolon/tab, UTF-8 BOM, ANSI)
-  - [ ] Column profile: type, nulls, distinct, min/max/mean — reusing `CsvProfiler`
-  - [ ] Large-file handling: streamed import, row-count estimate, no full read into memory
-  - [ ] Dataset rename; a "recently used" ordering
+  - [x] Encoding and delimiter detection, confirmed by the user before commit; files convert to
+        UTF-8/comma on the way in. The Arabic case needed more than the planned ANSI fallback —
+        see the phase doc
+  - [x] Column profile on demand, cached beside the file and invalidated by write time
+  - [x] Streamed import, approximate row count, 50-column preview cap, malformed-file guard
+  - [x] Rename keeping the id; "recently used" ordering, stamped when a pipeline or training run uses it
+  - [ ] **The 200 MB memory ceiling is unmeasured** — the streaming is in place, nobody has watched it
 
 - [ ] **Phase 03 — Designer UX parity with the field's best** (`03_DESIGNER_UX_PARITY.md`)
   - [ ] Per-node data preview — inspect the table flowing out of any node

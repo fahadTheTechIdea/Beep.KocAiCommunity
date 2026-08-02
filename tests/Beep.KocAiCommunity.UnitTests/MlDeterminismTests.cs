@@ -25,8 +25,8 @@ public class MlDeterminismTests
     public async Task Training_with_a_fixed_seed_is_reproducible()
     {
         var trainer = new AutoMlTrainer();
-        var a = await trainer.TrainAsync(MlTaskType.BinaryClassification, Csv(), "label", maxSeconds: 5);
-        var b = await trainer.TrainAsync(MlTaskType.BinaryClassification, Csv(), "label", maxSeconds: 5);
+        var a = await trainer.TrainAsync(MlTaskType.BinaryClassification, Csv(), "label", maxSeconds: 20);
+        var b = await trainer.TrainAsync(MlTaskType.BinaryClassification, Csv(), "label", maxSeconds: 20);
 
         // AutoML is wall-clock bounded, so under heavy machine load the two runs may fit a different
         // number of trials and crown different winners. Per-trial results ARE seeded/deterministic:

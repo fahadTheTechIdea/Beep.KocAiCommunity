@@ -1,0 +1,157 @@
+@using System.Text
+@using Beep.KocAiCommunity.Desktop.Local
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject LocalDatasetStore Store
+@inject IStringLocalizer<Strings> L
+
+@* Detection is a guess. Showing the guess next to the columns it produces is what makes a wrong one
+   obvious — a semicolon file read as commas shows one column named after the whole header row, which
+   nobody misses when it is in front of them and everybody misses when it is not. *@
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.subtitle1" Class="mb-1">@_staged.FileName</MudText>
+
+        @if (_staged.Problem is { Length: > 0 } problem)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Text" Dense="true">@problem</MudAlert>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mb-3" Style="opacity:.75;">
+                @L["Check the columns below. If they look wrong, change the separator or the encoding."]
+            </MudText>
+
+            <div class="d-flex gap-3 mb-3 flex-wrap">
+                <MudSelect T="char" Value="_staged.Format.Delimiter" ValueChanged="OnDelimiterChanged"
+                           Label="@L["Separator"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Style="min-width:180px;">
+                    @foreach (var d in CsvFormat.Candidates)
+                    {
+                        <MudSelectItem T="char" Value="@d">@DelimiterLabel(d)</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect T="string" Value="_encoding" ValueChanged="OnEncodingChanged"
+                           Label="@L["Encoding"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Style="min-width:220px;">
+                    <MudSelectItem T="string" Value="@Utf8">@L["Unicode (UTF-8)"]</MudSelectItem>
+                    <MudSelectItem T="string" Value="@Arabic">@L["Arabic (Windows-1256)"]</MudSelectItem>
+                    <MudSelectItem T="string" Value="@Ansi">@L["Windows default"]</MudSelectItem>
+                </MudSelect>
+            </div>
+
+            @if (!_staged.Format.Confident)
+            {
+                @* Every line had a different count, or there was nothing to count. Worth saying: a
+                   single-column file is fine, a mis-read one is not, and they look identical here. *@
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-3">
+                    @L["The separator could not be worked out from the file. Check the columns carefully."]
+                </MudAlert>
+            }
+
+            @if (_staged.Header.Count == 0)
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Text" Dense="true">
+                    @L["Nothing readable at these settings."]
+                </MudAlert>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;">
+                    @L["{0} columns found", _staged.Header.Count]
+                </MudText>
+                <div style="overflow-x:auto;max-height:300px;">
+                    <MudSimpleTable Dense="true" Striped="true" Style="min-width:100%;">
+                        <thead>
+                            <tr>@foreach (var h in _staged.Header.Take(PreviewColumns)) { <th>@h</th> }</tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _staged.Rows)
+                            {
+                                <tr>
+                                    @for (var i = 0; i < Math.Min(_staged.Header.Count, PreviewColumns); i++)
+                                    {
+                                        <td>@(i < row.Length ? row[i] : "")</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </div>
+                @if (_staged.Header.Count > PreviewColumns)
+                {
+                    <MudText Typo="Typo.caption" Style="opacity:.7;">
+                        @L["and {0} more columns", _staged.Header.Count - PreviewColumns]
+                    </MudText>
+                }
+            }
+
+            <MudText Typo="Typo.caption" Class="d-block mt-3" Style="opacity:.6;">
+                @L["The copy kept here is saved as UTF-8 with commas. Your original file is not changed."]
+            </MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Import"
+                   Disabled="@(!_staged.CanCommit)">@L["Import"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>Beyond this the table scrolls off the page and the dialog stops being readable.</summary>
+    private const int PreviewColumns = 50;
+
+    private const string Utf8 = "utf8";
+    private const string Arabic = "arabic";
+    private const string Ansi = "ansi";
+
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    [Parameter] public StagedImport Staged { get; set; } = default!;
+
+    private StagedImport _staged = default!;
+    private string _encoding = Utf8;
+
+    protected override void OnInitialized()
+    {
+        _staged = Staged;
+        _encoding = _staged.Format.Encoding.CodePage == 1256 ? Arabic
+            : _staged.Format.Encoding.CodePage == Encoding.UTF8.CodePage ? Utf8
+            : Ansi;
+    }
+
+    /// <summary>
+    /// Literal keys rather than <c>L[CsvFormat.DelimiterName(d)]</c>: the localization coverage test
+    /// scans markup for literal indexer strings, and a computed key is invisible to it — which is
+    /// exactly how a label goes untranslated with nobody finding out.
+    /// </summary>
+    private string DelimiterLabel(char delimiter) => delimiter switch
+    {
+        ';' => L["semicolon"],
+        '\t' => L["tab"],
+        '|' => L["pipe"],
+        _ => L["comma"],
+    };
+
+    private void OnDelimiterChanged(char delimiter) =>
+        _staged = Store.Restage(_staged, _staged.Format with { Delimiter = delimiter, Confident = true });
+
+    private void OnEncodingChanged(string choice)
+    {
+        _encoding = choice;
+        var encoding = choice switch
+        {
+            Arabic => CsvFormatDetector.Arabic(),
+            Ansi => CsvFormatDetector.SystemAnsi(),
+            _ => new UTF8Encoding(false),
+        };
+
+        _staged = Store.Restage(_staged, _staged.Format with { Encoding = encoding });
+    }
+
+    private void Import() => Dialog.Close(DialogResult.Ok(_staged));
+
+    private void Cancel() => Dialog.Cancel();
+}

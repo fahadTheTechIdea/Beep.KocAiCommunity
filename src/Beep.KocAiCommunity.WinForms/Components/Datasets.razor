@@ -1,4 +1,6 @@
 @page "/datasets"
+@using System.Globalization
+@using Beep.KocAiCommunity.Application.Datasets
 @using Beep.KocAiCommunity.Contracts.Datasets
 @using Beep.KocAiCommunity.Desktop.Local
 @using Beep.KocAiCommunity.Ui.Shared.Localization
@@ -62,8 +64,14 @@ else
                           @onclick="() => Select(d)">
                     <div class="d-flex justify-space-between align-center">
                         <MudText Typo="Typo.subtitle1">@d.Name</MudText>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                                       OnClick="@(() => Remove(d))" aria-label="@L["Delete"]" />
+                        @* Stopped on the wrapper, not the buttons: MudIconButton already owns OnClick,
+                           and selecting the row behind a delete would be an unpleasant surprise. *@
+                        <div class="d-flex" @onclick="() => { }" @onclick:stopPropagation="true">
+                            <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" Size="Size.Small"
+                                           OnClick="@(() => Rename(d))" aria-label="@L["Rename"]" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                           OnClick="@(() => Remove(d))" aria-label="@L["Delete"]" />
+                        </div>
                     </div>
                     <MudText Typo="Typo.caption" Style="opacity:.7;">@d.Classification</MudText>
                 </MudPaper>
@@ -96,19 +104,26 @@ else
                     }
                     else
                     {
+                        @* Estimated, and labelled as such — counting rows means reading the file, and
+                           this is here to fill in a caption. The profile below gives the true number. *@
                         <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">
                             @L["{0} columns · first {1} rows shown", _header.Count, _rows.Count]
+                            @if (_estimatedRows is { } estimate)
+                            {
+                                <span> · @L["about {0} rows", estimate.ToString("N0", CultureInfo.CurrentCulture)]</span>
+                            }
                         </MudText>
+
                         <div style="overflow-x:auto;">
                             <MudSimpleTable Dense="true" Striped="true" Style="min-width:100%;">
                                 <thead>
-                                    <tr>@foreach (var h in _header) { <th>@h</th> }</tr>
+                                    <tr>@foreach (var h in _header.Take(PreviewColumns)) { <th>@h</th> }</tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var row in _rows)
                                     {
                                         <tr>
-                                            @for (var i = 0; i < _header.Count; i++)
+                                            @for (var i = 0; i < Math.Min(_header.Count, PreviewColumns); i++)
                                             {
                                                 <td>@(i < row.Length ? row[i] : "")</td>
                                             }
@@ -117,6 +132,66 @@ else
                                 </tbody>
                             </MudSimpleTable>
                         </div>
+
+                        @* A 500-column file rendered in full pushes the page sideways and makes it
+                           unusable; the count is more use than the 451st column. *@
+                        @if (_header.Count > PreviewColumns)
+                        {
+                            <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.7;">
+                                @L["and {0} more columns", _header.Count - PreviewColumns]
+                            </MudText>
+                        }
+
+                        <MudExpansionPanels Elevation="0" Class="mt-3">
+                            <MudExpansionPanel Text="@L["Column details"]" ExpandedChanged="OnProfileExpanded">
+                                @if (_profiling)
+                                {
+                                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                                    <MudText Typo="Typo.caption" Style="opacity:.7;">
+                                        @L["Reading the file…"]
+                                    </MudText>
+                                }
+                                else if (_profile is null)
+                                {
+                                    <MudText Typo="Typo.body2">@L["Nothing to show."]</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">
+                                        @L["{0} rows, of which {1} were examined", _profile.TotalRows.ToString("N0", CultureInfo.CurrentCulture), _profile.SampledRows.ToString("N0", CultureInfo.CurrentCulture)]
+                                    </MudText>
+                                    <div style="overflow-x:auto;max-height:340px;">
+                                        <MudSimpleTable Dense="true" Striped="true" Style="min-width:100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>@L["Column"]</th>
+                                                    <th>@L["Type"]</th>
+                                                    <th style="text-align:end;">@L["Empty"]</th>
+                                                    <th style="text-align:end;">@L["Distinct"]</th>
+                                                    <th style="text-align:end;">@L["Lowest"]</th>
+                                                    <th style="text-align:end;">@L["Highest"]</th>
+                                                    <th style="text-align:end;">@L["Average"]</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var c in _profile.Columns)
+                                                {
+                                                    <tr>
+                                                        <td>@c.Name</td>
+                                                        <td>@c.DataType</td>
+                                                        <td style="text-align:end;font-variant-numeric:tabular-nums;">@c.NullCount</td>
+                                                        <td style="text-align:end;font-variant-numeric:tabular-nums;">@c.DistinctCount</td>
+                                                        <td style="text-align:end;font-variant-numeric:tabular-nums;">@Number(c.Min)</td>
+                                                        <td style="text-align:end;font-variant-numeric:tabular-nums;">@Number(c.Max)</td>
+                                                        <td style="text-align:end;font-variant-numeric:tabular-nums;">@Number(c.Mean)</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </MudSimpleTable>
+                                    </div>
+                                }
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
                     }
                 </MudPaper>
             }
@@ -125,10 +200,16 @@ else
 }
 
 @code {
+    /// <summary>Beyond this the table scrolls off the page and takes the layout with it.</summary>
+    private const int PreviewColumns = 50;
+
     private IReadOnlyList<DatasetDto>? _datasets;
     private DatasetDto? _selected;
     private IReadOnlyList<string> _header = [];
     private IReadOnlyList<string[]> _rows = [];
+    private long? _estimatedRows;
+    private CsvProfileResult? _profile;
+    private bool _profiling;
     private bool _busy;
 
     /// <summary>Guard against a huge file being read into the workspace by accident.</summary>
@@ -141,19 +222,58 @@ else
         _datasets = Store.List();
         if (_selected is not null && _datasets.All(d => d.Id != _selected.Id))
         {
-            _selected = null;
-            _header = [];
-            _rows = [];
+            Clear();
         }
+    }
+
+    private void Clear()
+    {
+        _selected = null;
+        _header = [];
+        _rows = [];
+        _estimatedRows = null;
+        _profile = null;
     }
 
     private async Task Select(DatasetDto dataset)
     {
         _selected = dataset;
+        _profile = null;
+
         var (header, rows, _) = await Store.PeekAsync(dataset.Id);
         _header = header;
         _rows = rows;
+        _estimatedRows = await Store.EstimateRowsAsync(dataset.Id);
     }
+
+    /// <summary>
+    /// Profiles on first expand rather than on select. A 200 MB file should not be read because
+    /// somebody clicked a row.
+    /// </summary>
+    private async Task OnProfileExpanded(bool expanded)
+    {
+        if (!expanded || _selected is null || _profile is not null || _profiling)
+        {
+            return;
+        }
+
+        _profiling = true;
+        try
+        {
+            _profile = await Store.ProfileAsync(_selected.Id);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["Couldn't read that file: {0}", ex.Message], Severity.Warning);
+        }
+        finally
+        {
+            _profiling = false;
+        }
+    }
+
+    private static string Number(double? value) =>
+        value is null ? "—" : value.Value.ToString("0.###", CultureInfo.CurrentCulture);
 
     private async Task Import(InputFileChangeEventArgs e)
     {
@@ -171,8 +291,19 @@ else
                 }
 
                 await using var stream = file.OpenReadStream(MaxImportBytes);
-                await Store.ImportAsync(stream, file.Name);
-                imported++;
+                var staged = await Store.StageAsync(stream, file.Name);
+
+                // Confirm what was detected before anything is kept. Silent detection is how a
+                // semicolon file used to land as a single column and fail much later.
+                var dialog = await Dialogs.ShowAsync<ConfirmImportDialog>(
+                    L["Import CSV"],
+                    new DialogParameters<ConfirmImportDialog> { { d => d.Staged, staged } });
+
+                if (await dialog.Result is { Canceled: false, Data: StagedImport confirmed })
+                {
+                    await Store.CommitAsync(confirmed);
+                    imported++;
+                }
             }
 
             Reload();
@@ -188,6 +319,34 @@ else
         finally
         {
             _busy = false;
+        }
+    }
+
+    private async Task Rename(DatasetDto dataset)
+    {
+        var dialog = await Dialogs.ShowAsync<NameDialog>(
+            L["Rename dataset"],
+            new DialogParameters<NameDialog>
+            {
+                { d => d.Name, dataset.Name },
+                { d => d.Label, L["Dataset name"].Value },
+                { d => d.HelperText, L["Workflows that use this dataset keep working — only the name changes."].Value },
+                { d => d.ConfirmLabel, L["Rename"].Value },
+            });
+
+        if (await dialog.Result is not { Canceled: false, Data: string chosen } || string.IsNullOrWhiteSpace(chosen))
+        {
+            return;
+        }
+
+        if (Store.Rename(dataset.Id, chosen))
+        {
+            Snackbar.Add(L["Renamed to “{0}”.", chosen], Severity.Success);
+            Reload();
+            if (_selected?.Id == dataset.Id && _datasets!.FirstOrDefault(d => d.Id == dataset.Id) is { } renamed)
+            {
+                await Select(renamed);
+            }
         }
     }
 

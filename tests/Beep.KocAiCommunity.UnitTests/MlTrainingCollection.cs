@@ -34,7 +34,7 @@ public sealed class TrainedModelFixture : IAsyncLifetime
             MlTaskType.BinaryClassification,
             new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString())),
             TargetColumn,
-            maxSeconds: 5);
+            maxSeconds: 20);
 
         ModelBytes = captured.ModelBytes;
     }

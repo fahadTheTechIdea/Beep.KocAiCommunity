@@ -44,6 +44,10 @@ public sealed class LocalKocApiClient(
             return (null, "That dataset is not in your local workspace.");
         }
 
+        // Running against it is what "recently used" means, and it keeps the file being worked on at
+        // the top of the list instead of alphabetised away from its owner.
+        datasets.MarkUsed(datasetId);
+
         await using var csv = File.OpenRead(path);
         return await RunLocalAsync(definition, csv, labelColumn, task, datasetId, ct);
     }

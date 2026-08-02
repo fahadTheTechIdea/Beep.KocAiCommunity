@@ -113,9 +113,23 @@ public sealed class LocalDatasetStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task An_empty_file_previews_as_empty_rather_than_throwing()
+    public async Task An_empty_file_is_refused_with_a_reason()
     {
-        var dataset = await _store.ImportAsync(Csv(""), "empty.csv");
+        // It used to import to a dataset with no columns, which looked fine in the list and then failed
+        // in the designer. Saying no at the door is the better answer; the import dialog disables its
+        // confirm button and says nothing was readable.
+        var act = () => _store.ImportAsync(Csv(""), "empty.csv");
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _store.List().Should().BeEmpty("nothing importable means nothing left behind");
+    }
+
+    [Fact]
+    public async Task Previewing_a_dataset_whose_file_has_been_emptied_returns_nothing()
+    {
+        // Emptied outside the app, after import. Reading it must not throw at whoever selected it.
+        var dataset = await _store.ImportAsync(Csv("a,b\n1,2\n"), "later-emptied.csv");
+        await File.WriteAllTextAsync(_store.PathFor(dataset.Id)!, "");
 
         var (header, rows, _) = await _store.PeekAsync(dataset.Id);
 

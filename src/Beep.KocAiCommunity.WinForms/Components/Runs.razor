@@ -309,9 +309,15 @@ else
         }
 
         var suggested = LocalModelStore.SafeName(Path.GetFileNameWithoutExtension(run.DatasetName));
-        var name = await Dialogs.ShowAsync<KeepModelDialog>(
+        var name = await Dialogs.ShowAsync<NameDialog>(
             L["Keep this model"],
-            new DialogParameters<KeepModelDialog> { { d => d.Name, suggested } });
+            new DialogParameters<NameDialog>
+            {
+                { d => d.Name, suggested },
+                { d => d.Label, L["Model name"].Value },
+                { d => d.HelperText, L["Reuse a name to save this as the next version of it."].Value },
+                { d => d.ConfirmLabel, L["Keep"].Value },
+            });
 
         if (await name.Result is not { Canceled: false, Data: string chosen } || string.IsNullOrWhiteSpace(chosen))
         {

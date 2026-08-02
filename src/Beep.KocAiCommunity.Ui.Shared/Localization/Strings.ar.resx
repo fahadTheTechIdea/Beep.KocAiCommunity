@@ -184,6 +184,9 @@
   <data name="Approve" xml:space="preserve">
     <value>موافقة</value>
   </data>
+  <data name="Arabic (Windows-1256)" xml:space="preserve">
+    <value>عربي (Windows-1256)</value>
+  </data>
   <data name="Archive" xml:space="preserve">
     <value>أرشفة</value>
   </data>
@@ -219,6 +222,9 @@
   </data>
   <data name="AutoML training" xml:space="preserve">
     <value>تدريب تلقائي AutoML</value>
+  </data>
+  <data name="Average" xml:space="preserve">
+    <value>المتوسط</value>
   </data>
   <data name="Back" xml:space="preserve">
     <value>السابق</value>
@@ -307,6 +313,9 @@
   <data name="Champions this month" xml:space="preserve">
     <value>أبطال هذا الشهر</value>
   </data>
+  <data name="Check the columns below. If they look wrong, change the separator or the encoding." xml:space="preserve">
+    <value>راجع الأعمدة أدناه. إن بدت خاطئة، غيّر الفاصل أو الترميز.</value>
+  </data>
   <data name="Choose a dataset and the column you want to predict. Several algorithms are tried and the best one wins. Everything runs on this machine." xml:space="preserve">
     <value>اختر مجموعة بيانات والعمود الذي تريد التنبؤ به. تُجرَّب عدة خوارزميات ويفوز أفضلها. كل شيء يعمل على هذا الجهاز.</value>
   </data>
@@ -324,6 +333,9 @@
   </data>
   <data name="Column" xml:space="preserve">
     <value>العمود</value>
+  </data>
+  <data name="Column details" xml:space="preserve">
+    <value>تفاصيل الأعمدة</value>
   </data>
   <data name="Column to predict" xml:space="preserve">
     <value>العمود المراد التنبؤ به</value>
@@ -421,6 +433,9 @@
   <data name="Couldn't reach the API ({0})." xml:space="preserve">
     <value>تعذّر الوصول إلى الواجهة البرمجية ({0}).</value>
   </data>
+  <data name="Couldn't read that file: {0}" xml:space="preserve">
+    <value>تعذّرت قراءة هذا الملف: {0}</value>
+  </data>
   <data name="Create" xml:space="preserve">
     <value>إنشاء</value>
   </data>
@@ -462,6 +477,9 @@
   </data>
   <data name="Dataset" xml:space="preserve">
     <value>مجموعة البيانات</value>
+  </data>
+  <data name="Dataset name" xml:space="preserve">
+    <value>اسم مجموعة البيانات</value>
   </data>
   <data name="Datasets" xml:space="preserve">
     <value>مجموعات البيانات</value>
@@ -558,6 +576,12 @@
   </data>
   <data name="Earned {0}" xml:space="preserve">
     <value>مُكتسب في {0}</value>
+  </data>
+  <data name="Empty" xml:space="preserve">
+    <value>فارغ</value>
+  </data>
+  <data name="Encoding" xml:space="preserve">
+    <value>الترميز</value>
   </data>
   <data name="Enroll" xml:space="preserve">
     <value>سجِّل</value>
@@ -702,6 +726,9 @@
   </data>
   <data name="Hidden answer key" xml:space="preserve">
     <value>مفتاح الإجابات المخفي</value>
+  </data>
+  <data name="Highest" xml:space="preserve">
+    <value>الأعلى</value>
   </data>
   <data name="History" xml:space="preserve">
     <value>السجل</value>
@@ -891,6 +918,9 @@
   </data>
   <data name="Locked" xml:space="preserve">
     <value>مقفل</value>
+  </data>
+  <data name="Lowest" xml:space="preserve">
+    <value>الأدنى</value>
   </data>
   <data name="Lvl {0}" xml:space="preserve">
     <value>المستوى {0}</value>
@@ -1096,6 +1126,12 @@
   <data name="Nothing here yet. Earn a badge or cheer a colleague to get things moving." xml:space="preserve">
     <value>لا شيء هنا بعد. اكسب وسامًا أو شجّع زميلًا لتبدأ الحركة.</value>
   </data>
+  <data name="Nothing readable at these settings." xml:space="preserve">
+    <value>لا شيء مقروء بهذه الإعدادات.</value>
+  </data>
+  <data name="Nothing to show." xml:space="preserve">
+    <value>لا شيء لعرضه.</value>
+  </data>
   <data name="Notifications" xml:space="preserve">
     <value>الإشعارات</value>
   </data>
@@ -1222,6 +1258,9 @@
   <data name="Rank" xml:space="preserve">
     <value>الترتيب</value>
   </data>
+  <data name="Reading the file…" xml:space="preserve">
+    <value>جارٍ قراءة الملف…</value>
+  </data>
   <data name="Records far more detail for a support session. Applies on the next launch." xml:space="preserve">
     <value>يسجّل تفاصيل أكثر بكثير لجلسة دعم. يُطبَّق عند التشغيل التالي.</value>
   </data>
@@ -1251,6 +1290,15 @@
   </data>
   <data name="Remaining" xml:space="preserve">
     <value>متبقٍ</value>
+  </data>
+  <data name="Rename" xml:space="preserve">
+    <value>إعادة تسمية</value>
+  </data>
+  <data name="Rename dataset" xml:space="preserve">
+    <value>إعادة تسمية مجموعة البيانات</value>
+  </data>
+  <data name="Renamed to “{0}”." xml:space="preserve">
+    <value>أُعيدت التسمية إلى “{0}”.</value>
   </data>
   <data name="Resource" xml:space="preserve">
     <value>المورد</value>
@@ -1371,6 +1419,9 @@
   </data>
   <data name="Sending a model to the platform is not available yet — the platform registers models from runs made on the server. Export it and attach it to a request for now." xml:space="preserve">
     <value>إرسال نموذج إلى المنصّة غير متاح بعد — فالمنصّة تسجّل النماذج من تشغيلات تجري على الخادم. صدّر النموذج وأرفقه بطلب في الوقت الحالي.</value>
+  </data>
+  <data name="Separator" xml:space="preserve">
+    <value>الفاصل</value>
   </data>
   <data name="Set reveal" xml:space="preserve">
     <value>حدّد الكشف</value>
@@ -1558,6 +1609,9 @@
   <data name="The column ML.NET should learn to predict." xml:space="preserve">
     <value>العمود الذي يتعلّم ML.NET التنبؤ به.</value>
   </data>
+  <data name="The copy kept here is saved as UTF-8 with commas. Your original file is not changed." xml:space="preserve">
+    <value>النسخة المحفوظة هنا تُحفظ بترميز UTF-8 وبفواصل. ملفك الأصلي لا يتغيّر.</value>
+  </data>
   <data name="The dataset has changed since this run. Training it again will not give the same result." xml:space="preserve">
     <value>تغيّرت مجموعة البيانات منذ هذا التشغيل. إعادة التدريب لن تعطي النتيجة نفسها.</value>
   </data>
@@ -1575,6 +1629,9 @@
   </data>
   <data name="The podium is wide open — be the first on the board!" xml:space="preserve">
     <value>المنصة مفتوحة للجميع — كن الأول على اللوحة!</value>
+  </data>
+  <data name="The separator could not be worked out from the file. Check the columns carefully." xml:space="preserve">
+    <value>تعذّر استنتاج الفاصل من الملف. راجع الأعمدة بعناية.</value>
   </data>
   <data name="The three files you'll prepare" xml:space="preserve">
     <value>الملفات الثلاثة التي ستجهّزها</value>
@@ -1684,6 +1741,9 @@
   <data name="Type" xml:space="preserve">
     <value>النوع</value>
   </data>
+  <data name="Unicode (UTF-8)" xml:space="preserve">
+    <value>يونيكود (UTF-8)</value>
+  </data>
   <data name="Unlock" xml:space="preserve">
     <value>فتح</value>
   </data>
@@ -1762,6 +1822,9 @@
   <data name="Who can see this?" xml:space="preserve">
     <value>من يمكنه رؤية هذا؟</value>
   </data>
+  <data name="Windows default" xml:space="preserve">
+    <value>إعداد ويندوز الافتراضي</value>
+  </data>
   <data name="Winner" xml:space="preserve">
     <value>الفائز</value>
   </data>
@@ -1773,6 +1836,9 @@
   </data>
   <data name="Workflows" xml:space="preserve">
     <value>مسارات العمل</value>
+  </data>
+  <data name="Workflows that use this dataset keep working — only the name changes." xml:space="preserve">
+    <value>مسارات العمل التي تستخدم مجموعة البيانات هذه تظل تعمل — يتغيّر الاسم فقط.</value>
   </data>
   <data name="Workspace checked at launch — nothing to report." xml:space="preserve">
     <value>فُحصت مساحة العمل عند التشغيل — لا شيء يستدعي الإبلاغ.</value>
@@ -1849,6 +1915,12 @@
   <data name="Your training runs" xml:space="preserve">
     <value>تشغيلات التدريب لديك</value>
   </data>
+  <data name="about {0} rows" xml:space="preserve">
+    <value>نحو {0} صف</value>
+  </data>
+  <data name="and {0} more columns" xml:space="preserve">
+    <value>و{0} أعمدة أخرى</value>
+  </data>
   <data name="badges earned" xml:space="preserve">
     <value>وسام مكتسب</value>
   </data>
@@ -1860,6 +1932,9 @@
   </data>
   <data name="best {0}" xml:space="preserve">
     <value>أفضل نتيجة {0}</value>
+  </data>
+  <data name="comma" xml:space="preserve">
+    <value>فاصلة</value>
   </data>
   <data name="company —" xml:space="preserve">
     <value>الشركة —</value>
@@ -1933,6 +2008,9 @@
   <data name="open discussions" xml:space="preserve">
     <value>نقاش مفتوح</value>
   </data>
+  <data name="pipe" xml:space="preserve">
+    <value>شرطة رأسية</value>
+  </data>
   <data name="public to competitors." xml:space="preserve">
     <value>متاحة للمتنافسين.</value>
   </data>
@@ -1948,11 +2026,17 @@
   <data name="sec" xml:space="preserve">
     <value>ثانية</value>
   </data>
+  <data name="semicolon" xml:space="preserve">
+    <value>فاصلة منقوطة</value>
+  </data>
   <data name="submissions" xml:space="preserve">
     <value>مشاركة</value>
   </data>
   <data name="submissions scored" xml:space="preserve">
     <value>مشاركة مُقيَّمة</value>
+  </data>
+  <data name="tab" xml:space="preserve">
+    <value>مسافة جدولة</value>
   </data>
   <data name="to join the conversation." xml:space="preserve">
     <value>للمشاركة في النقاش.</value>
@@ -1999,6 +2083,9 @@
   <data name="{0} bbl per scored submission; your first ever earns the {1} badge (+{2} bbl)." xml:space="preserve">
     <value>{0} برميل لكل مشاركة مُقيَّمة؛ وأول مشاركة لك تمنحك وسام {1} (+{2} برميل).</value>
   </data>
+  <data name="{0} columns found" xml:space="preserve">
+    <value>عُثر على {0} أعمدة</value>
+  </data>
   <data name="{0} columns · first {1} rows shown" xml:space="preserve">
     <value>{0} عمود · تُعرض أول {1} صفوف</value>
   </data>
@@ -2025,6 +2112,9 @@
   </data>
   <data name="{0} rows scored. Saved as {1}" xml:space="preserve">
     <value>تمّ تقييم {0} صفًا. حُفظت باسم {1}</value>
+  </data>
+  <data name="{0} rows, of which {1} were examined" xml:space="preserve">
+    <value>{0} صف، فُحص منها {1}</value>
   </data>
   <data name="{0} — lower wins" xml:space="preserve">
     <value>{0} — الأقل يفوز</value>
