@@ -72,8 +72,11 @@
                         <MudText Typo="Typo.caption" Style="opacity:.7;direction:rtl;">@GreetingArabic</MudText>
                     }
                     <div class="d-flex gap-4 mt-1">
-                        <MudText Typo="Typo.body2"><b>🛢️ @_myProfile.XpTotal</b> @L["Barrels"]</MudText>
-                        <MudText Typo="Typo.body2"><b>🔥 @_myProfile.CurrentStreakDays</b> @L["day streak"]</MudText>
+                        <MudText Typo="Typo.body2"><span class="koc-barrels">@_myProfile.XpTotal</span> @L["Barrels"]</MudText>
+                        @if (_myProfile.CurrentStreakDays > 0)
+                        {
+                            <MudText Typo="Typo.body2"><span class="koc-streak">@_myProfile.CurrentStreakDays</span> @L["day streak"]</MudText>
+                        }
                         <MudText Typo="Typo.body2"><b>@L["Lvl {0}", _myProfile.Level]</b> @_myProfile.LevelTitle</MudText>
                     </div>
                 </div>
@@ -108,7 +111,7 @@
                 <div class="d-flex flex-column gap-3" style="min-width:260px;">
                     <CountdownTimer TargetUtc="featured.RevealUtc" />
                     <div class="d-flex gap-4">
-                        <div><span class="koc-stat-value" style="font-size:24px;">@featured.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">@L["competitors"]</MudText></div>
+                        <div><span class="koc-stat-value koc-live" style="font-size:24px;">@featured.ParticipantCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">@L["competitors"]</MudText></div>
                         <div><span class="koc-stat-value" style="font-size:24px;">@featured.SubmissionCount</span> <MudText Typo="Typo.caption" Class="d-inline" Style="opacity:.85;">@L["submissions"]</MudText></div>
                     </div>
                     @if (CompetitionDisplay.RevealProgress(featured, DateTime.UtcNow) is { } progress)
