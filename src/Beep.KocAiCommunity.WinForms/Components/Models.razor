@@ -1,0 +1,445 @@
+@page "/models"
+@using System.Globalization
+@using Beep.KocAiCommunity.Application.ML
+@using Beep.KocAiCommunity.Desktop.Local
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Localization
+@inject LocalModelStore Store
+@inject LocalPredictionService Predictions
+@inject LocalWorkspace Workspace
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<Strings> L
+
+@* Models an engineer decided to keep, and the two ways they check one: a row typed in, or a file. *@
+
+<div class="d-flex align-center justify-space-between mb-1">
+    <MudText Typo="Typo.h5">@L["Models"]</MudText>
+    <div class="d-flex gap-2">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FolderOpen"
+                   OnClick="OpenFolder">@L["Open folder"]</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                   HtmlTag="label" for="model-import">@L["Import a model"]</MudButton>
+    </div>
+</div>
+<InputFile id="model-import" OnChange="Import" accept=".kocmodel" style="display:none;" />
+
+@* Local models are drafts. Nothing here has been through the platform's approvals, and the page should
+   not let anyone forget that. *@
+<MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;max-width:80ch;">
+    @L["Models kept on this machine. These are local drafts — they have not been through the platform's review, and nothing here is deployed."]
+</MudText>
+
+@if (_models.Count == 0)
+{
+    <MudPaper Class="pa-8" Outlined="true" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="mb-1">@L["No models kept yet"]</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;">
+            @L["Train a model, then choose “Keep this model” to save it here."]
+        </MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/runs">@L["Run history"]</MudButton>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="4">
+        <MudItem xs="12" md="5">
+            @foreach (var m in _models)
+            {
+                <MudPaper Class="pa-3 mb-2" Outlined="true"
+                          Style="@(m.Id == _selected?.Id ? "border-color:var(--mud-palette-primary);cursor:pointer;" : "cursor:pointer;")"
+                          @onclick="() => Select(m)">
+                    <div class="d-flex justify-space-between align-center gap-2">
+                        <MudText Typo="Typo.subtitle2">@m.Name</MudText>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@L["v{0}", m.Version]</MudChip>
+                    </div>
+                    <MudText Typo="Typo.caption" Style="opacity:.7;">
+                        @L[MlTaskLabels.Display(m.Task)]
+                        @if (m.PrimaryValue is { } v)
+                        {
+                            <span> · @m.PrimaryMetric @v.ToString("0.####")</span>
+                        }
+                    </MudText>
+                </MudPaper>
+            }
+            <MudText Typo="Typo.caption" Style="opacity:.6;">
+                @L["{0} MB on disk", Math.Round(Store.TotalBytes() / 1024d / 1024d, 1)]
+            </MudText>
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            @if (_selected is null)
+            {
+                <MudPaper Class="pa-6" Outlined="true" Style="text-align:center;">
+                    <MudText Typo="Typo.body2">@L["Select a model to use it."]</MudText>
+                </MudPaper>
+            }
+            else
+            {
+                var m = _selected;
+                <MudPaper Class="pa-4" Outlined="true">
+                    <div class="d-flex justify-space-between align-start mb-3">
+                        <div>
+                            <MudText Typo="Typo.subtitle1">@m.Name @L["v{0}", m.Version]</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.7;">
+                                @L["Predicting"] @m.TargetColumn ·
+                                @m.CreatedUtc.ToLocalTime().ToString("dd MMM HH:mm", CultureInfo.CurrentCulture)
+                            </MudText>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Upload" Size="Size.Small"
+                                           OnClick="Export" aria-label="@L["Export"]" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                           OnClick="Remove" aria-label="@L["Delete"]" />
+                        </div>
+                    </div>
+
+                    @if (m.DatasetName is { Length: > 0 })
+                    {
+                        <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.7;">
+                            @L["Trained on {0}", m.DatasetName]
+                        </MudText>
+                    }
+
+                    <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true">
+                        <MudTabPanel Text="@L["Try one row"]">
+                            @foreach (var field in m.Features)
+                            {
+                                <MudTextField T="string" Label="@field.Name" Variant="Variant.Outlined"
+                                              Margin="Margin.Dense" Class="mb-2"
+                                              Value="@Value(field.Name)"
+                                              ValueChanged="@(v => _inputs[field.Name] = v ?? "")"
+                                              InputType="@(field.IsNumeric ? InputType.Number : InputType.Text)" />
+                            }
+
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2"
+                                       StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="PredictOne"
+                                       Disabled="_busy">@L["Predict"]</MudButton>
+
+                            @if (_single is not null)
+                            {
+                                <MudPaper Class="pa-3 mt-3" Elevation="0" Style="background:var(--mud-palette-background-grey);">
+                                    <MudText Typo="Typo.caption" Style="opacity:.7;">@L["Prediction"]</MudText>
+                                    <MudText Typo="Typo.h6">@LocalPredictionService.Describe(_single)</MudText>
+                                    @if (_single.Probability is { } probability)
+                                    {
+                                        <MudText Typo="Typo.body2">
+                                            @L["Confidence {0}", probability.ToString("P1")]
+                                        </MudText>
+                                    }
+                                </MudPaper>
+                            }
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="@L["Score a file"]">
+                            <MudText Typo="Typo.body2" Class="mb-3" Style="opacity:.75;">
+                                @L["Pick a CSV with the same columns this model was trained on. The predictions are written to a new file beside it."]
+                            </MudText>
+
+                            <MudSelect T="Guid" @bind-Value="_batchDatasetId" Label="@L["Dataset"]"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3">
+                                @foreach (var d in _datasets)
+                                {
+                                    <MudSelectItem T="Guid" Value="@d.Key">@d.Value</MudSelectItem>
+                                }
+                            </MudSelect>
+
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="PredictFile"
+                                       Disabled="@(_busy || _batchDatasetId == Guid.Empty)">@L["Score the file"]</MudButton>
+
+                            @if (_missing.Count > 0)
+                            {
+                                @* The common failure, answered by name rather than by stack trace. *@
+                                <MudAlert Severity="Severity.Error" Variant="Variant.Text" Dense="true" Class="mt-3">
+                                    @L["That file is missing columns this model needs: {0}", string.Join(", ", _missing)]
+                                </MudAlert>
+                            }
+                            else if (_batchOutput is { Length: > 0 })
+                            {
+                                <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="mt-3">
+                                    @L["{0} rows scored. Saved as {1}", _batchRows, Path.GetFileName(_batchOutput)]
+                                </MudAlert>
+                            }
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="@L["Details"]">
+                            <MudSimpleTable Dense="true" Style="min-width:100%;">
+                                <tbody>
+                                    <tr><td>@L["Kind of prediction"]</td><td>@L[MlTaskLabels.Display(m.Task)]</td></tr>
+                                    @if (m.Algorithm is { Length: > 0 })
+                                    {
+                                        <tr><td>@L["Algorithm"]</td><td>@m.Algorithm</td></tr>
+                                    }
+                                    @if (m.PrimaryValue is { } primary)
+                                    {
+                                        <tr>
+                                            <td>@m.PrimaryMetric</td>
+                                            <td style="font-variant-numeric:tabular-nums;">@primary.ToString("0.####")</td>
+                                        </tr>
+                                    }
+                                    @if (m.SecondaryValue is { } secondary)
+                                    {
+                                        <tr>
+                                            <td>@m.SecondaryMetric</td>
+                                            <td style="font-variant-numeric:tabular-nums;">@secondary.ToString("0.####")</td>
+                                        </tr>
+                                    }
+                                    <tr><td>@L["Columns it needs"]</td><td>@string.Join(", ", m.Features.Select(f => f.Name))</td></tr>
+                                    <tr><td>@L["Size"]</td><td>@L["{0} MB", Math.Round(Store.SizeOf(m.Id) / 1024d / 1024d, 2)]</td></tr>
+                                    <tr><td>@L["Built with"]</td><td>@L["ML.NET {0}", m.MlNetVersion]</td></tr>
+                                </tbody>
+                            </MudSimpleTable>
+
+                            @* Promotion is the explicit step, and it is not available yet. Saying so
+                               beats an enabled button that fails. *@
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mt-3">
+                                @L["Sending a model to the platform is not available yet — the platform registers models from runs made on the server. Export it and attach it to a request for now."]
+                            </MudAlert>
+                        </MudTabPanel>
+                    </MudTabs>
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private IReadOnlyList<LocalModelVersion> _models = [];
+    private LocalModelVersion? _selected;
+    private readonly Dictionary<string, string> _inputs = new(StringComparer.OrdinalIgnoreCase);
+    private Prediction? _single;
+    private bool _busy;
+
+    private Dictionary<Guid, string> _datasets = [];
+    private Guid _batchDatasetId;
+    private string? _batchOutput;
+    private int _batchRows;
+    private IReadOnlyList<string> _missing = [];
+
+    [Inject] private LocalDatasetStore Datasets { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Reload();
+        if (_models.Count > 0)
+        {
+            Select(_models[0]);
+        }
+    }
+
+    private void Reload()
+    {
+        _models = Store.List();
+        _datasets = Datasets.List().ToDictionary(d => d.Id, d => d.Name);
+    }
+
+    private string Value(string column) => _inputs.TryGetValue(column, out var v) ? v : "";
+
+    private void Select(LocalModelVersion model)
+    {
+        _selected = model;
+        _inputs.Clear();
+        _single = null;
+        _batchOutput = null;
+        _missing = [];
+    }
+
+    private async Task PredictOne()
+    {
+        if (_selected is not { } model)
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            _single = await Predictions.PredictAsync(model, _inputs);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["That didn't work: {0}", ex.Message], Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task PredictFile()
+    {
+        if (_selected is not { } model || Datasets.PathFor(_batchDatasetId) is not { } path)
+        {
+            return;
+        }
+
+        _busy = true;
+        _batchOutput = null;
+        _missing = [];
+
+        try
+        {
+            var result = await Predictions.PredictFileAsync(model, path);
+            _missing = result.MissingColumns;
+            _batchOutput = result.OutputPath;
+            _batchRows = result.RowCount;
+
+            if (!result.Succeeded && _missing.Count == 0)
+            {
+                Snackbar.Add(L["That file had no rows to score."], Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["That didn't work: {0}", ex.Message], Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task Export()
+    {
+        if (_selected is not { } model)
+        {
+            return;
+        }
+
+        try
+        {
+            var bytes = await Store.ReadModelAsync(model.Id)
+                        ?? throw new InvalidOperationException(L["The model's file is missing."]);
+
+            // Written into the workspace, then revealed — a desktop file dialog from inside a WebView
+            // is more trouble than it is worth, and the folder is one the user already knows.
+            var folder = Path.Combine(Workspace.RootPath, "exports");
+            Directory.CreateDirectory(folder);
+            var path = Path.Combine(folder, ModelBundle.SuggestedFileName(model));
+
+            await ModelBundle.WriteAsync(path, model, bytes);
+            Snackbar.Add(L["Exported to {0}", path], Severity.Success);
+            Reveal(path);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["Export failed: {0}", ex.Message], Severity.Error);
+        }
+    }
+
+    private async Task Import(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        // An imported model is executable content from somewhere else, and we do not sandbox ML.NET
+        // model loading. Saying so plainly is better than implying a safety we do not provide.
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            L["Import this model?"],
+            L["“{0}” will run on this machine when you use it. Only import models from people you trust.", file.Name],
+            yesText: L["Import"], cancelText: L["Cancel"]);
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        _busy = true;
+        var scratch = Path.Combine(Workspace.TempPath, $"import-{Guid.NewGuid():N}{ModelBundle.Extension}");
+
+        try
+        {
+            Directory.CreateDirectory(Workspace.TempPath);
+            await using (var stream = file.OpenReadStream(256L * 1024 * 1024))
+            await using (var target = File.Create(scratch))
+            {
+                await stream.CopyToAsync(target);
+            }
+
+            var read = await ModelBundle.ReadAsync(scratch);
+            if (!read.Accepted)
+            {
+                Snackbar.Add(read.Refusal ?? L["That file could not be imported."], Severity.Error);
+                return;
+            }
+
+            var adopted = await Store.AdoptAsync(read.Manifest!, read.ModelBytes!);
+            Reload();
+            Select(adopted);
+            Snackbar.Add(L["Imported “{0}” as v{1}.", adopted.Name, adopted.Version], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["Import failed: {0}", ex.Message], Severity.Error);
+        }
+        finally
+        {
+            try { File.Delete(scratch); } catch (IOException) { /* best effort */ }
+            _busy = false;
+        }
+    }
+
+    private async Task Remove()
+    {
+        if (_selected is not { } model)
+        {
+            return;
+        }
+
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            L["Delete this model?"],
+            L["“{0}” v{1} will be removed from this machine.", model.Name, model.Version],
+            yesText: L["Delete"], cancelText: L["Cancel"]);
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        if (Store.Delete(model.Id))
+        {
+            // The pool holds it in memory; without this, a later model reusing the id would serve the
+            // deleted one.
+            Predictions.Forget(model.Id);
+            Snackbar.Add(L["Deleted “{0}”.", model.Name], Severity.Success);
+            _selected = null;
+            Reload();
+        }
+    }
+
+    private void OpenFolder() => Reveal(null);
+
+    private void Reveal(string? file)
+    {
+        try
+        {
+            if (file is not null && File.Exists(file))
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,\"{file}\"")
+                    {
+                        UseShellExecute = true,
+                    });
+                return;
+            }
+
+            Directory.CreateDirectory(Store.FolderPath);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = Store.FolderPath,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["Couldn't open the folder: {0}", ex.Message], Severity.Warning);
+        }
+    }
+}

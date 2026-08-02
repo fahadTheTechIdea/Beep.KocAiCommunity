@@ -25,6 +25,11 @@ public static class KocLocalServiceCollectionExtensions
         services.AddSingleton<LocalDatasetStore>();
         services.AddSingleton<LocalWorkflowStore>();
         services.AddSingleton<LocalRunStore>();
+        services.AddSingleton<LocalModelStore>();
+
+        // The pool caches loaded models; loading one per prediction would be slow and pointless.
+        services.AddSingleton<IPredictionPool, AutoMlPredictionPool>();
+        services.AddSingleton<LocalPredictionService>();
 
         // AutoML, on this machine. The deployment decision of 2026-08-02 left the shared hosting unable
         // to run the Worker, so the desktop is now the only place a model gets trained — which is why

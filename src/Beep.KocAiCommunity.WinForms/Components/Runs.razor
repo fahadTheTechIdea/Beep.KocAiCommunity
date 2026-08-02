@@ -5,6 +5,7 @@
 @using Beep.KocAiCommunity.Ui.Shared.Localization
 @using Microsoft.Extensions.Localization
 @inject LocalRunStore Store
+@inject LocalModelStore Models
 @inject LocalDatasetStore Datasets
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
@@ -42,7 +43,17 @@ else
                           Style="@(r.Id == _selected?.Id ? "border-color:var(--mud-palette-primary);cursor:pointer;" : "cursor:pointer;")"
                           @onclick="() => Select(r)">
                     <div class="d-flex justify-space-between align-center gap-2">
-                        <MudText Typo="Typo.subtitle2">@r.DatasetName</MudText>
+                        <div class="d-flex align-center gap-2">
+                            @* Ticking runs is how you compare them — tuning a model is looking at two
+                               attempts side by side, and doing that from memory is how people get it
+                               wrong. *@
+                            <MudCheckBox T="bool" Dense="true" Size="Size.Small"
+                                         Value="@_compared.Contains(r.Id)"
+                                         ValueChanged="@((bool on) => ToggleCompare(r.Id, on))"
+                                         @onclick:stopPropagation="true"
+                                         aria-label="@L["Compare"]" />
+                            <MudText Typo="Typo.subtitle2">@r.DatasetName</MudText>
+                        </div>
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@ColorFor(r.Outcome)">
                             @OutcomeLabel(r.Outcome)
                         </MudChip>
@@ -62,6 +73,55 @@ else
         </MudItem>
 
         <MudItem xs="12" md="7">
+            @if (Comparison is { Count: > 1 } compared)
+            {
+                <MudPaper Class="pa-4 mb-4" Outlined="true">
+                    <div class="d-flex justify-space-between align-center mb-2">
+                        <MudText Typo="Typo.subtitle1">@L["Comparing {0} runs", compared.Count]</MudText>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => _compared.Clear())">
+                            @L["Clear"]
+                        </MudButton>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <MudSimpleTable Dense="true" Style="min-width:100%;">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    @foreach (var r in compared)
+                                    {
+                                        <th>@Local(r.StartedUtc)</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in ComparisonRows(compared))
+                                {
+                                    @* Rows where the runs agree are dimmed, so what is left standing
+                                       out is exactly what differs between the attempts. *@
+                                    <tr style="@(row.Differs ? "" : "opacity:.55;")">
+                                        <td>@row.Label</td>
+                                        @foreach (var value in row.Values)
+                                        {
+                                            <td style="font-variant-numeric:tabular-nums;">
+                                                @if (row.Differs)
+                                                {
+                                                    <b>@value</b>
+                                                }
+                                                else
+                                                {
+                                                    @value
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </div>
+                </MudPaper>
+            }
+
             @if (_selected is null)
             {
                 <MudPaper Class="pa-6" Outlined="true" Style="text-align:center;">
@@ -79,8 +139,19 @@ else
                                 @Local(r.StartedUtc) · @L["{0}s", r.DurationSeconds] · @L["{0} attempts", r.TrialsCompleted]
                             </MudText>
                         </div>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                                       OnClick="Remove" aria-label="@L["Delete"]" />
+                        <div class="d-flex gap-1 align-center">
+                            @* Keeping copies the file into the registry, so clearing run history later
+                               cannot take the model with it. *@
+                            @if (r.HasModel)
+                            {
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Inventory2" OnClick="Keep">
+                                    @L["Keep this model"]
+                                </MudButton>
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                           OnClick="Remove" aria-label="@L["Delete"]" />
+                        </div>
                     </div>
 
                     @* The whole point of storing the hash. A run whose data has since been replaced is
@@ -149,6 +220,48 @@ else
     private LocalRun? _selected;
     private string? _log;
     private bool _datasetChanged;
+    private readonly HashSet<string> _compared = [];
+
+    /// <summary>One line of the comparison, and whether the runs actually differ on it.</summary>
+    private sealed record ComparisonRow(string Label, IReadOnlyList<string> Values, bool Differs);
+
+    /// <summary>The ticked runs, oldest first — comparing reads better in the order they happened.</summary>
+    private List<LocalRun> Comparison =>
+        [.. _runs.Where(r => _compared.Contains(r.Id)).OrderBy(r => r.StartedUtc)];
+
+    private void ToggleCompare(string id, bool on)
+    {
+        if (on)
+        {
+            _compared.Add(id);
+        }
+        else
+        {
+            _compared.Remove(id);
+        }
+    }
+
+    private IEnumerable<ComparisonRow> ComparisonRows(List<LocalRun> runs)
+    {
+        yield return Row(L["Dataset"], r => r.DatasetName);
+        yield return Row(L["Predicting"], r => r.TargetColumn);
+        yield return Row(L["Kind of prediction"], r => r.Task);
+        yield return Row(L["Algorithm"], r => r.Algorithm ?? "—");
+        yield return Row(L["Score"], r => r.PrimaryValue is { } v ? $"{r.PrimaryMetric} {v:0.####}" : "—");
+        yield return Row(L["Rows"], r => r.RowCount.ToString());
+        yield return Row(L["Attempts"], r => r.TrialsCompleted.ToString());
+        yield return Row(L["Limits used"], r => $"{r.LimitSeconds}s · {r.LimitMemoryMb} MB");
+        yield return Row(L["Status"], r => OutcomeLabel(r.Outcome));
+
+        // Two runs on data that has since diverged are not comparable in the way the table implies.
+        yield return Row(L["Data fingerprint"], r => r.DatasetHash ?? "—");
+
+        ComparisonRow Row(string label, Func<LocalRun, string> value)
+        {
+            var values = runs.Select(value).ToList();
+            return new ComparisonRow(label, values, values.Distinct(StringComparer.Ordinal).Count() > 1);
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -185,6 +298,57 @@ else
 
         var current = await LocalRunStore.HashFileAsync(Datasets.PathFor(id));
         return current is not null && current != run.DatasetHash;
+    }
+
+    /// <summary>Copies the run's model into the registry under a name the user chooses.</summary>
+    private async Task Keep()
+    {
+        if (_selected is not { } run)
+        {
+            return;
+        }
+
+        var suggested = LocalModelStore.SafeName(Path.GetFileNameWithoutExtension(run.DatasetName));
+        var name = await Dialogs.ShowAsync<KeepModelDialog>(
+            L["Keep this model"],
+            new DialogParameters<KeepModelDialog> { { d => d.Name, suggested } });
+
+        if (await name.Result is not { Canceled: false, Data: string chosen } || string.IsNullOrWhiteSpace(chosen))
+        {
+            return;
+        }
+
+        try
+        {
+            var bytes = await Store.ReadModelAsync(run.Id)
+                        ?? throw new InvalidOperationException(L["This run's model file is missing."]);
+
+            var kept = await Models.RegisterAsync(chosen, bytes, new LocalModelVersion
+            {
+                Id = Guid.Empty,
+                Name = chosen,
+                Version = 0,
+                CreatedUtc = DateTime.UtcNow,
+                MlNetVersion = "",
+                Task = run.Task,
+                TargetColumn = run.TargetColumn,
+                Algorithm = run.Algorithm,
+                PrimaryMetric = run.PrimaryMetric,
+                PrimaryValue = run.PrimaryValue,
+                SecondaryMetric = run.SecondaryMetric,
+                SecondaryValue = run.SecondaryValue,
+                SourceRunId = run.Id,
+                DatasetName = run.DatasetName,
+                DatasetHash = run.DatasetHash,
+            });
+
+            Snackbar.Add(L["Kept as “{0}” v{1}.", kept.Name, kept.Version], Severity.Success);
+            Nav.NavigateTo("/models");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["That didn't work: {0}", ex.Message], Severity.Error);
+        }
     }
 
     private async Task Remove()

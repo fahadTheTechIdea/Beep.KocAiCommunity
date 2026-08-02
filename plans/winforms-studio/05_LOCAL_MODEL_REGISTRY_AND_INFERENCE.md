@@ -98,18 +98,43 @@ not to whatever happened to be on someone's laptop.
 | `WinForms/Components/Runs.razor` | "Keep this model" action into the registry |
 | `Application/ML/IPredictionPool.cs` | Confirm it is reusable as-is from the desktop |
 
+## What implementation found — promotion is blocked on the API
+
+**Established 2026-08-02.** Promotion to the platform cannot be built from the desktop as things stand,
+and the reason is one line of contract:
+
+```csharp
+public sealed record RegisterModelRequest(string ModelName, Guid SourceRunId);
+```
+
+`POST /api/v1/models` registers a model **from a run that already exists on the server**. There is no
+endpoint anywhere in `ModelEndpoints` that accepts model bytes. A model trained on a laptop has no
+server-side run to point at, so there is nothing to send.
+
+The obvious workaround — upload the training dataset and retrain server-side — is the one thing this
+document rules out: *"It does **not** carry the training dataset — that may be Restricted."*
+
+So promotion is **not built**. The Models page says so plainly and points at export instead, rather than
+offering a button that fails. Unblocking it needs an API change: an endpoint that accepts a model file
+plus its metrics and creates the server-side version directly. That is platform work, not desktop work,
+and it should be decided on the platform's terms — a model arriving without a server-side run has no
+lineage the platform can verify, which is a governance question before it is an engineering one.
+
+Also worth noting: `AutoMlPredictionPool` was reusable from the desktop exactly as the design assumed —
+no changes needed, and `ModelSchema` was added beside it to read a saved model's input columns.
+
 ## Acceptance criteria
 
-- [ ] A run's model can be kept into a named registry entry
-- [ ] Registering the same name twice creates v2, and v1 is still readable
-- [ ] Single-row prediction builds its form from the model's own feature list
-- [ ] Batch prediction appends a column and writes the result beside the input
-- [ ] A CSV missing a feature names the missing column
-- [ ] Export produces a `.kocmodel` that imports on another machine
-- [ ] Importing a newer-ML.NET bundle refuses with a clear message
-- [ ] The import dialog states the trust implication
-- [ ] Promotion to the platform works when online and fails honestly when not
-- [ ] Deleting a run leaves any model kept from it intact
+- [x] A run's model can be kept into a named registry entry
+- [x] Registering the same name twice creates v2, and v1 is still readable
+- [x] Single-row prediction builds its form from the model's own feature list
+- [x] Batch prediction appends a column and writes the result beside the input
+- [x] A CSV missing a feature names the missing column
+- [x] Export produces a `.kocmodel` that imports on another machine
+- [x] Importing a newer-ML.NET bundle refuses with a clear message
+- [x] The import dialog states the trust implication
+- [ ] ~~Promotion to the platform works when online~~ — **blocked on an API endpoint, see above**
+- [x] Deleting a run leaves any model kept from it intact
 
 ## Tests
 

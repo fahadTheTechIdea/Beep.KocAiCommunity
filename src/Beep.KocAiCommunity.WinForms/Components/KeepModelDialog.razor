@@ -1,0 +1,28 @@
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Strings> L
+
+@* Naming is the whole dialog. Keeping the same name again makes the next version rather than a second
+   entry, which is the behaviour worth explaining here rather than discovering later. *@
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Name" Label="@L["Model name"]" Variant="Variant.Outlined"
+                      Margin="Margin.Dense" Immediate="true"
+                      HelperText="@L["Reuse a name to save this as the next version of it."]" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Keep"
+                   Disabled="@string.IsNullOrWhiteSpace(Name)">@L["Keep"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    [Parameter] public string Name { get; set; } = "";
+
+    private void Keep() => Dialog.Close(DialogResult.Ok(Name.Trim()));
+
+    private void Cancel() => Dialog.Cancel();
+}

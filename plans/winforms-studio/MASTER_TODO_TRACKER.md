@@ -1,7 +1,7 @@
 # KOC Studio (WinForms Desktop) — Master Todo Tracker
 
 **Plan folder:** `plans/winforms-studio/`
-**Status:** 🟢 BUILDING — Phases 01 and 04 code complete (2026-08-02), Phase 02 partly shipped; 03, 05–08 design-only
+**Status:** 🟢 BUILDING — Phases 01, 04 and 05 code complete (2026-08-02), Phase 02 partly shipped; 03, 06–08 design-only
 **Baseline audited:** 2026-08-02 against `src/Beep.KocAiCommunity.WinForms`, `src/Beep.KocAiCommunity.Desktop.Local`, `src/Beep.KocAiCommunity.Ui.Studio` at commit `e3ae815`
 **Related plans:** `plans/koc-ai-community-platform/19_WINFORMS_DESKTOP_STUDIO.md` and `19a–19d` — those describe the *original* desktop build. This folder is its evolution into a product an engineer can live in.
 
@@ -28,7 +28,7 @@ do a day's work in it without hitting a wall".
 | **Dataset import** | ✅ Shipped 2026-08-02 — was the blocking gap |
 | **AutoML (CSV → best model, no graph)** | ✅ Shipped 2026-08-02 — trains in a killable child process |
 | **Run history** | ✅ Shipped 2026-08-02 — files in the workspace, with the dataset hash |
-| **Model registry / inference** | ❌ No local surface at all |
+| **Model registry / inference** | ✅ Shipped 2026-08-02 — keep, predict, export/import; promotion blocked on the API |
 | **Offline competition queue** | ❌ Submitting offline just fails |
 | **Packaging / updates** | ❌ No installer, no update path |
 | **Crash handling / logs** | ❌ An unhandled exception closes the window silently |
@@ -77,17 +77,22 @@ do a day's work in it without hitting a wall".
   - [x] Live trial progress, streamed from the child
   - [x] Persisted local run history with metrics, limits used, and the dataset content hash
   - [x] Training limits shown and editable in Settings; Settings.razor fully localized while there
-  - [ ] **Run comparison not built** — the one scoped item left
+  - [x] Run comparison — tick two or more runs; rows that agree are dimmed so the differences stand out
   - [ ] **A stopped run keeps no model.** The child is killed, so it never serializes one. The UI says
         so up front; recovering it means saving the best model after each improvement
   - [ ] **Hand-verification outstanding** — a real AutoML run, Stop, and the ceiling have not been
         exercised in a running window. Same bar as Phase 01
 
-- [ ] **Phase 05 — Local model registry and inference** (`05_LOCAL_MODEL_REGISTRY_AND_INFERENCE.md`)
-  - [ ] Save a trained model to the workspace with its metrics and source run
-  - [ ] Local predictions against a saved model
-  - [ ] Export / import a model bundle
-  - [ ] Promote a local model to the platform registry when online
+- [ ] **Phase 05 — Local model registry and inference** (`05_LOCAL_MODEL_REGISTRY_AND_INFERENCE.md`) — 🟡 CODE COMPLETE
+  - [x] Keep a run's model into a named registry entry, with metrics and lineage; versions never reused
+  - [x] Predictions — one row typed in, or a CSV scored into a new file beside it
+  - [x] A file missing a feature names the column, before anything is scored
+  - [x] Export / import a `.kocmodel` bundle; a newer-runtime bundle is refused by name
+  - [ ] **Promotion to the platform is blocked on the API** — `RegisterModelRequest` takes a
+        server-side run id, and no endpoint accepts model bytes. Not buildable from the desktop; the
+        page says so and points at export. See the phase doc
+  - [ ] **Hand-verification outstanding** — keeping, predicting, exporting and importing have not been
+        exercised in a running window
 
 - [ ] **Phase 06 — Offline-first competitions** (`06_OFFLINE_FIRST_COMPETITIONS.md`)
   - [ ] Durable outbox for submissions made while offline

@@ -211,6 +211,9 @@
   <data name="Attempt log" xml:space="preserve">
     <value>سجل المحاولات</value>
   </data>
+  <data name="Attempts" xml:space="preserve">
+    <value>المحاولات</value>
+  </data>
   <data name="AutoML" xml:space="preserve">
     <value>التعلُّم الآلي التلقائي</value>
   </data>
@@ -289,6 +292,9 @@
   <data name="Build your model" xml:space="preserve">
     <value>ابنِ نموذجك</value>
   </data>
+  <data name="Built with" xml:space="preserve">
+    <value>بُني بـ</value>
+  </data>
   <data name="CSV files on this machine. The designer reads them directly, so pipelines run and score without the KOC network." xml:space="preserve">
     <value>ملفات CSV على هذا الجهاز. يقرأها المصمّم مباشرة، فتعمل المسارات وتُقيَّم دون شبكة KOC.</value>
   </data>
@@ -322,6 +328,9 @@
   <data name="Column to predict" xml:space="preserve">
     <value>العمود المراد التنبؤ به</value>
   </data>
+  <data name="Columns it needs" xml:space="preserve">
+    <value>الأعمدة التي يحتاجها</value>
+  </data>
   <data name="Community" xml:space="preserve">
     <value>المجتمع</value>
   </data>
@@ -330,6 +339,12 @@
   </data>
   <data name="Company" xml:space="preserve">
     <value>الشركة</value>
+  </data>
+  <data name="Compare" xml:space="preserve">
+    <value>قارن</value>
+  </data>
+  <data name="Comparing {0} runs" xml:space="preserve">
+    <value>مقارنة {0} تشغيلات</value>
   </data>
   <data name="Compete" xml:space="preserve">
     <value>نافس</value>
@@ -381,6 +396,9 @@
   </data>
   <data name="Concluded" xml:space="preserve">
     <value>منتهية</value>
+  </data>
+  <data name="Confidence {0}" xml:space="preserve">
+    <value>الثقة {0}</value>
   </data>
   <data name="Connectors" xml:space="preserve">
     <value>الموصلات</value>
@@ -439,6 +457,9 @@
   <data name="Data" xml:space="preserve">
     <value>البيانات</value>
   </data>
+  <data name="Data fingerprint" xml:space="preserve">
+    <value>بصمة البيانات</value>
+  </data>
   <data name="Dataset" xml:space="preserve">
     <value>مجموعة البيانات</value>
   </data>
@@ -450,6 +471,9 @@
   </data>
   <data name="Delete this dataset?" xml:space="preserve">
     <value>حذف مجموعة البيانات هذه؟</value>
+  </data>
+  <data name="Delete this model?" xml:space="preserve">
+    <value>حذف هذا النموذج؟</value>
   </data>
   <data name="Delete this run?" xml:space="preserve">
     <value>حذف هذا التشغيل؟</value>
@@ -489,6 +513,9 @@
   </data>
   <data name="Detailed logging" xml:space="preserve">
     <value>تسجيل مفصّل</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>التفاصيل</value>
   </data>
   <data name="Diagnostics" xml:space="preserve">
     <value>التشخيص</value>
@@ -580,6 +607,12 @@
   <data name="Export" xml:space="preserve">
     <value>تصدير</value>
   </data>
+  <data name="Export failed: {0}" xml:space="preserve">
+    <value>فشل التصدير: {0}</value>
+  </data>
+  <data name="Exported to {0}" xml:space="preserve">
+    <value>صُدِّر إلى {0}</value>
+  </data>
   <data name="Failed" xml:space="preserve">
     <value>فشل</value>
   </data>
@@ -609,9 +642,6 @@
   </data>
   <data name="Finished" xml:space="preserve">
     <value>انتهى</value>
-  </data>
-  <data name="Stopping. The attempts below are kept; no model is saved from a run that was stopped." xml:space="preserve">
-    <value>جارٍ الإيقاف. المحاولات أدناه محفوظة؛ ولا يُحفظ نموذج من تشغيل تمّ إيقافه.</value>
   </data>
   <data name="Follow how your team is learning machine learning on KOC data — progress across tracks, competitions entered, and the projects they build." xml:space="preserve">
     <value>تابع كيف يتعلّم فريقك تعلُّم الآلة على بيانات KOC — التقدّم في المسارات، والمسابقات التي دخلوها، والمشاريع التي يبنونها.</value>
@@ -718,11 +748,20 @@
   <data name="Import a CSV to build your first pipeline. Nothing leaves this machine." xml:space="preserve">
     <value>استورد ملف CSV لبناء أول مسار لك. لا شيء يغادر هذا الجهاز.</value>
   </data>
+  <data name="Import a model" xml:space="preserve">
+    <value>استورد نموذجًا</value>
+  </data>
   <data name="Import failed: {0}" xml:space="preserve">
     <value>فشل الاستيراد: {0}</value>
   </data>
+  <data name="Import this model?" xml:space="preserve">
+    <value>استيراد هذا النموذج؟</value>
+  </data>
   <data name="Imported {0} file(s)." xml:space="preserve">
     <value>استُوردت {0} ملفات.</value>
+  </data>
+  <data name="Imported “{0}” as v{1}." xml:space="preserve">
+    <value>استُورد “{0}” بوصفه الإصدار {1}.</value>
   </data>
   <data name="In progress" xml:space="preserve">
     <value>قيد التقدّم</value>
@@ -757,8 +796,17 @@
   <data name="KOC's AI &amp; ML workspace." xml:space="preserve">
     <value>مساحة KOC للذكاء الاصطناعي وتعلُّم الآلة.</value>
   </data>
+  <data name="Keep" xml:space="preserve">
+    <value>احتفظ</value>
+  </data>
+  <data name="Keep this model" xml:space="preserve">
+    <value>احتفظ بهذا النموذج</value>
+  </data>
   <data name="Keeps the field fair — nobody can brute-force the leaderboard with hundreds of tries. 5 per day suits most challenges." xml:space="preserve">
     <value>يحفظ عدالة المنافسة — فلا أحد يستطيع اقتحام لوحة الصدارة بمئات المحاولات. وخمس محاولات يوميًا تناسب معظم التحديات.</value>
+  </data>
+  <data name="Kept as “{0}” v{1}." xml:space="preserve">
+    <value>حُفظ باسم “{0}” الإصدار {1}.</value>
   </data>
   <data name="Kept on this machine, with the settings each run used. Delete a run to reclaim its disk space." xml:space="preserve">
     <value>محفوظة على هذا الجهاز مع الإعدادات التي استخدمها كل تشغيل. احذف تشغيلًا لاستعادة مساحته على القرص.</value>
@@ -850,6 +898,9 @@
   <data name="ML node catalog" xml:space="preserve">
     <value>دليل عقد تعلُّم الآلة</value>
   </data>
+  <data name="ML.NET {0}" xml:space="preserve">
+    <value>ML.NET {0}</value>
+  </data>
   <data name="Manage data" xml:space="preserve">
     <value>إدارة البيانات</value>
   </data>
@@ -885,6 +936,9 @@
   </data>
   <data name="Models" xml:space="preserve">
     <value>النماذج</value>
+  </data>
+  <data name="Models kept on this machine. These are local drafts — they have not been through the platform's review, and nothing here is deployed." xml:space="preserve">
+    <value>نماذج محفوظة على هذا الجهاز. هذه مسودات محلية — لم تمرّ بمراجعة المنصّة، ولا شيء منها منشور للتشغيل.</value>
   </data>
   <data name="Multiclass" xml:space="preserve">
     <value>تصنيف متعدد</value>
@@ -990,6 +1044,9 @@
   </data>
   <data name="No kudos yet. Great work gets noticed — keep going!" xml:space="preserve">
     <value>لا تحيات بعد. العمل الجيد يُلاحَظ — واصل!</value>
+  </data>
+  <data name="No models kept yet" xml:space="preserve">
+    <value>لا نماذج محفوظة بعد</value>
   </data>
   <data name="No models registered yet" xml:space="preserve">
     <value>لا نماذج مسجَّلة بعد</value>
@@ -1111,6 +1168,9 @@
   <data name="Personal — explore your own data" xml:space="preserve">
     <value>شخصي — استكشف بياناتك</value>
   </data>
+  <data name="Pick a CSV with the same columns this model was trained on. The predictions are written to a new file beside it." xml:space="preserve">
+    <value>اختر ملف CSV بالأعمدة نفسها التي دُرِّب عليها هذا النموذج. تُكتب التنبؤات في ملف جديد بجواره.</value>
+  </data>
   <data name="Pick an avatar" xml:space="preserve">
     <value>اختر صورة رمزية</value>
   </data>
@@ -1201,6 +1261,9 @@
   <data name="Retire" xml:space="preserve">
     <value>إيقاف</value>
   </data>
+  <data name="Reuse a name to save this as the next version of it." xml:space="preserve">
+    <value>أعد استخدام اسم لحفظ هذا بوصفه إصداره التالي.</value>
+  </data>
   <data name="Reveal date" xml:space="preserve">
     <value>تاريخ الكشف</value>
   </data>
@@ -1252,6 +1315,12 @@
   <data name="Score" xml:space="preserve">
     <value>النتيجة</value>
   </data>
+  <data name="Score a file" xml:space="preserve">
+    <value>قيّم ملفًا</value>
+  </data>
+  <data name="Score the file" xml:space="preserve">
+    <value>قيّم الملف</value>
+  </data>
   <data name="Scored on a hidden answer key shared by everyone — only modelling moves your rank." xml:space="preserve">
     <value>يُقيَّم على مفتاح إجابات مخفي مشترك للجميع — لا يرفع ترتيبك سوى جودة النمذجة.</value>
   </data>
@@ -1282,6 +1351,9 @@
   <data name="Select a discussion to read and reply." xml:space="preserve">
     <value>اختر نقاشًا لقراءته والرد عليه.</value>
   </data>
+  <data name="Select a model to use it." xml:space="preserve">
+    <value>اختر نموذجًا لاستخدامه.</value>
+  </data>
   <data name="Select a run to see its details." xml:space="preserve">
     <value>اختر تشغيلًا لعرض تفاصيله.</value>
   </data>
@@ -1296,6 +1368,9 @@
   </data>
   <data name="Send kudos" xml:space="preserve">
     <value>أرسل تحية</value>
+  </data>
+  <data name="Sending a model to the platform is not available yet — the platform registers models from runs made on the server. Export it and attach it to a request for now." xml:space="preserve">
+    <value>إرسال نموذج إلى المنصّة غير متاح بعد — فالمنصّة تسجّل النماذج من تشغيلات تجري على الخادم. صدّر النموذج وأرفقه بطلب في الوقت الحالي.</value>
   </data>
   <data name="Set reveal" xml:space="preserve">
     <value>حدّد الكشف</value>
@@ -1351,6 +1426,9 @@
   <data name="Signed-in user ({0})" xml:space="preserve">
     <value>المستخدم المسجَّل ({0})</value>
   </data>
+  <data name="Size" xml:space="preserve">
+    <value>الحجم</value>
+  </data>
   <data name="Skills" xml:space="preserve">
     <value>المهارات</value>
   </data>
@@ -1392,6 +1470,9 @@
   </data>
   <data name="Stopped. The attempts so far are saved in the run history." xml:space="preserve">
     <value>تمّ الإيقاف. المحاولات حتى الآن محفوظة في سجل التشغيلات.</value>
+  </data>
+  <data name="Stopping. The attempts below are kept; no model is saved from a run that was stopped." xml:space="preserve">
+    <value>جارٍ الإيقاف. المحاولات أدناه محفوظة؛ ولا يُحفظ نموذج من تشغيل تمّ إيقافه.</value>
   </data>
   <data name="Stopping…" xml:space="preserve">
     <value>جارٍ الإيقاف…</value>
@@ -1450,6 +1531,18 @@
   <data name="Templates" xml:space="preserve">
     <value>القوالب</value>
   </data>
+  <data name="That didn't work: {0}" xml:space="preserve">
+    <value>لم ينجح ذلك: {0}</value>
+  </data>
+  <data name="That file could not be imported." xml:space="preserve">
+    <value>تعذّر استيراد هذا الملف.</value>
+  </data>
+  <data name="That file had no rows to score." xml:space="preserve">
+    <value>لا صفوف في هذا الملف لتقييمها.</value>
+  </data>
+  <data name="That file is missing columns this model needs: {0}" xml:space="preserve">
+    <value>ينقص هذا الملف أعمدة يحتاجها النموذج: {0}</value>
+  </data>
   <data name="The KOC AI community" xml:space="preserve">
     <value>مجتمع الذكاء الاصطناعي في KOC</value>
   </data>
@@ -1476,6 +1569,9 @@
   </data>
   <data name="The live leaderboard shows public scores; final private standings unlock on reveal day so no one can game the last hours." xml:space="preserve">
     <value>تعرض لوحة الصدارة المباشرة النتائج العلنية؛ ويُكشف الترتيب النهائي الخاص يوم الكشف حتى لا يستغل أحد الساعات الأخيرة.</value>
+  </data>
+  <data name="The model's file is missing." xml:space="preserve">
+    <value>ملف النموذج مفقود.</value>
   </data>
   <data name="The podium is wide open — be the first on the board!" xml:space="preserve">
     <value>المنصة مفتوحة للجميع — كن الأول على اللوحة!</value>
@@ -1506,6 +1602,9 @@
   </data>
   <data name="This month's champions" xml:space="preserve">
     <value>أبطال هذا الشهر</value>
+  </data>
+  <data name="This run's model file is missing." xml:space="preserve">
+    <value>ملف نموذج هذا التشغيل مفقود.</value>
   </data>
   <data name="This week" xml:space="preserve">
     <value>هذا الأسبوع</value>
@@ -1552,6 +1651,12 @@
   <data name="Train a model in AutoML, then register it with the button above." xml:space="preserve">
     <value>درّب نموذجًا في AutoML، ثم سجّله بالزر أعلاه.</value>
   </data>
+  <data name="Train a model, then choose “Keep this model” to save it here." xml:space="preserve">
+    <value>درِّب نموذجًا ثم اختر «احتفظ بهذا النموذج» لحفظه هنا.</value>
+  </data>
+  <data name="Trained on {0}" xml:space="preserve">
+    <value>دُرِّب على {0}</value>
+  </data>
   <data name="Training" xml:space="preserve">
     <value>جارٍ التدريب</value>
   </data>
@@ -1569,6 +1674,9 @@
   </data>
   <data name="Training… (AutoML searches for the best algorithm)" xml:space="preserve">
     <value>جارٍ التدريب… (يبحث AutoML عن أفضل خوارزمية)</value>
+  </data>
+  <data name="Try one row" xml:space="preserve">
+    <value>جرّب صفًا واحدًا</value>
   </data>
   <data name="Turn a CSV into a working prediction with ML.NET AutoML — no code. Upload a dataset, tell it which column to predict, pick the task, and it finds and evaluates the best model. For a step-by-step pipeline, use the Studio node editor." xml:space="preserve">
     <value>حوّل ملف CSV إلى تنبؤ عامل باستخدام ML.NET AutoML — بلا برمجة. ارفع مجموعة بيانات، وحدّد العمود المراد التنبؤ به، واختر المهمة، وسيجد أفضل نموذج ويقيّمه. ولمسار خطوة بخطوة، استخدم محرّر العقد في الاستوديو.</value>
@@ -1849,6 +1957,9 @@
   <data name="to join the conversation." xml:space="preserve">
     <value>للمشاركة في النقاش.</value>
   </data>
+  <data name="v{0}" xml:space="preserve">
+    <value>إصدار {0}</value>
+  </data>
   <data name="you" xml:space="preserve">
     <value>أنت</value>
   </data>
@@ -1866,6 +1977,9 @@
   </data>
   <data name="{0} / {1} complete" xml:space="preserve">
     <value>أنجزت {0} من {1}</value>
+  </data>
+  <data name="{0} MB" xml:space="preserve">
+    <value>{0} ميجابايت</value>
   </data>
   <data name="{0} MB on disk" xml:space="preserve">
     <value>{0} ميجابايت على القرص</value>
@@ -1909,6 +2023,9 @@
   <data name="{0} rows" xml:space="preserve">
     <value>{0} صف</value>
   </data>
+  <data name="{0} rows scored. Saved as {1}" xml:space="preserve">
+    <value>تمّ تقييم {0} صفًا. حُفظت باسم {1}</value>
+  </data>
   <data name="{0} — lower wins" xml:space="preserve">
     <value>{0} — الأقل يفوز</value>
   </data>
@@ -1933,8 +2050,14 @@
   <data name="{0}s · {1} MB" xml:space="preserve">
     <value>{0} ث · {1} ميجابايت</value>
   </data>
+  <data name="“{0}” v{1} will be removed from this machine." xml:space="preserve">
+    <value>سيُحذف “{0}” الإصدار {1} من هذا الجهاز.</value>
+  </data>
   <data name="“{0}” will be removed from this machine. Workflows that use it will stop resolving." xml:space="preserve">
     <value>سيُحذف “{0}” من هذا الجهاز. ومسارات العمل التي تستخدمه لن تعود تجده.</value>
+  </data>
+  <data name="“{0}” will run on this machine when you use it. Only import models from people you trust." xml:space="preserve">
+    <value>سيعمل “{0}” على هذا الجهاز عند استخدامه. لا تستورد النماذج إلا ممّن تثق بهم.</value>
   </data>
   <data name="…or import from URL" xml:space="preserve">
     <value>…أو استورد من رابط</value>

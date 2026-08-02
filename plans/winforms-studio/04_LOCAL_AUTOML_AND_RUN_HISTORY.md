@@ -148,11 +148,16 @@ What was measured:
 
 - `MLContext.CancelExecution` is **not public** here, so it cannot be registered against a token.
 - Setting `ExperimentSettings.CancellationToken` does **not** stop a running experiment. A thirty-second
-  experiment cancelled after one second still ran the full thirty seconds and returned normally.
-- It does change one thing, and for the worse: with a token set, an expired time budget **throws**
-  `TimeoutException` when no trial has finished, instead of returning the best trial so far. That
-  turned the API's own 8-second budget into an outright failure on a loaded machine — caught by five
-  integration tests, and the reason the change was reverted rather than kept "for the desktop only".
+  experiment cancelled after one second still ran the full thirty seconds and returned normally. That is
+  the finding that decided this: the setting buys nothing, so it was reverted rather than kept "for the
+  desktop only".
+
+> **A correction, recorded because the first version of this note was wrong.** Five integration tests
+> failed while the token change was in, and it was written up here as the token making an expired budget
+> throw `TimeoutException` instead of returning the best trial so far. Further runs show that throw
+> happens **with or without** the token — it is AutoML's behaviour whenever no trial completes inside the
+> budget, and the API's 8-second budget makes that reachable on a loaded machine. See "Known flakiness"
+> at the end of this document. The revert still stands, on the measurement above rather than on this.
 
 So in-process, **Stop cannot stop and a memory ceiling cannot be enforced**. Both would have been
 buttons that lie, and the memory ceiling is an acceptance criterion, not a nicety.
@@ -212,6 +217,34 @@ against a fake `IMlTrainer`, and verify actual training by hand.
 | A long run blocks the UI | Off the UI thread; the app stays usable, with a visible indicator |
 | Model files fill the disk | Report workspace size in Settings; offer retention |
 | A user expects server-grade results on a laptop | Say what the limits are, in the UI, in plain words |
+
+## Known flakiness — the API's training budget, not this phase
+
+`POST /api/v1/studio/train` trains with `maxSeconds: 8`. When the whole test suite runs, the unit and
+integration assemblies run in parallel and both do AutoML; on a contended machine an 8-second experiment
+can finish without a single completed trial, and ML.NET throws
+
+```
+System.TimeoutException: Training time finished without completing a successful trial.
+```
+
+which the endpoint turns into a 400, and whichever test was training fails. It moves around — most often
+`StudioEndpointsTests`, `StudioDatasetTrainingTests`, `ModelRegistryEndpointsTests` and
+`InferenceEndpointsTests`, and sometimes `AutoMlTrainerTests` in the unit assembly instead. Each assembly
+passes on its own. Roughly one full-suite run in two is clean.
+
+**This predates the desktop work** and is not caused by it, though Phase 04 and 05 added AutoML-training
+unit tests that made it more likely; those three now share one trained model through
+`TrainedModelFixture` rather than training one each, which cut the unit assembly from ~3m50 to ~1m50.
+
+Two candidate fixes, neither taken here because both reach outside the desktop:
+
+1. Raise the endpoint's budget. 8 seconds is short for a training call that a person waits on, so this
+   may be right on its own merits — but it is a change to server behaviour, made for a test.
+2. Stop the assemblies training concurrently — an xUnit assembly-level lock, or running the ML-heavy
+   assemblies in sequence in CI.
+
+Until one is done, **a single AutoML failure in a full-suite run should be re-run before being believed**.
 
 ## Note on the pilot
 
