@@ -1,7 +1,7 @@
 # KOC Studio (WinForms Desktop) — Master Todo Tracker
 
 **Plan folder:** `plans/winforms-studio/`
-**Status:** 🟢 BUILDING — Phases 01, 02, 04 and 05 code complete (2026-08-02); 03, 06–08 design-only
+**Status:** 🟢 BUILDING — Phases 01–05 code complete (2026-08-02); 06–08 design-only
 **Baseline audited:** 2026-08-02 against `src/Beep.KocAiCommunity.WinForms`, `src/Beep.KocAiCommunity.Desktop.Local`, `src/Beep.KocAiCommunity.Ui.Studio` at commit `e3ae815`
 **Related plans:** `plans/koc-ai-community-platform/19_WINFORMS_DESKTOP_STUDIO.md` and `19a–19d` — those describe the *original* desktop build. This folder is its evolution into a product an engineer can live in.
 
@@ -28,6 +28,7 @@ do a day's work in it without hitting a wall".
 | **Dataset import** | ✅ Shipped 2026-08-02 — was the blocking gap |
 | **AutoML (CSV → best model, no graph)** | ✅ Shipped 2026-08-02 — trains in a killable child process |
 | **Run history** | ✅ Shipped 2026-08-02 — files in the workspace, with the dataset hash |
+| **Per-node data preview** | ✅ Shipped 2026-08-02 — rows in/out, timing, bounded sample per node |
 | **Model registry / inference** | ✅ Shipped 2026-08-02 — keep, predict, export/import; promotion blocked on the API |
 | **Offline competition queue** | ❌ Submitting offline just fails |
 | **Packaging / updates** | ❌ No installer, no update path |
@@ -65,12 +66,16 @@ do a day's work in it without hitting a wall".
   - [x] Rename keeping the id; "recently used" ordering, stamped when a pipeline or training run uses it
   - [ ] **The 200 MB memory ceiling is unmeasured** — the streaming is in place, nobody has watched it
 
-- [ ] **Phase 03 — Designer UX parity with the field's best** (`03_DESIGNER_UX_PARITY.md`)
-  - [ ] Per-node data preview — inspect the table flowing out of any node
-  - [ ] Node palette search and keyboard-driven add
-  - [ ] Validation surfaced on the canvas before a run, not only in the log
-  - [ ] Undo/redo on the canvas
-  - [ ] Run pane: per-node timing and row counts, kept after navigation
+- [ ] **Phase 03 — Designer UX parity with the field's best** (`03_DESIGNER_UX_PARITY.md`) — 🟡 CODE COMPLETE
+  - [x] Per-node data preview — rows in/out, timing, and a bounded sample of the table each node produced
+  - [x] Palette search now also matches descriptions; `Enter` adds the top match
+  - [x] The split-before-fit leakage rule, plus disconnected-node detection, with a toolbar count
+  - [ ] **Not badged on the canvas** — there is no custom node widget, and `MlNode.Status` is set but
+        never rendered. The reason lives in the offending node's property panel instead
+  - [x] Undo/redo (`Ctrl+Z` / `Ctrl+Y`), riding the autosave debounce so typing is one entry
+  - [x] Run results and log moved into a scoped `RunSession`, so navigation no longer loses them
+  - [ ] **Web parity unverified by hand** — same components, same registration, covered by tests;
+        neither designer has been opened
 
 - [ ] **Phase 04 — Local AutoML and run history** (`04_LOCAL_AUTOML_AND_RUN_HISTORY.md`) — 🟡 CODE COMPLETE
   - [x] Register `IMlTrainer` in desktop DI; an AutoML page (CSV → best model)

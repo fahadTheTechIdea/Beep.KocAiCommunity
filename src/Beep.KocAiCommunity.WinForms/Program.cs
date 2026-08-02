@@ -2,6 +2,7 @@ using System.Globalization;
 using Beep.KocAiCommunity.Client;
 using Beep.KocAiCommunity.Contracts.Localization;
 using Beep.KocAiCommunity.Desktop.Local;
+using Beep.KocAiCommunity.Ui.Studio;
 using Beep.KocAiCommunity.WinForms.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -64,6 +65,7 @@ internal static class Program
         services.AddBlazorWebViewDeveloperTools();
 #endif
         services.AddMudServices();
+        services.AddKocStudioUi();
 
         // The shared components take IStringLocalizer, so the desktop host needs the same resource
         // machinery the web host has — without it every shared label throws rather than falling back.

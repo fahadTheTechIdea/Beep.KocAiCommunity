@@ -108,6 +108,8 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         {
             ct.ThrowIfCancellationRequested(); // bound runaway graphs at node boundaries
             var node = byId[nodeId];
+            var rowsIn = table.RowCount;
+            var clock = System.Diagnostics.Stopwatch.StartNew();
             NodeResult result;
             try
             {
@@ -117,11 +119,25 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
             }
             catch (Exception ex)
             {
-                ctx.Results.Add(new NodeExecutionResult(nodeId, node.Kind, "failed", ex.Message));
+                clock.Stop();
+                ctx.Results.Add(new NodeExecutionResult(
+                    nodeId, node.Kind, "failed", ex.Message, rowsIn, 0, clock.ElapsedMilliseconds));
                 return new PipelineExecutionResult(false, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results, rowCount);
             }
 
-            ctx.Results.Add(result.Status);
+            clock.Stop();
+
+            // What came out of this node, sampled. A pipeline that produces an odd metric can then be
+            // inspected rather than reasoned about — the whole point of keeping any of this.
+            var output = result.Output ?? table;
+            ctx.Results.Add(result.Status with
+            {
+                RowsIn = rowsIn,
+                RowsOut = output.RowCount,
+                ElapsedMs = clock.ElapsedMilliseconds,
+                Sample = SampleOf(output),
+            });
+
             if (result.Status.Status == "failed")
             {
                 return new PipelineExecutionResult(false, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results, rowCount);
@@ -134,6 +150,47 @@ public sealed class PluginNodeExecutor(PluginNodeRegistry registry) : IPipelineE
         }
 
         return new PipelineExecutionResult(true, ctx.Algorithm, primaryMetric, ctx.PrimaryValue, ctx.Results, rowCount);
+    }
+
+    /// <summary>
+    /// The first rows and columns of a node's output table.
+    /// <para>
+    /// Bounded at construction. A table is a CSV on disk here, so this reads the head of a file rather
+    /// than holding anything — and a failure to read it costs the preview, never the run.
+    /// </para>
+    /// </summary>
+    private static NodeSample? SampleOf(PipelineTable table)
+    {
+        try
+        {
+            if (!File.Exists(table.CsvPath))
+            {
+                return null;
+            }
+
+            using var reader = new StreamReader(table.CsvPath);
+            using var records = KocCsv.ParseRecords(reader).GetEnumerator();
+            if (!records.MoveNext())
+            {
+                return null;
+            }
+
+            var header = records.Current;
+            var columns = header.Take(NodeSample.MaxColumns).ToArray();
+            var rows = new List<string[]>(Math.Min(NodeSample.MaxRows, 16));
+
+            while (rows.Count < NodeSample.MaxRows && records.MoveNext())
+            {
+                rows.Add([.. records.Current.Take(NodeSample.MaxColumns)]);
+            }
+
+            return new NodeSample(columns, rows, header.Length, table.RowCount);
+        }
+        catch (Exception)
+        {
+            // A preview nobody can read is worth less than the run it would otherwise take down.
+            return null;
+        }
     }
 
     private string Predict(WorkflowDefinition definition, IReadOnlyList<string> order, string labelColumn, string idColumn, MlTaskType task, string trainPath, string evalPath, IReadOnlyDictionary<Guid, byte[]> secondary, CancellationToken ct = default)

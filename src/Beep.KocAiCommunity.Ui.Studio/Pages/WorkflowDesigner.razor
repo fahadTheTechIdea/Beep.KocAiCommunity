@@ -15,8 +15,10 @@
 @using Beep.KocAiCommunity.Contracts.Competitions
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Studio.Services
 @implements IDisposable
 @inject IKocApiClient Api
+@inject RunSession Runs
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
@@ -85,6 +87,16 @@ else
                 <MudProgressCircular Indeterminate="true" Size="Size.Small" />
             }
             <MudSpacer />
+            @* A disabled Run button with no explanation is the thing people file a ticket about. *@
+            @if (GraphIssues() is { Count: > 0 } outstanding)
+            {
+                <MudTooltip Text="@string.Join("  •  ", outstanding)">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Warning"
+                             Icon="@Icons.Material.Filled.ReportProblem">
+                        @outstanding.Count @(outstanding.Count == 1 ? "problem" : "problems")
+                    </MudChip>
+                </MudTooltip>
+            }
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
                        Disabled="@(_running || GraphIssues().Count > 0)" OnClick="RunFromDataset">Run</MudButton>
             @if (_registryCompetitionId is { } topCompId)
@@ -92,6 +104,14 @@ else
                 <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.EmojiEvents"
                            Disabled="@(_submitting || GraphIssues().Count > 0)" OnClick="() => OnSubmitPipeline(topCompId)">Submit</MudButton>
             }
+            <MudTooltip Text="Undo (Ctrl+Z)">
+                <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small" OnClick="Undo"
+                               Disabled="@(!_history.CanUndo)" aria-label="Undo" />
+            </MudTooltip>
+            <MudTooltip Text="Redo (Ctrl+Y)">
+                <MudIconButton Icon="@Icons.Material.Filled.Redo" Size="Size.Small" OnClick="Redo"
+                               Disabled="@(!_history.CanRedo)" aria-label="Redo" />
+            </MudTooltip>
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveRegistryDraft" Disabled="_registryBusy">Save draft</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Publish" OnClick="PublishRegistry" Disabled="_registryBusy">Publish</MudButton>
         }
@@ -122,7 +142,8 @@ else
         <!-- Palette -->
         <BlueprintCard Class="pa-3" Style="width:220px;flex:0 0 220px;max-height:560px;overflow:auto;">
             <MudTextField @bind-Value="_search" Placeholder="Search nodes…" Immediate="true" Margin="Margin.Dense" Variant="Variant.Outlined"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2" />
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-2"
+                          OnKeyDown="OnSearchKey" />
             @if (_catalog.Count == 0)
             {
                 <MudText Typo="Typo.caption" Style="opacity:.7;">Loading nodes…</MudText>
@@ -149,7 +170,10 @@ else
 
         <!-- Canvas -->
         <BlueprintCard Style="flex:1 1 420px;min-width:320px;position:relative;min-height:540px;">
-            <div style="position:absolute;inset:8px;" @ondragover:preventDefault="true" @ondrop="OnDrop" @ondrop:preventDefault="true">
+            @* tabindex so the canvas can hold focus and receive the shortcuts at all. *@
+            <div style="position:absolute;inset:8px;outline:none;" tabindex="0"
+                 @onkeydown="OnCanvasKey"
+                 @ondragover:preventDefault="true" @ondrop="OnDrop" @ondrop:preventDefault="true">
                 <CascadingValue Value="_diagram" IsFixed="true">
                     <DiagramCanvas></DiagramCanvas>
                 </CascadingValue>
@@ -210,6 +234,19 @@ else
                        task field of its own — Cross-validate — still offers only the trainers that apply. *@
                     <NodePropertyPanel Descriptor="def" Config="_selected.Config" Datasets="_fileDatasets" AvailableColumns="_columns" Task="@EffectiveTask()" LockedKeys="@(_selected.Kind == "train" ? _lockedKeys : [])" OnChanged="OnNodeChanged" />
                 }
+
+                @* The node's own problem, next to the node. A list above the log leaves someone matching
+                   a sentence against a canvas. *@
+                @if (IssueFor(_selected.NodeId) is { } nodeIssue)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mt-3">@nodeIssue</MudAlert>
+                }
+
+                @* What this node did to the data on the last run. Kept per node so a wrong metric can
+                   be traced to the step that caused it rather than deduced from the log. *@
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.caption" Class="koc-heading d-block mb-1" Style="letter-spacing:.06em;text-transform:uppercase;opacity:.7;">Data</MudText>
+                <DataPreview Result="@ResultFor(_selected.NodeId)" />
             }
         </BlueprintCard>
     </div>
@@ -224,7 +261,7 @@ else
                 <MudText Typo="Typo.caption" Class="ml-3" Style="opacity:.7;">Submit trains &amp; scores your graph on the competition's hidden test set.</MudText>
             }
             <MudSpacer />
-            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => _log.Clear())" Disabled="@(_log.Count == 0)">Clear</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => Runs.ClearLog())" Disabled="@(Runs.Log.Count == 0)">Clear</MudButton>
         </div>
         @{
             var issues = GraphIssues();
@@ -241,13 +278,13 @@ else
             </MudAlert>
         }
         <div style="max-height:260px;overflow:auto;font-family:monospace;font-size:.82rem;line-height:1.55;">
-            @if (_log.Count == 0)
+            @if (Runs.Log.Count == 0)
             {
                 <MudText Typo="Typo.body2" Style="opacity:.6;">Run the pipeline or submit to see the log here.</MudText>
             }
             else
             {
-                @foreach (var entry in Enumerable.Reverse(_log))
+                @foreach (var entry in Enumerable.Reverse(Runs.Log))
                 {
                     <div style="@($"color:{LogColor(entry.Level)};")">
                         <span style="opacity:.5;">@entry.At.ToString("HH:mm:ss")</span> @entry.Message
@@ -400,8 +437,70 @@ else
             issues.Add("Pick a training dataset on the Dataset node.");
         }
 
+        issues.AddRange(NodeIssues().Select(i => i.Message));
         return issues;
     }
+
+    /// <summary>
+    /// Problems that belong to one node, so the property panel can say what is wrong with the node
+    /// someone is looking at rather than leaving them to match a line in a list against a canvas.
+    /// </summary>
+    private List<(string NodeId, string Message)> NodeIssues()
+    {
+        var found = new List<(string, string)>();
+        var nodes = _diagram.Nodes.OfType<MlNode>().ToList();
+
+        // Which nodes are upstream of each node, following the single chain the compiler enforces.
+        var upstream = new Dictionary<string, List<MlNode>>(StringComparer.Ordinal);
+        var incoming = new Dictionary<string, MlNode>(StringComparer.Ordinal);
+        foreach (var link in _diagram.Links)
+        {
+            if ((link.Source as SinglePortAnchor)?.Port?.Parent is MlNode s
+                && (link.Target as SinglePortAnchor)?.Port?.Parent is MlNode d)
+            {
+                incoming[d.NodeId] = s;
+            }
+        }
+
+        foreach (var node in nodes)
+        {
+            var chain = new List<MlNode>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var current = node.NodeId;
+            while (incoming.TryGetValue(current, out var previous) && seen.Add(previous.NodeId))
+            {
+                chain.Add(previous);
+                current = previous.NodeId;
+            }
+
+            upstream[node.NodeId] = chain;
+        }
+
+        // The leakage guard, and the rule people hit most. Fitting a supervised model on data that was
+        // never split means the score is measured on rows the model already saw — a number that looks
+        // good and means nothing. It used to surface at publish time, which is after you have already
+        // reasoned about it.
+        foreach (var train in nodes.Where(n => n.Kind == "train"))
+        {
+            var hasSplit = upstream[train.NodeId].Any(n => n.Kind is "split" or "time-split" or "cross-validate");
+            if (!hasSplit)
+            {
+                found.Add((train.NodeId,
+                    "Add a Split before this Train node — without one it is scored on the same rows it learned from, "
+                    + "which flatters the result."));
+            }
+        }
+
+        foreach (var node in nodes.Where(n => n.Kind != "dataset" && !incoming.ContainsKey(n.NodeId)))
+        {
+            found.Add((node.NodeId, $"This {node.Kind} node has nothing connected to it, so it will not run."));
+        }
+
+        return found;
+    }
+
+    private string? IssueFor(string nodeId) =>
+        NodeIssues().FirstOrDefault(i => i.NodeId == nodeId).Message;
 
     // The Dataset node's selected dataset id (the pipeline's data source), or null if none/unset.
     private Guid? DatasetNodeId() =>
@@ -542,6 +641,13 @@ else
         SeedDatasetNodeDefault();
         await LoadColumns();
         _loaded = true;
+
+        // A fresh workflow starts its own history and its own run results. Carrying either across would
+        // let Ctrl+Z restore a graph from a different workflow, and show one workflow's rows under
+        // another's nodes.
+        _history.Reset(JsonSerializer.Serialize(BuildDefinition(), _json));
+        Runs.Reset();
+
         StateHasChanged();
     }
 
@@ -568,6 +674,10 @@ else
                 {
                     if (!token.IsCancellationRequested)
                     {
+                        // Same debounce as the save, deliberately: typing a value is one undo entry
+                        // rather than one per keystroke, and it is already the point where the graph
+                        // has settled.
+                        RecordHistory();
                         await AutoSaveDraftAsync();
                     }
                 });
@@ -704,6 +814,68 @@ else
         finally
         {
             _registryBusy = false;
+        }
+    }
+
+    // ---- Undo / redo ----
+
+    private readonly GraphHistory _history = new();
+
+    // Set while an undo or redo is rebuilding the canvas: the rebuild fires the same change events a
+    // user edit does, and recording those would push the state we just restored back onto the stack.
+    private bool _restoring;
+
+    private void RecordHistory()
+    {
+        if (_restoring || !_loaded)
+        {
+            return;
+        }
+
+        _history.Record(JsonSerializer.Serialize(BuildDefinition(), _json));
+    }
+
+    private void Undo() => Restore(_history.Undo());
+
+    private void Redo() => Restore(_history.Redo());
+
+    private void Restore(string? snapshot)
+    {
+        if (snapshot is null)
+        {
+            return;
+        }
+
+        _restoring = true;
+        try
+        {
+            LoadDefinition(snapshot);
+            _selected = null;
+        }
+        finally
+        {
+            _restoring = false;
+        }
+
+        StateHasChanged();
+        ScheduleAutoSave();
+    }
+
+    /// <summary>Ctrl+Z and Ctrl+Y over the canvas area.</summary>
+    private void OnCanvasKey(KeyboardEventArgs e)
+    {
+        if (!e.CtrlKey && !e.MetaKey)
+        {
+            return;
+        }
+
+        if (e.Key is "z" or "Z")
+        {
+            Undo();
+        }
+        else if (e.Key is "y" or "Y")
+        {
+            Redo();
         }
     }
 
@@ -875,7 +1047,31 @@ else
         string.IsNullOrWhiteSpace(_search)
         || n.DisplayName.Contains(_search, StringComparison.OrdinalIgnoreCase)
         || n.Kind.Contains(_search, StringComparison.OrdinalIgnoreCase)
-        || n.Category.Contains(_search, StringComparison.OrdinalIgnoreCase);
+        || n.Category.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        // Descriptions carry the words people actually search for — "missing", "scale", "outlier" —
+        // which are rarely in a node's display name.
+        || (n.Description ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The node a search is pointing at: the first match in palette order, so what Enter adds is the
+    /// one at the top of the list rather than whichever the catalogue happened to yield first.
+    /// </summary>
+    private NodeDescriptorDto? TopMatch() =>
+        string.IsNullOrWhiteSpace(_search)
+            ? null
+            : _categories.SelectMany(NodesInCategory).FirstOrDefault();
+
+    /// <summary>Enter adds the top match, so a node can be added without leaving the keyboard.</summary>
+    private void OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key is not ("Enter" or "NumpadEnter") || TopMatch() is not { } match)
+        {
+            return;
+        }
+
+        AddNode(match.Kind);
+        _search = "";
+    }
 
     // ---- Run / submit (actions live in the top toolbar; all output goes to the log pane) ----
 
@@ -937,6 +1133,15 @@ else
         }
     }
 
+    /// <summary>
+    /// The last run's result for one node, or null if it has not run since the page was opened.
+    /// <para>
+    /// Held in the session rather than in this component, so navigating away and back does not lose
+    /// the run someone is in the middle of reading.
+    /// </para>
+    /// </summary>
+    private NodeExecutionResult? ResultFor(string nodeId) => Runs.ResultFor(nodeId);
+
     // Log each node's execution + the headline metric; set the node's status only for a subtle canvas cue.
     private void ApplyResult(PipelineExecutionResult? result)
     {
@@ -944,6 +1149,8 @@ else
         {
             return;
         }
+
+        Runs.Record(result);
 
         var byId = _diagram.Nodes.OfType<MlNode>().ToDictionary(n => n.NodeId);
         foreach (var nr in result.Nodes)
@@ -986,9 +1193,8 @@ else
 
     // ---- Log pane ----
 
-    private readonly List<(DateTime At, string Level, string Message)> _log = [];
-
-    private void Log(string level, string message) => _log.Add((DateTime.Now, level, message));
+    // The log lives in the session, not here: navigating away used to lose the run you were reading.
+    private void Log(string level, string message) => Runs.Add(level, message);
 
     private static string LogColor(string level) => level switch
     {

@@ -14,10 +14,16 @@ pipeline gets debugged, and three more are ordinary desktop expectations we do n
 | Capability | Azure ML Designer | Us |
 |---|---|---|
 | Preview the table flowing out of any node | ✅ right-click → Preview Data | ❌ one log line per node |
-| Searchable node palette | ✅ | ❌ 38 nodes, browse only |
-| Validation before running | ✅ on the canvas | 🟡 compiler errors, in the log |
+| Searchable node palette | ✅ | ~~❌ browse only~~ **wrong — see below** |
+| Validation before running | ✅ on the canvas | ~~🟡 in the log~~ **understated — see below** |
 | Undo / redo | — | ❌ |
 | Run results that survive navigation | ✅ | ❌ lost |
+
+> **The audit was wrong on two rows**, found on 2026-08-02 when implementation started. The palette
+> already had a search box filtering on name, kind and category, and validation already ran live on
+> every render (`GraphIssues`), listed above the log, and disabled Run. Both needed finishing, not
+> building — which changed what this phase actually cost. Recorded rather than quietly corrected,
+> because a plan whose baseline is wrong is what makes an estimate wrong.
 
 ## Scope
 
@@ -107,17 +113,37 @@ survive a restart — that is Phase 04's run history, and this pane becomes its 
 | `ML/Nodes/PluginNodeExecutor.cs` | Capture the bounded sample per node |
 | `Api/Endpoints/StudioEndpoints.cs` | Carry the new fields |
 
+## What implementation found
+
+**The canvas cannot badge a node yet, and that is a bigger job than it looks.** `MlNode.Status` is set
+on every run and carries a comment about "a subtle canvas cue" — but nothing renders it. There is no
+custom node widget registered with `Z.Blazor.Diagrams`, so the canvas draws its default node and the
+status is dead weight. Building one is a visual change to the shared designer that both hosts render,
+and it wants a person looking at it, which nothing in this session can do. So the split-before-fit
+warning appears **in the property panel of the offending node** and in the toolbar count, and the
+canvas badge is left undone with this as the reason. Worth pairing with a look at why `SetStatus`
+exists at all.
+
+**Undo/redo rides the autosave debounce.** The designer already collapsed rapid edits into one save
+900 ms after the last one; recording history at the same point gets "typing a value is one undo entry"
+for free, and is the moment the graph has actually settled.
+
 ## Acceptance criteria
 
-- [ ] Selecting a node after a run shows the table that flowed out of it
-- [ ] The sample is bounded — a million-row dataset does not grow the response or the process materially
-- [ ] Typing in the palette filters within a keystroke; `Enter` adds the top match
-- [ ] A supervised model with no split ahead of it is badged **before** Run is pressed
-- [ ] The toolbar shows an outstanding-problem count
-- [ ] `Ctrl+Z` reverses add, delete, move, connect and property edits
-- [ ] Typing a value produces one undo entry, not one per character
-- [ ] Navigating away from the designer and back preserves the last run's results
-- [ ] All of the above work identically in the Web
+- [x] Selecting a node after a run shows the table that flowed out of it
+- [x] The sample is bounded — 100 rows × 50 columns, bounded where it is built, and the record says
+      what it left out
+- [x] Typing in the palette filters within a keystroke; `Enter` adds the top match
+- [ ] ~~A supervised model with no split ahead of it is **badged on the canvas**~~ — the rule is
+      implemented and surfaces in the property panel and the toolbar count, but not as a canvas badge.
+      See above
+- [x] The toolbar shows an outstanding-problem count, with the problems in its tooltip
+- [x] `Ctrl+Z` reverses add, delete, move, connect and property edits
+- [x] Typing a value produces one undo entry, not one per character
+- [x] Navigating away from the designer and back preserves the last run's results
+- [ ] **Identical behaviour in the Web is untested by hand.** The same components and the same
+      `RunSession` registration serve both, and the suite covers the logic — but nobody has opened
+      either designer
 
 ## Tests
 

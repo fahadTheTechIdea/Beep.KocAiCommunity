@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.ServiceDefaults\Beep.KocAiCommunity.ServiceDefaults.csproj" />
     <!-- The shared string resource lives here; LocalizationTests proves it actually resolves. -->
     <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Ui.Shared\Beep.KocAiCommunity.Ui.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Ui.Studio\Beep.KocAiCommunity.Ui.Studio.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,68 @@
+@using Beep.KocAiCommunity.Contracts.Workflow
+
+@* The table that came out of a node, after the last run.
+   Without this, a pipeline that produces an odd number can only be explained by reasoning about what
+   each node probably did to the data. Being able to look at it turns that into observation. *@
+
+@if (Result is null)
+{
+    <MudText Typo="Typo.caption" Style="opacity:.65;">Run the pipeline to see the data flowing out of this node.</MudText>
+}
+else
+{
+    <div class="d-flex gap-3 flex-wrap mb-2">
+        <MudText Typo="Typo.caption" Style="opacity:.75;">
+            <b>@Result.RowsIn.ToString("N0")</b> in → <b>@Result.RowsOut.ToString("N0")</b> out
+        </MudText>
+        <MudText Typo="Typo.caption" Style="opacity:.75;">@Result.ElapsedMs.ToString("N0") ms</MudText>
+        @if (Result.RowsOut != Result.RowsIn)
+        {
+            @* The number people come looking for when a metric is wrong: a filter or a join that
+               removed far more than expected is invisible in a log line and obvious here. *@
+            <MudText Typo="Typo.caption" Style="opacity:.75;">
+                @(Result.RowsOut > Result.RowsIn ? "+" : "")@((Result.RowsOut - Result.RowsIn).ToString("N0")) rows
+            </MudText>
+        }
+    </div>
+
+    @if (Result.Sample is not { Columns.Count: > 0 } sample)
+    {
+        <MudText Typo="Typo.caption" Style="opacity:.65;">This node produced no table to preview.</MudText>
+    }
+    else
+    {
+        <div style="overflow:auto;max-height:280px;border:1px solid var(--mud-palette-lines-default);border-radius:4px;">
+            <MudSimpleTable Dense="true" Striped="true" Style="min-width:100%;">
+                <thead>
+                    <tr>@foreach (var column in sample.Columns) { <th>@column</th> }</tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in sample.Rows)
+                    {
+                        <tr>
+                            @for (var i = 0; i < sample.Columns.Count; i++)
+                            {
+                                <td style="white-space:nowrap;">@(i < row.Length ? row[i] : "")</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </div>
+
+        @* Say what is missing. A preview that silently shows the first 50 of 300 columns invites a
+           conclusion drawn from a fraction of the data. *@
+        @if (sample.RowsTruncated || sample.ColumnsTruncated)
+        {
+            <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.65;">
+                Showing @sample.Rows.Count of @sample.TotalRows.ToString("N0") rows@(sample.ColumnsTruncated
+                    ? $" and {sample.Columns.Count} of {sample.TotalColumns} columns" : "").
+            </MudText>
+        }
+    }
+}
+
+@code {
+    /// <summary>The node's result from the last run, or null if it has not run.</summary>
+    [Parameter] public NodeExecutionResult? Result { get; set; }
+}
