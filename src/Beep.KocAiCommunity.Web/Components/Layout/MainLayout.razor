@@ -264,7 +264,7 @@
             "" or "learn" or "community" => true,       // public browsing
             "supervision" => Identity.IsSupervisor,
             "admin" => Identity.IsPlatformAdmin,
-            _ => Identity.HasAnyPosition,                // dashboard / compete / datasets / studio / workflow / models
+            _ => Identity.HasAnyPosition,                // dashboard, compete, profile — the Studio surfaces are the desktop app now
         };
     }
 

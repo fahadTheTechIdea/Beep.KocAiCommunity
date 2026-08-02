@@ -271,8 +271,8 @@
   <data name="Build your model" xml:space="preserve">
     <value>ابنِ نموذجك</value>
   </data>
-  <data name="Build your pipeline in KOC Studio, the desktop app — it reads this competition's data directly and submits your entry when you are on the KOC network." xml:space="preserve">
-    <value>ابنِ مسارك في استوديو KOC، تطبيق سطح المكتب — فهو يقرأ بيانات هذه المسابقة مباشرة ويُرسل مشاركتك عندما تكون على شبكة شركة نفط الكويت.</value>
+  <data name="Build your model however you like — KOC Studio on the desktop, or your own tools. Only your predictions come back here." xml:space="preserve">
+    <value>ابنِ نموذجك بالطريقة التي تناسبك — استوديو KOC على سطح المكتب، أو أدواتك الخاصة. لا يعود إلى هنا سوى تنبؤاتك.</value>
   </data>
   <data name="Built with" xml:space="preserve">
     <value>بُني بـ</value>
@@ -492,9 +492,6 @@
   </data>
   <data name="Description" xml:space="preserve">
     <value>الوصف</value>
-  </data>
-  <data name="Design a pipeline in the Studio node editor — features, split, algorithm." xml:space="preserve">
-    <value>صمّم مسارًا في محرّر العقد بالاستوديو — الخصائص، والتقسيم، والخوارزمية.</value>
   </data>
   <data name="Designer" xml:space="preserve">
     <value>المصمّم</value>
@@ -1495,6 +1492,9 @@
   <data name="Submit a prediction" xml:space="preserve">
     <value>أرسِل تنبؤًا</value>
   </data>
+  <data name="Submit your predictions" xml:space="preserve">
+    <value>أرسل تنبؤاتك</value>
+  </data>
   <data name="Supervision" xml:space="preserve">
     <value>الإشراف</value>
   </data>
@@ -1687,6 +1687,9 @@
   <data name="Until the reveal, the final private standings stay concealed so no one games the last day." xml:space="preserve">
     <value>حتى موعد الكشف يبقى الترتيب النهائي الخاص محجوبًا حتى لا يستغل أحد اليوم الأخير.</value>
   </data>
+  <data name="Use KOC Studio on the desktop, or any tool you prefer — the leaderboard only sees your predictions." xml:space="preserve">
+    <value>استخدم استوديو KOC على سطح المكتب، أو أي أداة تفضّلها — لا ترى لوحة الصدارة سوى تنبؤاتك.</value>
+  </data>
   <data name="Use the persona picker in the top right to view the app as different roles." xml:space="preserve">
     <value>استخدم منتقي الشخصيات أعلى اليمين لعرض التطبيق بأدوار مختلفة.</value>
   </data>
@@ -1779,9 +1782,6 @@
   </data>
   <data name="You are signed in automatically with your KOC account — if you are seeing this, contact the platform team." xml:space="preserve">
     <value>يتم تسجيل دخولك تلقائيًا بحساب KOC — إن ظهرت لك هذه الرسالة فتواصل مع فريق المنصة.</value>
-  </data>
-  <data name="You can also submit a predictions file from this page at any time." xml:space="preserve">
-    <value>يمكنك أيضًا إرسال ملف تنبؤات من هذه الصفحة في أي وقت.</value>
   </data>
   <data name="You can edit the draft from the Host tab afterwards." xml:space="preserve">
     <value>يمكنك تعديل المسودة لاحقًا من تبويب الاستضافة.</value>

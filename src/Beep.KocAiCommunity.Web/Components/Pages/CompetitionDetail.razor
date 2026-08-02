@@ -61,15 +61,24 @@ else
                     <div class="koc-deadline-bar" title="@L["Progress toward the final reveal"]"><span style="width:@(((int)(progress * 100)))%"></span></div>
                 }
 
-                @* Pipelines are built in KOC Studio on the desktop. Saying so here beats a button that
-                   opens an editor this site no longer has. *@
-                @if (_competition.Status != "concluded" && _competition.HasDatasets)
+                @* The two things a competitor does from a browser. The button that used to sit here
+                   opened the node editor, which is a desktop app now — so these are the site's job:
+                   take the data away, bring a score back. *@
+                @if (_competition.Status != "concluded")
                 {
-                    <MudText Typo="Typo.body2" Style="color:#e8f1f8;">
-                        @L["Build your pipeline in KOC Studio, the desktop app — it reads this competition's data directly and submits your entry when you are on the KOC network."]
-                    </MudText>
+                    @if (_competition.HasDatasets)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.Download" OnClick="@(() => ShowTab(TabData))">
+                            @L["Get the data"]
+                        </MudButton>
+                    }
+                    <MudButton Variant="Variant.Outlined" Size="Size.Large" FullWidth="true" Style="color:#e8f1f8;border-color:#e8f1f8;"
+                               StartIcon="@Icons.Material.Filled.UploadFile" OnClick="@(() => ShowTab(TabSubmissions))">
+                        @L["Submit your predictions"]
+                    </MudButton>
                     <MudText Typo="Typo.caption" Style="opacity:.8;color:#e8f1f8;">
-                        @L["You can also submit a predictions file from this page at any time."]
+                        @L["Build your model however you like — KOC Studio on the desktop, or your own tools. Only your predictions come back here."]
                     </MudText>
                 }
             </div>
@@ -102,7 +111,7 @@ else
                         <BlueprintCard Class="pa-4" Style="height:100%;">
                             <span class="koc-stat-value" style="font-size:26px;">2</span>
                             <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Build your model"]</MudText>
-                            <MudText Typo="Typo.caption" Style="opacity:.75;">@L["Design a pipeline in the Studio node editor — features, split, algorithm."]</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.75;">@L["Use KOC Studio on the desktop, or any tool you prefer — the leaderboard only sees your predictions."]</MudText>
                         </BlueprintCard>
                     </MudItem>
                     <MudItem xs="12" md="4">
@@ -422,7 +431,22 @@ else
     private CompetitionDto? _competition;
     private bool _notFound;
     private Guid _loadedId;
+    // The tab order, named once. Two places move the tabs — the ?tab= query and the hero buttons — and
+    // bare 1/3 in both is how they end up disagreeing after somebody inserts a panel.
+    private const int TabOverview = 0;
+    private const int TabData = 1;
+    private const int TabLeaderboard = 2;
+    private const int TabSubmissions = 3;
+    private const int TabHost = 4;
+
     private int _initialTab;
+
+    /// <summary>
+    /// Moves the tabs from the hero. Set directly rather than by navigating to <c>?tab=</c>: the query
+    /// is only read in <c>OnInitializedAsync</c>, so changing it on a page already open would update
+    /// the address bar and nothing else.
+    /// </summary>
+    private void ShowTab(int index) => _initialTab = index;
 
     private IReadOnlyList<LeaderboardEntryDto>? _leaderboard;
     private IReadOnlyList<SubmissionResultDto>? _mySubmissions;
@@ -460,11 +484,11 @@ else
 
         _initialTab = Tab?.ToLowerInvariant() switch
         {
-            "data" => 1,
-            "leaderboard" => 2,
-            "submissions" => 3,
-            "host" => 4,
-            _ => 0,
+            "data" => TabData,
+            "leaderboard" => TabLeaderboard,
+            "submissions" => TabSubmissions,
+            "host" => TabHost,
+            _ => TabOverview,
         };
 
         await ConnectAsync();

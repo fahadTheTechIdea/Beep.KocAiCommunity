@@ -44,9 +44,25 @@ still shows the data, the rules, the live leaderboard, your own submissions, and
 upload**. So a browser is still enough to compete with any tool you like; it is only the node graph
 that needs the desktop.
 
-> **This raises the stakes on Phase 07.** Until there is an installer, the people who can build a
-> pipeline are the people who can build the solution. That was tolerable when the website offered the
-> same thing; it is not any more. **07 is now the gate on competing at all for most people.**
+### The competitor's path through the website
+
+1. **Register** and sign in — unchanged.
+2. **Open a competition** and read the rules, the metric, and the reveal date.
+3. **Get the data** — the hero's primary action opens the Data tab: the labelled training set and the
+   unlabelled evaluation set, both downloadable.
+4. **Build a model** anywhere. KOC Studio on the desktop reads this competition's data directly; any
+   other tool works too, because the site never sees the model.
+5. **Submit predictions** — a CSV of id and label, scored instantly against the hidden answer key, which
+   puts the score on the live leaderboard and awards Barrels.
+
+Nothing about that path needs the desktop app. It is the same path a Kaggle competitor would recognise,
+and it is why removing the designer did not remove the ability to compete.
+
+> **A correction to an earlier draft of this note.** It said removing the Studio made an installer
+> (Phase 07) "the gate on competing at all". Working the path through shows that is wrong: predictions
+> can be produced with any tool and uploaded from a browser, so competing never needed the desktop.
+> What an installer gates is the **node designer and local AutoML** — the guided way in, which matters
+> most to the people with the least ML experience. That is a real cost, and a smaller one than stated.
 
 ## Consequences worth knowing
 
