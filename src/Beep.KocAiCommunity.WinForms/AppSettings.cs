@@ -17,6 +17,12 @@ public sealed class AppSettings
     /// </summary>
     public string Language { get; set; } = KocLanguages.English;
 
+    /// <summary>
+    /// Writes Debug-level detail to the log. Off by default — it is noisy — and turned on in Settings
+    /// for a support session, so a reproduction can be captured without a new build.
+    /// </summary>
+    public bool VerboseLogging { get; set; }
+
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KocStudio", "settings.json");
 

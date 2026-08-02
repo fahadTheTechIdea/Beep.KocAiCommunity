@@ -1,7 +1,7 @@
 # KOC Studio (WinForms Desktop) — Master Todo Tracker
 
 **Plan folder:** `plans/winforms-studio/`
-**Status:** 🟡 PLANNED — Phase 02 partially shipped (dataset import landed 2026-08-02); everything else is design-only
+**Status:** 🟢 BUILDING — Phase 01 code complete (2026-08-02), Phase 02 partly shipped; 03–08 design-only
 **Baseline audited:** 2026-08-02 against `src/Beep.KocAiCommunity.WinForms`, `src/Beep.KocAiCommunity.Desktop.Local`, `src/Beep.KocAiCommunity.Ui.Studio` at commit `e3ae815`
 **Related plans:** `plans/koc-ai-community-platform/19_WINFORMS_DESKTOP_STUDIO.md` and `19a–19d` — those describe the *original* desktop build. This folder is its evolution into a product an engineer can live in.
 
@@ -42,12 +42,17 @@ do a day's work in it without hitting a wall".
   - [x] Online research: Blazor Hybrid, WebView2 distribution, visual-designer UX precedent, offline-first sync, ML.NET AutoML limits, Windows deployment options
   - [x] Decisions pinned with rationale and sources
 
-- [ ] **Phase 01 — Workspace, first run, and diagnostics** (`01_WORKSPACE_FIRSTRUN_DIAGNOSTICS.md`)
-  - [ ] Workspace integrity check and repair on launch
-  - [ ] Global exception handling — nothing closes silently
-  - [ ] Rolling file log + "Open logs" from Settings
-  - [ ] First-run experience: sample dataset, guided first pipeline
-  - [ ] WebView2 runtime presence check with an actionable message
+- [x] **Phase 01 — Workspace, first run, and diagnostics** (`01_WORKSPACE_FIRSTRUN_DIAGNOSTICS.md`) — ✅ CODE COMPLETE
+  - [x] Workspace `Verify()` — recreates folders, reports unreadable workflows without deleting them, sweeps stale scratch, blocks on an unwritable root
+  - [x] Global exception handling — `ThreadException`, `UnhandledException`, `UnobservedTaskException`; crash file + dialog with Copy details
+  - [x] Blazor `ErrorBoundary` with Recover, so one bad page does not cost the session
+  - [x] Rolling file log (14 files, 8 MB cap) + Open logs / Open workspace / detailed-logging toggle in Settings
+  - [x] Corrupt dataset index preserved and rebuilt rather than silently discarded
+  - [x] First-run sample dataset (`sample-esp-readings.csv`, generated, fixed seed)
+  - [x] WebView2 presence check with a download link instead of a blank window
+  - [x] 8 unit tests; full suite 529 green
+  - [ ] **Hand-verification outstanding** — the crash dialog, the WebView2 message and the first-run
+        experience have not been exercised in a running window. See "Definition of done" item 3
 
 - [ ] **Phase 02 — Data: import, profiling, preview** (`02_DATA_IMPORT_PROFILING_PREVIEW.md`) — 🟡 PART SHIPPED
   - [x] Import CSV, preview header + rows, delete, open folder *(shipped 2026-08-02)*

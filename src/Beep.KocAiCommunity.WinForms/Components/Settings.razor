@@ -1,9 +1,14 @@
 @page "/settings"
 @using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Desktop.Local
+@using System.Diagnostics
 @inject DevIdentity Identity
 @inject AppSettings Config
 @inject SignedInUser Me
 @inject ISnackbar Snackbar
+@inject LocalWorkspace Workspace
+@inject WorkspaceReport Report
+@inject Beep.KocAiCommunity.WinForms.Diagnostics.FileLoggerProvider Logs
 
 <MudText Typo="Typo.h5" Class="mb-4">Settings</MudText>
 
@@ -46,6 +51,46 @@
     </div>
 </MudPaper>
 
+<MudPaper Class="pa-4 mt-4" MaxWidth="560px" Outlined="true">
+    <MudText Typo="Typo.subtitle1" Class="mb-1">Diagnostics</MudText>
+    <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.7;">
+        KOC Studio @Version · WebView2 @(WebViewVersion ?? "not detected")
+    </MudText>
+
+    <div class="d-flex gap-2 flex-wrap mb-3">
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Description"
+                   OnClick="OpenLogs">Open logs</MudButton>
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FolderOpen"
+                   OnClick="OpenWorkspace">Open workspace</MudButton>
+    </div>
+
+    @* Off by default because it is noisy. Turned on to capture a reproduction without a new build. *@
+    <MudSwitch T="bool" @bind-Value="_verbose" Color="Color.Primary" Label="Detailed logging"
+               Class="mb-1" />
+    <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.7;">
+        Records far more detail for a support session. Applies on the next launch.
+    </MudText>
+
+    @* A workspace that repaired itself is not worth interrupting anyone over, but it is worth being
+       able to find when a file someone expected has gone missing. *@
+    @if (Report.IsClean)
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true">
+            Workspace checked at launch — nothing to report.
+        </MudAlert>
+    }
+    else
+    {
+        <MudText Typo="Typo.subtitle2" Class="mb-1">Last workspace check</MudText>
+        @foreach (var finding in Report.Findings)
+        {
+            <MudAlert Severity="@SeverityFor(finding.Level)" Variant="Variant.Text" Dense="true" Class="mb-1">
+                @finding.Message
+            </MudAlert>
+        }
+    }
+</MudPaper>
+
 @code {
     private string _apiBaseUrl = "";
     private string _personaKey = "";
@@ -63,12 +108,50 @@
         var me = Me.Current;
         _userId = me?.UserId ?? "";
         _display = me?.DisplayName ?? _userId;
+        _verbose = Config.VerboseLogging;
         _email = me?.Email;
         _company = me?.CompanyId;
         _department = me?.DepartmentId;
     }
 
+    private bool _verbose;
+
     private static string Or(string? value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value!;
+
+    private static string Version => Beep.KocAiCommunity.WinForms.Diagnostics.CrashReporter.Version;
+
+    private static string? WebViewVersion =>
+        Beep.KocAiCommunity.WinForms.Diagnostics.WebViewRuntimeCheck.InstalledVersion();
+
+    private static Severity SeverityFor(WorkspaceFindingLevel level) => level switch
+    {
+        WorkspaceFindingLevel.Blocked => Severity.Error,
+        WorkspaceFindingLevel.Warning => Severity.Warning,
+        _ => Severity.Info,
+    };
+
+    /// <summary>Opens the folder and selects today's log, so support can be handed a file.</summary>
+    private void OpenLogs() => Reveal(Logs.CurrentFilePath, Workspace.LogsPath);
+
+    private void OpenWorkspace() => Reveal(null, Workspace.RootPath);
+
+    private void Reveal(string? file, string folder)
+    {
+        try
+        {
+            if (file is not null && File.Exists(file))
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{file}\"") { UseShellExecute = true });
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't open the folder: {ex.Message}", Severity.Warning);
+        }
+    }
 
     private Task SaveAsync()
     {
@@ -84,6 +167,7 @@
 
         Config.ApiBaseUrl = _apiBaseUrl.Trim();
         Config.PersonaKey = _personaKey;
+        Config.VerboseLogging = _verbose;
         Config.Save();
         Snackbar.Add("Saved. Restart to apply a changed API URL.", Severity.Success);
         return Task.CompletedTask;

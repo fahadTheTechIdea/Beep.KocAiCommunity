@@ -228,6 +228,13 @@ public sealed class LocalDatasetStore(LocalWorkspace workspace)
         }
     }
 
+    /// <summary>
+    /// True when the last <see cref="LoadIndex"/> found the index unreadable and started over. The
+    /// launch check reads this so a rebuilt index is reported rather than passing unnoticed — the
+    /// visible symptom is that every dataset has a new id, which breaks saved workflows.
+    /// </summary>
+    public bool IndexWasRebuilt { get; private set; }
+
     private Dictionary<string, Guid> LoadIndex()
     {
         if (!File.Exists(_indexPath))
@@ -240,9 +247,29 @@ public sealed class LocalDatasetStore(LocalWorkspace workspace)
             return JsonSerializer.Deserialize<Dictionary<string, Guid>>(File.ReadAllText(_indexPath))
                    ?? new(StringComparer.OrdinalIgnoreCase);
         }
-        catch
+        catch (Exception)
         {
+            // Keep the unreadable file rather than overwriting it: the ids in it are the only link
+            // between a saved workflow and its dataset, and someone may be able to salvage them.
+            TryPreserveCorruptIndex();
+            IndexWasRebuilt = true;
             return new(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private void TryPreserveCorruptIndex()
+    {
+        try
+        {
+            var backup = $"{_indexPath}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}";
+            if (!File.Exists(backup))
+            {
+                File.Copy(_indexPath, backup);
+            }
+        }
+        catch (Exception)
+        {
+            // Best effort. Failing to keep a copy must not stop the app from starting.
         }
     }
 

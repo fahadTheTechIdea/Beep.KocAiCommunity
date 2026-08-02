@@ -6,10 +6,30 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
+@* An exception inside a component is caught by the renderer, not by the process-level handlers — in a
+   BlazorWebView that shows as a dead UI with no explanation. The boundary keeps one bad page from
+   costing the whole session. *@
 <Router AppAssembly="@typeof(Shell).Assembly"
         AdditionalAssemblies="new[] { typeof(Beep.KocAiCommunity.Ui.Studio.UiStudioAssembly).Assembly }">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(DesktopLayout)" />
+        <ErrorBoundary @ref="_boundary">
+            <ChildContent>
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(DesktopLayout)" />
+            </ChildContent>
+            <ErrorContent Context="error">
+                <LayoutView Layout="@typeof(DesktopLayout)">
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="ma-4">
+                        <MudText Typo="Typo.subtitle1" Class="mb-1">This page hit a problem</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-3">@error.Message</MudText>
+                        <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
+                            The details were written to the log. Settings → Open logs.
+                        </MudText>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="Recover">Reload the page</MudButton>
+                    </MudAlert>
+                </LayoutView>
+            </ErrorContent>
+        </ErrorBoundary>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
@@ -18,3 +38,10 @@
         </LayoutView>
     </NotFound>
 </Router>
+
+@code {
+    private ErrorBoundary? _boundary;
+
+    /// <summary>Clears the boundary so the route re-renders, instead of requiring a restart.</summary>
+    private void Recover() => _boundary?.Recover();
+}
