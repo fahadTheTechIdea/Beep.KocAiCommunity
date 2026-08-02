@@ -1,14 +1,26 @@
 @inherits LayoutComponentBase
+@using System.Globalization
+@using Beep.KocAiCommunity.Contracts.Localization
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject AppSettings Config
+@inject IStringLocalizer<Strings> L
+@inject ISnackbar Snackbar
 
+@* The desktop reads right-to-left with the rest of the app when the language is Arabic. There is no
+   request and no cookie here, so the choice lives in the settings file and is applied at start-up. *@
+<div dir="@KocLanguages.Direction(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)">
 <MudLayout>
     <MudAppBar Elevation="1" Dense="true">
-        <MudIcon Icon="@Icons.Material.Filled.Hub" Class="mr-2" />
-        <MudText Typo="Typo.h6">KOC Studio</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.Hub" Class="me-2" />
+        <MudText Typo="Typo.h6">@L["KOC Studio"]</MudText>
         <MudSpacer />
-        <MudButton Href="/workflows" StartIcon="@Icons.Material.Filled.Schema" Color="Color.Inherit">Workflows</MudButton>
-        <MudButton Href="/workflow" StartIcon="@Icons.Material.Filled.AccountTree" Color="Color.Inherit">Designer</MudButton>
-        <MudButton Href="/competitions" StartIcon="@Icons.Material.Filled.EmojiEvents" Color="Color.Inherit">Compete</MudButton>
-        <MudIconButton Href="/settings" Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" />
+        <MudButton Href="/datasets" StartIcon="@Icons.Material.Filled.Dataset" Color="Color.Inherit">@L["Datasets"]</MudButton>
+        <MudButton Href="/workflows" StartIcon="@Icons.Material.Filled.Schema" Color="Color.Inherit">@L["Workflows"]</MudButton>
+        <MudButton Href="/workflow" StartIcon="@Icons.Material.Filled.AccountTree" Color="Color.Inherit">@L["Designer"]</MudButton>
+        <MudButton Href="/competitions" StartIcon="@Icons.Material.Filled.EmojiEvents" Color="Color.Inherit">@L["Compete"]</MudButton>
+        <LanguageSwitcher Language="@Config.Language" OnSwitch="SwitchLanguage" />
+        <MudIconButton Href="/settings" Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" aria-label="@L["Settings"]" />
     </MudAppBar>
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
@@ -16,3 +28,18 @@
         </MudContainer>
     </MudMainContent>
 </MudLayout>
+</div>
+
+@code {
+    /// <summary>
+    /// Saves the language and tells the user it applies next launch. Unlike the web there is no request
+    /// to re-issue: the culture is set once for the process at start-up, and re-rendering the tree under
+    /// a new culture would leave anything already rendered in the old one.
+    /// </summary>
+    private void SwitchLanguage(string language)
+    {
+        Config.Language = KocLanguages.Normalize(language);
+        Config.Save();
+        Snackbar.Add(L["Language saved — restart KOC Studio to apply it."], Severity.Info);
+    }
+}

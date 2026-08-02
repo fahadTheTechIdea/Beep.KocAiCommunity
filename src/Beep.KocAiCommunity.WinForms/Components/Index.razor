@@ -4,11 +4,15 @@
 <MudPaper Class="pa-8" Elevation="0">
     <MudText Typo="Typo.h4" Class="mb-2">KOC Studio — Desktop</MudText>
     <MudText Typo="Typo.body1" Class="mb-6" Style="max-width:70ch;">
-        Build ML pipelines on the canvas and run them locally. Connect to the KOC network to
-        submit a pipeline to a competition.
+        Import a CSV, build a pipeline on the canvas, and train it here on this machine — no network
+        needed. Connect to the KOC network only to enter a competition or submit a result.
     </MudText>
-    <div class="d-flex gap-3">
+    <div class="d-flex gap-3 flex-wrap">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Dataset" OnClick="@(() => Nav.NavigateTo("/datasets"))">
+            Import data
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
                    StartIcon="@Icons.Material.Filled.Schema" OnClick="@(() => Nav.NavigateTo("/workflows"))">
             Open Workflows
         </MudButton>

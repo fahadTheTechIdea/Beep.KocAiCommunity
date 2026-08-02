@@ -24,3 +24,10 @@ appsettings.*.local.json
 
 ## Aspire
 **/aspire-manifest.json
+
+# Control-panel screenshots — these carry hosting server names and logins.
+*.jpg
+*.jpeg
+*.png
+!src/**/wwwroot/**/*.png
+!src/**/wwwroot/**/*.jpg

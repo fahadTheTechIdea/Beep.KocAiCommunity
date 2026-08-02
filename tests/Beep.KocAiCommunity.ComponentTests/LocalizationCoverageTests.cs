@@ -38,6 +38,10 @@ public class LocalizationCoverageTests
         "src/Beep.KocAiCommunity.Ui.Shared",
         "src/Beep.KocAiCommunity.Ui.Studio",
         "src/Beep.KocAiCommunity.Ui.Community",
+
+        // The desktop Studio shares the same resource, so its strings are held to the same standard.
+        // Without it here, every string added to the desktop reads as an orphan.
+        "src/Beep.KocAiCommunity.WinForms",
     ];
 
     private static readonly string[] OutOfScopeFiles = ["Admin.razor", "WorkflowDesigner.razor"];

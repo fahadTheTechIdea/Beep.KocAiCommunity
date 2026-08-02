@@ -265,6 +265,9 @@
   <data name="Build a model" xml:space="preserve">
     <value>ابنِ نموذجًا</value>
   </data>
+  <data name="Build a pipeline" xml:space="preserve">
+    <value>ابنِ مسارًا</value>
+  </data>
   <data name="Build a pipeline and claim a rank" xml:space="preserve">
     <value>ابنِ مسارًا واحجز ترتيبك</value>
   </data>
@@ -273,6 +276,9 @@
   </data>
   <data name="Build your model" xml:space="preserve">
     <value>ابنِ نموذجك</value>
+  </data>
+  <data name="CSV files on this machine. The designer reads them directly, so pipelines run and score without the KOC network." xml:space="preserve">
+    <value>ملفات CSV على هذا الجهاز. يقرأها المصمّم مباشرة، فتعمل المسارات وتُقيَّم دون شبكة KOC.</value>
   </data>
   <data name="CSV of" xml:space="preserve">
     <value>ملف CSV يحتوي</value>
@@ -373,6 +379,9 @@
   <data name="Continue your pipeline" xml:space="preserve">
     <value>تابع مسارك</value>
   </data>
+  <data name="Couldn't open the folder: {0}" xml:space="preserve">
+    <value>تعذّر فتح المجلد: {0}</value>
+  </data>
   <data name="Couldn't reach the API ({0})." xml:space="preserve">
     <value>تعذّر الوصول إلى الواجهة البرمجية ({0}).</value>
   </data>
@@ -418,8 +427,17 @@
   <data name="Datasets" xml:space="preserve">
     <value>مجموعات البيانات</value>
   </data>
+  <data name="Delete" xml:space="preserve">
+    <value>حذف</value>
+  </data>
+  <data name="Delete this dataset?" xml:space="preserve">
+    <value>حذف مجموعة البيانات هذه؟</value>
+  </data>
   <data name="Delete thread" xml:space="preserve">
     <value>حذف النقاش</value>
+  </data>
+  <data name="Deleted “{0}”." xml:space="preserve">
+    <value>حُذف “{0}”.</value>
   </data>
   <data name="Demonstration environment" xml:space="preserve">
     <value>بيئة عرض تجريبية</value>
@@ -441,6 +459,9 @@
   </data>
   <data name="Design a pipeline in the Studio node editor — features, split, algorithm." xml:space="preserve">
     <value>صمّم مسارًا في محرّر العقد بالاستوديو — الخصائص، والتقسيم، والخوارزمية.</value>
+  </data>
+  <data name="Designer" xml:space="preserve">
+    <value>المصمّم</value>
   </data>
   <data name="Directorate" xml:space="preserve">
     <value>الإدارة</value>
@@ -634,6 +655,18 @@
   <data name="Import" xml:space="preserve">
     <value>استيراد</value>
   </data>
+  <data name="Import CSV" xml:space="preserve">
+    <value>استورد ملف CSV</value>
+  </data>
+  <data name="Import a CSV to build your first pipeline. Nothing leaves this machine." xml:space="preserve">
+    <value>استورد ملف CSV لبناء أول مسار لك. لا شيء يغادر هذا الجهاز.</value>
+  </data>
+  <data name="Import failed: {0}" xml:space="preserve">
+    <value>فشل الاستيراد: {0}</value>
+  </data>
+  <data name="Imported {0} file(s)." xml:space="preserve">
+    <value>استُوردت {0} ملفات.</value>
+  </data>
   <data name="In progress" xml:space="preserve">
     <value>قيد التقدّم</value>
   </data>
@@ -652,6 +685,9 @@
   <data name="Join the community, enter competitions, and build pipelines." xml:space="preserve">
     <value>انضم إلى المجتمع، وادخل المسابقات، وابنِ المسارات.</value>
   </data>
+  <data name="KOC Studio" xml:space="preserve">
+    <value>استوديو KOC</value>
+  </data>
   <data name="KOC's AI &amp; ML workspace." xml:space="preserve">
     <value>مساحة KOC للذكاء الاصطناعي وتعلُّم الآلة.</value>
   </data>
@@ -669,6 +705,9 @@
   </data>
   <data name="Language" xml:space="preserve">
     <value>اللغة</value>
+  </data>
+  <data name="Language saved — restart KOC Studio to apply it." xml:space="preserve">
+    <value>حُفظت اللغة — أعد تشغيل استوديو KOC لتطبيقها.</value>
   </data>
   <data name="Leaderboard" xml:space="preserve">
     <value>لوحة الصدارة</value>
@@ -922,6 +961,9 @@
   <data name="Open" xml:space="preserve">
     <value>افتح</value>
   </data>
+  <data name="Open folder" xml:space="preserve">
+    <value>افتح المجلد</value>
+  </data>
   <data name="Open the &lt;b&gt;Host&lt;/b&gt; tab to upload &lt;b&gt;training&lt;/b&gt;, &lt;b&gt;evaluation&lt;/b&gt;, and the &lt;b&gt;hidden answer key&lt;/b&gt;." xml:space="preserve">
     <value>افتح تبويب &lt;b&gt;الاستضافة&lt;/b&gt; لرفع بيانات &lt;b&gt;التدريب&lt;/b&gt; و&lt;b&gt;التقييم&lt;/b&gt; و&lt;b&gt;مفتاح الإجابات المخفي&lt;/b&gt;.</value>
   </data>
@@ -1105,6 +1147,9 @@
   <data name="See how machine-learning skills are building across your department on KOC data — who is learning, what teams are working on, and models coming into use." xml:space="preserve">
     <value>اطّلع على نمو مهارات تعلُّم الآلة في دائرتك على بيانات KOC — من يتعلّم، وما الذي تعمل عليه الفرق، والنماذج التي دخلت الاستخدام.</value>
   </data>
+  <data name="Select a dataset to preview it." xml:space="preserve">
+    <value>اختر مجموعة بيانات لمعاينتها.</value>
+  </data>
   <data name="Select a discussion to read and reply." xml:space="preserve">
     <value>اختر نقاشًا لقراءته والرد عليه.</value>
   </data>
@@ -1122,6 +1167,9 @@
   </data>
   <data name="Set reveal" xml:space="preserve">
     <value>حدّد الكشف</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>الإعدادات</value>
   </data>
   <data name="Setup saved" xml:space="preserve">
     <value>حُفظت الإعدادات</value>
@@ -1281,6 +1329,9 @@
   </data>
   <data name="This discussion is locked — no new replies." xml:space="preserve">
     <value>هذا النقاش مقفل — لا ردود جديدة.</value>
+  </data>
+  <data name="This file is empty or unreadable." xml:space="preserve">
+    <value>هذا الملف فارغ أو غير قابل للقراءة.</value>
   </data>
   <data name="This is the first account on this installation, so it becomes the platform administrator." xml:space="preserve">
     <value>هذا أول حساب في هذا التنصيب، ولذلك سيصبح مشرف المنصة.</value>
@@ -1624,6 +1675,12 @@
   <data name="{0} bbl per scored submission; your first ever earns the {1} badge (+{2} bbl)." xml:space="preserve">
     <value>{0} برميل لكل مشاركة مُقيَّمة؛ وأول مشاركة لك تمنحك وسام {1} (+{2} برميل).</value>
   </data>
+  <data name="{0} columns · first {1} rows shown" xml:space="preserve">
+    <value>{0} عمود · تُعرض أول {1} صفوف</value>
+  </data>
+  <data name="{0} is larger than 512 MB and was skipped." xml:space="preserve">
+    <value>{0} أكبر من 512 ميغابايت وتم تخطّيه.</value>
+  </data>
   <data name="{0} lessons" xml:space="preserve">
     <value>{0} دروس</value>
   </data>
@@ -1656,6 +1713,9 @@
   </data>
   <data name="{0}m ago" xml:space="preserve">
     <value>قبل {0} دقيقة</value>
+  </data>
+  <data name="“{0}” will be removed from this machine. Workflows that use it will stop resolving." xml:space="preserve">
+    <value>سيُحذف “{0}” من هذا الجهاز. ومسارات العمل التي تستخدمه لن تعود تجده.</value>
   </data>
   <data name="…or import from URL" xml:space="preserve">
     <value>…أو استورد من رابط</value>
