@@ -12,8 +12,16 @@ namespace Beep.KocAiCommunity.WinForms;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static int Main(string[] args)
     {
+        // Training runs as a child of this same executable. One binary to sign and ship, and no way for
+        // the app and its trainer to drift apart. Checked before anything else — a training child must
+        // not create a window, load MudBlazor, or touch the settings file.
+        if (args is [TrainingHost.CommandLineSwitch, var jobPath, ..])
+        {
+            return TrainingHost.RunAsync(jobPath, Console.Out).GetAwaiter().GetResult();
+        }
+
         // The workspace path is needed before anything else, because that is where crashes are written.
         // Resolved without DI so a failure during composition still has somewhere to go.
         var workspace = LocalWorkspace.Default();
@@ -35,7 +43,7 @@ internal static class Program
         // 4. Without the WebView2 runtime the whole UI is a blank window. Say so and stop.
         if (!WebViewRuntimeCheck.EnsureAvailable())
         {
-            return;
+            return 1;
         }
 
         // 5. Repair what is repairable; refuse to start on a workspace that cannot be written to,
@@ -47,7 +55,7 @@ internal static class Program
             MessageBox.Show(
                 report.BlockedReason,
                 "KOC Studio — workspace unavailable", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return;
+            return 1;
         }
 
         var services = new ServiceCollection();
@@ -77,7 +85,7 @@ internal static class Program
         // for a directory-API implementation later to fill in department/profile info.
         services.AddSingleton<IEnvironmentUserProvider, WindowsEnvironmentUserProvider>();
         services.AddSingleton<SignedInUser>();
-        services.AddKocLocalStudio(apiBaseUrl, workspace);
+        services.AddKocLocalStudio(apiBaseUrl, workspace, settings.TrainingLimits());
 
         using var provider = services.BuildServiceProvider();
 
@@ -122,5 +130,6 @@ internal static class Program
         // Fully qualified: the Beep.KocAiCommunity.Application namespace shadows WinForms' Application here.
         System.Windows.Forms.Application.Run(new MainForm(provider));
         log.LogInformation("KOC Studio closed.");
+        return 0;
     }
 }

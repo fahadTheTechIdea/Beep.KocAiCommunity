@@ -138,18 +138,54 @@ marked. This is the tuning loop, and without it every comparison is done from me
 | `WinForms/Components/Settings.razor` | Limits, with guidance |
 | `ML/AutoMlTrainer.cs` | Accept limits and a progress callback; honour cancellation |
 
+## What implementation changed — training moved out of process
+
+**Decided 2026-08-02, on a measurement rather than a preference.** The design above assumed the
+in-process route: hand AutoML a cancellation token and it stops. That was tried first and it does not
+work in this ML.NET version.
+
+What was measured:
+
+- `MLContext.CancelExecution` is **not public** here, so it cannot be registered against a token.
+- Setting `ExperimentSettings.CancellationToken` does **not** stop a running experiment. A thirty-second
+  experiment cancelled after one second still ran the full thirty seconds and returned normally.
+- It does change one thing, and for the worse: with a token set, an expired time budget **throws**
+  `TimeoutException` when no trial has finished, instead of returning the best trial so far. That
+  turned the API's own 8-second budget into an outright failure on a loaded machine — caught by five
+  integration tests, and the reason the change was reverted rather than kept "for the desktop only".
+
+So in-process, **Stop cannot stop and a memory ceiling cannot be enforced**. Both would have been
+buttons that lie, and the memory ceiling is an acceptance criterion, not a nicety.
+
+The route taken is this document's own stated fallback — *"if leaks persist, consider a child process —
+heavier, but it can be killed"*:
+
+- `KocStudio.exe --train <job.json>` runs one experiment and prints a JSON line per trial, then a result
+  line, to stdout (`TrainingHost`). Self-hosting means one binary to sign in Phase 07 and no way for the
+  app and its trainer to drift apart.
+- `LocalTrainingService` starts it, reads the lines, samples **the child's** working set, and kills the
+  process tree on Stop or on the ceiling. Killing it returns the memory to the machine, which is exactly
+  what in-process could not do.
+- `AutoMlTrainer` is left untouched, so the server keeps its forgiving "best trial so far" behaviour.
+
+**The cost, stated plainly:** a stopped or memory-capped run keeps its recorded attempts but **no
+model** — the child is killed before it serializes one. The design table above promised "best result
+*so far* is offered". That is not achievable while the only stop available is a kill. The UI says so
+before you press Stop, rather than after. Recovering it would mean the child writing its best model
+after every improvement; worth doing if anyone asks for it, not worth it unasked.
+
 ## Acceptance criteria
 
-- [ ] AutoML page: pick a local dataset, name the target, pick a task, train — no graph needed
-- [ ] Progress shows trials as they complete, with the best so far
-- [ ] **Stop** moves to "finishing the current trial…", then returns the best completed result
-- [ ] A run that would exceed the memory ceiling stops cleanly and says so — it does not take the app down
-- [ ] The time budget is honoured within a few seconds
-- [ ] Every run appears in history with its metrics and its dataset hash
-- [ ] History survives a restart
-- [ ] Two runs can be compared side by side
-- [ ] A run whose dataset has since changed is marked as such
-- [ ] Scratch files are cleaned up after a run, and orphans are swept at launch
+- [x] AutoML page: pick a local dataset, name the target, pick a task, train — no graph needed
+- [x] Progress shows trials as they complete, with the best so far
+- [x] **Stop** moves to a distinct "stopping" state — but returns **no model**, see above
+- [x] A run that would exceed the memory ceiling stops cleanly and says so — it does not take the app down
+- [x] The time budget is honoured within a few seconds
+- [x] Every run appears in history with its metrics and its dataset hash
+- [x] History survives a restart
+- [ ] Two runs can be compared side by side — **not built**
+- [x] A run whose dataset has since changed is marked as such
+- [x] Scratch files are cleaned up after a run, and orphans are swept at launch (Phase 01's sweep)
 
 ## Tests
 

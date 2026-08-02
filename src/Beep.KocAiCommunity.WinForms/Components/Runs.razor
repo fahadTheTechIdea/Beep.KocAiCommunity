@@ -1,0 +1,241 @@
+@page "/runs"
+@page "/runs/{RunId}"
+@using System.Globalization
+@using Beep.KocAiCommunity.Desktop.Local
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject LocalRunStore Store
+@inject LocalDatasetStore Datasets
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IStringLocalizer<Strings> L
+
+@* Every run this machine has done, kept. Results used to live in the designer's log pane and vanish
+   the moment you navigated away, which made comparing two attempts a matter of memory. *@
+
+<div class="d-flex align-center justify-space-between mb-1">
+    <MudText Typo="Typo.h5">@L["Run history"]</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+               Href="/automl">@L["Train a model"]</MudButton>
+</div>
+
+<MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;max-width:80ch;">
+    @L["Kept on this machine, with the settings each run used. Delete a run to reclaim its disk space."]
+</MudText>
+
+@if (_runs.Count == 0)
+{
+    <MudPaper Class="pa-8" Outlined="true" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="mb-1">@L["No runs yet"]</MudText>
+        <MudText Typo="Typo.body2" Style="opacity:.75;">@L["Train a model and it will be recorded here."]</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="4">
+        <MudItem xs="12" md="5">
+            @foreach (var r in _runs)
+            {
+                <MudPaper Class="pa-3 mb-2" Outlined="true"
+                          Style="@(r.Id == _selected?.Id ? "border-color:var(--mud-palette-primary);cursor:pointer;" : "cursor:pointer;")"
+                          @onclick="() => Select(r)">
+                    <div class="d-flex justify-space-between align-center gap-2">
+                        <MudText Typo="Typo.subtitle2">@r.DatasetName</MudText>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@ColorFor(r.Outcome)">
+                            @OutcomeLabel(r.Outcome)
+                        </MudChip>
+                    </div>
+                    <MudText Typo="Typo.caption" Style="opacity:.7;">
+                        @Local(r.StartedUtc) · @r.TargetColumn
+                        @if (r.PrimaryValue is { } v)
+                        {
+                            <span> · @r.PrimaryMetric @v.ToString("0.####")</span>
+                        }
+                    </MudText>
+                </MudPaper>
+            }
+            <MudText Typo="Typo.caption" Style="opacity:.6;">
+                @L["{0} MB on disk", Math.Round(Store.TotalBytes() / 1024d / 1024d, 1)]
+            </MudText>
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            @if (_selected is null)
+            {
+                <MudPaper Class="pa-6" Outlined="true" Style="text-align:center;">
+                    <MudText Typo="Typo.body2">@L["Select a run to see its details."]</MudText>
+                </MudPaper>
+            }
+            else
+            {
+                var r = _selected;
+                <MudPaper Class="pa-4" Outlined="true">
+                    <div class="d-flex justify-space-between align-start mb-3">
+                        <div>
+                            <MudText Typo="Typo.subtitle1">@r.DatasetName</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:.7;">
+                                @Local(r.StartedUtc) · @L["{0}s", r.DurationSeconds] · @L["{0} attempts", r.TrialsCompleted]
+                            </MudText>
+                        </div>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                       OnClick="Remove" aria-label="@L["Delete"]" />
+                    </div>
+
+                    @* The whole point of storing the hash. A run whose data has since been replaced is
+                       not reproducible, and a history that stays quiet about that is misleading. *@
+                    @if (_datasetChanged)
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-3">
+                            @L["The dataset has changed since this run. Training it again will not give the same result."]
+                        </MudAlert>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(r.Error))
+                    {
+                        <MudAlert Severity="@(r.Outcome == LocalRunOutcome.Failed ? Severity.Error : Severity.Info)"
+                                  Variant="Variant.Text" Dense="true" Class="mb-3">
+                            @r.Error
+                        </MudAlert>
+                    }
+
+                    <MudSimpleTable Dense="true" Style="min-width:100%;" Class="mb-3">
+                        <tbody>
+                            <tr><td>@L["Predicting"]</td><td>@r.TargetColumn</td></tr>
+                            <tr><td>@L["Kind of prediction"]</td><td>@r.Task</td></tr>
+                            @if (r.Algorithm is { Length: > 0 })
+                            {
+                                <tr><td>@L["Algorithm"]</td><td>@r.Algorithm</td></tr>
+                            }
+                            @if (r.PrimaryValue is { } primary)
+                            {
+                                <tr>
+                                    <td>@r.PrimaryMetric</td>
+                                    <td style="font-variant-numeric:tabular-nums;">@primary.ToString("0.####")</td>
+                                </tr>
+                            }
+                            @if (r.SecondaryValue is { } secondary)
+                            {
+                                <tr>
+                                    <td>@r.SecondaryMetric</td>
+                                    <td style="font-variant-numeric:tabular-nums;">@secondary.ToString("0.####")</td>
+                                </tr>
+                            }
+                            <tr><td>@L["Rows"]</td><td style="font-variant-numeric:tabular-nums;">@r.RowCount</td></tr>
+                            <tr><td>@L["Limits used"]</td><td>@L["{0}s · {1} MB", r.LimitSeconds, r.LimitMemoryMb]</td></tr>
+                            <tr><td>@L["Model saved"]</td><td>@(r.HasModel ? L["Yes"] : L["No"])</td></tr>
+                        </tbody>
+                    </MudSimpleTable>
+
+                    @if (_log is { Length: > 0 })
+                    {
+                        <MudExpansionPanels Elevation="0">
+                            <MudExpansionPanel Text="@L["Attempt log"]">
+                                <pre style="max-height:320px;overflow:auto;font-size:.8rem;margin:0;" dir="ltr">@_log</pre>
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+                    }
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public string? RunId { get; set; }
+
+    private IReadOnlyList<LocalRun> _runs = [];
+    private LocalRun? _selected;
+    private string? _log;
+    private bool _datasetChanged;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _runs = Store.List();
+
+        var wanted = RunId is { Length: > 0 } ? _runs.FirstOrDefault(r => r.Id == RunId) : _selected;
+        if (wanted is not null && wanted.Id != _selected?.Id)
+        {
+            await Select(wanted);
+        }
+        else if (_selected is null && _runs.Count > 0 && RunId is null)
+        {
+            await Select(_runs[0]);
+        }
+    }
+
+    private async Task Select(LocalRun run)
+    {
+        _selected = run;
+        _log = Store.ReadTrialLog(run.Id);
+        _datasetChanged = await HasDatasetChanged(run);
+    }
+
+    /// <summary>
+    /// True only when we can prove it changed. A dataset that has been deleted, or a run recorded without
+    /// a hash, is unknown rather than changed — and claiming otherwise would be its own kind of wrong.
+    /// </summary>
+    private async Task<bool> HasDatasetChanged(LocalRun run)
+    {
+        if (run.DatasetHash is null || !Guid.TryParse(run.DatasetId, out var id))
+        {
+            return false;
+        }
+
+        var current = await LocalRunStore.HashFileAsync(Datasets.PathFor(id));
+        return current is not null && current != run.DatasetHash;
+    }
+
+    private async Task Remove()
+    {
+        if (_selected is not { } run)
+        {
+            return;
+        }
+
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            L["Delete this run?"],
+            L["Its metrics and saved model are removed from this machine."],
+            yesText: L["Delete"], cancelText: L["Cancel"]);
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        Store.Delete(run.Id);
+        Snackbar.Add(L["Run deleted."], Severity.Success);
+        _selected = null;
+        _log = null;
+        _runs = Store.List();
+
+        // Drop the id from the URL, or the deleted run is re-selected on the next render.
+        if (RunId is { Length: > 0 })
+        {
+            Nav.NavigateTo("/runs");
+        }
+    }
+
+    /// <summary>
+    /// Shown in the machine's own time — a run is a thing that happened at this desk. The formatting
+    /// culture stays pinned, as it is everywhere else, so the numbers read the same in both languages.
+    /// </summary>
+    private static string Local(DateTime utc) =>
+        utc.ToLocalTime().ToString("dd MMM HH:mm", CultureInfo.CurrentCulture);
+
+    private string OutcomeLabel(LocalRunOutcome outcome) => outcome switch
+    {
+        LocalRunOutcome.Completed => L["Finished"],
+        LocalRunOutcome.Stopped => L["Stopped"],
+        LocalRunOutcome.OutOfBudget => L["Hit the limit"],
+        _ => L["Failed"],
+    };
+
+    private static Color ColorFor(LocalRunOutcome outcome) => outcome switch
+    {
+        LocalRunOutcome.Completed => Color.Success,
+        LocalRunOutcome.Failed => Color.Error,
+        _ => Color.Warning,
+    };
+}

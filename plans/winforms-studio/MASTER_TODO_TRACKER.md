@@ -1,7 +1,7 @@
 # KOC Studio (WinForms Desktop) — Master Todo Tracker
 
 **Plan folder:** `plans/winforms-studio/`
-**Status:** 🟢 BUILDING — Phase 01 code complete (2026-08-02), Phase 02 partly shipped; 03–08 design-only
+**Status:** 🟢 BUILDING — Phases 01 and 04 code complete (2026-08-02), Phase 02 partly shipped; 03, 05–08 design-only
 **Baseline audited:** 2026-08-02 against `src/Beep.KocAiCommunity.WinForms`, `src/Beep.KocAiCommunity.Desktop.Local`, `src/Beep.KocAiCommunity.Ui.Studio` at commit `e3ae815`
 **Related plans:** `plans/koc-ai-community-platform/19_WINFORMS_DESKTOP_STUDIO.md` and `19a–19d` — those describe the *original* desktop build. This folder is its evolution into a product an engineer can live in.
 
@@ -26,8 +26,8 @@ do a day's work in it without hitting a wall".
 | Workflow save / open / publish (local JSON) | ✅ Works |
 | Competitions browse + submit | ✅ Works when online |
 | **Dataset import** | ✅ Shipped 2026-08-02 — was the blocking gap |
-| **AutoML (CSV → best model, no graph)** | ❌ `IMlTrainer` is not registered in desktop DI |
-| **Run history** | ❌ Results are logged in the designer and lost on navigation |
+| **AutoML (CSV → best model, no graph)** | ✅ Shipped 2026-08-02 — trains in a killable child process |
+| **Run history** | ✅ Shipped 2026-08-02 — files in the workspace, with the dataset hash |
 | **Model registry / inference** | ❌ No local surface at all |
 | **Offline competition queue** | ❌ Submitting offline just fails |
 | **Packaging / updates** | ❌ No installer, no update path |
@@ -69,12 +69,19 @@ do a day's work in it without hitting a wall".
   - [ ] Undo/redo on the canvas
   - [ ] Run pane: per-node timing and row counts, kept after navigation
 
-- [ ] **Phase 04 — Local AutoML and run history** (`04_LOCAL_AUTOML_AND_RUN_HISTORY.md`)
-  - [ ] Register `IMlTrainer` in desktop DI; an AutoML page (CSV → best model)
-  - [ ] Hard memory ceiling and time budget — AutoML grows its models until stopped
-  - [ ] Real cancellation, honouring `MLContext.CancelExecution` semantics
-  - [ ] Live trial progress
-  - [ ] Persisted local run history with metrics and lineage
+- [ ] **Phase 04 — Local AutoML and run history** (`04_LOCAL_AUTOML_AND_RUN_HISTORY.md`) — 🟡 CODE COMPLETE
+  - [x] Register `IMlTrainer` in desktop DI; an AutoML page (CSV → best model)
+  - [x] Hard memory ceiling and time budget — AutoML grows its models until stopped
+  - [x] Real cancellation — **training moved to a child process**; in-process cancellation was measured
+        and does not work in this ML.NET version. See the phase doc for what was measured and what it cost
+  - [x] Live trial progress, streamed from the child
+  - [x] Persisted local run history with metrics, limits used, and the dataset content hash
+  - [x] Training limits shown and editable in Settings; Settings.razor fully localized while there
+  - [ ] **Run comparison not built** — the one scoped item left
+  - [ ] **A stopped run keeps no model.** The child is killed, so it never serializes one. The UI says
+        so up front; recovering it means saving the best model after each improvement
+  - [ ] **Hand-verification outstanding** — a real AutoML run, Stop, and the ceiling have not been
+        exercised in a running window. Same bar as Phase 01
 
 - [ ] **Phase 05 — Local model registry and inference** (`05_LOCAL_MODEL_REGISTRY_AND_INFERENCE.md`)
   - [ ] Save a trained model to the workspace with its metrics and source run

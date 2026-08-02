@@ -1,0 +1,286 @@
+@page "/automl"
+@using Beep.KocAiCommunity.Application.ML
+@using Beep.KocAiCommunity.Contracts.Datasets
+@using Beep.KocAiCommunity.Desktop.Local
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@implements IDisposable
+@inject LocalDatasetStore Datasets
+@inject LocalTrainingService Training
+@inject LocalTrainingLimits Limits
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<Strings> L
+
+@* Pick a file, pick a column, get a model. No graph to build — the shortest path from a CSV to a
+   number, for someone who has not learned the designer yet. *@
+
+<div class="d-flex align-center justify-space-between mb-1">
+    <MudText Typo="Typo.h5">@L["Train a model"]</MudText>
+    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History" Href="/runs">@L["Run history"]</MudButton>
+</div>
+
+<MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;max-width:80ch;">
+    @L["Choose a dataset and the column you want to predict. Several algorithms are tried and the best one wins. Everything runs on this machine."]
+</MudText>
+
+@if (_datasets.Count == 0)
+{
+    <MudPaper Class="pa-8" Outlined="true" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.Dataset" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="mb-1">@L["No datasets yet"]</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;">
+            @L["Import a CSV first — training needs something to learn from."]
+        </MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/datasets">@L["Go to datasets"]</MudButton>
+    </MudPaper>
+}
+else
+{
+    <MudGrid Spacing="4">
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudSelect T="Guid" Value="_datasetId" ValueChanged="OnDatasetChanged" Label="@L["Dataset"]"
+                           Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Disabled="_running">
+                    @foreach (var d in _datasets)
+                    {
+                        <MudSelectItem T="Guid" Value="@d.Id">@d.Name</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect T="string" @bind-Value="_target" Label="@L["Column to predict"]" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Class="mb-3" Disabled="_running || _columns.Count == 0">
+                    @foreach (var c in _columns)
+                    {
+                        <MudSelectItem T="string" Value="@c">@c</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect T="MlTaskType" @bind-Value="_task" Label="@L["Kind of prediction"]" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Disabled="_running">
+                    @foreach (var t in AutoMlTasks)
+                    {
+                        <MudSelectItem T="MlTaskType" Value="@t">@L[MlTaskLabels.Display(t.ToString())]</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudText Typo="Typo.caption" Class="d-block mt-1 mb-3" Style="opacity:.7;">
+                    @L["Forecasting and anomaly detection need a chronological or unsupervised step — build those in the designer."]
+                </MudText>
+
+                @* The limits are stated up front rather than only in the message that stops a run.
+                   Somebody watching a run stop at four minutes deserves to have known it would. *@
+                <MudAlert Severity="Severity.Normal" Variant="Variant.Text" Dense="true" Class="mb-3">
+                    @L["Stops after {0} minutes or {1} MB of memory, whichever comes first. Change this in Settings.",
+                       Math.Round(Limits.MaxSecondsPerExperiment / 60.0, 1), Limits.MaxMemoryMb]
+                </MudAlert>
+
+                @if (_running)
+                {
+                    <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.Stop" OnClick="Stop"
+                               Disabled="@(_progress?.Phase == TrainingPhase.Stopping)">
+                        @(_progress?.Phase == TrainingPhase.Stopping ? L["Stopping…"] : L["Stop"])
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="Start"
+                               Disabled="@(string.IsNullOrEmpty(_target))">
+                        @L["Start training"]
+                    </MudButton>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            @if (_progress is null)
+            {
+                <MudPaper Class="pa-6" Outlined="true" Style="text-align:center;">
+                    <MudText Typo="Typo.body2" Style="opacity:.75;">
+                        @L["Progress appears here once a run starts."]
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                var p = _progress;
+                <MudPaper Class="pa-4" Outlined="true">
+                    <div class="d-flex justify-space-between align-center mb-2">
+                        <MudText Typo="Typo.subtitle1">@PhaseLabel(p.Phase)</MudText>
+                        <MudText Typo="Typo.caption" Style="opacity:.7;">
+                            @L["{0}s elapsed · {1} MB", p.ElapsedSeconds, p.WorkingSetMb]
+                        </MudText>
+                    </div>
+
+                    @if (p.Phase is TrainingPhase.Running or TrainingPhase.Stopping)
+                    {
+                        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+                    }
+
+                    @* Say what stopping costs before it costs it. Training runs in its own process and
+                       is ended by closing it, so the attempts below survive and the model does not. *@
+                    @if (p.Phase == TrainingPhase.Stopping)
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Text" Dense="true" Class="mb-3">
+                            @L["Stopping. The attempts below are kept; no model is saved from a run that was stopped."]
+                        </MudAlert>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(p.Message))
+                    {
+                        <MudText Typo="Typo.body2" Class="mb-3">@p.Message</MudText>
+                    }
+
+                    @if (p.Best is { } best)
+                    {
+                        <MudPaper Class="pa-3 mb-3" Elevation="0" Style="background:var(--mud-palette-background-grey);">
+                            <MudText Typo="Typo.caption" Style="opacity:.7;">@L["Best so far"]</MudText>
+                            <MudText Typo="Typo.h6">@best.TrainerName</MudText>
+                            <MudText Typo="Typo.body2">@best.MetricName @best.MetricValue.ToString("0.####")</MudText>
+                        </MudPaper>
+                    }
+
+                    @if (p.Trials.Count > 0)
+                    {
+                        <MudText Typo="Typo.subtitle2" Class="mb-1">
+                            @L["{0} attempts", p.Trials.Count]
+                        </MudText>
+                        <div style="max-height:340px;overflow-y:auto;">
+                            <MudSimpleTable Dense="true" Striped="true" Style="min-width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>@L["Algorithm"]</th>
+                                        <th style="text-align:end;">@L["Score"]</th>
+                                        <th style="text-align:end;">@L["Seconds"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var t in p.Trials.Reverse())
+                                    {
+                                        <tr>
+                                            <td>@t.TrialNumber</td>
+                                            <td>@t.TrainerName</td>
+                                            <td style="text-align:end;font-variant-numeric:tabular-nums;">@t.MetricValue.ToString("0.####")</td>
+                                            <td style="text-align:end;font-variant-numeric:tabular-nums;">@t.RuntimeSeconds.ToString("0.0")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        </div>
+                    }
+
+                    @if (p.Phase == TrainingPhase.Done && _finished is { } run)
+                    {
+                        <MudButton Class="mt-3" Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.History"
+                                   OnClick="@(() => Nav.NavigateTo($"/runs/{run.Id}"))">
+                            @L["Open this run"]
+                        </MudButton>
+                    }
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    /// <summary>
+    /// What AutoML itself can search. Forecasting needs a chronological split and anomaly detection is
+    /// unsupervised — both are node-graph shapes, and offering them here would silently train something
+    /// else and report a number for it.
+    /// </summary>
+    private static readonly MlTaskType[] AutoMlTasks =
+        [MlTaskType.BinaryClassification, MlTaskType.MulticlassClassification, MlTaskType.Regression];
+
+    private IReadOnlyList<DatasetDto> _datasets = [];
+    private IReadOnlyList<string> _columns = [];
+    private Guid _datasetId;
+    private string _target = "";
+    private MlTaskType _task = MlTaskType.BinaryClassification;
+
+    private TrainingProgress? _progress;
+    private LocalRun? _finished;
+    private bool _running;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Training.Progress += OnProgress;
+        _running = Training.IsRunning;
+
+        _datasets = Datasets.List();
+        if (_datasets.Count > 0)
+        {
+            await OnDatasetChanged(_datasets[0].Id);
+        }
+    }
+
+    public void Dispose() => Training.Progress -= OnProgress;
+
+    /// <summary>Fires from the training thread and the watchdog timer, so it hops to the renderer.</summary>
+    private void OnProgress(TrainingProgress progress) =>
+        InvokeAsync(() =>
+        {
+            _progress = progress;
+            _running = progress.Phase is TrainingPhase.Running or TrainingPhase.Stopping;
+            StateHasChanged();
+        });
+
+    private async Task OnDatasetChanged(Guid id)
+    {
+        _datasetId = id;
+        var (header, _, _) = await Datasets.PeekAsync(id);
+        _columns = header;
+
+        // Default to the last column: the convention in nearly every teaching dataset, including the
+        // sample this app seeds on first run.
+        _target = _columns.Count > 0 ? _columns[^1] : "";
+    }
+
+    private async Task Start()
+    {
+        _finished = null;
+        _running = true;
+
+        try
+        {
+            _finished = await Training.TrainAsync(_datasetId, _target, _task);
+            Snackbar.Add(OutcomeMessage(_finished), SeverityFor(_finished.Outcome));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["Training could not start: {0}", ex.Message], Severity.Error);
+        }
+        finally
+        {
+            _running = false;
+        }
+    }
+
+    private void Stop() => Training.Stop();
+
+    private string OutcomeMessage(LocalRun run) => run.Outcome switch
+    {
+        LocalRunOutcome.Completed => L["Done — {0} {1}", run.PrimaryMetric ?? "", (run.PrimaryValue ?? 0).ToString("0.####")],
+        LocalRunOutcome.Stopped => L["Stopped. The attempts so far are saved in the run history."],
+        LocalRunOutcome.OutOfBudget => L["Stopped at the memory limit. Raise it in Settings, or train on fewer columns."],
+        _ => L["Training failed: {0}", run.Error ?? ""],
+    };
+
+    private static Severity SeverityFor(LocalRunOutcome outcome) => outcome switch
+    {
+        LocalRunOutcome.Completed => Severity.Success,
+        LocalRunOutcome.Failed => Severity.Error,
+        _ => Severity.Warning,
+    };
+
+    private string PhaseLabel(TrainingPhase phase) => phase switch
+    {
+        TrainingPhase.Running => L["Training"],
+        TrainingPhase.Stopping => L["Stopping…"],
+        TrainingPhase.Done => L["Finished"],
+        _ => L["Not started"],
+    };
+}

@@ -61,15 +61,6 @@
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
   </resheader>
-  <resheader name="version">
-    <value>2.0</value>
-  </resheader>
-  <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
-  <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
   <data name=" · {0} {1} the leader ({2})." xml:space="preserve">
     <value> · {0} {1} المتصدّر ({2}).</value>
   </data>
@@ -100,8 +91,14 @@
   <data name="A reveal date creates suspense and prevents last-minute gaming." xml:space="preserve">
     <value>تاريخ الكشف يخلق التشويق ويمنع التلاعب في اللحظات الأخيرة.</value>
   </data>
+  <data name="A run stops when it reaches either limit. Raise them for a bigger dataset; lower them if your machine struggles while training." xml:space="preserve">
+    <value>يتوقّف التشغيل عند بلوغ أيٍّ من الحدّين. ارفعهما لمجموعة بيانات أكبر، وأخفضهما إذا تعثّر جهازك أثناء التدريب.</value>
+  </data>
   <data name="A specific title beats a generic one — name the asset and the outcome." xml:space="preserve">
     <value>العنوان المحدّد أفضل من العام — اذكر الأصل والنتيجة.</value>
+  </data>
+  <data name="API base URL" xml:space="preserve">
+    <value>عنوان واجهة البرمجة الأساسي</value>
   </data>
   <data name="About" xml:space="preserve">
     <value>نبذة</value>
@@ -111,6 +108,9 @@
   </data>
   <data name="Achievements" xml:space="preserve">
     <value>الإنجازات</value>
+  </data>
+  <data name="Act as (dev override)" xml:space="preserve">
+    <value>التصرّف بصفة (تجاوز للتطوير)</value>
   </data>
   <data name="Acting as (dev user)" xml:space="preserve">
     <value>تعمل بصفة (مستخدم تطوير)</value>
@@ -208,6 +208,9 @@
   <data name="Attachments" xml:space="preserve">
     <value>المرفقات</value>
   </data>
+  <data name="Attempt log" xml:space="preserve">
+    <value>سجل المحاولات</value>
+  </data>
   <data name="AutoML" xml:space="preserve">
     <value>التعلُّم الآلي التلقائي</value>
   </data>
@@ -250,6 +253,15 @@
   <data name="Best score" xml:space="preserve">
     <value>أفضل نتيجة</value>
   </data>
+  <data name="Best so far" xml:space="preserve">
+    <value>الأفضل حتى الآن</value>
+  </data>
+  <data name="Between 10 seconds and 1 hour." xml:space="preserve">
+    <value>بين 10 ثوانٍ وساعة واحدة.</value>
+  </data>
+  <data name="Between 512 MB and 16 GB. This machine has {0} MB in use right now." xml:space="preserve">
+    <value>بين 512 ميجابايت و16 جيجابايت. يستخدم هذا الجهاز {0} ميجابايت حاليًا.</value>
+  </data>
   <data name="Binary classification" xml:space="preserve">
     <value>تصنيف ثنائي</value>
   </data>
@@ -289,6 +301,9 @@
   <data name="Champions this month" xml:space="preserve">
     <value>أبطال هذا الشهر</value>
   </data>
+  <data name="Choose a dataset and the column you want to predict. Several algorithms are tried and the best one wins. Everything runs on this machine." xml:space="preserve">
+    <value>اختر مجموعة بيانات والعمود الذي تريد التنبؤ به. تُجرَّب عدة خوارزميات ويفوز أفضلها. كل شيء يعمل على هذا الجهاز.</value>
+  </data>
   <data name="Choosing the task" xml:space="preserve">
     <value>اختيار المهمة</value>
   </data>
@@ -303,6 +318,9 @@
   </data>
   <data name="Column" xml:space="preserve">
     <value>العمود</value>
+  </data>
+  <data name="Column to predict" xml:space="preserve">
+    <value>العمود المراد التنبؤ به</value>
   </data>
   <data name="Community" xml:space="preserve">
     <value>المجتمع</value>
@@ -433,6 +451,9 @@
   <data name="Delete this dataset?" xml:space="preserve">
     <value>حذف مجموعة البيانات هذه؟</value>
   </data>
+  <data name="Delete this run?" xml:space="preserve">
+    <value>حذف هذا التشغيل؟</value>
+  </data>
   <data name="Delete thread" xml:space="preserve">
     <value>حذف النقاش</value>
   </data>
@@ -441,6 +462,9 @@
   </data>
   <data name="Demonstration environment" xml:space="preserve">
     <value>بيئة عرض تجريبية</value>
+  </data>
+  <data name="Department and profile details load from the KOC directory once its API is configured." xml:space="preserve">
+    <value>تُحمَّل تفاصيل الدائرة والملف الشخصي من دليل شركة نفط الكويت بمجرد إعداد واجهته البرمجية.</value>
   </data>
   <data name="Deploy" xml:space="preserve">
     <value>نشر</value>
@@ -463,6 +487,12 @@
   <data name="Designer" xml:space="preserve">
     <value>المصمّم</value>
   </data>
+  <data name="Detailed logging" xml:space="preserve">
+    <value>تسجيل مفصّل</value>
+  </data>
+  <data name="Diagnostics" xml:space="preserve">
+    <value>التشخيص</value>
+  </data>
   <data name="Directorate" xml:space="preserve">
     <value>الإدارة</value>
   </data>
@@ -474,6 +504,9 @@
   </data>
   <data name="Domain" xml:space="preserve">
     <value>المجال</value>
+  </data>
+  <data name="Done — {0} {1}" xml:space="preserve">
+    <value>تمّ — {0} {1}</value>
   </data>
   <data name="Download" xml:space="preserve">
     <value>تنزيل</value>
@@ -547,6 +580,9 @@
   <data name="Export" xml:space="preserve">
     <value>تصدير</value>
   </data>
+  <data name="Failed" xml:space="preserve">
+    <value>فشل</value>
+  </data>
   <data name="Fair play &amp; timing" xml:space="preserve">
     <value>العدالة والتوقيت</value>
   </data>
@@ -571,11 +607,20 @@
   <data name="Find a competition" xml:space="preserve">
     <value>ابحث عن مسابقة</value>
   </data>
+  <data name="Finished" xml:space="preserve">
+    <value>انتهى</value>
+  </data>
+  <data name="Stopping. The attempts below are kept; no model is saved from a run that was stopped." xml:space="preserve">
+    <value>جارٍ الإيقاف. المحاولات أدناه محفوظة؛ ولا يُحفظ نموذج من تشغيل تمّ إيقافه.</value>
+  </data>
   <data name="Follow how your team is learning machine learning on KOC data — progress across tracks, competitions entered, and the projects they build." xml:space="preserve">
     <value>تابع كيف يتعلّم فريقك تعلُّم الآلة على بيانات KOC — التقدّم في المسارات، والمسابقات التي دخلوها، والمشاريع التي يبنونها.</value>
   </data>
   <data name="Forecasting" xml:space="preserve">
     <value>تنبؤ زمني</value>
+  </data>
+  <data name="Forecasting and anomaly detection need a chronological or unsupervised step — build those in the designer." xml:space="preserve">
+    <value>التنبؤ الزمني ورصد الحالات غير الطبيعية يحتاجان إلى تقسيم زمني أو خطوة غير خاضعة للإشراف — ابنِهما في المصمّم.</value>
   </data>
   <data name="From training run" xml:space="preserve">
     <value>من تشغيلة تدريب</value>
@@ -594,6 +639,9 @@
   </data>
   <data name="Give kudos" xml:space="preserve">
     <value>أرسل تحية</value>
+  </data>
+  <data name="Go to datasets" xml:space="preserve">
+    <value>انتقل إلى مجموعات البيانات</value>
   </data>
   <data name="Good afternoon" xml:space="preserve">
     <value>طاب يومك</value>
@@ -631,6 +679,9 @@
   <data name="Hit &lt;b&gt;Activate&lt;/b&gt; to open submissions — it appears on everyone's leaderboard." xml:space="preserve">
     <value>اضغط &lt;b&gt;تفعيل&lt;/b&gt; لفتح باب المشاركة — عندها تظهر على لوحة صدارة الجميع.</value>
   </data>
+  <data name="Hit the limit" xml:space="preserve">
+    <value>بلغ الحدّ</value>
+  </data>
   <data name="Home" xml:space="preserve">
     <value>الرئيسية</value>
   </data>
@@ -652,11 +703,17 @@
   <data name="Id column" xml:space="preserve">
     <value>عمود المعرّف</value>
   </data>
+  <data name="Identity" xml:space="preserve">
+    <value>الهوية</value>
+  </data>
   <data name="Import" xml:space="preserve">
     <value>استيراد</value>
   </data>
   <data name="Import CSV" xml:space="preserve">
     <value>استورد ملف CSV</value>
+  </data>
+  <data name="Import a CSV first — training needs something to learn from." xml:space="preserve">
+    <value>استورد ملف CSV أولًا — التدريب يحتاج إلى بيانات يتعلّم منها.</value>
   </data>
   <data name="Import a CSV to build your first pipeline. Nothing leaves this machine." xml:space="preserve">
     <value>استورد ملف CSV لبناء أول مسار لك. لا شيء يغادر هذا الجهاز.</value>
@@ -679,6 +736,9 @@
   <data name="It may have been removed, or the link is out of date." xml:space="preserve">
     <value>ربما حُذفت، أو أن الرابط قديم.</value>
   </data>
+  <data name="Its metrics and saved model are removed from this machine." xml:space="preserve">
+    <value>ستُحذف مقاييسه ونموذجه المحفوظ من هذا الجهاز.</value>
+  </data>
   <data name="Join &amp; build your pipeline" xml:space="preserve">
     <value>انضم وابنِ مسارك</value>
   </data>
@@ -688,11 +748,23 @@
   <data name="KOC Studio" xml:space="preserve">
     <value>استوديو KOC</value>
   </data>
+  <data name="KOC Studio {0} · WebView2 {1}" xml:space="preserve">
+    <value>استوديو KOC {0} · WebView2 {1}</value>
+  </data>
+  <data name="KOC network" xml:space="preserve">
+    <value>شبكة شركة نفط الكويت</value>
+  </data>
   <data name="KOC's AI &amp; ML workspace." xml:space="preserve">
     <value>مساحة KOC للذكاء الاصطناعي وتعلُّم الآلة.</value>
   </data>
   <data name="Keeps the field fair — nobody can brute-force the leaderboard with hundreds of tries. 5 per day suits most challenges." xml:space="preserve">
     <value>يحفظ عدالة المنافسة — فلا أحد يستطيع اقتحام لوحة الصدارة بمئات المحاولات. وخمس محاولات يوميًا تناسب معظم التحديات.</value>
+  </data>
+  <data name="Kept on this machine, with the settings each run used. Delete a run to reclaim its disk space." xml:space="preserve">
+    <value>محفوظة على هذا الجهاز مع الإعدادات التي استخدمها كل تشغيل. احذف تشغيلًا لاستعادة مساحته على القرص.</value>
+  </data>
+  <data name="Kind of prediction" xml:space="preserve">
+    <value>نوع التنبؤ</value>
   </data>
   <data name="Kudos" xml:space="preserve">
     <value>تحية</value>
@@ -708,6 +780,9 @@
   </data>
   <data name="Language saved — restart KOC Studio to apply it." xml:space="preserve">
     <value>حُفظت اللغة — أعد تشغيل استوديو KOC لتطبيقها.</value>
+  </data>
+  <data name="Last workspace check" xml:space="preserve">
+    <value>آخر فحص لمساحة العمل</value>
   </data>
   <data name="Leaderboard" xml:space="preserve">
     <value>لوحة الصدارة</value>
@@ -739,11 +814,20 @@
   <data name="Learning tracks" xml:space="preserve">
     <value>المسارات التعليمية</value>
   </data>
+  <data name="Leave as the signed-in user in production. The dev personas are for testing roles against a dev API." xml:space="preserve">
+    <value>اتركه على المستخدم المسجَّل في بيئة الإنتاج. شخصيات التطوير مخصّصة لاختبار الأدوار مقابل واجهة برمجة تطويرية.</value>
+  </data>
   <data name="Level {0} · {1}" xml:space="preserve">
     <value>المستوى {0} · {1}</value>
   </data>
   <data name="Lifecycle" xml:space="preserve">
     <value>دورة الحياة</value>
+  </data>
+  <data name="Limits saved — they apply to the next run." xml:space="preserve">
+    <value>حُفظت الحدود — تُطبَّق على التشغيل التالي.</value>
+  </data>
+  <data name="Limits used" xml:space="preserve">
+    <value>الحدود المستخدمة</value>
   </data>
   <data name="Live leaderboard" xml:space="preserve">
     <value>لوحة الصدارة المباشرة</value>
@@ -778,6 +862,9 @@
   <data name="Mean" xml:space="preserve">
     <value>المتوسط</value>
   </data>
+  <data name="Memory ceiling (MB)" xml:space="preserve">
+    <value>سقف الذاكرة (ميجابايت)</value>
+  </data>
   <data name="Mention" xml:space="preserve">
     <value>إشارة</value>
   </data>
@@ -792,6 +879,9 @@
   </data>
   <data name="Model registry" xml:space="preserve">
     <value>سجل النماذج</value>
+  </data>
+  <data name="Model saved" xml:space="preserve">
+    <value>حُفظ النموذج</value>
   </data>
   <data name="Models" xml:space="preserve">
     <value>النماذج</value>
@@ -846,6 +936,9 @@
   </data>
   <data name="Next" xml:space="preserve">
     <value>التالي</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>لا</value>
   </data>
   <data name="No Barrels earned in this period yet — be the first!" xml:space="preserve">
     <value>لم تُكسب براميل في هذه الفترة بعد — كن الأول!</value>
@@ -910,6 +1003,9 @@
   <data name="No reveal date = a simple, always-live leaderboard." xml:space="preserve">
     <value>بلا تاريخ كشف = لوحة صدارة بسيطة ومباشرة دائمًا.</value>
   </data>
+  <data name="No runs yet" xml:space="preserve">
+    <value>لا تشغيلات بعد</value>
+  </data>
   <data name="No runs yet. Training a model from the Studio queues a run here." xml:space="preserve">
     <value>لا تشغيلات بعد. تدريب نموذج من الاستوديو يضع تشغيلة هنا.</value>
   </data>
@@ -964,8 +1060,17 @@
   <data name="Open folder" xml:space="preserve">
     <value>افتح المجلد</value>
   </data>
+  <data name="Open logs" xml:space="preserve">
+    <value>افتح السجلات</value>
+  </data>
   <data name="Open the &lt;b&gt;Host&lt;/b&gt; tab to upload &lt;b&gt;training&lt;/b&gt;, &lt;b&gt;evaluation&lt;/b&gt;, and the &lt;b&gt;hidden answer key&lt;/b&gt;." xml:space="preserve">
     <value>افتح تبويب &lt;b&gt;الاستضافة&lt;/b&gt; لرفع بيانات &lt;b&gt;التدريب&lt;/b&gt; و&lt;b&gt;التقييم&lt;/b&gt; و&lt;b&gt;مفتاح الإجابات المخفي&lt;/b&gt;.</value>
+  </data>
+  <data name="Open this run" xml:space="preserve">
+    <value>افتح هذا التشغيل</value>
+  </data>
+  <data name="Open workspace" xml:space="preserve">
+    <value>افتح مساحة العمل</value>
   </data>
   <data name="Opening…" xml:space="preserve">
     <value>جارٍ الفتح…</value>
@@ -1021,11 +1126,17 @@
   <data name="Predict" xml:space="preserve">
     <value>تنبّأ</value>
   </data>
+  <data name="Predicting" xml:space="preserve">
+    <value>التنبؤ بـ</value>
+  </data>
   <data name="Prediction" xml:space="preserve">
     <value>التنبؤ</value>
   </data>
   <data name="Profile" xml:space="preserve">
     <value>الملف الشخصي</value>
+  </data>
+  <data name="Progress appears here once a run starts." xml:space="preserve">
+    <value>يظهر التقدّم هنا بمجرد بدء التشغيل.</value>
   </data>
   <data name="Progress toward the final reveal" xml:space="preserve">
     <value>ما تبقّى حتى الكشف النهائي</value>
@@ -1050,6 +1161,9 @@
   </data>
   <data name="Rank" xml:space="preserve">
     <value>الترتيب</value>
+  </data>
+  <data name="Records far more detail for a support session. Applies on the next launch." xml:space="preserve">
+    <value>يسجّل تفاصيل أكثر بكثير لجلسة دعم. يُطبَّق عند التشغيل التالي.</value>
   </data>
   <data name="Refresh" xml:space="preserve">
     <value>تحديث</value>
@@ -1108,6 +1222,15 @@
   <data name="Run" xml:space="preserve">
     <value>التشغيلة</value>
   </data>
+  <data name="Run deleted." xml:space="preserve">
+    <value>حُذف التشغيل.</value>
+  </data>
+  <data name="Run history" xml:space="preserve">
+    <value>سجل التشغيلات</value>
+  </data>
+  <data name="Run history is using {0} MB." xml:space="preserve">
+    <value>يستهلك سجل التشغيلات {0} ميجابايت.</value>
+  </data>
   <data name="Run name" xml:space="preserve">
     <value>اسم التشغيلة</value>
   </data>
@@ -1119,6 +1242,9 @@
   </data>
   <data name="Save and continue" xml:space="preserve">
     <value>احفظ وتابع</value>
+  </data>
+  <data name="Saved. Restart to apply a changed API URL." xml:space="preserve">
+    <value>تمّ الحفظ. أعد التشغيل لتطبيق تغيير عنوان واجهة البرمجة.</value>
   </data>
   <data name="Say why (they'll see this)" xml:space="preserve">
     <value>اذكر السبب (سيرونه)</value>
@@ -1138,6 +1264,9 @@
   <data name="Secondary" xml:space="preserve">
     <value>مقياس ثانوي</value>
   </data>
+  <data name="Seconds" xml:space="preserve">
+    <value>الثواني</value>
+  </data>
   <data name="Security classification" xml:space="preserve">
     <value>التصنيف الأمني</value>
   </data>
@@ -1152,6 +1281,9 @@
   </data>
   <data name="Select a discussion to read and reply." xml:space="preserve">
     <value>اختر نقاشًا لقراءته والرد عليه.</value>
+  </data>
+  <data name="Select a run to see its details." xml:space="preserve">
+    <value>اختر تشغيلًا لعرض تفاصيله.</value>
   </data>
   <data name="Select a run to watch its progress." xml:space="preserve">
     <value>اختر تشغيلة لمتابعة تقدّمها.</value>
@@ -1210,6 +1342,15 @@
   <data name="Sign out" xml:space="preserve">
     <value>تسجيل الخروج</value>
   </data>
+  <data name="Signed in as" xml:space="preserve">
+    <value>مسجَّل الدخول باسم</value>
+  </data>
+  <data name="Signed in from your intranet session — no extra login." xml:space="preserve">
+    <value>مسجَّل الدخول من جلسة الشبكة الداخلية — بلا تسجيل دخول إضافي.</value>
+  </data>
+  <data name="Signed-in user ({0})" xml:space="preserve">
+    <value>المستخدم المسجَّل ({0})</value>
+  </data>
   <data name="Skills" xml:space="preserve">
     <value>المهارات</value>
   </data>
@@ -1228,6 +1369,9 @@
   <data name="Start the conversation" xml:space="preserve">
     <value>ابدأ النقاش</value>
   </data>
+  <data name="Start training" xml:space="preserve">
+    <value>ابدأ التدريب</value>
+  </data>
   <data name="Start with the recommended learning track" xml:space="preserve">
     <value>ابدأ بالمسار التعليمي المقترح</value>
   </data>
@@ -1236,6 +1380,24 @@
   </data>
   <data name="Status" xml:space="preserve">
     <value>الحالة</value>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>إيقاف</value>
+  </data>
+  <data name="Stopped" xml:space="preserve">
+    <value>متوقّف</value>
+  </data>
+  <data name="Stopped at the memory limit. Raise it in Settings, or train on fewer columns." xml:space="preserve">
+    <value>تمّ الإيقاف عند حدّ الذاكرة. ارفع الحدّ من الإعدادات، أو درّب على عدد أقل من الأعمدة.</value>
+  </data>
+  <data name="Stopped. The attempts so far are saved in the run history." xml:space="preserve">
+    <value>تمّ الإيقاف. المحاولات حتى الآن محفوظة في سجل التشغيلات.</value>
+  </data>
+  <data name="Stopping…" xml:space="preserve">
+    <value>جارٍ الإيقاف…</value>
+  </data>
+  <data name="Stops after {0} minutes or {1} MB of memory, whichever comes first. Change this in Settings." xml:space="preserve">
+    <value>يتوقّف بعد {0} دقيقة أو عند {1} ميجابايت من الذاكرة، أيهما أسبق. غيّر ذلك في الإعدادات.</value>
   </data>
   <data name="Studio" xml:space="preserve">
     <value>الاستوديو</value>
@@ -1303,6 +1465,9 @@
   <data name="The column ML.NET should learn to predict." xml:space="preserve">
     <value>العمود الذي يتعلّم ML.NET التنبؤ به.</value>
   </data>
+  <data name="The dataset has changed since this run. Training it again will not give the same result." xml:space="preserve">
+    <value>تغيّرت مجموعة البيانات منذ هذا التشغيل. إعادة التدريب لن تعطي النتيجة نفسها.</value>
+  </data>
   <data name="The learning catalogue couldn't be loaded ({0})." xml:space="preserve">
     <value>تعذّر تحميل دليل المسارات ({0}).</value>
   </data>
@@ -1345,6 +1510,9 @@
   <data name="This week" xml:space="preserve">
     <value>هذا الأسبوع</value>
   </data>
+  <data name="Time budget (seconds)" xml:space="preserve">
+    <value>المدة المسموحة (بالثواني)</value>
+  </data>
   <data name="Time-series forecasting" xml:space="preserve">
     <value>تنبؤ بالسلاسل الزمنية</value>
   </data>
@@ -1378,11 +1546,26 @@
   <data name="Train a model" xml:space="preserve">
     <value>درِّب نموذجًا</value>
   </data>
+  <data name="Train a model and it will be recorded here." xml:space="preserve">
+    <value>درِّب نموذجًا وسيُسجَّل هنا.</value>
+  </data>
   <data name="Train a model in AutoML, then register it with the button above." xml:space="preserve">
     <value>درّب نموذجًا في AutoML، ثم سجّله بالزر أعلاه.</value>
   </data>
+  <data name="Training" xml:space="preserve">
+    <value>جارٍ التدريب</value>
+  </data>
+  <data name="Training could not start: {0}" xml:space="preserve">
+    <value>تعذّر بدء التدريب: {0}</value>
+  </data>
   <data name="Training data" xml:space="preserve">
     <value>بيانات التدريب</value>
+  </data>
+  <data name="Training failed: {0}" xml:space="preserve">
+    <value>فشل التدريب: {0}</value>
+  </data>
+  <data name="Training limits" xml:space="preserve">
+    <value>حدود التدريب</value>
   </data>
   <data name="Training… (AutoML searches for the best algorithm)" xml:space="preserve">
     <value>جارٍ التدريب… (يبحث AutoML عن أفضل خوارزمية)</value>
@@ -1413,6 +1596,9 @@
   </data>
   <data name="Use this template" xml:space="preserve">
     <value>استخدم هذا القالب</value>
+  </data>
+  <data name="Used for competitions (browse, submit, leaderboard). Applied on next launch." xml:space="preserve">
+    <value>يُستخدم للمسابقات (التصفّح والإرسال ولوحة الصدارة). يُطبَّق عند التشغيل التالي.</value>
   </data>
   <data name="Value" xml:space="preserve">
     <value>القيمة</value>
@@ -1480,11 +1666,17 @@
   <data name="Workflows" xml:space="preserve">
     <value>مسارات العمل</value>
   </data>
+  <data name="Workspace checked at launch — nothing to report." xml:space="preserve">
+    <value>فُحصت مساحة العمل عند التشغيل — لا شيء يستدعي الإبلاغ.</value>
+  </data>
   <data name="Write a reply" xml:space="preserve">
     <value>اكتب ردًا</value>
   </data>
   <data name="Writing a great brief" xml:space="preserve">
     <value>كتابة وصف جيد</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>نعم</value>
   </data>
   <data name="You are signed in automatically with your KOC account — if you are seeing this, contact the platform team." xml:space="preserve">
     <value>يتم تسجيل دخولك تلقائيًا بحساب KOC — إن ظهرت لك هذه الرسالة فتواصل مع فريق المنصة.</value>
@@ -1561,6 +1753,9 @@
   <data name="best {0}" xml:space="preserve">
     <value>أفضل نتيجة {0}</value>
   </data>
+  <data name="company —" xml:space="preserve">
+    <value>الشركة —</value>
+  </data>
   <data name="competitions running" xml:space="preserve">
     <value>مسابقة جارية</value>
   </data>
@@ -1578,6 +1773,12 @@
   </data>
   <data name="days" xml:space="preserve">
     <value>يوم</value>
+  </data>
+  <data name="department —" xml:space="preserve">
+    <value>الدائرة —</value>
+  </data>
+  <data name="email —" xml:space="preserve">
+    <value>البريد الإلكتروني —</value>
   </data>
   <data name="entries/day" xml:space="preserve">
     <value>مشاركة/يوم</value>
@@ -1614,6 +1815,9 @@
   </data>
   <data name="no label; what they predict." xml:space="preserve">
     <value>بلا تصنيف؛ وهو ما سيتنبأون به.</value>
+  </data>
+  <data name="not detected" xml:space="preserve">
+    <value>غير مكتشف</value>
   </data>
   <data name="off" xml:space="preserve">
     <value>عن</value>
@@ -1663,8 +1867,14 @@
   <data name="{0} / {1} complete" xml:space="preserve">
     <value>أنجزت {0} من {1}</value>
   </data>
+  <data name="{0} MB on disk" xml:space="preserve">
+    <value>{0} ميجابايت على القرص</value>
+  </data>
   <data name="{0} active · {1} bbl total" xml:space="preserve">
     <value>{0} نشط · {1} برميل إجمالًا</value>
+  </data>
+  <data name="{0} attempts" xml:space="preserve">
+    <value>{0} محاولة</value>
   </data>
   <data name="{0} avg" xml:space="preserve">
     <value>{0} متوسط</value>
@@ -1713,6 +1923,15 @@
   </data>
   <data name="{0}m ago" xml:space="preserve">
     <value>قبل {0} دقيقة</value>
+  </data>
+  <data name="{0}s" xml:space="preserve">
+    <value>{0} ث</value>
+  </data>
+  <data name="{0}s elapsed · {1} MB" xml:space="preserve">
+    <value>مضى {0} ث · {1} ميجابايت</value>
+  </data>
+  <data name="{0}s · {1} MB" xml:space="preserve">
+    <value>{0} ث · {1} ميجابايت</value>
   </data>
   <data name="“{0}” will be removed from this machine. Workflows that use it will stop resolving." xml:space="preserve">
     <value>سيُحذف “{0}” من هذا الجهاز. ومسارات العمل التي تستخدمه لن تعود تجده.</value>

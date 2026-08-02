@@ -1,6 +1,7 @@
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Application.Workflow;
 using Beep.KocAiCommunity.Client;
+using Beep.KocAiCommunity.ML;
 using Beep.KocAiCommunity.ML.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,13 +15,26 @@ public static class KocLocalServiceCollectionExtensions
     /// <see cref="IKocApiClient"/> that runs the Studio surface locally while forwarding competition
     /// calls to the API at <paramref name="apiBaseUrl"/> (used only when online).
     /// </summary>
-    public static IServiceCollection AddKocLocalStudio(this IServiceCollection services, string apiBaseUrl, LocalWorkspace? workspace = null)
+    public static IServiceCollection AddKocLocalStudio(
+        this IServiceCollection services, string apiBaseUrl, LocalWorkspace? workspace = null,
+        LocalTrainingLimits? trainingLimits = null)
     {
         var ws = workspace ?? LocalWorkspace.Default();
         ws.EnsureCreated();
         services.AddSingleton(ws);
         services.AddSingleton<LocalDatasetStore>();
         services.AddSingleton<LocalWorkflowStore>();
+        services.AddSingleton<LocalRunStore>();
+
+        // AutoML, on this machine. The deployment decision of 2026-08-02 left the shared hosting unable
+        // to run the Worker, so the desktop is now the only place a model gets trained — which is why
+        // this is registered here at all, and why it comes with limits attached.
+        services.AddSingleton((trainingLimits ?? new LocalTrainingLimits()).Clamped());
+        services.AddSingleton<IMlTrainer, AutoMlTrainer>();
+
+        // Singleton, so a run survives navigating away from the AutoML page. Results used to be logged
+        // in the designer and lost the moment you left it.
+        services.AddSingleton<LocalTrainingService>();
 
         // In-process node engine — every IPipelineNodeHandler in the ML assembly (mirrors the API host).
         foreach (var handler in typeof(PluginNodeExecutor).Assembly.GetTypes()

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Beep.KocAiCommunity.Contracts.Localization;
+using Beep.KocAiCommunity.Desktop.Local;
 
 namespace Beep.KocAiCommunity.WinForms;
 
@@ -22,6 +23,23 @@ public sealed class AppSettings
     /// for a support session, so a reproduction can be captured without a new build.
     /// </summary>
     public bool VerboseLogging { get; set; }
+
+    /// <summary>
+    /// Working-set ceiling for a training run, in MB. This is a shared workstation with Outlook and Teams
+    /// on it, not a training box — see <see cref="LocalTrainingLimits"/> for why AutoML
+    /// needs a ceiling imposed from outside.
+    /// </summary>
+    public int MaxTrainingMemoryMb { get; set; } = 2048;
+
+    /// <summary>Wall-clock budget for one AutoML run, in seconds.</summary>
+    public int MaxTrainingSeconds { get; set; } = 300;
+
+    /// <summary>The limits as the training service takes them, clamped so a hand-edited file stays sane.</summary>
+    public LocalTrainingLimits TrainingLimits() => new LocalTrainingLimits
+    {
+        MaxMemoryMb = MaxTrainingMemoryMb,
+        MaxSecondsPerExperiment = MaxTrainingSeconds,
+    }.Clamped();
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KocStudio", "settings.json");

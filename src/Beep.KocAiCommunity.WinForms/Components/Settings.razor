@@ -1,6 +1,8 @@
 @page "/settings"
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Desktop.Local
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
 @using System.Diagnostics
 @inject DevIdentity Identity
 @inject AppSettings Config
@@ -8,38 +10,40 @@
 @inject ISnackbar Snackbar
 @inject LocalWorkspace Workspace
 @inject WorkspaceReport Report
+@inject LocalRunStore Runs
+@inject IStringLocalizer<Strings> L
 @inject Beep.KocAiCommunity.WinForms.Diagnostics.FileLoggerProvider Logs
 
-<MudText Typo="Typo.h5" Class="mb-4">Settings</MudText>
+<MudText Typo="Typo.h5" Class="mb-4">@L["Settings"]</MudText>
 
 <MudPaper Class="pa-4" MaxWidth="560px" Outlined="true">
-    <MudText Typo="Typo.subtitle1" Class="mb-2">KOC network</MudText>
-    <MudTextField @bind-Value="_apiBaseUrl" Label="API base URL" Variant="Variant.Outlined" Margin="Margin.Dense"
-                  HelperText="Used for competitions (browse, submit, leaderboard). Applied on next launch." Class="mb-4" />
+    <MudText Typo="Typo.subtitle1" Class="mb-2">@L["KOC network"]</MudText>
+    <MudTextField @bind-Value="_apiBaseUrl" Label="@L["API base URL"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  HelperText="@L["Used for competitions (browse, submit, leaderboard). Applied on next launch."]" Class="mb-4" />
 
-    <MudText Typo="Typo.subtitle1" Class="mb-1">Identity</MudText>
+    <MudText Typo="Typo.subtitle1" Class="mb-1">@L["Identity"]</MudText>
     <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">
-        Signed in from your intranet session — no extra login.
+        @L["Signed in from your intranet session — no extra login."]
     </MudText>
-    <MudField Label="Signed in as" Variant="Variant.Outlined" Margin="Margin.Dense"
+    <MudField Label="@L["Signed in as"]" Variant="Variant.Outlined" Margin="Margin.Dense"
               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountCircle">
         @_display <span style="opacity:.6;">(@_userId)</span>
     </MudField>
     <div class="d-flex gap-2 my-2 flex-wrap">
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Email">@Or(_email, "email —")</MudChip>
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Business">@Or(_company, "company —")</MudChip>
-        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Groups">@Or(_department, "department —")</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Email">@Or(_email, L["email —"])</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Business">@Or(_company, L["company —"])</MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Groups">@Or(_department, L["department —"])</MudChip>
     </div>
     @if (_email is null && _department is null)
     {
         <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.6;">
-            Department &amp; profile details load from the KOC directory once its API is configured.
+            @L["Department and profile details load from the KOC directory once its API is configured."]
         </MudText>
     }
 
-    <MudSelect T="string" @bind-Value="_personaKey" Label="Act as (dev override)" Variant="Variant.Outlined" Margin="Margin.Dense"
-               HelperText="Leave as the signed-in user in production. The dev personas are for testing roles against a dev API.">
-        <MudSelectItem Value="@DevIdentity.RealUserKey">Signed-in user (@_display)</MudSelectItem>
+    <MudSelect T="string" @bind-Value="_personaKey" Label="@L["Act as (dev override)"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+               HelperText="@L["Leave as the signed-in user in production. The dev personas are for testing roles against a dev API."]">
+        <MudSelectItem Value="@DevIdentity.RealUserKey">@L["Signed-in user ({0})", _display]</MudSelectItem>
         @foreach (var p in DevIdentity.Personas)
         {
             <MudSelectItem Value="@p.Key">@p.Label</MudSelectItem>
@@ -47,28 +51,54 @@
     </MudSelect>
 
     <div class="d-flex justify-end mt-4">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveAsync">Save</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveAsync">@L["Save"]</MudButton>
+    </div>
+</MudPaper>
+
+@* Training happens on this machine now — the shared hosting cannot run it — so what a run is allowed
+   to consume is a setting an engineer needs to be able to see and change, not a constant in the code. *@
+<MudPaper Class="pa-4 mt-4" MaxWidth="560px" Outlined="true">
+    <MudText Typo="Typo.subtitle1" Class="mb-1">@L["Training limits"]</MudText>
+    <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.7;">
+        @L["A run stops when it reaches either limit. Raise them for a bigger dataset; lower them if your machine struggles while training."]
+    </MudText>
+
+    <MudNumericField T="int" @bind-Value="_maxSeconds" Label="@L["Time budget (seconds)"]" Min="10" Max="3600"
+                     Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3"
+                     HelperText="@L["Between 10 seconds and 1 hour."]" />
+
+    <MudNumericField T="int" @bind-Value="_maxMemoryMb" Label="@L["Memory ceiling (MB)"]" Min="512" Max="16384"
+                     Variant="Variant.Outlined" Margin="Margin.Dense"
+                     HelperText="@L["Between 512 MB and 16 GB. This machine has {0} MB in use right now.", WorkingSetMb]" />
+
+    <MudText Typo="Typo.caption" Class="d-block mt-3" Style="opacity:.7;">
+        @L["Run history is using {0} MB.", Math.Round(Runs.TotalBytes() / 1024d / 1024d, 1)]
+    </MudText>
+
+    <div class="d-flex justify-end mt-3">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+                   OnClick="SaveLimits">@L["Save"]</MudButton>
     </div>
 </MudPaper>
 
 <MudPaper Class="pa-4 mt-4" MaxWidth="560px" Outlined="true">
-    <MudText Typo="Typo.subtitle1" Class="mb-1">Diagnostics</MudText>
+    <MudText Typo="Typo.subtitle1" Class="mb-1">@L["Diagnostics"]</MudText>
     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.7;">
-        KOC Studio @Version · WebView2 @(WebViewVersion ?? "not detected")
+        @L["KOC Studio {0} · WebView2 {1}", Version, WebViewVersion ?? L["not detected"].Value]
     </MudText>
 
     <div class="d-flex gap-2 flex-wrap mb-3">
         <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Description"
-                   OnClick="OpenLogs">Open logs</MudButton>
+                   OnClick="OpenLogs">@L["Open logs"]</MudButton>
         <MudButton Size="Size.Small" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FolderOpen"
-                   OnClick="OpenWorkspace">Open workspace</MudButton>
+                   OnClick="OpenWorkspace">@L["Open workspace"]</MudButton>
     </div>
 
     @* Off by default because it is noisy. Turned on to capture a reproduction without a new build. *@
-    <MudSwitch T="bool" @bind-Value="_verbose" Color="Color.Primary" Label="Detailed logging"
+    <MudSwitch T="bool" @bind-Value="_verbose" Color="Color.Primary" Label="@L["Detailed logging"]"
                Class="mb-1" />
     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.7;">
-        Records far more detail for a support session. Applies on the next launch.
+        @L["Records far more detail for a support session. Applies on the next launch."]
     </MudText>
 
     @* A workspace that repaired itself is not worth interrupting anyone over, but it is worth being
@@ -76,12 +106,12 @@
     @if (Report.IsClean)
     {
         <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true">
-            Workspace checked at launch — nothing to report.
+            @L["Workspace checked at launch — nothing to report."]
         </MudAlert>
     }
     else
     {
-        <MudText Typo="Typo.subtitle2" Class="mb-1">Last workspace check</MudText>
+        <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Last workspace check"]</MudText>
         @foreach (var finding in Report.Findings)
         {
             <MudAlert Severity="@SeverityFor(finding.Level)" Variant="Variant.Text" Dense="true" Class="mb-1">
@@ -99,6 +129,8 @@
     private string? _email;
     private string? _company;
     private string? _department;
+    private int _maxSeconds;
+    private int _maxMemoryMb;
 
     protected override void OnInitialized()
     {
@@ -112,11 +144,15 @@
         _email = me?.Email;
         _company = me?.CompanyId;
         _department = me?.DepartmentId;
+        _maxSeconds = Config.MaxTrainingSeconds;
+        _maxMemoryMb = Config.MaxTrainingMemoryMb;
     }
 
     private bool _verbose;
 
     private static string Or(string? value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value!;
+
+    private static long WorkingSetMb => Environment.WorkingSet / (1024 * 1024);
 
     private static string Version => Beep.KocAiCommunity.WinForms.Diagnostics.CrashReporter.Version;
 
@@ -149,7 +185,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Couldn't open the folder: {ex.Message}", Severity.Warning);
+            Snackbar.Add(L["Couldn't open the folder: {0}", ex.Message], Severity.Warning);
         }
     }
 
@@ -169,7 +205,22 @@
         Config.PersonaKey = _personaKey;
         Config.VerboseLogging = _verbose;
         Config.Save();
-        Snackbar.Add("Saved. Restart to apply a changed API URL.", Severity.Success);
+        Snackbar.Add(L["Saved. Restart to apply a changed API URL."], Severity.Success);
         return Task.CompletedTask;
+    }
+
+    // Saved through the same clamp the training service applies, so what is written back is what will
+    // actually be enforced — a value silently corrected at start-up would leave this page lying.
+    private void SaveLimits()
+    {
+        Config.MaxTrainingSeconds = _maxSeconds;
+        Config.MaxTrainingMemoryMb = _maxMemoryMb;
+
+        var clamped = Config.TrainingLimits();
+        Config.MaxTrainingSeconds = _maxSeconds = clamped.MaxSecondsPerExperiment;
+        Config.MaxTrainingMemoryMb = _maxMemoryMb = clamped.MaxMemoryMb;
+        Config.Save();
+
+        Snackbar.Add(L["Limits saved — they apply to the next run."], Severity.Success);
     }
 }
