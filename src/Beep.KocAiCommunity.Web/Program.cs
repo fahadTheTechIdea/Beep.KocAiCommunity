@@ -26,11 +26,13 @@ builder.AddServiceDefaults();
 var internalApiPort = builder.Configuration.GetValue("Platform:InternalPort", 5151);
 if (internalApiPort > 0)
 {
-    var configured = builder.Configuration["ASPNETCORE_URLS"] ?? builder.Configuration["urls"];
-    var internalUrl = $"http://127.0.0.1:{internalApiPort}";
-    builder.WebHost.UseUrls(string.IsNullOrWhiteSpace(configured)
-        ? internalUrl
-        : $"{configured};{internalUrl}");
+    // The public listener is ADDED TO, never replaced. The host reads ASPNETCORE_URLS under the key
+    // "urls" (the prefix is stripped), so checking only the long name found nothing and this bound the
+    // site to loopback alone — the website itself disappeared. Falling back to the dev address keeps a
+    // public listener even when nothing is configured at all.
+    var configured = builder.Configuration["urls"] ?? builder.Configuration["ASPNETCORE_URLS"];
+    var publicUrls = string.IsNullOrWhiteSpace(configured) ? "http://localhost:5150" : configured;
+    builder.WebHost.UseUrls($"{publicUrls};http://127.0.0.1:{internalApiPort}");
 }
 
 // Where people sign in — the one thing the first run settles, read by both hosts.
