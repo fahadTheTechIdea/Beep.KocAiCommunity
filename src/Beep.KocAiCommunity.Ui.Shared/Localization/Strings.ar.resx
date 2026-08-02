@@ -316,6 +316,9 @@
   <data name="Check the columns below. If they look wrong, change the separator or the encoding." xml:space="preserve">
     <value>راجع الأعمدة أدناه. إن بدت خاطئة، غيّر الفاصل أو الترميز.</value>
   </data>
+  <data name="Checking…" xml:space="preserve">
+    <value>جارٍ التحقق…</value>
+  </data>
   <data name="Choose a dataset and the column you want to predict. Several algorithms are tried and the best one wins. Everything runs on this machine." xml:space="preserve">
     <value>اختر مجموعة بيانات والعمود الذي تريد التنبؤ به. تُجرَّب عدة خوارزميات ويفوز أفضلها. كل شيء يعمل على هذا الجهاز.</value>
   </data>
@@ -412,6 +415,9 @@
   <data name="Confidence {0}" xml:space="preserve">
     <value>الثقة {0}</value>
   </data>
+  <data name="Connected" xml:space="preserve">
+    <value>متصل</value>
+  </data>
   <data name="Connectors" xml:space="preserve">
     <value>الموصلات</value>
   </data>
@@ -495,6 +501,9 @@
   </data>
   <data name="Delete this run?" xml:space="preserve">
     <value>حذف هذا التشغيل؟</value>
+  </data>
+  <data name="Delete this submission?" xml:space="preserve">
+    <value>حذف هذا الإرسال؟</value>
   </data>
   <data name="Delete thread" xml:space="preserve">
     <value>حذف النقاش</value>
@@ -615,6 +624,9 @@
   </data>
   <data name="Every training run is tracked here — live trial metrics, the leading model, side-by-side comparison, and the lineage to reproduce it." xml:space="preserve">
     <value>تُتابَع هنا كل تشغيلة تدريب — مقاييس المحاولات المباشرة، والنموذج المتصدّر، والمقارنة جنبًا إلى جنب، والسلسلة اللازمة لإعادة الإنتاج.</value>
+  </data>
+  <data name="Everything you have submitted has been sent." xml:space="preserve">
+    <value>أُرسل كل ما قدّمته.</value>
   </data>
   <data name="Examples:" xml:space="preserve">
     <value>أمثلة:</value>
@@ -801,6 +813,9 @@
   </data>
   <data name="It may have been removed, or the link is out of date." xml:space="preserve">
     <value>ربما حُذفت، أو أن الرابط قديم.</value>
+  </data>
+  <data name="It will not be sent, and the predictions kept with it are removed from this machine." xml:space="preserve">
+    <value>لن يُرسَل، وستُحذف التنبؤات المحفوظة معه من هذا الجهاز.</value>
   </data>
   <data name="Its metrics and saved model are removed from this machine." xml:space="preserve">
     <value>ستُحذف مقاييسه ونموذجه المحفوظ من هذا الجهاز.</value>
@@ -1006,6 +1021,9 @@
   <data name="Name (opt)" xml:space="preserve">
     <value>الاسم (اختياري)</value>
   </data>
+  <data name="Needs attention" xml:space="preserve">
+    <value>يحتاج إلى مراجعة</value>
+  </data>
   <data name="New discussion" xml:space="preserve">
     <value>نقاش جديد</value>
   </data>
@@ -1117,8 +1135,14 @@
   <data name="Node catalog" xml:space="preserve">
     <value>دليل العقد</value>
   </data>
+  <data name="Not scored yet — the platform scores it against the hidden test set when it arrives." xml:space="preserve">
+    <value>لم تُقيَّم بعد — تقيّمها المنصّة على مجموعة الاختبار المخفية عند وصولها.</value>
+  </data>
   <data name="Not started" xml:space="preserve">
     <value>لم يبدأ</value>
+  </data>
+  <data name="Nothing could be sent this time." xml:space="preserve">
+    <value>تعذّر إرسال أي شيء هذه المرة.</value>
   </data>
   <data name="Nothing goes live until you upload data and click Activate." xml:space="preserve">
     <value>لا شيء ينطلق حتى ترفع البيانات وتضغط تفعيل.</value>
@@ -1132,11 +1156,17 @@
   <data name="Nothing to show." xml:space="preserve">
     <value>لا شيء لعرضه.</value>
   </data>
+  <data name="Nothing waiting" xml:space="preserve">
+    <value>لا شيء في الانتظار</value>
+  </data>
   <data name="Notifications" xml:space="preserve">
     <value>الإشعارات</value>
   </data>
   <data name="Nulls" xml:space="preserve">
     <value>قيم فارغة</value>
+  </data>
+  <data name="Offline" xml:space="preserve">
+    <value>غير متصل</value>
   </data>
   <data name="On &lt;b&gt;{0}&lt;/b&gt; the final private standings are revealed." xml:space="preserve">
     <value>في &lt;b&gt;{0}&lt;/b&gt; يُكشف الترتيب النهائي الخاص.</value>
@@ -1252,6 +1282,12 @@
   <data name="Put it to work in" xml:space="preserve">
     <value>طبِّقه في</value>
   </data>
+  <data name="Queued" xml:space="preserve">
+    <value>في الانتظار</value>
+  </data>
+  <data name="Queued {0}" xml:space="preserve">
+    <value>في الانتظار منذ {0}</value>
+  </data>
   <data name="Quiet so far — earn a badge or give kudos to get things moving." xml:space="preserve">
     <value>هدوء حتى الآن — اكسب وسامًا أو أرسل تحية لتبدأ الحركة.</value>
   </data>
@@ -1266,6 +1302,9 @@
   </data>
   <data name="Refresh" xml:space="preserve">
     <value>تحديث</value>
+  </data>
+  <data name="Refused" xml:space="preserve">
+    <value>مرفوض</value>
   </data>
   <data name="Register" xml:space="preserve">
     <value>سجِّل</value>
@@ -1420,6 +1459,12 @@
   <data name="Sending a model to the platform is not available yet — the platform registers models from runs made on the server. Export it and attach it to a request for now." xml:space="preserve">
     <value>إرسال نموذج إلى المنصّة غير متاح بعد — فالمنصّة تسجّل النماذج من تشغيلات تجري على الخادم. صدّر النموذج وأرفقه بطلب في الوقت الحالي.</value>
   </data>
+  <data name="Sent {0}, and {1} were refused." xml:space="preserve">
+    <value>أُرسل {0}، ورُفض {1}.</value>
+  </data>
+  <data name="Sent {0}." xml:space="preserve">
+    <value>أُرسل {0}.</value>
+  </data>
   <data name="Separator" xml:space="preserve">
     <value>الفاصل</value>
   </data>
@@ -1510,6 +1555,9 @@
   <data name="Status" xml:space="preserve">
     <value>الحالة</value>
   </data>
+  <data name="Still no connection to the KOC network." xml:space="preserve">
+    <value>لا يزال لا اتصال بشبكة شركة نفط الكويت.</value>
+  </data>
   <data name="Stop" xml:space="preserve">
     <value>إيقاف</value>
   </data>
@@ -1542,6 +1590,9 @@
   </data>
   <data name="Submissions made" xml:space="preserve">
     <value>المشاركات المُرسَلة</value>
+  </data>
+  <data name="Submissions made without a network wait here and are sent when it returns. Sending again is safe — the platform records each one only once." xml:space="preserve">
+    <value>الإرسالات التي تُنفَّذ دون شبكة تنتظر هنا وتُرسل عند عودتها. إعادة الإرسال آمنة — تُسجّل المنصّة كل إرسال مرة واحدة فقط.</value>
   </data>
   <data name="Submit &amp; climb" xml:space="preserve">
     <value>أرسِل وارتقِ</value>
@@ -1732,6 +1783,9 @@
   <data name="Training… (AutoML searches for the best algorithm)" xml:space="preserve">
     <value>جارٍ التدريب… (يبحث AutoML عن أفضل خوارزمية)</value>
   </data>
+  <data name="Try now" xml:space="preserve">
+    <value>جرّب الآن</value>
+  </data>
   <data name="Try one row" xml:space="preserve">
     <value>جرّب صفًا واحدًا</value>
   </data>
@@ -1794,6 +1848,9 @@
   </data>
   <data name="Waiting for output…" xml:space="preserve">
     <value>في انتظار المخرجات…</value>
+  </data>
+  <data name="Waiting to send" xml:space="preserve">
+    <value>في انتظار الإرسال</value>
   </data>
   <data name="What happens next" xml:space="preserve">
     <value>ما الذي يحدث بعد ذلك</value>
@@ -2053,6 +2110,9 @@
   <data name="your Barrels" xml:space="preserve">
     <value>براميلك</value>
   </data>
+  <data name="your local score {0}" xml:space="preserve">
+    <value>نتيجتك المحلية {0}</value>
+  </data>
   <data name="your rank (month)" xml:space="preserve">
     <value>ترتيبك (الشهر)</value>
   </data>
@@ -2115,6 +2175,15 @@
   </data>
   <data name="{0} rows, of which {1} were examined" xml:space="preserve">
     <value>{0} صف، فُحص منها {1}</value>
+  </data>
+  <data name="{0} submissions are waiting to be sent. Open to see them." xml:space="preserve">
+    <value>{0} إرسالات في انتظار الإرسال. افتح لعرضها.</value>
+  </data>
+  <data name="{0} waiting" xml:space="preserve">
+    <value>{0} في الانتظار</value>
+  </data>
+  <data name="{0} were refused — see why below." xml:space="preserve">
+    <value>رُفض {0} — انظر السبب أدناه.</value>
   </data>
   <data name="{0} — lower wins" xml:space="preserve">
     <value>{0} — الأقل يفوز</value>

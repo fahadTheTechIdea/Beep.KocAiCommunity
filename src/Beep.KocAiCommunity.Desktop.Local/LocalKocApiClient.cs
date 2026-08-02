@@ -1,6 +1,7 @@
 using Beep.KocAiCommunity.Application.ML;
 using Beep.KocAiCommunity.Application.Workflow;
 using Beep.KocAiCommunity.Client;
+using Beep.KocAiCommunity.Contracts.Competitions;
 using Beep.KocAiCommunity.Contracts.Datasets;
 using Beep.KocAiCommunity.Contracts.ML;
 using Beep.KocAiCommunity.Contracts.Workflow;
@@ -17,8 +18,92 @@ public sealed class LocalKocApiClient(
     INodeRegistry registry,
     IPipelineExecutor executor,
     LocalDatasetStore datasets,
-    LocalWorkflowStore workflows) : RemoteFallbackKocApiClient(remote)
+    LocalWorkflowStore workflows,
+    LocalCompetitionCache cache,
+    SubmissionOutbox outbox,
+    ConnectionState connection) : RemoteFallbackKocApiClient(remote)
 {
+    // ---- Competitions: cached for reading, queued for writing ----
+
+    /// <summary>
+    /// The competition list, from the network when it is there and from the cache when it is not.
+    /// <para>
+    /// The age comes back through <see cref="LastCompetitionsFetchUtc"/> rather than the return value,
+    /// because this implements a shared interface the Web also uses. The desktop's own pages read it
+    /// and say how old the list is — a cached leaderboard shown as current is worse than none.
+    /// </para>
+    /// </summary>
+    public override async Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default)
+    {
+        var cached = await cache.ThroughAsync<IReadOnlyList<CompetitionDto>>(
+            LocalCompetitionCache.CompetitionsKey, async c => await Remote.GetCompetitionsAsync(c), ct);
+
+        LastCompetitionsFetchUtc = cached?.FetchedUtc;
+        return cached?.Value ?? [];
+    }
+
+    /// <summary>When the competition list currently on screen was actually fetched.</summary>
+    public DateTime? LastCompetitionsFetchUtc { get; private set; }
+
+    public override async Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default)
+    {
+        var cached = await cache.ThroughAsync<CompetitionDto>(
+            LocalCompetitionCache.CompetitionKey(competitionId),
+            async c => await Remote.GetCompetitionAsync(competitionId, c), ct);
+
+        return cached?.Value;
+    }
+
+    /// <summary>
+    /// Submits, or queues it when that is not possible.
+    /// <para>
+    /// The work is already done by this point — the pipeline ran and the score is known — so failing
+    /// because the network happened to be absent at that moment throws it away. The queued entry's id
+    /// is its idempotency key, which is what makes the replay safe against the daily quota.
+    /// </para>
+    /// </summary>
+    public override async Task<SubmissionResultDto?> SubmitAsync(
+        Guid competitionId, Stream csv, string fileName, string? idempotencyKey = null, CancellationToken ct = default)
+    {
+        var key = idempotencyKey ?? Guid.NewGuid().ToString();
+
+        // Buffer first: the stream is read either by the API or by the outbox, and on a failed send it
+        // has already been consumed.
+        using var buffer = new MemoryStream();
+        await csv.CopyToAsync(buffer, ct);
+        buffer.Position = 0;
+
+        try
+        {
+            var result = await Remote.SubmitAsync(competitionId, buffer, fileName, key, ct);
+            connection.Status = Connectivity.Online;
+            return result;
+        }
+        catch (Exception)
+        {
+            connection.Status = Connectivity.Offline;
+        }
+
+        buffer.Position = 0;
+        var competition = (await cache.ReadAsync<CompetitionDto>(
+            LocalCompetitionCache.CompetitionKey(competitionId), ct))?.Value;
+
+        await outbox.EnqueueAsync(new QueuedSubmission
+        {
+            Id = key,
+            CompetitionId = competitionId,
+            CompetitionTitle = competition?.Title ?? "this competition",
+            QueuedUtc = DateTime.UtcNow,
+            CompetitionStatusWhenQueued = competition?.Status,
+        }, buffer, ct);
+
+        connection.Queued = outbox.Pending().Count;
+
+        // No submission id and no score, because there is no submission yet. Returning a fabricated one
+        // would have the UI report a result that does not exist.
+        return null;
+    }
+
     // ---- Node catalog + tasks (local) ----
 
     public override Task<IReadOnlyList<NodeDescriptorDto>> GetMlNodesAsync(CancellationToken ct = default) =>

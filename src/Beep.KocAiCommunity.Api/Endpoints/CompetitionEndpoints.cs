@@ -10,11 +10,23 @@ using Beep.KocAiCommunity.Contracts.Engagement;
 using Beep.KocAiCommunity.Contracts.Workflow;
 using Beep.KocAiCommunity.Domain.Competitions;
 using Beep.KocAiCommunity.Domain.Organization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Beep.KocAiCommunity.Api.Endpoints;
 
 public static class CompetitionEndpoints
 {
+    /// <summary>
+    /// The header a client sends to make a submission retry safe.
+    /// <para>
+    /// The conventional name, so anything that already knows the pattern gets it right. Submissions are
+    /// quota-limited: a client that resends because it never saw a response — the desktop draining a
+    /// queue built while offline — would otherwise have to choose between losing the work and spending
+    /// a participant's attempt twice.
+    /// </para>
+    /// </summary>
+    public const string IdempotencyHeader = "Idempotency-Key";
+
     public static RouteGroupBuilder MapCompetitionEndpoints(this RouteGroupBuilder group)
     {
         // One localizer for the whole group: it reads the request culture on every call,
@@ -137,11 +149,12 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         .DisableAntiforgery();
 
         group.MapPost("/competitions/{id:guid}/submit-pipeline", async (
-            Guid id, WorkflowDefinition definition, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+            Guid id, WorkflowDefinition definition, IKocCurrentUser me, ICompetitionService svc,
+            [FromHeader(Name = IdempotencyHeader)] string? idempotencyKey, CancellationToken ct) =>
         {
             try
             {
-                var submission = await svc.SubmitPipelineAsync(me.UserId!, id, definition, ct);
+                var submission = await svc.SubmitPipelineAsync(me.UserId!, id, definition, idempotencyKey, ct);
                 return Results.Ok(new SubmissionResultDto(submission.Id, submission.Score, submission.Status, submission.SubmittedUtc));
             }
             catch (CompetitionException ex)
@@ -156,12 +169,13 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         .WithName("SubmitPipeline")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
-        group.MapPost("/competitions/{id:guid}/submissions", async (Guid id, IFormFile file, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        group.MapPost("/competitions/{id:guid}/submissions", async (Guid id, IFormFile file, IKocCurrentUser me, ICompetitionService svc,
+            [FromHeader(Name = IdempotencyHeader)] string? idempotencyKey, CancellationToken ct) =>
         {
             try
             {
                 await using var stream = file.OpenReadStream();
-                var submission = await svc.SubmitAsync(me.UserId!, id, stream, file.FileName, ct);
+                var submission = await svc.SubmitAsync(me.UserId!, id, stream, file.FileName, idempotencyKey, ct);
                 return Results.Ok(new SubmissionResultDto(submission.Id, submission.Score, submission.Status, submission.SubmittedUtc));
             }
             catch (CompetitionException ex)

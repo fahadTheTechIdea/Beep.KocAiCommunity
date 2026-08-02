@@ -115,7 +115,11 @@ public interface ICompetitionService
     /// evaluation data (so no one can tamper with the inputs), scores the predictions against the
     /// hidden key, and updates the leaderboard. This turns a Studio pipeline into a submission.
     /// </summary>
-    Task<Submission> SubmitPipelineAsync(string userId, Guid competitionId, WorkflowDefinition definition, CancellationToken ct = default);
+    /// <summary>
+    /// Runs a participant's graph on the competition's own data and records the score.
+    /// <inheritdoc cref="SubmitAsync" path="/summary/para"/>
+    /// </summary>
+    Task<Submission> SubmitPipelineAsync(string userId, Guid competitionId, WorkflowDefinition definition, string? idempotencyKey = null, CancellationToken ct = default);
 
     Task<IReadOnlyList<Competition>> BrowseVisibleAsync(string userId, CancellationToken ct = default);
 
@@ -150,8 +154,16 @@ public interface ICompetitionService
     /// <summary>Arena stats for a set of competitions, computed in one pass (no per-competition queries).</summary>
     Task<IReadOnlyDictionary<Guid, CompetitionStats>> GetStatsAsync(IReadOnlyCollection<Guid> competitionIds, CancellationToken ct = default);
 
-    /// <summary>Scores a prediction file against the hidden key and updates the leaderboard.</summary>
-    Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, CancellationToken ct = default);
+    /// <summary>
+    /// Scores a prediction file against the hidden key and updates the leaderboard.
+    /// <para>
+    /// <paramref name="idempotencyKey"/> makes a retry safe. Submissions are quota-limited, so a client
+    /// that resends a request it is not sure was received — anything queueing work offline — would
+    /// otherwise have to choose between losing the work and spending someone's quota twice. Given the
+    /// same key, the submission already recorded is returned unchanged and no quota is consumed.
+    /// </para>
+    /// </summary>
+    Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, string? idempotencyKey = null, CancellationToken ct = default);
 
     Task<IReadOnlyList<LeaderboardEntry>> GetLeaderboardAsync(Guid competitionId, CancellationToken ct = default);
 

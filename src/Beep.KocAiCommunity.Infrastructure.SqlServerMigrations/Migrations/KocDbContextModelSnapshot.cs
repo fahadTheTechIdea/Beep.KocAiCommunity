@@ -729,6 +729,10 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -767,6 +771,11 @@ namespace Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompetitionId", "SubmitterUserId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Submissions_Idempotency")
+                        .HasFilter("[IdempotencyKey] IS NOT NULL");
 
                     b.HasIndex("CompetitionId", "SubmitterUserId", "SubmittedUtc");
 

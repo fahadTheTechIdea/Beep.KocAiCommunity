@@ -25,6 +25,12 @@ public static class KocLocalServiceCollectionExtensions
         services.AddSingleton<LocalDatasetStore>();
         services.AddSingleton<LocalWorkflowStore>();
         services.AddSingleton<LocalRunStore>();
+
+        // Offline-first competitions: what was last seen, what is waiting to be sent, and whether the
+        // network is there. Singletons — one queue and one answer per machine.
+        services.AddSingleton<LocalCompetitionCache>();
+        services.AddSingleton<SubmissionOutbox>();
+        services.AddSingleton<ConnectionState>();
         services.AddSingleton<LocalModelStore>();
 
         // The pool caches loaded models; loading one per prediction would be slow and pointless.
@@ -66,7 +72,13 @@ public static class KocLocalServiceCollectionExtensions
             sp.GetRequiredService<INodeRegistry>(),
             sp.GetRequiredService<IPipelineExecutor>(),
             sp.GetRequiredService<LocalDatasetStore>(),
-            sp.GetRequiredService<LocalWorkflowStore>()));
+            sp.GetRequiredService<LocalWorkflowStore>(),
+            sp.GetRequiredService<LocalCompetitionCache>(),
+            sp.GetRequiredService<SubmissionOutbox>(),
+            sp.GetRequiredService<ConnectionState>()));
+
+        services.AddScoped<ISubmissionSender>(sp => new ApiSubmissionSender(sp.GetRequiredService<IKocApiClient>()));
+        services.AddScoped<SyncService>();
 
         return services;
     }

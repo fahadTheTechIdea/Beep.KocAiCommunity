@@ -1,7 +1,7 @@
 # KOC Studio (WinForms Desktop) — Master Todo Tracker
 
 **Plan folder:** `plans/winforms-studio/`
-**Status:** 🟢 BUILDING — Phases 01–05 code complete (2026-08-02); 06–08 design-only
+**Status:** 🟢 BUILDING — Phases 01–06 code complete (2026-08-02); 07–08 design-only
 **Baseline audited:** 2026-08-02 against `src/Beep.KocAiCommunity.WinForms`, `src/Beep.KocAiCommunity.Desktop.Local`, `src/Beep.KocAiCommunity.Ui.Studio` at commit `e3ae815`
 **Related plans:** `plans/koc-ai-community-platform/19_WINFORMS_DESKTOP_STUDIO.md` and `19a–19d` — those describe the *original* desktop build. This folder is its evolution into a product an engineer can live in.
 
@@ -30,7 +30,7 @@ do a day's work in it without hitting a wall".
 | **Run history** | ✅ Shipped 2026-08-02 — files in the workspace, with the dataset hash |
 | **Per-node data preview** | ✅ Shipped 2026-08-02 — rows in/out, timing, bounded sample per node |
 | **Model registry / inference** | ✅ Shipped 2026-08-02 — keep, predict, export/import; promotion blocked on the API |
-| **Offline competition queue** | ❌ Submitting offline just fails |
+| **Offline competition queue** | ✅ Shipped 2026-08-02 — durable outbox + idempotent replay |
 | **Packaging / updates** | ❌ No installer, no update path |
 | **Crash handling / logs** | ❌ An unhandled exception closes the window silently |
 | **Accessibility** | ❌ Never assessed |
@@ -102,11 +102,17 @@ do a day's work in it without hitting a wall".
   - [ ] **Hand-verification outstanding** — keeping, predicting, exporting and importing have not been
         exercised in a running window
 
-- [ ] **Phase 06 — Offline-first competitions** (`06_OFFLINE_FIRST_COMPETITIONS.md`)
-  - [ ] Durable outbox for submissions made while offline
-  - [ ] Background sync when the network returns; idempotent replay
-  - [ ] Competition data cached for offline browsing
-  - [ ] Honest connection state in the UI — no silent failures
+- [ ] **Phase 06 — Offline-first competitions** (`06_OFFLINE_FIRST_COMPETITIONS.md`) — 🟡 CODE COMPLETE
+  - [x] **The API idempotency gap is closed** — the blocker this phase was not allowed to ship before.
+        `Idempotency-Key` on both submit endpoints, checked before the quota and again inside the
+        transaction; unique index filtered to skip nulls; migrations on both providers; 6 tests
+  - [x] Durable outbox, capped at 50, surviving restart; refusals kept with their reason
+  - [x] Replay with the entry id as the key; backoff that grows, caps, and parks after 5 attempts
+  - [x] Competition list and detail cached, with the age shown whenever it is not live
+  - [x] Connection indicator in the app bar and an outbox page; queued entries show no score
+  - [ ] **Nothing polls in the background yet** — sync runs from a Try now button. Needs a timer owned
+        by the WinForms shell, which wants a running window to get right. See the phase doc
+  - [ ] **Local vs server score not shown together** — the data is recorded, the teaching moment is not built
   - [ ] Conflict rules where a submission's competition has since closed
 
 - [ ] **Phase 07 — Packaging, updates, WebView2** (`07_PACKAGING_UPDATES_WEBVIEW2.md`)

@@ -584,19 +584,44 @@ public sealed class CompetitionService(
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, CancellationToken ct = default)
+    public async Task<Submission> SubmitAsync(string userId, Guid competitionId, Stream predictions, string fileName, string? idempotencyKey = null, CancellationToken ct = default)
     {
         var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
             ?? throw new CompetitionException("Competition not found.");
+
+        // Before the quota check, deliberately: a replay is not a new attempt and must not cost one.
+        if (await AlreadySubmittedAsync(competitionId, userId, idempotencyKey, ct) is { } already)
+        {
+            return already;
+        }
 
         await EnsureSubmittableAsync(competition, userId, ct);
-        return await ScoreAndRecordAsync(competition, userId, predictions, fileName, notes: null, ct);
+        return await ScoreAndRecordAsync(competition, userId, predictions, fileName, notes: null, idempotencyKey, ct);
     }
 
-    public async Task<Submission> SubmitPipelineAsync(string userId, Guid competitionId, WorkflowDefinition definition, CancellationToken ct = default)
+    /// <summary>
+    /// The submission already recorded under this key, if any.
+    /// <para>
+    /// Checked before anything else a submission does — quota, scoring, the leaderboard — because a
+    /// retry has to be free. A client that resends because it never saw the response is not making a
+    /// second attempt, and charging it as one would take a participant's quota for work they did once.
+    /// </para>
+    /// </summary>
+    private async Task<Submission?> AlreadySubmittedAsync(Guid competitionId, string userId, string? key, CancellationToken ct) =>
+        string.IsNullOrWhiteSpace(key)
+            ? null
+            : await db.Set<Submission>().FirstOrDefaultAsync(
+                s => s.CompetitionId == competitionId && s.SubmitterUserId == userId && s.IdempotencyKey == key, ct);
+
+    public async Task<Submission> SubmitPipelineAsync(string userId, Guid competitionId, WorkflowDefinition definition, string? idempotencyKey = null, CancellationToken ct = default)
     {
         var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
             ?? throw new CompetitionException("Competition not found.");
+
+        if (await AlreadySubmittedAsync(competitionId, userId, idempotencyKey, ct) is { } already)
+        {
+            return already;
+        }
 
         await EnsureSubmittableAsync(competition, userId, ct);
 
@@ -646,7 +671,7 @@ public sealed class CompetitionService(
         }
 
         using var predictions = new MemoryStream(Encoding.UTF8.GetBytes(predictionCsv));
-        return await ScoreAndRecordAsync(competition, userId, predictions, "pipeline-predictions.csv", notes: "from Studio pipeline", ct);
+        return await ScoreAndRecordAsync(competition, userId, predictions, "pipeline-predictions.csv", notes: "from Studio pipeline", idempotencyKey, ct);
     }
 
     // Resolve the join/union nodes' secondary datasets to the participant's OWN visible, file-bearing
@@ -704,7 +729,7 @@ public sealed class CompetitionService(
         }
     }
 
-    private async Task<Submission> ScoreAndRecordAsync(Competition competition, string userId, Stream predictions, string fileName, string? notes, CancellationToken ct)
+    private async Task<Submission> ScoreAndRecordAsync(Competition competition, string userId, Stream predictions, string fileName, string? notes, string? idempotencyKey, CancellationToken ct)
     {
         var predictionArtifact = await artifacts.SaveAsync(
             predictions, $"competitions/{competition.Id}/submissions/{userId}/{fileName}", "text/csv", KocDataClassification.Internal, ct);
@@ -724,6 +749,7 @@ public sealed class CompetitionService(
             Score = score,               // public — shown live
             PrivateScore = privateScore, // hidden holdout — the final standings
             Notes = notes,
+            IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey,
             CreatedUtc = DateTime.UtcNow,
         };
         // Atomically re-check the daily quota and insert, so two concurrent submits can't both slip past the
@@ -732,6 +758,15 @@ public sealed class CompetitionService(
         // user-initiated transaction is safe here.
         await using (var tx = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, ct))
         {
+            // Re-check the key inside the transaction too. The upfront check races with a concurrent
+            // replay of the same queued submission — exactly what a client retrying a request it never
+            // saw the answer to produces — and losing that race would spend a second attempt.
+            if (await AlreadySubmittedAsync(competition.Id, userId, idempotencyKey, ct) is { } concurrent)
+            {
+                await tx.RollbackAsync(ct);
+                return concurrent;
+            }
+
             var sinceUtc = DateTime.UtcNow.Date;
             var todayCount = await db.Set<Submission>()
                 .CountAsync(s => s.CompetitionId == competition.Id && s.SubmitterUserId == userId && s.SubmittedUtc >= sinceUtc, ct);

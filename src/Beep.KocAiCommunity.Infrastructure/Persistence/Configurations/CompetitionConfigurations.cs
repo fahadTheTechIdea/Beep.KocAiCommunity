@@ -44,7 +44,17 @@ public sealed class SubmissionConfiguration : IEntityTypeConfiguration<Submissio
         b.HasKey(x => x.Id);
         b.Property(x => x.SubmitterUserId).HasMaxLength(450).IsRequired();
         b.Property(x => x.Status).HasMaxLength(32).IsRequired();
+        b.Property(x => x.IdempotencyKey).HasMaxLength(100);
         b.HasIndex(x => new { x.CompetitionId, x.SubmitterUserId, x.SubmittedUtc });
+
+        // Unique per competition and submitter. It has to exclude nulls — the ordinary online path sends
+        // no key, and a unique index over nulls would allow exactly one keyless submission per user.
+        // The filter's quoting differs between providers, so KocDbContext sets it where it knows which
+        // one it is talking to.
+        b.HasIndex(x => new { x.CompetitionId, x.SubmitterUserId, x.IdempotencyKey })
+            .IsUnique()
+            .HasDatabaseName("IX_Submissions_Idempotency");
+
         b.HasOne<Competition>().WithMany().HasForeignKey(x => x.CompetitionId).OnDelete(DeleteBehavior.Cascade);
     }
 }

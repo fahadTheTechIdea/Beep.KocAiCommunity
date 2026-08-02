@@ -1,18 +1,30 @@
 @page "/competitions"
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Desktop.Local
 @inject IKocApiClient Api
 
 <MudText Typo="Typo.h5" Class="mb-1">Competitions</MudText>
 <MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;">
     Browse KOC competitions and leaderboards. Build a pipeline in the designer and submit it from its
-    <b>Submit to competition</b> card. Requires the KOC network.
+    <b>Submit to competition</b> card.
 </MudText>
 
-@if (_offline)
+@* The age is shown whenever this is not live. A leaderboard from three days ago presented as current
+   is the same number a person would act on, with none of the reasons not to. *@
+@if (CacheAge is { } age)
+{
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.CloudOff" Class="mb-3">
+        Not connected — showing what was here @Ago(age). Scores and standings may have moved on.
+        <MudButton Class="ml-3" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="Load">Retry</MudButton>
+    </MudAlert>
+}
+
+@if (_offline && _competitions is { Count: 0 })
 {
     <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.CloudOff">
-        Connect to the KOC network to compete. The designer keeps working offline — only competitions need the API.
+        Connect to the KOC network to compete — nothing has been cached on this machine yet. The designer
+        keeps working offline; only competitions need the API.
         <MudButton Class="ml-3" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="Load">Retry</MudButton>
     </MudAlert>
 }
@@ -93,12 +105,32 @@ else
         try
         {
             _competitions = await Api.GetCompetitionsAsync();
+
+            // The local client serves the cache when the network is gone, so an empty-handed success
+            // is the tell — not an exception.
+            if (Api is LocalKocApiClient local && local.LastCompetitionsFetchUtc is { } fetchedUtc)
+            {
+                var age = DateTime.UtcNow - fetchedUtc;
+                CacheAge = age > TimeSpan.FromSeconds(30) ? age : null;
+                _offline = CacheAge is not null;
+            }
         }
         catch
         {
             _offline = true;
+            _competitions ??= [];
         }
     }
+
+    /// <summary>Non-null exactly when what is on screen came from the cache.</summary>
+    private TimeSpan? CacheAge { get; set; }
+
+    private static string Ago(TimeSpan age) => age switch
+    {
+        { TotalMinutes: < 60 } => $"{(int)age.TotalMinutes} minutes ago",
+        { TotalHours: < 24 } => $"{(int)age.TotalHours} hours ago",
+        _ => $"{(int)age.TotalDays} days ago",
+    };
 
     private async Task Select(CompetitionDto c)
     {

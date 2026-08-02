@@ -51,8 +51,15 @@ public interface IKocApiClient
     Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default);
     Task<CompetitionDto?> CreateCompetitionAsync(CreateCompetitionRequest request, CancellationToken ct = default);
     Task SetAnswerKeyAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default);
-    Task<SubmissionResultDto?> SubmitAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default);
-    Task<SubmissionResultDto?> SubmitPipelineAsync(Guid competitionId, WorkflowDefinition definition, CancellationToken ct = default);
+    /// <summary>
+    /// Submits a prediction file. <paramref name="idempotencyKey"/> makes a retry safe — resending with
+    /// the same key returns the submission already recorded instead of spending another attempt against
+    /// the daily quota. Callers that queue work offline must supply one.
+    /// </summary>
+    Task<SubmissionResultDto?> SubmitAsync(Guid competitionId, Stream csv, string fileName, string? idempotencyKey = null, CancellationToken ct = default);
+
+    /// <inheritdoc cref="SubmitAsync"/>
+    Task<SubmissionResultDto?> SubmitPipelineAsync(Guid competitionId, WorkflowDefinition definition, string? idempotencyKey = null, CancellationToken ct = default);
     Task SetCompetitionDatasetsAsync(Guid competitionId, Stream training, Stream evaluation, string labelColumn, string idColumn, string task, CancellationToken ct = default);
     Task<string?> GetCompetitionDataAsync(Guid competitionId, string which, CancellationToken ct = default);
     Task<IReadOnlyList<SubmissionResultDto>> GetMySubmissionsAsync(Guid competitionId, CancellationToken ct = default);
@@ -308,17 +315,35 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         (await http.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", content, ct)).EnsureSuccessStatusCode();
     }
 
-    public async Task<SubmissionResultDto?> SubmitAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default)
+    public async Task<SubmissionResultDto?> SubmitAsync(Guid competitionId, Stream csv, string fileName, string? idempotencyKey = null, CancellationToken ct = default)
     {
         using var content = CsvForm(csv, fileName);
-        var response = await http.PostAsync($"/api/v1/competitions/{competitionId}/submissions", content, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/competitions/{competitionId}/submissions") { Content = content };
+        WithIdempotency(request, idempotencyKey);
+
+        var response = await http.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<SubmissionResultDto>(ct);
     }
 
-    public async Task<SubmissionResultDto?> SubmitPipelineAsync(Guid competitionId, WorkflowDefinition definition, CancellationToken ct = default)
+    /// <summary>Attaches the retry-safety key, when the caller has one.</summary>
+    private static void WithIdempotency(HttpRequestMessage request, string? key)
     {
-        var response = await http.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/submit-pipeline", definition, ct);
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            request.Headers.TryAddWithoutValidation("Idempotency-Key", key);
+        }
+    }
+
+    public async Task<SubmissionResultDto?> SubmitPipelineAsync(Guid competitionId, WorkflowDefinition definition, string? idempotencyKey = null, CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/competitions/{competitionId}/submit-pipeline")
+        {
+            Content = JsonContent.Create(definition),
+        };
+        WithIdempotency(request, idempotencyKey);
+
+        var response = await http.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
         {
             var problem = await response.Content.ReadAsStringAsync(ct);

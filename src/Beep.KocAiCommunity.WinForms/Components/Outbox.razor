@@ -1,0 +1,169 @@
+@page "/outbox"
+@using System.Globalization
+@using Beep.KocAiCommunity.Desktop.Local
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@implements IDisposable
+@inject SubmissionOutbox Queue
+@inject SyncService Sync
+@inject ConnectionState Connection
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<Strings> L
+
+@* What is waiting to be sent, what the server refused, and why. Nothing here is ever removed on its
+   own: the work was done, and a queue that quietly empties itself is indistinguishable from one that
+   worked. *@
+
+<div class="d-flex align-center justify-space-between mb-1">
+    <MudText Typo="Typo.h5">@L["Waiting to send"]</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sync"
+               OnClick="SyncNow" Disabled="_syncing">@L["Try now"]</MudButton>
+</div>
+
+<MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;max-width:80ch;">
+    @L["Submissions made without a network wait here and are sent when it returns. Sending again is safe — the platform records each one only once."]
+</MudText>
+
+@if (_syncing)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+}
+
+@if (_entries.Count == 0)
+{
+    <MudPaper Class="pa-8" Outlined="true" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.CloudDone" Size="Size.Large" Color="Color.Success" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="mb-1">@L["Nothing waiting"]</MudText>
+        <MudText Typo="Typo.body2" Style="opacity:.75;">@L["Everything you have submitted has been sent."]</MudText>
+    </MudPaper>
+}
+else
+{
+    @foreach (var entry in _entries)
+    {
+        <MudPaper Class="pa-3 mb-2" Outlined="true">
+            <div class="d-flex justify-space-between align-center gap-2">
+                <MudText Typo="Typo.subtitle2">@entry.CompetitionTitle</MudText>
+                <div class="d-flex align-center gap-2">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@ColorFor(entry.State)">
+                        @StateLabel(entry.State)
+                    </MudChip>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                   OnClick="@(() => Discard(entry))" aria-label="@L["Delete"]" />
+                </div>
+            </div>
+
+            <MudText Typo="Typo.caption" Style="opacity:.7;">
+                @L["Queued {0}", entry.QueuedUtc.ToLocalTime().ToString("dd MMM HH:mm", CultureInfo.CurrentCulture)]
+                @if (entry.LocalScore is { } local)
+                {
+                    <span> · @L["your local score {0}", local.ToString("0.####")]</span>
+                }
+                @if (entry.Attempts > 0)
+                {
+                    <span> · @L["{0} attempts", entry.Attempts]</span>
+                }
+            </MudText>
+
+            @* No score is shown for a queued entry, because it does not have one yet. A number here
+               would read as a result. *@
+            @if (entry.State == OutboxState.Queued)
+            {
+                <MudText Typo="Typo.caption" Class="d-block" Style="opacity:.6;">
+                    @L["Not scored yet — the platform scores it against the hidden test set when it arrives."]
+                </MudText>
+            }
+
+            @if (entry.LastError is { Length: > 0 } error)
+            {
+                <MudAlert Severity="@(entry.State == OutboxState.Rejected ? Severity.Error : Severity.Warning)"
+                          Variant="Variant.Text" Dense="true" Class="mt-2">
+                    @error
+                </MudAlert>
+            }
+        </MudPaper>
+    }
+}
+
+@code {
+    private IReadOnlyList<QueuedSubmission> _entries = [];
+    private bool _syncing;
+
+    protected override void OnInitialized()
+    {
+        Connection.Changed += OnConnectionChanged;
+        Reload();
+    }
+
+    public void Dispose() => Connection.Changed -= OnConnectionChanged;
+
+    private void OnConnectionChanged() => InvokeAsync(() => { Reload(); StateHasChanged(); });
+
+    private void Reload() => _entries = Queue.List();
+
+    private async Task SyncNow()
+    {
+        _syncing = true;
+        try
+        {
+            if (!await Sync.IsReachableAsync())
+            {
+                Snackbar.Add(L["Still no connection to the KOC network."], Severity.Warning);
+                return;
+            }
+
+            var outcome = await Sync.DrainAsync();
+            Reload();
+
+            Snackbar.Add(
+                outcome switch
+                {
+                    { Sent: > 0, Rejected: 0 } => L["Sent {0}.", outcome.Sent],
+                    { Sent: > 0 } => L["Sent {0}, and {1} were refused.", outcome.Sent, outcome.Rejected],
+                    { Rejected: > 0 } => L["{0} were refused — see why below.", outcome.Rejected],
+                    _ => L["Nothing could be sent this time."],
+                },
+                outcome.Rejected > 0 ? Severity.Warning : Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["That didn't work: {0}", ex.Message], Severity.Error);
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    private async Task Discard(QueuedSubmission entry)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            L["Delete this submission?"],
+            L["It will not be sent, and the predictions kept with it are removed from this machine."],
+            yesText: L["Delete"], cancelText: L["Cancel"]);
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        Queue.Discard(entry.Id);
+        Connection.Queued = Queue.Pending().Count;
+        Reload();
+    }
+
+    private string StateLabel(OutboxState state) => state switch
+    {
+        OutboxState.Queued => L["Queued"],
+        OutboxState.NeedsAttention => L["Needs attention"],
+        _ => L["Refused"],
+    };
+
+    private static Color ColorFor(OutboxState state) => state switch
+    {
+        OutboxState.Queued => Color.Info,
+        OutboxState.NeedsAttention => Color.Warning,
+        _ => Color.Error,
+    };
+}

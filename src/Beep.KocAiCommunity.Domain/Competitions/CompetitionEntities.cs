@@ -84,6 +84,21 @@ public class Submission : AuditableEntity
     public double? Score { get; set; }                   // public score — the live leaderboard (Kaggle-style)
     public double? PrivateScore { get; set; }            // private/hidden holdout score — the final standings
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// A caller-supplied key that makes a retry safe.
+    /// <para>
+    /// Submissions are quota-limited, so a retried request that scores twice costs the participant an
+    /// attempt they did not spend. A client that queues submissions — the desktop when it is offline —
+    /// cannot know whether a request that timed out was received, so without this it must choose
+    /// between losing work and double-spending someone's quota.
+    /// </para>
+    /// <para>
+    /// Unique per (competition, submitter) when present. Null for the ordinary online path, where the
+    /// caller is a person watching a button.
+    /// </para>
+    /// </summary>
+    public string? IdempotencyKey { get; set; }
 }
 
 /// <summary>

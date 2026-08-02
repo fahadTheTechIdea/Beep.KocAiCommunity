@@ -90,6 +90,20 @@ public class KocDbContext(DbContextOptions<KocDbContext> options)
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(KocDbContext).Assembly);
+
+        // The submission idempotency index must skip nulls: the ordinary online path sends no key, and
+        // a unique index that counts them would allow one keyless submission per user, ever. Only the
+        // identifier quoting differs between the two providers, and this is the one place that knows
+        // which is in play.
+        var quote = Database.ProviderName?.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) == true
+            ? "[IdempotencyKey]"
+            : "\"IdempotencyKey\"";
+
+        builder.Entity<Domain.Competitions.Submission>()
+            .HasIndex(x => new { x.CompetitionId, x.SubmitterUserId, x.IdempotencyKey })
+            .HasDatabaseName("IX_Submissions_Idempotency")
+            .IsUnique()
+            .HasFilter($"{quote} IS NOT NULL");
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

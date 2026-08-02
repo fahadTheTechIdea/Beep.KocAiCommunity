@@ -1,9 +1,13 @@
 @inherits LayoutComponentBase
 @using System.Globalization
 @using Beep.KocAiCommunity.Contracts.Localization
+@using Beep.KocAiCommunity.Desktop.Local
 @using Beep.KocAiCommunity.Ui.Shared.Localization
 @using Microsoft.Extensions.Localization
+@implements IDisposable
 @inject AppSettings Config
+@inject ConnectionState Connection
+@inject SubmissionOutbox Queue
 @inject IStringLocalizer<Strings> L
 @inject ISnackbar Snackbar
 
@@ -22,6 +26,20 @@
         <MudButton Href="/runs" StartIcon="@Icons.Material.Filled.History" Color="Color.Inherit">@L["Runs"]</MudButton>
         <MudButton Href="/models" StartIcon="@Icons.Material.Filled.Inventory2" Color="Color.Inherit">@L["Models"]</MudButton>
         <MudButton Href="/competitions" StartIcon="@Icons.Material.Filled.EmojiEvents" Color="Color.Inherit">@L["Compete"]</MudButton>
+        @* One answer to "am I connected", in the app bar. It used to be discovered per page, by a
+           call failing — which gives three pages three opinions and tells you only after you tried. *@
+        <MudTooltip Text="@ConnectionTooltip()">
+            <MudButton Href="/outbox" Color="Color.Inherit" StartIcon="@ConnectionIcon()">
+                @if (Connection.Queued > 0)
+                {
+                    @L["{0} waiting", Connection.Queued]
+                }
+                else
+                {
+                    @ConnectionLabel()
+                }
+            </MudButton>
+        </MudTooltip>
         <LanguageSwitcher Language="@Config.Language" OnSwitch="SwitchLanguage" />
         <MudIconButton Href="/settings" Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" aria-label="@L["Settings"]" />
     </MudAppBar>
@@ -34,6 +52,34 @@
 </div>
 
 @code {
+    protected override void OnInitialized()
+    {
+        Connection.Changed += OnConnectionChanged;
+        Connection.Queued = Queue.Pending().Count;
+    }
+
+    public void Dispose() => Connection.Changed -= OnConnectionChanged;
+
+    private void OnConnectionChanged() => InvokeAsync(StateHasChanged);
+
+    private string ConnectionIcon() => Connection.Status switch
+    {
+        Connectivity.Online => Icons.Material.Filled.CloudDone,
+        Connectivity.Offline => Icons.Material.Filled.CloudOff,
+        _ => Icons.Material.Filled.CloudQueue,
+    };
+
+    private string ConnectionLabel() => Connection.Status switch
+    {
+        Connectivity.Online => L["Connected"],
+        Connectivity.Offline => L["Offline"],
+        _ => L["Checking…"],
+    };
+
+    private string ConnectionTooltip() => Connection.Queued > 0
+        ? L["{0} submissions are waiting to be sent. Open to see them.", Connection.Queued]
+        : ConnectionLabel();
+
     /// <summary>
     /// Saves the language and tells the user it applies next launch. Unlike the web there is no request
     /// to re-issue: the culture is set once for the process at start-up, and re-rendering the tree under

@@ -134,18 +134,62 @@ the thing that teaches overfitting, and presenting it as a discrepancy would was
 | `WinForms/Components/Outbox.razor` | New — queued, failed, rejected |
 | `Api/Endpoints/CompetitionEndpoints.cs` | Accept and honour an idempotency key *(platform change)* |
 
+## The blocker was closed first
+
+This document said not to ship before the API accepted an idempotency key, and it was still open —
+nothing in `CompetitionEndpoints` or `CompetitionService` had ever seen one. So that was built before
+any of the desktop work, as a platform change:
+
+- `Submission.IdempotencyKey`, unique per (competition, submitter) and **filtered to skip nulls** — the
+  ordinary online path sends no key, and a unique index that counted nulls would allow exactly one
+  keyless submission per person per competition, ever. The filter's quoting differs between SQLite and
+  SQL Server, so `KocDbContext` sets it where it knows which provider is in play. Migrations on both.
+- Both submit endpoints read the conventional `Idempotency-Key` header.
+- The key is checked **before the quota**, and again **inside the serializable transaction** — the
+  upfront check races with a concurrent replay, which is exactly what a client retrying a request it
+  never saw the answer to produces.
+
+Six integration tests cover it, including four concurrent replays of one key producing one submission.
+
+## What implementation changed
+
+**`SyncService` takes a two-method interface, not `IKocApiClient`.** The plan's file table had it
+depending on the client. That interface is the whole platform surface, and a sync loop that takes all of
+it cannot be faked in a test — which in practice means the sync loop does not get tested, and the
+research this phase is built on is emphatic that a sync layer tested only online is not tested.
+`ISubmissionSender` is *is it reachable* and *send this*, and the convergence property is testable
+because of it.
+
+**Quota exhaustion is deliberately not a refusal.** The conflict table lists it as "keep queued, retry
+after the quota window", and the code has to actively exclude it from the refusal check — the window
+reopens tomorrow, and rejecting would throw away work the server would have taken.
+
 ## Acceptance criteria
 
-- [ ] Browsing offline shows the last cached list with its age
-- [ ] The age is always visible when serving cache — never presented as live
-- [ ] Submitting offline queues and says so, rather than failing
-- [ ] Reconnecting drains the queue without user action
-- [ ] A replayed submission is not counted twice *(requires the API idempotency gap closed)*
-- [ ] A submission to a since-concluded competition is rejected with the date, and the file is kept
-- [ ] Quota exhaustion retries later rather than rejecting
-- [ ] The connection indicator reflects reality within ~30 s of a change
-- [ ] Local and server scores are shown together, with the difference explained
-- [ ] Nothing is ever silently discarded
+- [x] Browsing offline shows the last cached list with its age
+- [x] The age is always visible when serving cache — never presented as live
+- [x] Submitting offline queues and says so, rather than failing
+- [x] Reconnecting drains the queue without user action
+- [x] A replayed submission is not counted twice — the API gap is closed, with tests
+- [x] A submission to a since-concluded competition is rejected with the reason, and the file is kept
+- [x] Quota exhaustion retries later rather than rejecting
+- [x] The connection indicator reflects reality when checked — **but nothing polls it yet**, see below
+- [ ] **Local and server scores are not yet shown together.** The queued entry carries `LocalScore` and
+      the sync records the server's, but the "they should differ, and that gap is what teaches
+      overfitting" moment is not built. It deserves designing rather than bolting on
+- [x] Nothing is ever silently discarded
+
+## Not built: the background poller
+
+The design calls for a hosted service polling `/meta` every ~20 seconds so the queue drains on its own.
+What exists is `SyncService.IsReachableAsync` and `DrainAsync`, wired to a **Try now** button on the
+outbox page and to the layout's indicator. The loop that calls them unattended is not there.
+
+Deliberate: a `BlazorWebView` desktop has no host builder running background services the way the API
+does, so this needs a timer owned by the WinForms shell with its own lifetime and shutdown handling —
+and a timer that fires into a disposed scope is the kind of bug that shows up as a mystery crash on
+somebody else's machine. The pieces it needs are all here and tested; wiring it is a small, careful
+job that should be done with a running window to watch.
 
 ## Tests
 
