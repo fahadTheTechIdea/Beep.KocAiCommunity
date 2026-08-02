@@ -64,7 +64,7 @@
                     @if (_profile is not null)
                     {
                         <div>
-                            <div class="koc-stat-value" style="font-size:26px;">🛢️ @_profile.XpTotal</div>
+                            <div class="koc-barrels" style="font-size:26px;">@_profile.XpTotal</div>
                             <MudText Typo="Typo.caption">@L["your Barrels"]</MudText>
                         </div>
                     }
@@ -328,7 +328,7 @@
                                         <MudIconButton Icon="@Icons.Material.Filled.Celebration" Size="Size.Small" Color="Color.Primary" OnClick="() => KudosTo(row.UserId, row.DisplayName)" />
                                     </MudTooltip>
                                 }
-                                <MudText Typo="Typo.body1"><b>🛢️ @row.XpTotal</b></MudText>
+                                <MudText Typo="Typo.body1"><span class="koc-barrels">@row.XpTotal</span></MudText>
                             </div>
                         </BlueprintCard>
                     }

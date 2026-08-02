@@ -17,7 +17,7 @@
 {
     <MudTooltip Text="@L["Level {0} · {1}", _profile.Level, _profile.LevelTitle]">
         <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="me-1" OnClick="@(() => Nav.NavigateTo("/profile"))">
-            <span style="font-weight:700;">🛢️ @_profile.XpTotal</span>
+            <span class="koc-barrels">@_profile.XpTotal</span>
             @if (_profile.CurrentStreakDays > 0)
             {
                 <span class="ml-2">🔥 @_profile.CurrentStreakDays</span>

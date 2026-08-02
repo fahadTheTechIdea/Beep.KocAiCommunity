@@ -77,7 +77,7 @@ else
                                 <MudText Typo="Typo.body2"><b>@p.DisplayName</b> @(p.IsMe ? $"({L["you"]})" : "")</MudText>
                                 <MudText Typo="Typo.caption" Style="opacity:.65;">@L["Lvl {0}", p.Level] · @p.LevelTitle</MudText>
                             </div>
-                            <MudText Typo="Typo.body2"><b>🛢️ @p.XpTotal</b></MudText>
+                            <MudText Typo="Typo.body2"><span class="koc-barrels">@p.XpTotal</span></MudText>
                         </div>
                     }
                 }
