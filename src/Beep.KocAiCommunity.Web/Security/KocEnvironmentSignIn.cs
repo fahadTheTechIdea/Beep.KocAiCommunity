@@ -29,7 +29,9 @@ public static class KocExchangeClient
 public static class KocEnvironmentSignIn
 {
     /// <summary>Paths that must not trigger a sign-in attempt (static assets, health, the wizard itself).</summary>
-    private static readonly string[] Skip = ["/health", "/alive", "/_framework", "/_blazor", "/css", "/js", "/lib", "/brand", "/icons", "/favicon", "/account", "/setup"];
+    // "/api" and "/hubs" carry their own bearer token and must not be handed a corporate cookie
+    // instead: the platform surface shares this host now, and a desktop client is not a browser.
+    private static readonly string[] Skip = ["/health", "/alive", "/api", "/hubs", "/_framework", "/_blazor", "/css", "/js", "/lib", "/brand", "/icons", "/favicon", "/account", "/setup"];
 
     public static IApplicationBuilder UseKocEnvironmentSignIn(this IApplicationBuilder app) =>
         app.Use(async (context, next) =>

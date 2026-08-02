@@ -3,6 +3,8 @@ using Beep.KocAiCommunity.Application.Workflow;
 using Beep.KocAiCommunity.Client;
 using Beep.KocAiCommunity.ML;
 using Beep.KocAiCommunity.ML.Nodes;
+using Beep.KocAiCommunity.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Beep.KocAiCommunity.Desktop.Local;
@@ -17,7 +19,8 @@ public static class KocLocalServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddKocLocalStudio(
         this IServiceCollection services, string apiBaseUrl, LocalWorkspace? workspace = null,
-        LocalTrainingLimits? trainingLimits = null)
+        LocalTrainingLimits? trainingLimits = null,
+        string? platformDatabase = null, string databaseProvider = "SqlServer")
     {
         var ws = workspace ?? LocalWorkspace.Default();
         ws.EnsureCreated();
@@ -58,17 +61,30 @@ public static class KocLocalServiceCollectionExtensions
         services.AddSingleton<INodeRegistry>(sp => sp.GetRequiredService<PluginNodeRegistry>());
         services.AddSingleton<IPipelineExecutor, PluginNodeExecutor>();
 
-        // Remote HTTP client for competitions (+ dev identity forwarding) and the realtime hub URL.
         services.AddSingleton<DevIdentity>();
         services.AddSingleton(new DevIdentityOptions());
-        services.AddTransient<DevIdentityHandler>();
-        services.AddHttpClient<KocApiClient>(client => client.BaseAddress = new Uri(apiBaseUrl))
-            .AddHttpMessageHandler<DevIdentityHandler>();
         services.AddSingleton(new RealtimeOptions($"{apiBaseUrl.TrimEnd('/')}/hubs/leaderboard"));
 
-        // The Studio-local façade with the HTTP client as its online fallback.
+        // The platform, read straight from its database. There is no API website in between any more —
+        // this machine opens the same database the site does, using the same application services.
+        if (platformDatabase is { Length: > 0 })
+        {
+            services.AddKocInfrastructure(new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:kocdb"] = platformDatabase,
+                    ["Database:Provider"] = databaseProvider,
+                })
+                .Build());
+
+            services.AddScoped<DesktopPlatformClient>();
+        }
+
+        // The Studio-local façade. Its fallback is the direct database client when this machine is
+        // configured for the platform, and nothing at all when it is not — in which case anything not
+        // handled locally says so by name rather than failing obscurely.
         services.AddScoped<IKocApiClient>(sp => new LocalKocApiClient(
-            sp.GetRequiredService<KocApiClient>(),
+            platformDatabase is { Length: > 0 } ? sp.GetRequiredService<DesktopPlatformClient>() : null,
             sp.GetRequiredService<INodeRegistry>(),
             sp.GetRequiredService<IPipelineExecutor>(),
             sp.GetRequiredService<LocalDatasetStore>(),
@@ -77,7 +93,12 @@ public static class KocLocalServiceCollectionExtensions
             sp.GetRequiredService<SubmissionOutbox>(),
             sp.GetRequiredService<ConnectionState>()));
 
-        services.AddScoped<ISubmissionSender>(sp => new ApiSubmissionSender(sp.GetRequiredService<IKocApiClient>()));
+        // Deliberately NOT the local façade: its SubmitAsync is the one that enqueues, so draining
+        // through it would have re-queued every entry instead of sending it.
+        services.AddScoped<ISubmissionSender>(sp => new ApiSubmissionSender(
+            platformDatabase is { Length: > 0 }
+                ? sp.GetRequiredService<DesktopPlatformClient>()
+                : sp.GetRequiredService<IKocApiClient>()));
         services.AddScoped<SyncService>();
 
         return services;

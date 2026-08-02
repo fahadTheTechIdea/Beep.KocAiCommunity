@@ -86,8 +86,15 @@ store or rotate:
 
 | Environment | Recommended approach | Secret stored? |
 |---|---|---|
-| **Local dev** | **User Secrets** — `dotnet user-secrets set "ConnectionStrings:kocdb" "…" --project src/Beep.KocAiCommunity.Api`. Active only in Development, never in source. Default stays SQLite (no config needed). | On the dev machine only |
+| **Local dev** | **User Secrets** — `dotnet user-secrets set "ConnectionStrings:kocdb" "…" --project src/Beep.KocAiCommunity.Web`. Active only in Development, never in source. Default stays SQLite (no config needed). | On the dev machine only |
 | **On-prem IIS (intranet)** | **Windows Integrated auth** — run the app-pool as a dedicated Windows service account / **gMSA** granted a SQL login; connection string uses `Integrated Security=true` (no password). | **None** |
+
+
+> **Moving from the old two-site layout.** The API was its own website and its own secret store
+> (`beep-kocaicommunity-api`). Since it merged into the website on 2026-08-02 the host reads
+> `beep-kocaicommunity-web` instead, so any connection string or signing key kept for the API has to be
+> re-set. `dotnet user-secrets list --id beep-kocaicommunity-api` shows what was there; nothing is
+> copied automatically.
 | **Azure Kuwait Central** | **Entra Managed Identity** — the app's managed identity is granted a SQL user; connection string uses `Authentication=Active Directory Default` (no password). Any residual secret goes in **Key Vault**. | None (or Key Vault only) |
 
 **How the connection string changes per environment** — config layering, highest wins, no rebuild:

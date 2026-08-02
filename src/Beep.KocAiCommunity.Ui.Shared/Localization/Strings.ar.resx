@@ -97,9 +97,6 @@
   <data name="A specific title beats a generic one — name the asset and the outcome." xml:space="preserve">
     <value>العنوان المحدّد أفضل من العام — اذكر الأصل والنتيجة.</value>
   </data>
-  <data name="API base URL" xml:space="preserve">
-    <value>عنوان واجهة البرمجة الأساسي</value>
-  </data>
   <data name="About" xml:space="preserve">
     <value>نبذة</value>
   </data>
@@ -393,6 +390,12 @@
   </data>
   <data name="Connected" xml:space="preserve">
     <value>متصل</value>
+  </data>
+  <data name="Connected to the platform. Applied on next launch." xml:space="preserve">
+    <value>متصل بالمنصّة. يُطبَّق عند التشغيل التالي.</value>
+  </data>
+  <data name="Connection to the KOC platform database. Leave empty to work offline — datasets, the designer, training and models all still work." xml:space="preserve">
+    <value>الاتصال بقاعدة بيانات منصّة شركة نفط الكويت. اتركه فارغًا للعمل دون اتصال — تظل مجموعات البيانات والمصمّم والتدريب والنماذج تعمل جميعها.</value>
   </data>
   <data name="Connectors" xml:space="preserve">
     <value>الموصلات</value>
@@ -880,6 +883,9 @@
   <data name="Live standings — {0}" xml:space="preserve">
     <value>الترتيب المباشر — {0}</value>
   </data>
+  <data name="Local only — competitions and experiments are unavailable." xml:space="preserve">
+    <value>محلي فقط — المسابقات والتجارب غير متاحة.</value>
+  </data>
   <data name="Lock" xml:space="preserve">
     <value>إقفال</value>
   </data>
@@ -897,6 +903,9 @@
   </data>
   <data name="ML.NET {0}" xml:space="preserve">
     <value>ML.NET {0}</value>
+  </data>
+  <data name="Main" xml:space="preserve">
+    <value>الرئيسية</value>
   </data>
   <data name="Mark all read" xml:space="preserve">
     <value>تعليم الكل كمقروء</value>
@@ -1165,6 +1174,9 @@
   <data name="Pin" xml:space="preserve">
     <value>تثبيت</value>
   </data>
+  <data name="Platform database" xml:space="preserve">
+    <value>قاعدة بيانات المنصّة</value>
+  </data>
   <data name="Post discussion" xml:space="preserve">
     <value>انشر النقاش</value>
   </data>
@@ -1291,8 +1303,8 @@
   <data name="Save and continue" xml:space="preserve">
     <value>احفظ وتابع</value>
   </data>
-  <data name="Saved. Restart to apply a changed API URL." xml:space="preserve">
-    <value>تمّ الحفظ. أعد التشغيل لتطبيق تغيير عنوان واجهة البرمجة.</value>
+  <data name="Saved. Restart to apply a changed database or address." xml:space="preserve">
+    <value>تمّ الحفظ. أعد التشغيل لتطبيق تغيير قاعدة البيانات أو العنوان.</value>
   </data>
   <data name="Say why (they'll see this)" xml:space="preserve">
     <value>اذكر السبب (سيرونه)</value>
@@ -1386,9 +1398,6 @@
   </data>
   <data name="Sign in to continue" xml:space="preserve">
     <value>سجّل الدخول للمتابعة</value>
-  </data>
-  <data name="Sign in to learn, compete, and build models." xml:space="preserve">
-    <value>سجّل الدخول للتعلُّم والتنافس وبناء النماذج.</value>
   </data>
   <data name="Sign in to {0}" xml:space="preserve">
     <value>سجّل الدخول لـ{0}</value>
@@ -1696,8 +1705,8 @@
   <data name="Use this template" xml:space="preserve">
     <value>استخدم هذا القالب</value>
   </data>
-  <data name="Used for competitions (browse, submit, leaderboard). Applied on next launch." xml:space="preserve">
-    <value>يُستخدم للمسابقات (التصفّح والإرسال ولوحة الصدارة). يُطبَّق عند التشغيل التالي.</value>
+  <data name="Used for the live leaderboard only — everything else is read from the database below. Applied on next launch." xml:space="preserve">
+    <value>يُستخدم للوحة الصدارة الحيّة فقط — وكل ما عداها يُقرأ من قاعدة البيانات أدناه. يُطبَّق عند التشغيل التالي.</value>
   </data>
   <data name="Value" xml:space="preserve">
     <value>القيمة</value>
@@ -1722,6 +1731,9 @@
   </data>
   <data name="Waiting to send" xml:space="preserve">
     <value>في انتظار الإرسال</value>
+  </data>
+  <data name="Website address" xml:space="preserve">
+    <value>عنوان الموقع</value>
   </data>
   <data name="What happens next" xml:space="preserve">
     <value>ما الذي يحدث بعد ذلك</value>

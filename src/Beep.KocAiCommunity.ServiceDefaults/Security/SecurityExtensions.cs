@@ -47,6 +47,10 @@ public static class SecurityExtensions
     /// <summary>Registers the KOC authorization policies (position and function roles).</summary>
     public static IServiceCollection AddKocAuthorization(this IServiceCollection services)
     {
+        // Policies deliberately name no scheme: they follow whatever the host made the default. That is
+        // what lets a test host swap the whole authentication stack for a stub and still exercise these
+        // rules. Where one host serves both browsers and API callers, the default is a routing scheme
+        // that picks by credential — see AddKocDualAuthentication.
         services.AddAuthorizationBuilder()
             .AddPolicy(KocPolicies.RequireEmployee, p => p.RequireRole(KocRoles.AllPositions))
             .AddPolicy(KocPolicies.RequirePlatformAdmin, p => p.RequireRole(KocRoles.PlatformAdmin))
@@ -74,6 +78,49 @@ public static class SecurityExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Adds the platform's access-token scheme <em>beside</em> whatever the host already uses.
+    /// <para>
+    /// <see cref="AddKocApiAuthentication"/> makes the token the default scheme, which is right for a
+    /// host that serves nothing else. The website is not that host: it signs people in with a cookie
+    /// and must keep the cookie as its default, while still accepting a bearer token from KOC Studio.
+    /// </para>
+    /// </summary>
+    public static IServiceCollection AddKocPlatformBearer(this IServiceCollection services, IConfiguration configuration)
+    {
+        var setup = new KocSetupStore(configuration);
+
+        // The default is a routing scheme, not either real one. A request carrying "Authorization:
+        // Bearer" is an API caller and is validated as a token; anything else is a browser and is
+        // validated as our sign-in cookie. One default keeps every policy — and any host that replaces
+        // the default wholesale, as the tests do — working unchanged.
+        services.AddAuthentication(DualScheme)
+            .AddPolicyScheme(DualScheme, DualScheme, options =>
+            {
+                options.ForwardDefaultSelector = context =>
+                    // The API surface is always token-authenticated, whether or not this particular
+                    // request carried one. Falling back to the cookie for an unauthenticated /api call
+                    // answered it with a 302 to the sign-in page — a redirect is not something an API
+                    // client can act on, and the contract there is 401.
+                    context.Request.Path.StartsWithSegments("/api")
+                    || context.Request.Path.StartsWithSegments("/hubs")
+                    || context.Request.Headers.Authorization.ToString()
+                        .StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                        ? JwtBearerDefaults.AuthenticationScheme
+                        : WebCookieScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = TokenValidation(setup.Current.TokenSigningKey);
+                options.MapInboundClaims = false;
+            });
+
+        return services;
+    }
+
+    /// <summary>The routing scheme a host uses when it serves both browsers and API callers.</summary>
+    public const string DualScheme = "KocCookieOrToken";
 
     /// <summary>
     /// The browser-facing cookie the Web signs people into. Always registered: whether the credentials

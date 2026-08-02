@@ -86,7 +86,9 @@ src/
   Beep.KocAiCommunity.Client             Framework-agnostic HTTP API client + dev identity (Web + desktop)
   Beep.KocAiCommunity.ServiceDefaults    Aspire defaults + shared security wiring
   Beep.KocAiCommunity.Web                Blazor Web App (Interactive Server) — calls the API, live via SignalR
-  Beep.KocAiCommunity.Api                Minimal API (/api/v1) + SignalR hub + outbox dispatcher
+  Beep.KocAiCommunity.Platform           The platform surface as a LIBRARY: /api/v1 endpoints,
+                                         SignalR hub, outbox dispatcher. Hosted by the Web; there is
+                                         no separate API website since 2026-08-02.
   Beep.KocAiCommunity.Worker             Background worker
   Beep.KocAiCommunity.Desktop.Local      Offline in-process Studio engine for the desktop (LocalKocApiClient)
   Beep.KocAiCommunity.WinForms           WinForms desktop app hosting the Studio designer via BlazorWebView
@@ -107,20 +109,16 @@ Prerequisites: **.NET SDK 10** (pinned in `global.json`).
 
 ### Standalone (no Docker)
 
-Two terminals — the API auto-migrates a local SQLite database, seeds starter content (learning tracks + two demo
-competitions), and enables a **development-only auth** (no Entra tenant needed):
+One host — the website auto-migrates a local SQLite database, seeds starter content (learning tracks +
+two demo competitions), and enables a **development-only auth** (no Entra tenant needed):
 
 ```bash
-# Terminal 1 — API on http://localhost:5250 (migrate + seed + dev auth)
-ASPNETCORE_ENVIRONMENT=Development Seed__Enabled=true ASPNETCORE_URLS=http://localhost:5250 \
-  dotnet run --project src/Beep.KocAiCommunity.Api
-
-# Terminal 2 — Web on http://localhost:5150 (calls the API)
+# One host on :5150 — pages, /api/v1, migrate, seed, dev auth
 ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5150 \
   dotnet run --project src/Beep.KocAiCommunity.Web
 ```
 
-Open <http://localhost:5150>. The **Dashboard**, **Datasets**, **Compete**, and **Models** pages let you change the
+Open <http://localhost:5150>. The **Dashboard**, **Compete**, and **Learn** pages let you change the
 acting-as dev user to see visibility, leaderboards, and dashboards behave per person. The dev user is seeded as a
 **Manager**, so **Supervision** and the team overview show populated rollups. Two demo competitions (a
 classification and a regression one) come pre-loaded with data so you can submit a pipeline immediately.

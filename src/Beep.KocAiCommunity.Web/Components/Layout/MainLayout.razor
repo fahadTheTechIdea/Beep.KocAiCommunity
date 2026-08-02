@@ -26,13 +26,16 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Surface">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" aria-label="Toggle navigation" />
         <MudImage Src="@KocBrand.LogoPath" Alt="Kuwait Oil Company" Height="38" Class="mr-3" />
-        <div class="d-flex flex-column" style="line-height:1.15;">
+        <a href="/" class="koc-brand d-flex flex-column" style="line-height:1.15;">
             <MudText Typo="Typo.h6" Class="koc-heading d-none d-sm-flex">@KocBrand.ProductName</MudText>
             <MudText Typo="Typo.h6" Class="koc-heading d-flex d-sm-none">@KocBrand.ShortName</MudText>
-            <MudText Typo="Typo.caption" Class="d-none d-md-flex" Style="opacity:.7;">@KocBrand.Company · @KocBrand.SubTitle</MudText>
-        </div>
+            <MudText Typo="Typo.caption" Class="d-none d-lg-flex" Style="opacity:.7;">@KocBrand.Company · @KocBrand.SubTitle</MudText>
+        </a>
+
+        @* Navigation moved off the drawer and onto the bar. *@
+        <TopNav />
+
         <MudSpacer />
 
         @if (!Identity.IsGuest)
@@ -135,10 +138,6 @@
         }
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
-        <NavMenu />
-    </MudDrawer>
-
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
             @if (AllowedHere())
@@ -176,7 +175,6 @@
 
 @code {
     private readonly MudTheme _theme = KocTheme.Build();
-    private bool _drawerOpen = true;
 
     /// <summary>True when nobody really signs in and the persona switcher stands in for an identity.</summary>
     private bool IsDemoMode => SetupStore.DemoPersonasEnabled;
@@ -240,7 +238,6 @@
         }
     }
 
-    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 
     private void Switch(string key)
     {

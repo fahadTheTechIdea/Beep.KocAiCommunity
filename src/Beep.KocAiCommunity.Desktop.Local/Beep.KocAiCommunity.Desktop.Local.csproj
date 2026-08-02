@@ -8,6 +8,9 @@
     <ProjectReference Include="..\Beep.KocAiCommunity.Client\Beep.KocAiCommunity.Client.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.ML\Beep.KocAiCommunity.ML.csproj" />
+    <!-- KOC Studio reads the platform database itself; there is no API website in between. -->
+    <ProjectReference Include="..\Beep.KocAiCommunity.Infrastructure\Beep.KocAiCommunity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Beep.KocAiCommunity.Infrastructure.SqlServerMigrations\Beep.KocAiCommunity.Infrastructure.SqlServerMigrations.csproj" />
     <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>
 

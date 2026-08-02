@@ -14,7 +14,7 @@ namespace Beep.KocAiCommunity.Desktop.Local;
 /// is inherited from <see cref="RemoteFallbackKocApiClient"/> and flows to the HTTP API.
 /// </summary>
 public sealed class LocalKocApiClient(
-    IKocApiClient remote,
+    IKocApiClient? remote,
     INodeRegistry registry,
     IPipelineExecutor executor,
     LocalDatasetStore datasets,

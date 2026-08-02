@@ -37,9 +37,14 @@ public static class KocLocalization
             [
                 new CustomRequestCultureProvider(context =>
                 {
+                    // Null when there is no cookie, so the next provider gets a turn. Returning a
+                    // normalised default here instead made this provider answer every request, which
+                    // left Accept-Language unreachable — invisible while the API was its own host, and
+                    // the reason every API caller got English once the surface moved in here.
                     var cookie = context.Request.Cookies[KocLanguages.CookieName];
-                    return Task.FromResult<ProviderCultureResult?>(
-                        new ProviderCultureResult(KocLanguages.FormattingCulture, KocLanguages.Normalize(cookie)));
+                    return Task.FromResult(string.IsNullOrWhiteSpace(cookie)
+                        ? null
+                        : new ProviderCultureResult(KocLanguages.FormattingCulture, KocLanguages.Normalize(cookie)));
                 }),
                 new AcceptLanguageHeaderRequestCultureProvider(),
             ];

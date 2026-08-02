@@ -18,8 +18,19 @@
 
 <MudPaper Class="pa-4" MaxWidth="560px" Outlined="true">
     <MudText Typo="Typo.subtitle1" Class="mb-2">@L["KOC network"]</MudText>
-    <MudTextField @bind-Value="_apiBaseUrl" Label="@L["API base URL"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                  HelperText="@L["Used for competitions (browse, submit, leaderboard). Applied on next launch."]" Class="mb-4" />
+    <MudTextField @bind-Value="_apiBaseUrl" Label="@L["Website address"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  HelperText="@L["Used for the live leaderboard only — everything else is read from the database below. Applied on next launch."]" Class="mb-4" />
+
+    @* KOC Studio reads the platform database itself; there is no API website in between. Blank means
+       local-only, which is a perfectly good way to run it. *@
+    <MudTextField @bind-Value="_platformDatabase" Label="@L["Platform database"]" Variant="Variant.Outlined"
+                  Margin="Margin.Dense" Class="mb-1"
+                  HelperText="@L["Connection to the KOC platform database. Leave empty to work offline — datasets, the designer, training and models all still work."]" />
+    <MudText Typo="Typo.caption" Class="d-block mb-4" Style="opacity:.7;">
+        @(string.IsNullOrWhiteSpace(_platformDatabase)
+            ? L["Local only — competitions and experiments are unavailable."]
+            : L["Connected to the platform. Applied on next launch."])
+    </MudText>
 
     <MudText Typo="Typo.subtitle1" Class="mb-1">@L["Identity"]</MudText>
     <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.7;">
@@ -131,6 +142,7 @@
     private string? _department;
     private int _maxSeconds;
     private int _maxMemoryMb;
+    private string _platformDatabase = "";
 
     protected override void OnInitialized()
     {
@@ -146,6 +158,7 @@
         _department = me?.DepartmentId;
         _maxSeconds = Config.MaxTrainingSeconds;
         _maxMemoryMb = Config.MaxTrainingMemoryMb;
+        _platformDatabase = Config.PlatformDatabase;
     }
 
     private bool _verbose;
@@ -202,10 +215,11 @@
         }
 
         Config.ApiBaseUrl = _apiBaseUrl.Trim();
+        Config.PlatformDatabase = _platformDatabase.Trim();
         Config.PersonaKey = _personaKey;
         Config.VerboseLogging = _verbose;
         Config.Save();
-        Snackbar.Add(L["Saved. Restart to apply a changed API URL."], Severity.Success);
+        Snackbar.Add(L["Saved. Restart to apply a changed database or address."], Severity.Success);
         return Task.CompletedTask;
     }
 

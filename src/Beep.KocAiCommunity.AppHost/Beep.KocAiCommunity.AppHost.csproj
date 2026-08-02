@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.KocAiCommunity.Web\Beep.KocAiCommunity.Web.csproj" />
-    <ProjectReference Include="..\Beep.KocAiCommunity.Api\Beep.KocAiCommunity.Api.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Worker\Beep.KocAiCommunity.Worker.csproj" />
   </ItemGroup>
 

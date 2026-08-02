@@ -7,7 +7,11 @@ namespace Beep.KocAiCommunity.WinForms;
 /// <summary>Desktop app configuration, persisted to %LOCALAPPDATA%/KocStudio/settings.json.</summary>
 public sealed class AppSettings
 {
-    public string ApiBaseUrl { get; set; } = "http://localhost:5250";
+    /// <summary>
+    /// The website's address. Since the API merged into it, this is only used for the live leaderboard
+    /// hub — everything else KOC Studio needs it reads from the database itself.
+    /// </summary>
+    public string ApiBaseUrl { get; set; } = "http://localhost:5150";
 
     /// <summary>Which identity to act as: "__me" (the real signed-in Windows user, default) or a dev persona key.</summary>
     public string PersonaKey { get; set; } = "__me";
@@ -17,6 +21,19 @@ public sealed class AppSettings
     /// here — this file is the equivalent of the browser's culture cookie.
     /// </summary>
     public string Language { get; set; } = KocLanguages.English;
+
+    /// <summary>
+    /// How this machine reaches the platform database.
+    /// <para>
+    /// KOC Studio reads the platform directly — there is no API website in between. Empty means this
+    /// installation is local-only: datasets, the designer, training, runs and models all still work,
+    /// and anything needing the platform says so rather than failing obscurely.
+    /// </para>
+    /// </summary>
+    public string PlatformDatabase { get; set; } = "";
+
+    /// <summary>"SqlServer" for a KOC install; "Sqlite" when pointed at a local file for testing.</summary>
+    public string DatabaseProvider { get; set; } = "SqlServer";
 
     /// <summary>
     /// Writes Debug-level detail to the log. Off by default — it is noisy — and turned on in Settings

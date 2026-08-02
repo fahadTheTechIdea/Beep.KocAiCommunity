@@ -10,7 +10,9 @@ namespace Beep.KocAiCommunity.Web.Security;
 public static class SetupEndpoints
 {
     /// <summary>Paths that must stay reachable while the app is still unconfigured.</summary>
-    private static readonly string[] AlwaysAllowed = ["/setup", "/health", "/alive", "/_framework", "/_blazor", "/css", "/js", "/lib", "/brand", "/icons", "/favicon"];
+    // "/api" and "/hubs" are here because the platform surface shares this host now: a desktop client
+    // asking for competitions must get JSON or a 401, never an HTML redirect to a wizard it cannot show.
+    private static readonly string[] AlwaysAllowed = ["/setup", "/health", "/alive", "/api", "/hubs", "/_framework", "/_blazor", "/css", "/js", "/lib", "/brand", "/icons", "/favicon"];
 
     public static IEndpointRouteBuilder MapKocSetupEndpoints(this IEndpointRouteBuilder app)
     {

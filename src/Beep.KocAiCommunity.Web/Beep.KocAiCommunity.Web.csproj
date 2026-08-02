@@ -27,6 +27,8 @@
     <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Community\Beep.KocAiCommunity.Ui.Community.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Ui.Admin\Beep.KocAiCommunity.Ui.Admin.csproj" />
     <ProjectReference Include="..\Beep.KocAiCommunity.Application\Beep.KocAiCommunity.Application.csproj" />
+    <!-- The platform surface, carried in-process. There is no separate API website since 2026-08-02. -->
+    <ProjectReference Include="..\Beep.KocAiCommunity.Platform\Beep.KocAiCommunity.Platform.csproj" />
   </ItemGroup>
 
 </Project>

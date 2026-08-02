@@ -421,3 +421,53 @@
     .koc-board-actionable { transition: none; }
     .koc-board-actionable:hover { transform: none; }
 }
+
+/* ── Top navigation ────────────────────────────────────────────────────────────────────────────
+   The drawer moved onto the bar. Links need to read as destinations rather than as text, and the
+   page you are on has to be obvious — a top bar has no built-in "you are here" the way a drawer
+   list does. Logical properties throughout, so this mirrors under dir="rtl" without a second rule
+   set. */
+.koc-topnav {
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: 18px;
+}
+
+.koc-topnav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: .875rem;
+  letter-spacing: .01em;
+  opacity: .72;
+  white-space: nowrap;
+  transition: opacity .15s ease, background-color .15s ease, transform .15s ease;
+}
+
+.koc-topnav-link:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+
+/* A press should feel like a press. */
+.koc-topnav-link:active { transform: translateY(1px); }
+
+.koc-topnav-link:focus-visible {
+  outline: 2px solid var(--mud-palette-primary);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+.koc-topnav-link--active {
+  opacity: 1;
+  background: color-mix(in srgb, var(--mud-palette-primary) 14%, transparent);
+  color: var(--mud-palette-primary);
+}
+
+.koc-brand { color: inherit; text-decoration: none; }
+.koc-brand:hover { opacity: .85; }

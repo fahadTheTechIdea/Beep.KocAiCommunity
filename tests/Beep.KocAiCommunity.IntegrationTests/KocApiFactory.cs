@@ -66,6 +66,14 @@ public class KocApiFactory : WebApplicationFactory<Program>
         // flight fails. This buys headroom for the contention, not for the model.
         builder.UseSetting("Studio:TrainingSeconds", "25");
 
+        // Negotiate needs Kestrel and this is a test server. It is a request handler, so it would run
+        // on every call regardless of scheme and fail them all.
+        builder.UseSetting("Auth:EnableNegotiate", "false");
+
+        // No second listener: a test server has no real ports, and confining the API to one would make
+        // every endpoint unroutable here. The in-process guard still applies.
+        builder.UseSetting("Platform:InternalPort", "0");
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>

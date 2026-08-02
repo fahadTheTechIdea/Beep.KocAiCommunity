@@ -1,0 +1,90 @@
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@using Beep.KocAiCommunity.Client
+@inject IStringLocalizer<Strings> L
+@inject DevIdentity Identity
+@inject NavigationManager Nav
+@implements IDisposable
+
+@* The navigation lives on the top bar. A drawer costs a click before you can go anywhere and eats a
+   fifth of the width on a laptop; these are five destinations, which fit. *@
+
+<nav class="koc-topnav d-none d-md-flex" aria-label="@L["Main"]">
+    @foreach (var item in Items())
+    {
+        <a href="@item.Href" class="@LinkClass(item)">
+            <MudIcon Icon="@item.Icon" Size="Size.Small" />
+            <span>@item.Label</span>
+        </a>
+    }
+</nav>
+
+@* Below md the same destinations, one tap away, without the bar wrapping into two rows. *@
+<MudMenu Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Dense="true" Class="d-flex d-md-none"
+         AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" aria-label="@L["Main"]">
+    @foreach (var item in Items())
+    {
+        <MudMenuItem Href="@item.Href" Icon="@item.Icon">@item.Label</MudMenuItem>
+    }
+</MudMenu>
+
+@code {
+    private sealed record NavItem(string Href, string Label, string Icon, bool ExactMatch = false);
+
+    private List<NavItem> Items()
+    {
+        // Learn and Community first and always: they are open without an account, and they are what a
+        // visitor is here to look at before deciding to sign in.
+        var items = new List<NavItem>
+        {
+            new("/", L["Home"], Icons.Material.Filled.Home, ExactMatch: true),
+            new("/learn", L["Learn"], Icons.Material.Filled.School),
+            new("/community", L["Community"], Icons.Material.Filled.Forum),
+        };
+
+        if (Identity.HasAnyPosition)
+        {
+            items.Add(new("/compete", L["Compete"], Icons.Material.Filled.EmojiEvents));
+            items.Add(new("/dashboard", L["Dashboard"], Icons.Material.Filled.Dashboard));
+        }
+
+        if (Identity.IsSupervisor)
+        {
+            items.Add(new("/supervision", L["Supervision"], Icons.Material.Filled.SupervisorAccount));
+        }
+
+        return items;
+    }
+
+    /// <summary>
+    /// Marks the page you are on. A top bar loses the drawer's built-in highlight, and without a
+    /// replacement there is nothing telling you where you are.
+    /// </summary>
+    private string LinkClass(NavItem item) =>
+        IsActive(item) ? "koc-topnav-link koc-topnav-link--active" : "koc-topnav-link";
+
+    private bool IsActive(NavItem item)
+    {
+        var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0].TrimEnd('/');
+        return item.ExactMatch
+            ? path is "/" or ""
+            : path.StartsWith(item.Href, StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected override void OnInitialized()
+    {
+        Identity.Changed += OnChanged;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
+        InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Identity.Changed -= OnChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

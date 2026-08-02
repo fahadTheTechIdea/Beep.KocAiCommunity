@@ -55,14 +55,11 @@ ASP.NET, MudBlazor, and ML.NET; the Web talks to the API, never the database.
 
 ## 4. Run it locally
 
-Two terminals (the API migrates + seeds a local SQLite DB and enables dev auth):
+The website carries the platform surface in-process: it migrates and seeds the local SQLite
+database itself and serves `/api/v1` alongside the pages, so one terminal is enough.
 
 ```bash
-# API on :5250 (migrate + seed + dev auth)
-ASPNETCORE_ENVIRONMENT=Development Seed__Enabled=true ASPNETCORE_URLS=http://localhost:5250 \
-  dotnet run --project src/Beep.KocAiCommunity.Api
-
-# Web on :5150 (calls the API)
+# One host on :5150 — pages, /api/v1, migrate, seed, dev auth
 ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5150 \
   dotnet run --project src/Beep.KocAiCommunity.Web
 ```
@@ -103,7 +100,7 @@ Migrations are **generated for both providers**:
 # SQLite (default provider project)
 dotnet ef migrations add <Name> \
   --project src/Beep.KocAiCommunity.Infrastructure \
-  --startup-project src/Beep.KocAiCommunity.Api
+  --startup-project src/Beep.KocAiCommunity.Web
 
 # SQL Server (its own migrations assembly)
 dotnet ef migrations add <Name> \

@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Beep.KocAiCommunity.Api/Beep.KocAiCommunity.Api.csproj" />
+    <Project Path="src/Beep.KocAiCommunity.Platform/Beep.KocAiCommunity.Platform.csproj" />
     <Project Path="src/Beep.KocAiCommunity.AppHost/Beep.KocAiCommunity.AppHost.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Application/Beep.KocAiCommunity.Application.csproj" />
     <Project Path="src/Beep.KocAiCommunity.Client/Beep.KocAiCommunity.Client.csproj" />

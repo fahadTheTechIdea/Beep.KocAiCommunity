@@ -87,7 +87,9 @@ internal static class Program
         // for a directory-API implementation later to fill in department/profile info.
         services.AddSingleton<IEnvironmentUserProvider, WindowsEnvironmentUserProvider>();
         services.AddSingleton<SignedInUser>();
-        services.AddKocLocalStudio(apiBaseUrl, workspace, settings.TrainingLimits());
+        services.AddKocLocalStudio(
+            apiBaseUrl, workspace, settings.TrainingLimits(),
+            settings.PlatformDatabase, settings.DatabaseProvider);
 
         using var provider = services.BuildServiceProvider();
 

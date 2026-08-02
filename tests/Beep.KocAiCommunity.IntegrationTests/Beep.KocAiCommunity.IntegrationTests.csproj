@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Api\Beep.KocAiCommunity.Api.csproj" />
+    <ProjectReference Include="..\..\src\Beep.KocAiCommunity.Web\Beep.KocAiCommunity.Web.csproj" />
   </ItemGroup>
 
 </Project>
