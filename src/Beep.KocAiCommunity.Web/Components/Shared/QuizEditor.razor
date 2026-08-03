@@ -1,0 +1,282 @@
+@using Beep.KocAiCommunity.Contracts.Learning
+@using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
+
+@* The quiz editor. Admin-only and deliberately English, consistent with the rest of this console.
+
+   One question is edited at a time rather than the whole set at once: a form of thirty fields with a
+   single Save is where somebody loses twenty minutes of typing to a mistyped pass mark. *@
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_quiz is null)
+{
+    <BlueprintCard Class="pa-6" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.Quiz" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">No quiz on this track</MudText>
+        <MudText Typo="Typo.body2" Class="mb-3">
+            Add one and learners will see it after the last lesson. It starts optional and switched off,
+            so nothing appears to anyone until you are ready.
+        </MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="_busy" OnClick="CreateAsync">Create the quiz</MudButton>
+    </BlueprintCard>
+}
+else
+{
+    <BlueprintCard Class="pa-5 mb-4">
+        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-3">Settings</MudText>
+
+        <MudTextField T="string" @bind-Value="_intro" Label="Intro" Variant="Variant.Outlined"
+                      Placeholder="What this covers, and how long it takes." Class="mb-3" />
+
+        <div class="d-flex flex-wrap gap-4 align-center">
+            <MudNumericField T="int" @bind-Value="_passMark" Label="Pass mark %" Min="1" Max="100"
+                             Variant="Variant.Outlined" Style="max-width:150px;" />
+
+            <MudSwitch T="bool" @bind-Value="_mandatory" Color="Color.Primary"
+                       Label="Required to finish the track" />
+
+            <MudSwitch T="bool" @bind-Value="_enabled" Color="Color.Primary" Label="Visible to learners" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy"
+                       StartIcon="@Icons.Material.Filled.Save" OnClick="SaveSettingsAsync">Save settings</MudButton>
+        </div>
+
+        @* Said here rather than discovered later. A mandatory quiz with nothing in it cannot be passed,
+           so it would hold every learner on the track at "awaiting quiz" with no way forward. *@
+        @if (_mandatory && _quiz.Questions.Count == 0)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mt-3">
+                This quiz is required but has no questions. Nobody can pass it, so nobody can finish the
+                track. Add a question, or make it optional.
+            </MudAlert>
+        }
+        else if (_mandatory)
+        {
+            <MudText Typo="Typo.caption" Class="mt-3 d-block mud-text-secondary">
+                Learners must pass this to finish the track. Anyone who has already finished keeps their
+                completion — this applies from now on.
+            </MudText>
+        }
+    </BlueprintCard>
+
+    <div class="d-flex align-center justify-space-between mb-2">
+        <MudText Typo="Typo.subtitle2" Class="koc-heading">
+            Questions <span class="mud-text-secondary">(@_quiz.Questions.Count)</span>
+        </MudText>
+        @if (_editing is null)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add" OnClick="StartNew">Add a question</MudButton>
+        }
+    </div>
+
+    @if (_editing is not null)
+    {
+        <BlueprintCard Class="pa-5 mb-4">
+            <MudTextField T="string" @bind-Value="_qText" Label="Question" Variant="Variant.Outlined"
+                          Lines="2" Class="mb-3" />
+
+            <MudTextField T="string" @bind-Value="_qWhy" Label="Why the right answer is right" Variant="Variant.Outlined"
+                          Placeholder="Shown in the review after an attempt." Lines="2" Class="mb-3" />
+
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                Tick every answer that is correct. A question may have more than one — learners must
+                select all of them and none of the others.
+            </MudText>
+
+            @for (var i = 0; i < _qAnswers.Count; i++)
+            {
+                var index = i;
+                <div class="d-flex align-center gap-2 mt-2">
+                    <MudCheckBox T="bool" Value="_qAnswers[index].IsCorrect" Color="Color.Success"
+                                 ValueChanged="@(v => _qAnswers[index] = _qAnswers[index] with { IsCorrect = v })" />
+                    <MudTextField T="string" Value="_qAnswers[index].Text" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Placeholder="@($"Answer {index + 1}")"
+                                  ValueChanged="@(v => _qAnswers[index] = _qAnswers[index] with { Text = v ?? "" })" />
+                    @if (_qAnswers.Count > 2)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                       OnClick="@(() => _qAnswers.RemoveAt(index))" aria-label="Remove answer" />
+                    }
+                </div>
+            }
+
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="@(() => _qAnswers.Add(new UpsertQuizAnswerRequest(null, "", false)))">Another answer</MudButton>
+                <MudSpacer />
+                <MudButton Variant="Variant.Text" Disabled="_busy" OnClick="@(() => _editing = null)">Cancel</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_busy"
+                           StartIcon="@Icons.Material.Filled.Save" OnClick="SaveQuestionAsync">Save question</MudButton>
+            </div>
+        </BlueprintCard>
+    }
+
+    @if (_quiz.Questions.Count == 0 && _editing is null)
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">No questions yet.</MudText>
+    }
+
+    @foreach (var question in _quiz.Questions)
+    {
+        <BlueprintCard Class="pa-4 mb-2">
+            <div class="d-flex align-start gap-2">
+                <MudText Typo="Typo.body2" Class="flex-grow-1">
+                    <b>@question.OrderNo.</b> @question.Text
+                </MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               OnClick="@(() => StartEdit(question))" aria-label="Edit question" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               Disabled="_busy" OnClick="@(() => DeleteAsync(question.Id))" aria-label="Delete question" />
+            </div>
+
+            @foreach (var answer in question.Answers)
+            {
+                <div class="@(answer.IsCorrect ? "koc-review-option koc-review-option--right" : "koc-review-option")">
+                    <span class="koc-review-mark">@(answer.IsCorrect ? "✓" : "")</span>
+                    <span>@answer.Text</span>
+                </div>
+            }
+        </BlueprintCard>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public Guid TrackId { get; set; }
+
+    private AdminQuizDto? _quiz;
+    private bool _loading = true;
+    private bool _busy;
+
+    private string _intro = "";
+    private int _passMark = 70;
+    private bool _mandatory;
+    private bool _enabled;
+
+    /// <summary>The question being written, or null when the list is just being read.</summary>
+    private AdminQuizQuestionDto? _editing;
+    private string _qText = "";
+    private string _qWhy = "";
+    private List<UpsertQuizAnswerRequest> _qAnswers = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _editing = null;
+        _quiz = await Api.GetQuizForAdminAsync(TrackId);
+        Apply(_quiz);
+        _loading = false;
+    }
+
+    private void Apply(AdminQuizDto? quiz)
+    {
+        _intro = quiz?.Intro ?? "";
+        _passMark = quiz?.PassMark ?? 70;
+        _mandatory = quiz?.IsMandatory ?? false;
+        _enabled = quiz?.IsEnabled ?? false;
+    }
+
+    private async Task CreateAsync()
+    {
+        // Optional and switched off to begin with: a quiz appears the moment it is created, and an empty
+        // one that is already required would strand every learner on the track.
+        _busy = true;
+        var (quiz, error) = await Api.UpsertQuizAsync(TrackId, new UpsertQuizRequest("", 70, IsMandatory: false, IsEnabled: false));
+        _busy = false;
+
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Error);
+            return;
+        }
+
+        _quiz = quiz;
+        Apply(quiz);
+    }
+
+    private async Task SaveSettingsAsync()
+    {
+        _busy = true;
+        var (quiz, error) = await Api.UpsertQuizAsync(TrackId,
+            new UpsertQuizRequest(_intro, _passMark, _mandatory, _enabled));
+        _busy = false;
+
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Error);
+            return;
+        }
+
+        _quiz = quiz;
+        Apply(quiz);
+        Snackbar.Add("Quiz settings saved.", Severity.Success);
+    }
+
+    private void StartNew()
+    {
+        _editing = new AdminQuizQuestionDto(Guid.Empty, 0, "", "", []);
+        _qText = "";
+        _qWhy = "";
+
+        // Two blanks to start: fewer than two options is not a question, and the shape of the form
+        // should say so before the save does.
+        _qAnswers = [new UpsertQuizAnswerRequest(null, "", false), new UpsertQuizAnswerRequest(null, "", false)];
+    }
+
+    private void StartEdit(AdminQuizQuestionDto question)
+    {
+        _editing = question;
+        _qText = question.Text;
+        _qWhy = question.Explanation;
+        _qAnswers = [.. question.Answers.Select(a => new UpsertQuizAnswerRequest(a.Id, a.Text, a.IsCorrect))];
+    }
+
+    private async Task SaveQuestionAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        var id = _editing.Id == Guid.Empty ? (Guid?)null : _editing.Id;
+        var (quiz, error) = await Api.SaveQuizQuestionAsync(TrackId,
+            new UpsertQuizQuestionRequest(id, _qText, _qWhy, _qAnswers));
+        _busy = false;
+
+        // The server refuses an unanswerable question and says why; showing that verbatim beats a
+        // second copy of the same rule here that can drift from it.
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Error);
+            return;
+        }
+
+        _quiz = quiz;
+        _editing = null;
+        Snackbar.Add("Question saved.", Severity.Success);
+    }
+
+    private async Task DeleteAsync(Guid questionId)
+    {
+        _busy = true;
+        var (quiz, error) = await Api.DeleteQuizQuestionAsync(TrackId, questionId);
+        _busy = false;
+
+        if (error is not null)
+        {
+            Snackbar.Add(error, Severity.Error);
+            return;
+        }
+
+        _quiz = quiz;
+        _editing = null;
+    }
+}

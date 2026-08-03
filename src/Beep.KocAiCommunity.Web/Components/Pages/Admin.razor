@@ -453,6 +453,40 @@ else
             }
         </MudTabPanel>
 
+        <MudTabPanel Text="Quizzes" Icon="@Icons.Material.Filled.Quiz" OnClick="EnsureTracks">
+            <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:70ch;">
+                A track can end in a quiz. Make it <b>required</b> and finishing the lessons is no longer
+                finishing the track — the completion, its Barrels and its badge wait until the learner
+                passes. Leave it optional and it is a self-check that records a score and blocks nothing.
+            </MudText>
+
+            @if (_tracks is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else if (_tracks.Count == 0)
+            {
+                <MudText Typo="Typo.body2">No learning tracks yet.</MudText>
+            }
+            else
+            {
+                <MudSelect T="Guid?" Label="Track" Value="_quizTrackId" ValueChanged="@(v => _quizTrackId = v)"
+                           Variant="Variant.Outlined" Class="mb-4" Style="max-width:460px;">
+                    @foreach (var track in _tracks)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)track.Id)">@track.Title</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (_quizTrackId is { } trackId)
+                {
+                    @* Keyed on the track: without it, switching tracks reuses the component and shows the
+                       previous track's questions until the reload lands. *@
+                    <QuizEditor @key="trackId" TrackId="trackId" />
+                }
+            }
+        </MudTabPanel>
+
         <MudTabPanel Text="Audit" Icon="@Icons.Material.Filled.Verified" OnClick="EnsureAudit">
             @if (_audit is null)
             {
@@ -656,6 +690,24 @@ else
     private async Task EnsureSettings() => _settings ??= await Api.GetSettingsAsync();
     private async Task EnsureFlags() => _flags ??= await Api.GetFeatureFlagsAsync();
     private async Task EnsureAudit() => _audit ??= await Api.GetAuditAsync();
+
+    // ---- Quizzes ----
+
+    private IReadOnlyList<Beep.KocAiCommunity.Contracts.Learning.TrackDto>? _tracks;
+    private Guid? _quizTrackId;
+
+    private async Task EnsureTracks()
+    {
+        if (_tracks is not null)
+        {
+            return;
+        }
+
+        _tracks = await Api.GetTracksAsync();
+
+        // Land on a track rather than an empty frame with a "choose one" instruction on it.
+        _quizTrackId ??= _tracks.FirstOrDefault()?.Id;
+    }
 
     // ---- RBAC / Users ----
 
