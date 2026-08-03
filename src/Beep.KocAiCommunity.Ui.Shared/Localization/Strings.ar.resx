@@ -2104,9 +2104,6 @@
   <data name="Standings" xml:space="preserve">
     <value>الترتيب</value>
   </data>
-  <data name="Every board on the platform, live. Scores update as submissions land — final standings stay concealed until reveal day." xml:space="preserve">
-    <value>كل لوحات الترتيب في المنصة، مباشرةً. تتحدّث النتائج مع وصول المشاركات — ويبقى الترتيب النهائي مخفيًا حتى يوم الإعلان.</value>
-  </data>
   <data name="No boards yet" xml:space="preserve">
     <value>لا توجد لوحات ترتيب بعد</value>
   </data>
@@ -2118,12 +2115,6 @@
   </data>
   <data name="{0} competing" xml:space="preserve">
     <value>{0} متسابقًا</value>
-  </data>
-  <data name="Ranked on {0}" xml:space="preserve">
-    <value>الترتيب حسب {0}</value>
-  </data>
-  <data name="{0} submissions" xml:space="preserve">
-    <value>{0} مشاركة</value>
   </data>
   <data name="Open competition" xml:space="preserve">
     <value>فتح المسابقة</value>
@@ -2145,5 +2136,35 @@
   </data>
   <data name="That&#39;s you" xml:space="preserve">
     <value>هذا أنت</value>
+  </data>
+  <data name="Search boards" xml:space="preserve">
+    <value>ابحث في اللوحات</value>
+  </data>
+  <data name="{0} boards" xml:space="preserve">
+    <value>{0} لوحة</value>
+  </data>
+  <data name="{0} of {1} boards" xml:space="preserve">
+    <value>{0} من {1} لوحة</value>
+  </data>
+  <data name="Nothing matches “{0}”." xml:space="preserve">
+    <value>‏لا نتائج تطابق “{0}”.</value>
+  </data>
+  <data name="Pick a board to see its standings." xml:space="preserve">
+    <value>اختر لوحة لعرض ترتيبها.</value>
+  </data>
+  <data name="Live now" xml:space="preserve">
+    <value>مباشر الآن</value>
+  </data>
+  <data name="higher wins" xml:space="preserve">
+    <value>الأعلى يفوز</value>
+  </data>
+  <data name="lower wins" xml:space="preserve">
+    <value>الأدنى يفوز</value>
+  </data>
+  <data name="until reveal" xml:space="preserve">
+    <value>حتى الإعلان</value>
+  </data>
+  <data name="leads on {0}" xml:space="preserve">
+    <value>يتصدّر في {0}</value>
   </data>
 </root>

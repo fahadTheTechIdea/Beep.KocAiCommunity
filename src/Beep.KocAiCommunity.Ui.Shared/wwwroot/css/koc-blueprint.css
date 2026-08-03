@@ -709,48 +709,322 @@
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
    THE LEADERBOARDS ROOM
-   Standings had no page of their own. These styles are for that page; the rank medals, the podium
-   rise and the live dot all come from the energy layer above rather than being redefined here.
+   A rail of boards on one side, one board on the stage. The rail is fixed-height and scrolls, so
+   fifty competitions cost the same screen as five; the stage is the whole point of the page and
+   gets the room. Medals, podium rise and the live dot come from the energy layer above.
    ════════════════════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Picking a board ────────────────────────────────────────────────────────────────────────── */
-.koc-board-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.koc-boards-shell {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
 }
 
-.koc-board-pick {
+/* One column below lg: the rail becomes a short scroller above the board rather than a squeezed
+   sidebar that fits three words per line. */
+@media (max-width: 1279px) {
+  .koc-boards-shell { grid-template-columns: minmax(0, 1fr); }
+  .koc-rail-list { max-block-size: 260px; }
+}
+
+/* ── The rail ───────────────────────────────────────────────────────────────────────────────── */
+.koc-boards-rail {
+  position: sticky;
+  inset-block-start: 88px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 10px 16px;
   border: 1px solid var(--mud-palette-lines-default);
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--mud-palette-surface);
+  overflow: hidden;
+}
+
+.koc-rail-head {
+  padding: 14px 14px 10px;
+  border-block-end: 1px solid var(--mud-palette-lines-default);
+}
+
+.koc-rail-filters {
+  display: flex;
+  gap: 6px;
+}
+
+.koc-rail-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mud-palette-text-secondary);
+  font: inherit;
+  font-size: .78rem;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+
+.koc-rail-filter:hover { border-color: var(--mud-palette-primary); }
+
+.koc-rail-filter--on {
+  border-color: var(--mud-palette-primary);
+  background: color-mix(in srgb, var(--mud-palette-primary) 14%, transparent);
+  color: var(--mud-palette-primary);
+  font-weight: 650;
+}
+
+.koc-rail-filter-count {
+  font-variant-numeric: tabular-nums;
+  opacity: .7;
+}
+
+.koc-rail-count {
+  margin-block-start: 10px;
+  font-size: .74rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
+}
+
+.koc-rail-list {
+  max-block-size: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.koc-rail-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--mud-palette-text-secondary);
+}
+
+/* ── One board in the rail ──────────────────────────────────────────────────────────────────── */
+.koc-pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  inline-size: 100%;
+  padding-block: 9px;
+  padding-inline: 0 12px;
+  border: 0;
+  background: transparent;
   color: inherit;
   font: inherit;
   text-align: start;
   cursor: pointer;
-  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  transition: background-color .15s ease;
 }
 
-.koc-board-pick:hover {
-  transform: translateY(-2px);
-  border-color: var(--mud-palette-primary);
+.koc-pick:hover { background: color-mix(in srgb, var(--mud-palette-primary) 7%, transparent); }
+
+/* The selected board is marked on the edge rather than by a fill, so the rail stays quiet. */
+.koc-pick-bar {
+  flex: 0 0 3px;
+  align-self: stretch;
+  border-start-end-radius: 3px;
+  border-end-end-radius: 3px;
+  background: transparent;
+  transition: background-color .15s ease;
 }
 
-.koc-board-pick--on {
-  border-color: var(--mud-palette-primary);
-  box-shadow: inset 0 -3px 0 0 var(--mud-palette-primary);
+.koc-pick--on { background: color-mix(in srgb, var(--mud-palette-primary) 11%, transparent); }
+.koc-pick--on .koc-pick-bar { background: var(--mud-palette-primary); }
+.koc-pick--on .koc-pick-title { color: var(--mud-palette-primary); }
+
+.koc-pick-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
 }
 
-.koc-board-pick-title { font-weight: 650; }
+.koc-pick-title {
+  font-weight: 620;
+  font-size: .88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-.koc-board-pick-meta {
-  font-size: .78rem;
+.koc-pick-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .74rem;
   color: var(--mud-palette-text-secondary);
 }
+
+.koc-pick-done { opacity: .75; }
+
+.koc-pick-star {
+  margin-inline-start: auto;
+  color: #E0A83C;
+}
+
+/* ── The hero ────────────────────────────────────────────────────────────────────────────────────
+   The competition you are looking at, not a title bar. A hero image when one is set; otherwise the
+   accent washes do the work, so an un-illustrated competition is not a grey rectangle. */
+.koc-board-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 30px 30px 26px;
+  border-radius: 18px;
+  border: 1px solid var(--mud-palette-lines-default);
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--mud-palette-secondary) 26%, transparent), transparent 62%),
+    radial-gradient(110% 130% at 0% 100%, color-mix(in srgb, var(--mud-palette-primary) 30%, transparent), transparent 60%),
+    var(--mud-palette-surface);
+}
+
+.koc-board-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--koc-hero-image, none);
+  background-size: cover;
+  background-position: center;
+  opacity: .22;
+}
+
+/* A running competition gets a moving edge; a concluded one deliberately does not. */
+.koc-board-hero--live::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: 3px;
+  background: linear-gradient(90deg,
+    var(--mud-palette-primary), var(--mud-palette-secondary), var(--mud-palette-primary));
+  background-size: 200% 100%;
+  animation: koc-run 3.5s linear infinite;
+}
+
+@keyframes koc-run {
+  from { background-position: 0 0; }
+  to   { background-position: 200% 0; }
+}
+
+.koc-board-hero-ink {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.koc-hero-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: .78rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
+}
+
+.koc-hero-flag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mud-palette-primary) 16%, transparent);
+  color: var(--mud-palette-primary);
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+.koc-hero-flag--done {
+  background: color-mix(in srgb, var(--mud-palette-text-secondary) 16%, transparent);
+  color: var(--mud-palette-text-secondary);
+}
+
+.koc-hero-title {
+  margin: 0;
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+
+/* ── The scoreboard strip ───────────────────────────────────────────────────────────────────── */
+.koc-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  align-items: flex-end;
+}
+
+.koc-hero-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.koc-hero-stat-value {
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.koc-hero-stat-label {
+  font-size: .74rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
+}
+
+.koc-hero-stat--clock { align-self: center; }
+
+/* ── Who is winning ─────────────────────────────────────────────────────────────────────────── */
+.koc-hero-leader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  align-self: flex-start;
+  max-inline-size: 100%;
+  padding-block: 10px;
+  padding-inline: 14px 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mud-palette-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--mud-palette-surface) 82%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.koc-hero-crown {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.koc-hero-leader-text {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.koc-hero-leader-score {
+  margin-inline-start: 4px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.koc-hero-prizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: .85rem;
+}
+
+.koc-hero-prize {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.koc-hero-medal { font-size: 1.05rem; }
+
+.koc-hero-actions { margin-block-start: 2px; }
 
 /* ── The podium ──────────────────────────────────────────────────────────────────────────────────
    Three columns of unequal height, first place in the middle and tallest. A leaderboard whose top
@@ -778,16 +1052,17 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border-radius: 10px 10px 0 0;
+  border-start-start-radius: 10px;
+  border-start-end-radius: 10px;
 }
 
 /* Height is the ranking, so the shape reads before any of the text does. */
-.koc-podium-col-1 .koc-podium-block { block-size: 112px; }
-.koc-podium-col-2 .koc-podium-block { block-size: 84px; }
-.koc-podium-col-3 .koc-podium-block { block-size: 64px; }
+.koc-podium-col-1 .koc-podium-block { block-size: 118px; }
+.koc-podium-col-2 .koc-podium-block { block-size: 88px; }
+.koc-podium-col-3 .koc-podium-block { block-size: 66px; }
 
 .koc-podium-place {
-  font-size: 1.5rem;
+  font-size: 1.55rem;
   font-weight: 800;
   line-height: 1;
 }
@@ -799,31 +1074,42 @@
   opacity: .85;
 }
 
-/* ── The board itself ───────────────────────────────────────────────────────────────────────── */
+/* ── The board ──────────────────────────────────────────────────────────────────────────────── */
 .koc-board {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .koc-board-row {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 9px 12px;
-  border-radius: 8px;
+  padding: 9px 14px;
+  border-radius: 9px;
+  overflow: hidden;
 }
 
-.koc-board-row:nth-child(odd) {
-  background: color-mix(in srgb, var(--mud-palette-primary) 4%, transparent);
+/* The bar behind the row IS the score, scaled against the leader. A column of numbers hides how
+   close the race is; the shape of the field shows it at a glance. */
+.koc-board-fill {
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: 9px;
+  background: linear-gradient(to inline-end,
+    color-mix(in srgb, var(--mud-palette-primary) 22%, transparent),
+    color-mix(in srgb, var(--mud-palette-primary) 6%, transparent));
+  transition: inline-size .5s cubic-bezier(.2, .8, .3, 1);
 }
 
-.koc-board-row:hover {
-  background: color-mix(in srgb, var(--mud-palette-primary) 10%, transparent);
-}
+.koc-board-row:hover { background: color-mix(in srgb, var(--mud-palette-primary) 8%, transparent); }
 
-/* Ranks are read as a column, so they line up: tabular figures and a fixed box. */
+/* Ranks are read as a column, so they line up: tabular figures in a fixed box. */
 .koc-board-rank {
   display: inline-flex;
   align-items: center;
@@ -833,13 +1119,14 @@
   border-radius: 8px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: color-mix(in srgb, var(--mud-palette-primary) 12%, transparent);
+  background: color-mix(in srgb, var(--mud-palette-primary) 14%, transparent);
 }
 
 .koc-board-name {
   display: flex;
   align-items: center;
-  font-weight: 550;
+  min-inline-size: 0;
+  font-weight: 560;
   overflow-wrap: anywhere;
 }
 
@@ -848,12 +1135,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-.koc-board-empty {
-  padding: 32px 16px;
-  text-align: center;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .koc-board-pick { transition: none !important; }
-  .koc-board-pick:hover { transform: none; }
+  .koc-board-hero--live::after { animation: none !important; }
+  .koc-board-fill,
+  .koc-pick,
+  .koc-pick-bar,
+  .koc-rail-filter { transition: none !important; }
 }
