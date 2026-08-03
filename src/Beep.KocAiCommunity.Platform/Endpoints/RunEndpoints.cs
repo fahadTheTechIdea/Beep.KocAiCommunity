@@ -12,7 +12,18 @@ public static class RunEndpoints
     {
         group.MapPost("/runs", async (CreateRunRequest req, IKocCurrentUser me, IJobQueue queue, CancellationToken ct) =>
         {
-            var payload = StampOwner(req.Type, req.PayloadJson, me.UserId!);
+            // The queue takes any job type, so this is where a training job would get in. The website
+            // does not train: refused here rather than accepted and left to fail in a worker with no
+            // handler for it, which would look like a broken queue rather than a closed door.
+            if (string.Equals(req.Type, JobTypes.ModelTrain, StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.BadRequest(new
+                {
+                    error = "The platform does not train models. Train in KOC Studio on the desktop and register the result.",
+                });
+            }
+
+            var payload = string.IsNullOrWhiteSpace(req.PayloadJson) ? "{}" : req.PayloadJson;
             var id = await queue.EnqueueAsync(req.Type, req.Title, payload, me.UserId!, req.Priority, maxAttempts: 3, ct);
             var job = await queue.GetAsync(id, ct);
             return Results.Ok(ToDto(job!));
@@ -86,30 +97,6 @@ public static class RunEndpoints
     // Owner or PlatformAdmin may see/cancel a run.
     private static bool CanSee(Job job, IKocCurrentUser me) =>
         job.OwnerUserId == me.UserId || me.IsInRole(KocRoles.PlatformAdmin);
-
-    // Never let a client run a training job as another user: force the payload owner to the caller.
-    private static string StampOwner(string type, string payloadJson, string userId)
-    {
-        if (type != JobTypes.ModelTrain)
-        {
-            return string.IsNullOrWhiteSpace(payloadJson) ? "{}" : payloadJson;
-        }
-
-        try
-        {
-            var payload = JsonSerializer.Deserialize<ModelTrainPayload>(payloadJson);
-            if (payload is null)
-            {
-                return payloadJson;
-            }
-
-            return JsonSerializer.Serialize(payload with { OwnerUserId = userId });
-        }
-        catch (JsonException)
-        {
-            return payloadJson;
-        }
-    }
 
     private static RunDto ToDto(Job j) => new(
         j.Id, j.Type, j.Title, j.Status, j.AttemptCount, j.MaxAttempts, j.Priority,

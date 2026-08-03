@@ -16,14 +16,14 @@ public class RunsEndpointsTests(KocApiFactory factory) : IClassFixture<KocApiFac
         var emp = _factory.CreateClientAs("emp1", "Employee");
 
         var created = await (await emp.PostAsJsonAsync("/api/v1/runs",
-            new CreateRunRequest("model.train", "Train pump failures", "{}")))
+            new CreateRunRequest("report.generate", "Monthly report", "{}")))
             .Content.ReadFromJsonAsync<RunDto>();
 
         created.Should().NotBeNull();
         created!.Status.Should().Be("pending");
 
         var fetched = await emp.GetFromJsonAsync<RunDto>($"/api/v1/runs/{created.Id}");
-        fetched!.Title.Should().Be("Train pump failures");
+        fetched!.Title.Should().Be("Monthly report");
 
         var mine = await emp.GetFromJsonAsync<List<RunDto>>("/api/v1/runs");
         mine!.Should().Contain(r => r.Id == created.Id);
@@ -34,7 +34,7 @@ public class RunsEndpointsTests(KocApiFactory factory) : IClassFixture<KocApiFac
     {
         var emp = _factory.CreateClientAs("emp1", "Employee");
         var created = await (await emp.PostAsJsonAsync("/api/v1/runs",
-            new CreateRunRequest("model.train", "Cancel me", "{}")))
+            new CreateRunRequest("report.generate", "Cancel me", "{}")))
             .Content.ReadFromJsonAsync<RunDto>();
 
         (await emp.PostAsync($"/api/v1/runs/{created!.Id}/cancel", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -48,7 +48,7 @@ public class RunsEndpointsTests(KocApiFactory factory) : IClassFixture<KocApiFac
     {
         var owner = _factory.CreateClientAs("emp1", "Employee");
         var created = await (await owner.PostAsJsonAsync("/api/v1/runs",
-            new CreateRunRequest("model.train", "Private run", "{}")))
+            new CreateRunRequest("report.generate", "Private run", "{}")))
             .Content.ReadFromJsonAsync<RunDto>();
 
         var other = _factory.CreateClientAs("empOther", "Employee");
@@ -61,7 +61,7 @@ public class RunsEndpointsTests(KocApiFactory factory) : IClassFixture<KocApiFac
     {
         var emp = _factory.CreateClientAs("emp1", "Employee");
         var created = await (await emp.PostAsJsonAsync("/api/v1/runs",
-            new CreateRunRequest("model.train", "With logs", "{}")))
+            new CreateRunRequest("report.generate", "With logs", "{}")))
             .Content.ReadFromJsonAsync<RunDto>();
 
         (await emp.GetAsync($"/api/v1/runs/{created!.Id}/logs")).StatusCode.Should().Be(HttpStatusCode.OK);

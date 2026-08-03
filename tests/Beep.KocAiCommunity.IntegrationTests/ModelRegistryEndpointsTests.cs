@@ -23,11 +23,12 @@ public class ModelRegistryEndpointsTests(KocApiFactory factory) : IClassFixture<
             sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
             sb.Append($"{i % 3},{(i / 3) % 3},false\n");
         }
-        var trained = (await (await owner.PostAsync("/api/v1/studio/train?labelColumn=label&datasetName=ESP", CsvFile(sb.ToString())))
-            .Content.ReadFromJsonAsync<ModelRunDto>())!;
+        // Trained in-process: the platform has no route that trains, and this test is about the
+        // registry rather than about where the model came from.
+        var trainedId = await ModelFixture.TrainAsync(_factory, "reg-owner", "ESP");
 
         // Register it as a model version (staging).
-        var version = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest("ESP failure model", trained.Id)))
+        var version = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest("ESP failure model", trainedId)))
             .Content.ReadFromJsonAsync<ModelVersionDto>())!;
         version.Status.Should().Be("staging");
         version.SemVer.Should().Be("1.0.0");
@@ -68,9 +69,10 @@ public class ModelRegistryEndpointsTests(KocApiFactory factory) : IClassFixture<
             sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
             sb.Append($"{i % 3},{(i / 3) % 3},false\n");
         }
-        var trained = (await (await owner.PostAsync("/api/v1/studio/train?labelColumn=label&datasetName=Dep", CsvFile(sb.ToString())))
-            .Content.ReadFromJsonAsync<ModelRunDto>())!;
-        var v1 = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest("Deploy model", trained.Id)))
+        // Trained in-process: the platform has no route that trains, and this test is about the
+        // registry rather than about where the model came from.
+        var trainedId = await ModelFixture.TrainAsync(_factory, "reg-owner", "Dep");
+        var v1 = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest("Deploy model", trainedId)))
             .Content.ReadFromJsonAsync<ModelVersionDto>())!;
 
         // Staging cannot be deployed.
@@ -86,7 +88,7 @@ public class ModelRegistryEndpointsTests(KocApiFactory factory) : IClassFixture<
         deployments.Should().ContainSingle(d => d.ModelVersionId == v1.Id && d.Status == "active");
 
         // Register + promote a second version, deploy it → the first deployment retires.
-        var v2 = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest("Deploy model", trained.Id)))
+        var v2 = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest("Deploy model", trainedId)))
             .Content.ReadFromJsonAsync<ModelVersionDto>())!;
         await _factory.CreateClientAs("dep-approver-1", "Employee").PostAsync($"/api/v1/models/versions/{v2.Id}/approve", null);
         await _factory.CreateClientAs("dep-approver-2", "Employee").PostAsync($"/api/v1/models/versions/{v2.Id}/approve", null);

@@ -15,7 +15,6 @@ builder.Services.AddScoped<Beep.KocAiCommunity.Application.ML.IMlTrainer, Beep.K
 builder.Services.AddSingleton<Beep.KocAiCommunity.Application.ML.IPredictionPool, Beep.KocAiCommunity.ML.AutoMlPredictionPool>();
 
 // Job handlers, the per-job processor, and the execution loop.
-builder.Services.AddScoped<IJobHandler, ModelTrainingJobHandler>();
 builder.Services.AddScoped<IJobHandler, Beep.KocAiCommunity.Infrastructure.Experiments.ExperimentTrainingJobHandler>();
 builder.Services.AddScoped<IJobHandler, WorkflowRunJobHandler>();
 builder.Services.AddScoped<JobProcessor>();

@@ -161,26 +161,11 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         .RequireAuthorization(KocPolicies.RequireEmployee)
         .DisableAntiforgery();
 
-        group.MapPost("/competitions/{id:guid}/submit-pipeline", async (
-            Guid id, WorkflowDefinition definition, IKocCurrentUser me, ICompetitionService svc,
-            [FromHeader(Name = IdempotencyHeader)] string? idempotencyKey, CancellationToken ct) =>
-        {
-            try
-            {
-                var submission = await svc.SubmitPipelineAsync(me.UserId!, id, definition, idempotencyKey, ct);
-                return Results.Ok(new SubmissionResultDto(submission.Id, submission.Score, submission.Status, submission.SubmittedUtc));
-            }
-            catch (CompetitionException ex)
-            {
-                return Results.BadRequest(new { error = messages.For(ex) });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { error = ex.Message });
-            }
-        })
-        .WithName("SubmitPipeline")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        // There is deliberately no submit-pipeline route here any more. Running a competitor's graph
+        // means training a model, and the website does not train — that happens in KOC Studio on the
+        // desktop, on that machine's own cores. The desktop still submits a graph, but it executes it
+        // itself against the database rather than asking the server to; what arrives here is a scored
+        // submission, through the predictions route below.
 
         group.MapPost("/competitions/{id:guid}/submissions", async (Guid id, IFormFile file, IKocCurrentUser me, ICompetitionService svc,
             [FromHeader(Name = IdempotencyHeader)] string? idempotencyKey, CancellationToken ct) =>

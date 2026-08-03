@@ -1,49 +1,37 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using Beep.KocAiCommunity.Contracts.Studio;
 using FluentAssertions;
 using Xunit;
 
 namespace Beep.KocAiCommunity.IntegrationTests;
 
+/// <summary>
+/// What is left of Studio on the server: reading the run history the desktop writes.
+/// <para>
+/// This used to prove that uploading a CSV trained a model here. It does not any more — the training
+/// half moved to the desktop and the route is gone, asserted in <see cref="NoServerTrainingTests"/>.
+/// The read stays covered, because it is the half that survived.
+/// </para>
+/// </summary>
 public class StudioEndpointsTests(KocApiFactory factory) : IClassFixture<KocApiFactory>
 {
     private readonly KocApiFactory _factory = factory;
 
     [Fact]
-    public async Task Uploading_a_csv_trains_a_model_and_records_the_run()
+    public async Task Run_history_reads_back_empty_for_somebody_who_has_trained_nothing()
     {
-        var client = _factory.CreateClientAs("ml-user", "Employee");
+        var client = _factory.CreateClientAs("ml-reader", "Employee");
 
-        // Balanced, separable dataset.
-        var sb = new StringBuilder("x1,x2,label\n");
-        for (var i = 0; i < 60; i++)
-        {
-            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
-            sb.Append($"{i % 3},{(i / 3) % 3},false\n");
-        }
+        var runs = await client.GetFromJsonAsync<List<ModelRunDto>>("/api/v1/studio/runs");
 
-        var response = await client.PostAsync("/api/v1/studio/train?labelColumn=label&datasetName=ESP%20sensors", CsvFile(sb.ToString()));
-        response.EnsureSuccessStatusCode();
-
-        var run = (await response.Content.ReadFromJsonAsync<ModelRunDto>())!;
-        run.Task.Should().Be("BinaryClassification");
-        run.PrimaryMetric.Should().Be("Accuracy");
-        run.Algorithm.Should().NotBeNullOrWhiteSpace();
-        run.PrimaryValue.Should().BeInRange(0.0, 1.0);
-        run.RowCount.Should().Be(120);
-
-        var runs = (await client.GetFromJsonAsync<List<ModelRunDto>>("/api/v1/studio/runs"))!;
-        runs.Should().ContainSingle(r => r.DatasetName == "ESP sensors");
+        runs.Should().NotBeNull("the history is readable even when there is none of it")
+            .And.BeEmpty();
     }
 
-    private static MultipartFormDataContent CsvFile(string content)
+    [Fact]
+    public async Task Run_history_needs_an_account()
     {
-        var form = new MultipartFormDataContent();
-        var part = new StringContent(content);
-        part.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
-        form.Add(part, "file", "data.csv");
-        return form;
+        (await _factory.CreateClientAs(sub: null).GetAsync("/api/v1/studio/runs"))
+            .StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
     }
 }

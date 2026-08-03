@@ -403,23 +403,14 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         }
     }
 
-    public async Task<SubmissionResultDto?> SubmitPipelineAsync(Guid competitionId, WorkflowDefinition definition, string? idempotencyKey = null, CancellationToken ct = default)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/competitions/{competitionId}/submit-pipeline")
-        {
-            Content = JsonContent.Create(definition),
-        };
-        WithIdempotency(request, idempotencyKey);
-
-        var response = await http.SendAsync(request, ct);
-        if (!response.IsSuccessStatusCode)
-        {
-            var problem = await response.Content.ReadAsStringAsync(ct);
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(problem) ? response.ReasonPhrase : problem);
-        }
-
-        return await response.Content.ReadFromJsonAsync<SubmissionResultDto>(ct);
-    }
+    /// <summary>
+    /// Not available over HTTP. Running a competitor's graph means training a model, and the website
+    /// does not train — the desktop executes its own graphs and sends the result. Refusing by name here
+    /// beats a 404 from a route that no longer exists.
+    /// </summary>
+    public Task<SubmissionResultDto?> SubmitPipelineAsync(Guid competitionId, WorkflowDefinition definition, string? idempotencyKey = null, CancellationToken ct = default) =>
+        throw new NotSupportedException(
+            "The platform does not run pipelines. Run it in KOC Studio on the desktop and submit the result.");
 
     public async Task SetCompetitionDatasetsAsync(Guid competitionId, Stream training, Stream evaluation, string labelColumn, string idColumn, string task, CancellationToken ct = default)
     {

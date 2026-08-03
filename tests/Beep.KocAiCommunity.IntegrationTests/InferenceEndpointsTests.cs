@@ -58,8 +58,8 @@ public class InferenceEndpointsTests(KocApiFactory factory) : IClassFixture<KocA
     public async Task Non_production_version_is_owner_only()
     {
         var owner = _factory.CreateClientAs("stg-owner", "Employee");
-        var trained = await TrainAsync(owner, "Staging only");
-        var version = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest("Staging only model", trained.Id)))
+        var trained = await TrainAsync("Staging only");
+        var version = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest("Staging only model", trained)))
             .Content.ReadFromJsonAsync<ModelVersionDto>())!;
         version.Status.Should().Be("staging");
 
@@ -76,8 +76,8 @@ public class InferenceEndpointsTests(KocApiFactory factory) : IClassFixture<KocA
 
     private async Task<ModelVersionDto> TrainRegisterPromoteAsync(HttpClient owner, string modelName)
     {
-        var trained = await TrainAsync(owner, "ESP");
-        var version = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest(modelName, trained.Id)))
+        var trained = await TrainAsync("ESP");
+        var version = (await (await owner.PostAsJsonAsync("/api/v1/models", new RegisterModelRequest(modelName, trained)))
             .Content.ReadFromJsonAsync<ModelVersionDto>())!;
         await _factory.CreateClientAs("inf-approver-1", "Employee").PostAsync($"/api/v1/models/versions/{version.Id}/approve", null);
         await _factory.CreateClientAs("inf-approver-2", "Employee").PostAsync($"/api/v1/models/versions/{version.Id}/approve", null);
@@ -85,18 +85,10 @@ public class InferenceEndpointsTests(KocApiFactory factory) : IClassFixture<KocA
         return version;
     }
 
-    private static async Task<ModelRunDto> TrainAsync(HttpClient owner, string datasetName)
-    {
-        var sb = new StringBuilder("x1,x2,label\n");
-        for (var i = 0; i < 60; i++)
-        {
-            sb.Append($"{7 + (i % 3)},{7 + ((i / 3) % 3)},true\n");
-            sb.Append($"{i % 3},{(i / 3) % 3},false\n");
-        }
-
-        return (await (await owner.PostAsync($"/api/v1/studio/train?labelColumn=label&datasetName={datasetName}", CsvFile(sb.ToString())))
-            .Content.ReadFromJsonAsync<ModelRunDto>())!;
-    }
+    // Trained in-process. The platform has no route that trains any more, and these tests are about
+    // serving predictions from a registered model rather than about how it came to exist.
+    private Task<Guid> TrainAsync(string datasetName) =>
+        ModelFixture.TrainAsync(_factory, "inf-owner", datasetName);
 
     private static async Task<InferResponseDto> Infer(HttpClient client, Guid versionId, Dictionary<string, string> input)
     {
