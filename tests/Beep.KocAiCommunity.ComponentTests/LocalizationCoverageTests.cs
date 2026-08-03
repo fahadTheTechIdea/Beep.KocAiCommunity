@@ -128,6 +128,36 @@ public class LocalizationCoverageTests
     }
 
     [Fact]
+    public void Every_translation_keeps_the_placeholders_its_english_declares()
+    {
+        // A dropped {0} is the one translation error that is not merely cosmetic: the value the caller
+        // passed disappears, so a sentence reports nothing where it meant to report a number. An added
+        // {1} is worse — it throws at render time, on the Arabic path only, which is exactly where
+        // nobody is looking. Neither is visible to a reviewer reading the Arabic for sense.
+        var placeholders = new Regex(@"\{(\d+)\}", RegexOptions.Compiled);
+
+        // Arabic expresses "1 reply" without the numeral, and the call site only uses the singular form
+        // when the count is one, so dropping it there is correct rather than a slip.
+        string[] deliberatelyWithoutTheNumber = ["{0} reply"];
+
+        var mismatched = ArabicEntries()
+            .Where(e => !deliberatelyWithoutTheNumber.Contains(e.Key))
+            .Where(e =>
+            {
+                var declared = placeholders.Matches(e.Key).Select(m => m.Groups[1].Value).ToHashSet();
+                var used = placeholders.Matches(e.Value).Select(m => m.Groups[1].Value).ToHashSet();
+                return !declared.SetEquals(used);
+            })
+            .Select(e => $"  \"{e.Key}\"  →  \"{e.Value}\"")
+            .ToList();
+
+        mismatched.Should().BeEmpty(
+            "a translation must use exactly the placeholders its English declares — dropping one loses "
+            + "the value silently, adding one throws when the page renders in Arabic:\n{0}",
+            string.Join("\n", mismatched));
+    }
+
+    [Fact]
     public void The_arabic_resource_has_no_orphans()
     {
         // English text is the key, so editing a label in the markup orphans its translation. Nothing

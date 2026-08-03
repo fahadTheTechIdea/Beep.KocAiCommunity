@@ -1,4 +1,5 @@
 @page "/learn"
+@page "/learn/{TrackId:guid}"
 @using Beep.KocAiCommunity.Contracts.Learning
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
@@ -10,6 +11,7 @@
 @inject IKocApiClient Api
 @inject DevIdentity Identity
 @inject IStringLocalizer<Strings> L
+@inject NavigationManager Nav
 
 <PageTitle>@L["Learn"] · @KocBrand.ProductName</PageTitle>
 
@@ -29,7 +31,7 @@ else if (_tracks is null)
 {
     <MudProgressCircular Indeterminate="true" />
 }
-else
+else if (_selected is null)
 {
     @* Where you are in the catalogue, before the catalogue. A curriculum with no sense of how far
        through it you are is a list of files. *@
@@ -163,19 +165,39 @@ else
         }
         </MudGrid>
     }
+}
+else
+{
+    @* The track replaces the catalogue rather than appearing under it. It used to render below every
+       card on the page, so "Open" moved nothing on screen and left you to scroll for what you had just
+       asked for. It has its own URL now, which is what makes the browser's back button work and a
+       lesson shareable with a colleague. *@
+    var selectedRtl = KocLanguages.IsRightToLeft(_selected.Language);
+    var progress = _mine.GetValueOrDefault(_selected.Id);
 
-    @if (_selected is not null)
-    {
-        var selectedRtl = KocLanguages.IsRightToLeft(_selected.Language);
-        <MudDivider Class="my-8" />
+    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/learn" Class="mb-3"
+               StartIcon="@Icons.Material.Filled.ArrowBack">@L["All tracks"]</MudButton>
 
-        @* The whole track — heading, summary, and every lesson body — reads in the direction its own
-           language reads. Rendering Arabic prose left-to-right is not a cosmetic problem; punctuation
-           and any embedded Latin term land in the wrong place and the paragraph stops making sense. *@
-        <div dir="@(selectedRtl ? "rtl" : "ltr")">
-            <MudText Typo="Typo.h5" Class="koc-heading mb-1">@_selected.Title</MudText>
-            <MudText Typo="Typo.body2" Class="mb-4">@_selected.Summary</MudText>
+    <div class="koc-track-head mb-5">
+        <div class="koc-track-head-ink" dir="@(selectedRtl ? "rtl" : "ltr")">
+            <span class="koc-eyebrow">@_selected.Level · @L["{0} lessons", _selected.Lessons.Count]</span>
+            <h1 class="koc-hero-title">@_selected.Title</h1>
+            <MudText Typo="Typo.body2" Class="koc-track-summary">@_selected.Summary</MudText>
         </div>
+
+        @if (progress is not null)
+        {
+            <div class="koc-track-progress">
+                <MudProgressLinear Color="Color.Primary" Value="@Percent(progress)" Class="mb-1" />
+                <span class="koc-pulse-label">@L["{0} / {1} complete", progress.CompletedLessons, progress.TotalLessons]</span>
+            </div>
+        }
+        else if (!Identity.IsGuest)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                       OnClick="@(() => Enroll(_selected.Id))">@L["Enroll"]</MudButton>
+        }
+    </div>
 
         @if (OtherTranslations(_selected) is { Count: > 0 } others)
         {
@@ -271,10 +293,31 @@ else
                      || t.Title.Contains(_search, StringComparison.OrdinalIgnoreCase)
                      || t.Summary.Contains(_search, StringComparison.OrdinalIgnoreCase))];
 
+    [Parameter] public Guid? TrackId { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         _language = KocLanguages.Normalize(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         await LoadAsync();
+    }
+
+    /// <summary>
+    /// The URL decides which track is open, not a click. That is what makes the back button work, and
+    /// what lets somebody paste a track to a colleague. Runs on every navigation, including back and
+    /// forward, so the fetch is skipped when the right track is already loaded.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (TrackId is null)
+        {
+            _selected = null;
+            return;
+        }
+
+        if (_selected?.Id != TrackId)
+        {
+            _selected = await Api.GetTrackAsync(TrackId.Value);
+        }
     }
 
     private async Task LoadAsync()
@@ -310,7 +353,9 @@ else
         }
     }
 
-    private async Task OpenTrack(Guid trackId) => _selected = await Api.GetTrackAsync(trackId);
+    // Navigate rather than assign: OnParametersSetAsync does the loading, so opening a track from a
+    // card, from a translation link, or from a pasted URL all take exactly the same path.
+    private void OpenTrack(Guid trackId) => Nav.NavigateTo($"/learn/{trackId}");
 
     /// <summary>The same material in every language except the one being read.</summary>
     private static IReadOnlyList<KeyValuePair<string, Guid>> OtherTranslations(TrackDetailDto track) =>
