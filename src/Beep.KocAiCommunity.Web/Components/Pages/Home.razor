@@ -26,7 +26,7 @@
 
 <!-- 1 · Hero -->
 <section class="mb-8">
-    <span class="koc-eyebrow mb-3 d-block">@KocBrand.Company · @(Identity.IsGuest ? L["Guest preview"] : Identity.Current.Label)</span>
+    <span class="koc-eyebrow mb-3 d-block">@L[KocBrand.Company] · @(Identity.IsGuest ? L["Guest preview"] : Identity.Current.Label)</span>
     <MudText Typo="Typo.h3" HtmlTag="h1" Class="koc-heading mb-4" Style="text-wrap:balance;max-width:22ch;">@Content.Headline</MudText>
     <MudText Typo="Typo.body1" Class="mb-6" Style="max-width:60ch;">@Content.Sub</MudText>
 

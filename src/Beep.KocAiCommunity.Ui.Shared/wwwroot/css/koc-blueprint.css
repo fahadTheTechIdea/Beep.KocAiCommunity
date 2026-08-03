@@ -429,8 +429,10 @@
    set. */
 .koc-topnav {
   align-items: center;
+  justify-content: center;
   gap: 2px;
-  margin-inline-start: 18px;
+  /* No start margin: the nav sits between two spacers now, and any margin here would offset it from
+     centre by exactly that much. It used to be here to clear the brand it sat beside. */
 }
 
 .koc-topnav-link {

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Beep.KocAiCommunity.Ui.Shared.Branding;
 using Beep.KocAiCommunity.Ui.Shared.Components;
 using Beep.KocAiCommunity.Web.Components.Shared;
 using Beep.KocAiCommunity.Web.Security;
@@ -78,6 +79,10 @@ public class LocalizationCoverageTests
             (nameof(MlTaskLabels), MlTaskLabels.Translatable),
             (nameof(CompetitionDisplay), CompetitionDisplay.Translatable),
             (nameof(SignInPrompt), SignInPrompt.Translatable),
+
+            // The masthead. Constants rather than literals, so the markup scan cannot see them, and an
+            // untranslated one is the most visible gap on the site — it sits above every page.
+            (nameof(KocBrand), KocBrand.Translatable),
         }
         .SelectMany(set => set.Item2.Select(key => (File: set.Item1 + ".cs", Key: key)));
 

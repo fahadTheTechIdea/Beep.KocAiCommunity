@@ -27,6 +27,18 @@ public static class KocBrand
     public const string Accent700 = "#1466A5";
     public const string Accent900 = "#0B2E4C";
 
+    /// <summary>
+    /// The brand text that is language, not identity, and so gets translated.
+    /// <para>
+    /// These were plain constants, which meant an Arabic reader saw the layout mirror to the right while
+    /// the masthead above it stayed in English — the worst of both, because it reads as a page half
+    /// finished rather than a wordmark left deliberately in Latin. The surfaces render them through the
+    /// localizer, and this array is how the coverage test sees keys that are constants rather than
+    /// literals in markup. The logo image is untouched: it is a mark, not a sentence.
+    /// </para>
+    /// </summary>
+    public static readonly string[] Translatable = [ProductName, ShortName, Company, SubTitle, Tagline];
+
     private const string ContentRoot = "_content/Beep.KocAiCommunity.Ui.Shared";
 
     public const string LogoPath = ContentRoot + "/brand/KOC_Logo.png";

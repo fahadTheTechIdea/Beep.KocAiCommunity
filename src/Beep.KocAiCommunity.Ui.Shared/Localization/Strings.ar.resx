@@ -2167,4 +2167,19 @@
   <data name="leads on {0}" xml:space="preserve">
     <value>يتصدّر في {0}</value>
   </data>
+  <data name="KOC Training and Career Development" xml:space="preserve">
+    <value>التدريب والتطوير الوظيفي — شركة نفط الكويت</value>
+  </data>
+  <data name="KOC T&amp;CD" xml:space="preserve">
+    <value>التدريب والتطوير الوظيفي</value>
+  </data>
+  <data name="Kuwait Oil Company" xml:space="preserve">
+    <value>شركة نفط الكويت</value>
+  </data>
+  <data name="AI Learning Community" xml:space="preserve">
+    <value>مجتمع تعلّم الذكاء الاصطناعي</value>
+  </data>
+  <data name="Build AI skills, compete with colleagues, and grow your career at KOC." xml:space="preserve">
+    <value>طوّر مهاراتك في الذكاء الاصطناعي، ونافس زملاءك، وامضِ قدمًا في مسارك المهني في شركة نفط الكويت.</value>
+  </data>
 </root>

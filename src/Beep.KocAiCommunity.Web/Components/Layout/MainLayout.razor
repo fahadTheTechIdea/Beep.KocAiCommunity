@@ -27,15 +27,20 @@
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Surface">
         <MudImage Src="@KocBrand.LogoPath" Alt="Kuwait Oil Company" Height="38" Class="mr-3" />
+        @* The masthead goes through the localizer like everything else. Left as constants it stayed in
+           English while the layout mirrored, which reads as a half-finished page rather than a wordmark
+           deliberately kept in Latin. The logo image is untouched — that is a mark, not a sentence. *@
         <a href="/" class="koc-brand d-flex flex-column" style="line-height:1.15;">
-            <MudText Typo="Typo.h6" Class="koc-heading d-none d-sm-flex">@KocBrand.ProductName</MudText>
-            <MudText Typo="Typo.h6" Class="koc-heading d-flex d-sm-none">@KocBrand.ShortName</MudText>
-            <MudText Typo="Typo.caption" Class="d-none d-lg-flex" Style="opacity:.7;">@KocBrand.Company · @KocBrand.SubTitle</MudText>
+            <MudText Typo="Typo.h6" Class="koc-heading d-none d-sm-flex">@L[KocBrand.ProductName]</MudText>
+            <MudText Typo="Typo.h6" Class="koc-heading d-flex d-sm-none">@L[KocBrand.ShortName]</MudText>
+            <MudText Typo="Typo.caption" Class="d-none d-lg-flex" Style="opacity:.7;">@L[KocBrand.Company] · @L[KocBrand.SubTitle]</MudText>
         </a>
 
-        @* Navigation moved off the drawer and onto the bar. *@
+        @* Navigation moved off the drawer and onto the bar, and sits centred: a spacer either side, so it
+           balances between the masthead and the account controls instead of hugging the brand. Spacers
+           rather than absolute centring, because the nav can never then overlap what is beside it. *@
+        <MudSpacer />
         <TopNav />
-
         <MudSpacer />
 
         @if (!Identity.IsGuest)
