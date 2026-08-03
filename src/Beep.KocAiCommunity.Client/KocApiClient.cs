@@ -53,6 +53,9 @@ public interface IKocApiClient
     Task<(QuizAttemptResultDto? Result, string? Error)> SubmitQuizAsync(Guid trackId, SubmitQuizRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<QuizAttemptSummaryDto>> GetMyQuizAttemptsAsync(Guid trackId, CancellationToken ct = default);
 
+    /// <summary>The certificate for a finished track, or null when the caller has not finished it.</summary>
+    Task<CertificateDto?> GetCertificateAsync(Guid trackId, CancellationToken ct = default);
+
     // Admin. These carry the correct answers and are the only client methods that do.
     Task<AdminQuizDto?> GetQuizForAdminAsync(Guid trackId, CancellationToken ct = default);
     Task<(AdminQuizDto? Quiz, string? Error)> UpsertQuizAsync(Guid trackId, UpsertQuizRequest request, CancellationToken ct = default);
@@ -318,6 +321,15 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
     public async Task<IReadOnlyList<QuizAttemptSummaryDto>> GetMyQuizAttemptsAsync(
         Guid trackId, CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<QuizAttemptSummaryDto>>($"/api/v1/tracks/{trackId}/quiz/attempts", ct) ?? [];
+
+    public async Task<CertificateDto?> GetCertificateAsync(Guid trackId, CancellationToken ct = default)
+    {
+        // 404 is the ordinary answer for a track this person has not finished, not a failure.
+        var response = await http.GetAsync($"/api/v1/tracks/{trackId}/certificate", ct);
+        return response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<CertificateDto>(ct)
+            : null;
+    }
 
     public async Task<AdminQuizDto?> GetQuizForAdminAsync(Guid trackId, CancellationToken ct = default)
     {

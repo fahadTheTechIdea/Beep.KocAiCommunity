@@ -2305,4 +2305,34 @@
   <data name="Submit answers" xml:space="preserve">
     <value>أرسل الإجابات</value>
   </data>
+  <data name="Certificate" xml:space="preserve">
+    <value>الشهادة</value>
+  </data>
+  <data name="One step left — pass the quiz to finish." xml:space="preserve">
+    <value>بقيت خطوة واحدة — اجتز الاختبار لإنهاء المسار.</value>
+  </data>
+  <data name="Nothing to show yet" xml:space="preserve">
+    <value>لا شيء لعرضه بعد</value>
+  </data>
+  <data name="A certificate appears here once you finish the track." xml:space="preserve">
+    <value>تظهر الشهادة هنا بعد إنهاء المسار.</value>
+  </data>
+  <data name="Print" xml:space="preserve">
+    <value>طباعة</value>
+  </data>
+  <data name="Certificate of completion" xml:space="preserve">
+    <value>شهادة إتمام</value>
+  </data>
+  <data name="This is to certify that" xml:space="preserve">
+    <value>تشهد هذه الوثيقة بأن</value>
+  </data>
+  <data name="has completed the learning track" xml:space="preserve">
+    <value>قد أتمّ المسار التعليمي</value>
+  </data>
+  <data name="Level" xml:space="preserve">
+    <value>المستوى</value>
+  </data>
+  <data name="Reference {0}" xml:space="preserve">
+    <value>المرجع {0}</value>
+  </data>
 </root>

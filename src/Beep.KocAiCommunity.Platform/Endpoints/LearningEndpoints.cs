@@ -128,6 +128,43 @@ public static class LearningEndpoints
         .WithName("MyQuizAttempts")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
+        // A certificate exists only for a track this person has actually finished. Everything printed on
+        // it is read here rather than passed in, so nothing on it can be arranged by editing a URL — a
+        // certificate assembled from query parameters is a template, not a record.
+        group.MapGet("/tracks/{id:guid}/certificate", async (
+            Guid id, IKocCurrentUser me, ILearningService learning, IQuizService quizzes,
+            Beep.KocAiCommunity.Application.Engagement.IEngagementService engagement, CancellationToken ct) =>
+        {
+            var completion = await learning.GetCompletionAsync(id, me.UserId!, ct);
+            if (completion is null)
+            {
+                return Results.NotFound();
+            }
+
+            var track = await learning.GetAsync(id, ct);
+            if (track is null)
+            {
+                return Results.NotFound();
+            }
+
+            var lessons = await learning.GetLessonsAsync(id, ct);
+            var attempts = await quizzes.GetMyAttemptsAsync(id, me.UserId!, ct);
+            var profile = await engagement.GetProfileAsync(me.UserId!, null, ct);
+
+            return Results.Ok(new CertificateDto(
+                track.Id, track.Title, track.Level.ToString(),
+                profile.DisplayName,
+                completion.CompletedUtc,
+                lessons.Count,
+                attempts.Count == 0 ? null : attempts.Max(a => a.ScorePercent),
+
+                // Derived from the completion row, so the same completion always prints the same
+                // reference and two different ones never collide.
+                completion.Id.ToString("N")[..8].ToUpperInvariant()));
+        })
+        .WithName("TrackCertificate")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
         // ---- Quiz administration ------------------------------------------------------------------
         // These are the only endpoints that disclose which answer is correct, and they are the only ones
         // behind PlatformAdmin. The learner routes above cannot leak it: their DTOs have no such field.

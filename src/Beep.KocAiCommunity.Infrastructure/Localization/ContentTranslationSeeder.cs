@@ -106,6 +106,8 @@ public static class ContentTranslationSeeder
             (Engagement.BadgeCatalog.Helper10, "الجار الطيّب", "تلقّيت عشر تحيات من الزملاء."),
             (Engagement.BadgeCatalog.DiscussionStarter, "حفّار النقاش", "بدأت خمسة نقاشات."),
             (Engagement.BadgeCatalog.TeamPlayer, "روح الفريق", "كنت ضمن فريق فاز بتحدٍّ جماعي."),
+            (Engagement.BadgeCatalog.QuizPerfect, "العلامة الكاملة", "حصلت على 100% في اختبار مسار."),
+            (Engagement.BadgeCatalog.QuizFirstTime, "من المحاولة الأولى", "اجتزت اختبار مسار من المحاولة الأولى."),
         ];
 
         foreach (var (code, name, description) in badges)

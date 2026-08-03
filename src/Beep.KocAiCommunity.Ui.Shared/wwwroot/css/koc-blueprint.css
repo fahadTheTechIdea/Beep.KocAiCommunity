@@ -1561,3 +1561,130 @@
 @media (prefers-reduced-motion: reduce) {
   .koc-option { transition: none !important; }
 }
+
+/* ── The certificate ────────────────────────────────────────────────────────────────────────────
+   The one thing on the platform that leaves it. Deliberately restrained: it carries the company's
+   name, so it should read like a record and not like a page from the app. */
+.koc-certificate {
+  max-inline-size: 820px;
+  margin-inline: auto;
+  padding: 56px 64px 44px;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: 6px;
+  background: var(--mud-palette-surface);
+  text-align: center;
+}
+
+.koc-certificate-rule {
+  block-size: 3px;
+  margin-block: 0 34px;
+  background: linear-gradient(90deg, transparent, var(--koc-accent-700), transparent);
+}
+
+.koc-certificate-rule:last-child { margin-block: 34px 0; }
+
+.koc-certificate-logo {
+  block-size: 56px;
+  margin-block-end: 12px;
+}
+
+.koc-certificate-org {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.koc-certificate-unit {
+  font-size: .8rem;
+  letter-spacing: .06em;
+  color: var(--mud-palette-text-secondary);
+}
+
+.koc-certificate-kind {
+  margin-block: 30px 26px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--koc-accent-700);
+}
+
+.koc-certificate-awarded {
+  font-size: .9rem;
+  color: var(--mud-palette-text-secondary);
+}
+
+/* The name is the largest thing on the page, because it is what the certificate is about. */
+.koc-certificate-name {
+  margin-block: 8px 22px;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.koc-certificate-track {
+  margin-block: 8px 30px;
+  font-size: 1.3rem;
+  font-weight: 650;
+  text-wrap: balance;
+}
+
+.koc-certificate-facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+  padding-block: 22px;
+  border-block: 1px solid var(--mud-palette-lines-default);
+}
+
+.koc-certificate-fact-label {
+  display: block;
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
+}
+
+.koc-certificate-fact {
+  font-size: 1.05rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.koc-certificate-ref {
+  margin-block-start: 20px;
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
+}
+
+/* ── Printing ───────────────────────────────────────────────────────────────────────────────────
+   Everything but the certificate is chrome. Printed on white regardless of the viewer's theme: a
+   dark-mode certificate would come out of the printer as a black rectangle. */
+@media print {
+  .mud-appbar,
+  .mud-drawer,
+  .koc-topnav,
+  .koc-print-hide { display: none !important; }
+
+  .mud-main-content { padding: 0 !important; }
+
+  .koc-certificate {
+    max-inline-size: none;
+    border: 0;
+    padding: 0;
+    background: #fff;
+    color: #10222F;
+  }
+
+  .koc-certificate-facts { border-color: #ccc; }
+  .koc-certificate-org, .koc-certificate-name, .koc-certificate-track, .koc-certificate-fact { color: #10222F; }
+  .koc-certificate-kind { color: #1466A5; }
+  .koc-certificate-awarded, .koc-certificate-unit, .koc-certificate-fact-label, .koc-certificate-ref { color: #55636E; }
+
+  @page { margin: 18mm; }
+}

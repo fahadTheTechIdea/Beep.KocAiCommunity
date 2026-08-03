@@ -1,6 +1,7 @@
 using Beep.KocAiCommunity.Application.Authorization;
 using Beep.KocAiCommunity.Application.Engagement;
 using Beep.KocAiCommunity.Application.Learning;
+using Beep.KocAiCommunity.Domain.Engagement;
 using Beep.KocAiCommunity.Domain.Learning;
 using Beep.KocAiCommunity.Infrastructure.Engagement;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
@@ -144,6 +145,9 @@ public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibi
         return items;
     }
 
+    public Task<TrackCompletion?> GetCompletionAsync(Guid trackId, string userId, CancellationToken ct = default) =>
+        db.TrackCompletions.AsNoTracking().FirstOrDefaultAsync(c => c.TrackId == trackId && c.UserId == userId, ct);
+
     /// <summary>
     /// Re-checks whether a track is finished, from whichever side just changed.
     /// <para>
@@ -238,6 +242,70 @@ public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibi
         if (!alreadyRecorded)
         {
             await AwardSafelyAsync(userId, XpSources.TrackCompleted, "track", trackId, ct);
+            await AwardTrackBadgeSafelyAsync(trackId, userId, ct);
+        }
+    }
+
+    /// <summary>
+    /// The badge this particular track awards.
+    /// <para>
+    /// Its catalogue row is created here, the first time anybody finishes the track, rather than being
+    /// something an admin has to remember to set up — a track that quietly awards nothing is the failure
+    /// worth designing out. It sits outside <c>BadgeRules</c> deliberately: those rules work from counts
+    /// and know nothing about individual tracks, and threading every track through them would turn a
+    /// small pure function into a table scan.
+    /// </para>
+    /// </summary>
+    private async Task AwardTrackBadgeSafelyAsync(Guid trackId, string userId, CancellationToken ct)
+    {
+        try
+        {
+            var track = await db.LearningTracks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == trackId, ct);
+            if (track is null)
+            {
+                return;
+            }
+
+            var code = BadgeCatalog.ForTrack(trackId);
+
+            if (!await db.Set<Badge>().AnyAsync(b => b.Code == code, ct))
+            {
+                db.Set<Badge>().Add(new Badge
+                {
+                    Code = code,
+                    Name = track.Title,
+                    Description = $"Completed the {track.Title} track.",
+                    IconFile = "132-training.png",
+
+                    // The harder the track, the better the badge should look on a profile.
+                    Tier = track.Level switch
+                    {
+                        TrackLevel.Advanced => "gold",
+                        TrackLevel.Intermediate => "silver",
+                        _ => "bronze",
+                    },
+                    CreatedByUserId = userId,
+                    CreatedUtc = DateTime.UtcNow,
+                });
+            }
+
+            if (!await db.Set<UserBadge>().AnyAsync(b => b.UserId == userId && b.BadgeCode == code, ct))
+            {
+                db.Set<UserBadge>().Add(new UserBadge
+                {
+                    UserId = userId,
+                    BadgeCode = code,
+                    RefId = trackId,
+                    CreatedByUserId = userId,
+                    CreatedUtc = DateTime.UtcNow,
+                });
+            }
+
+            await db.SaveChangesAsync(ct);
+        }
+        catch (Exception)
+        {
+            // Same rule as the Barrels above: the completion is already committed and must stand.
         }
     }
 

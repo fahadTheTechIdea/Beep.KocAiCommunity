@@ -20,6 +20,17 @@ public static class BadgeCatalog
     public const string Helper10 = "helper-10";
     public const string DiscussionStarter = "discussion-starter";
     public const string TeamPlayer = "team-player";
+    public const string QuizPerfect = "quiz-perfect";
+    public const string QuizFirstTime = "quiz-first-time";
+
+    /// <summary>
+    /// Prefix for the badge a specific track awards. The rest is the track id, so a badge is created
+    /// per track without an admin having to invent one — and without the shared rules engine, which
+    /// works from counts, needing to know that tracks exist individually.
+    /// </summary>
+    public const string TrackPrefix = "track:";
+
+    public static string ForTrack(Guid trackId) => TrackPrefix + trackId.ToString("N");
 
     public sealed record Definition(string Code, string Name, string Description, string IconFile, string Tier);
 
@@ -36,6 +47,8 @@ public static class BadgeCatalog
         new(Helper10, "Good Neighbor", "Received 10 kudos from colleagues.", "118-approval.png", "silver"),
         new(DiscussionStarter, "Conversation Driller", "Started 5 discussions.", "065-drilling-1.png", "bronze"),
         new(TeamPlayer, "Team Player", "Part of a team that won a team challenge.", "105-management.png", "silver"),
+        new(QuizPerfect, "Full Marks", "Scored 100% on a track quiz.", "100-goal.png", "gold"),
+        new(QuizFirstTime, "Straight Through", "Passed a track quiz on the first attempt.", "118-approval.png", "silver"),
     ];
 
     public static Definition? Find(string code) => All.FirstOrDefault(b => b.Code == code);

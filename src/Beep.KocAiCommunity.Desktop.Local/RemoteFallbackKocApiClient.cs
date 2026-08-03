@@ -65,6 +65,7 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient? remote) : IKocAp
     public virtual Task<QuizDto?> GetTrackQuizAsync(Guid trackId, CancellationToken ct = default) => Remote.GetTrackQuizAsync(trackId, ct);
     public virtual Task<(QuizAttemptResultDto? Result, string? Error)> SubmitQuizAsync(Guid trackId, SubmitQuizRequest request, CancellationToken ct = default) => Remote.SubmitQuizAsync(trackId, request, ct);
     public virtual Task<IReadOnlyList<QuizAttemptSummaryDto>> GetMyQuizAttemptsAsync(Guid trackId, CancellationToken ct = default) => Remote.GetMyQuizAttemptsAsync(trackId, ct);
+    public virtual Task<CertificateDto?> GetCertificateAsync(Guid trackId, CancellationToken ct = default) => Remote.GetCertificateAsync(trackId, ct);
     public virtual Task<AdminQuizDto?> GetQuizForAdminAsync(Guid trackId, CancellationToken ct = default) => Remote.GetQuizForAdminAsync(trackId, ct);
     public virtual Task<(AdminQuizDto? Quiz, string? Error)> UpsertQuizAsync(Guid trackId, UpsertQuizRequest request, CancellationToken ct = default) => Remote.UpsertQuizAsync(trackId, request, ct);
     public virtual Task<(AdminQuizDto? Quiz, string? Error)> SaveQuizQuestionAsync(Guid trackId, UpsertQuizQuestionRequest request, CancellationToken ct = default) => Remote.SaveQuizQuestionAsync(trackId, request, ct);

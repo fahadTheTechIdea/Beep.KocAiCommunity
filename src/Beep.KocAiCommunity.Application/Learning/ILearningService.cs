@@ -35,4 +35,11 @@ public interface ILearningService
     /// having finished the reading weeks ago, and nothing on the lesson path would ever run again.
     /// </summary>
     Task ReevaluateCompletionAsync(Guid trackId, string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// This person's completion of a track, or null if they have not finished it. The certificate is
+    /// built from this rather than from anything the caller sends, so nothing printed on it can be
+    /// arranged by editing a URL.
+    /// </summary>
+    Task<TrackCompletion?> GetCompletionAsync(Guid trackId, string userId, CancellationToken ct = default);
 }

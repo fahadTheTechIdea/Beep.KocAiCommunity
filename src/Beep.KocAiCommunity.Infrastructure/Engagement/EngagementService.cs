@@ -216,7 +216,12 @@ public sealed class EngagementService(
             HasCompetitionWin: await db.Set<XpEvent>().AnyAsync(e => e.UserId == userId && e.Source == XpSources.CompetitionWin, ct),
             HasCompetitionPodium: await db.Set<XpEvent>().AnyAsync(e => e.UserId == userId && e.Source == XpSources.CompetitionTop3, ct),
             CurrentStreakDays: profile.CurrentStreakDays,
-            KudosReceivedCount: await db.Set<Kudos>().CountAsync(k => k.ToUserId == userId, ct));
+            KudosReceivedCount: await db.Set<Kudos>().CountAsync(k => k.ToUserId == userId, ct),
+
+            // Read off the attempts themselves rather than the XP ledger: passing awards Barrels once
+            // per quiz, so the ledger cannot tell a first-time pass from a fourth-attempt one.
+            PerfectQuizCount: await db.QuizAttempts.CountAsync(a => a.UserId == userId && a.ScorePercent == 100, ct),
+            FirstTimeQuizPassCount: await db.QuizAttempts.CountAsync(a => a.UserId == userId && a.Passed && a.AttemptNo == 1, ct));
 
         var newCodes = BadgeRules.NewlyEarned(context, earnedSet);
         foreach (var code in newCodes)

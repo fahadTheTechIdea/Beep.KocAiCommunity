@@ -13,7 +13,13 @@ public sealed record BadgeContext(
     bool HasCompetitionWin,
     bool HasCompetitionPodium,
     int CurrentStreakDays,
-    int KudosReceivedCount);
+    int KudosReceivedCount,
+
+    /// <summary>Quiz attempts scoring 100%. Rewards doing it well rather than merely doing it.</summary>
+    int PerfectQuizCount = 0,
+
+    /// <summary>Quizzes passed on the very first sitting — which is why failed attempts are kept.</summary>
+    int FirstTimeQuizPassCount = 0);
 
 /// <summary>Evaluates the badge catalog against a <see cref="BadgeContext"/>. No side effects.</summary>
 public static class BadgeRules
@@ -31,6 +37,8 @@ public static class BadgeRules
         if (c.CurrentStreakDays >= 30) yield return BadgeCatalog.Streak30;
         if (c.KudosReceivedCount >= 10) yield return BadgeCatalog.Helper10;
         if (c.DiscussionCreatedCount >= 5) yield return BadgeCatalog.DiscussionStarter;
+        if (c.PerfectQuizCount >= 1) yield return BadgeCatalog.QuizPerfect;
+        if (c.FirstTimeQuizPassCount >= 1) yield return BadgeCatalog.QuizFirstTime;
     }
 
     /// <summary>Codes newly earned this evaluation (qualifying minus already-earned).</summary>

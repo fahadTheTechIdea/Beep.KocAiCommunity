@@ -94,3 +94,19 @@ public sealed record UpsertQuizAnswerRequest(Guid? Id, string Text, bool IsCorre
 /// <summary>A question and all of its answers, saved together — a question is not useful half-saved.</summary>
 public sealed record UpsertQuizQuestionRequest(
     Guid? Id, string Text, string Explanation, IReadOnlyList<UpsertQuizAnswerRequest> Answers);
+
+/// <summary>
+/// A track certificate. Issued by the platform rather than assembled by the page, so the date and the
+/// score on it come from the completion record and cannot be edited in a query string.
+/// </summary>
+public sealed record CertificateDto(
+    Guid TrackId,
+    string TrackTitle,
+    string Level,
+    string RecipientName,
+    DateTime CompletedUtc,
+    int LessonCount,
+    /// <summary>The learner's best quiz score, or null when the track has no quiz.</summary>
+    int? QuizScorePercent,
+    /// <summary>Short, human-checkable reference printed on the certificate.</summary>
+    string Reference);

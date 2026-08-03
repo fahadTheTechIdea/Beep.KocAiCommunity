@@ -1,5 +1,6 @@
 @page "/learn"
 @page "/learn/{TrackId:guid}"
+@using Beep.KocAiCommunity.Domain.Learning
 @using Beep.KocAiCommunity.Contracts.Learning
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Ui.Shared.Components
@@ -190,6 +191,19 @@ else
             <div class="koc-track-progress">
                 <MudProgressLinear Color="Color.Primary" Value="@Percent(progress)" Class="mb-1" />
                 <span class="koc-pulse-label">@L["{0} / {1} complete", progress.CompletedLessons, progress.TotalLessons]</span>
+
+                @* Offered only once the track is actually finished. The endpoint refuses otherwise, so
+                   showing the link earlier would be a button that leads to a shrug. *@
+                @if (progress.Status == TrackEnrollmentStatus.Completed)
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-1"
+                               Href="@($"/learn/{_selected.Id}/certificate")"
+                               StartIcon="@Icons.Material.Filled.WorkspacePremium">@L["Certificate"]</MudButton>
+                }
+                else if (progress.Status == TrackEnrollmentStatus.AwaitingQuiz)
+                {
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@L["One step left — pass the quiz to finish."]</MudText>
+                }
             </div>
         }
         else if (!Identity.IsGuest)

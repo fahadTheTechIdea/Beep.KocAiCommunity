@@ -1,0 +1,108 @@
+@page "/learn/{TrackId:guid}/certificate"
+@using Beep.KocAiCommunity.Contracts.Learning
+@using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IKocApiClient Api
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@* Everything printed here comes from the server's completion record. The page renders it; it does not
+   assemble it. A certificate built from a query string is a template somebody can fill in themselves. *@
+
+<PageTitle>@L["Certificate"] · @KocBrand.ProductName</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_certificate is null)
+{
+    <BlueprintCard Class="pa-8" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Nothing to show yet"]</MudText>
+        <MudText Typo="Typo.body2" Class="mb-3">@L["A certificate appears here once you finish the track."]</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="@($"/learn/{TrackId}")">@L["Back to the track"]</MudButton>
+    </BlueprintCard>
+}
+else
+{
+    @* Hidden when printing, along with the site chrome — see the @media print rules. *@
+    <div class="koc-print-hide d-flex flex-wrap gap-2 mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Print"
+                   OnClick="Print">@L["Print"]</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="@($"/learn/{TrackId}")"
+                   StartIcon="@Icons.Material.Filled.ArrowBack">@L["Back to the track"]</MudButton>
+    </div>
+
+    <div class="koc-certificate">
+        <div class="koc-certificate-rule"></div>
+
+        <img src="@KocBrand.LogoPath" alt="Kuwait Oil Company" class="koc-certificate-logo" />
+        <div class="koc-certificate-org">@L[KocBrand.Company]</div>
+        <div class="koc-certificate-unit">@L[KocBrand.ProductName]</div>
+
+        <div class="koc-certificate-kind">@L["Certificate of completion"]</div>
+
+        <div class="koc-certificate-awarded">@L["This is to certify that"]</div>
+        <div class="koc-certificate-name">@_certificate.RecipientName</div>
+        <div class="koc-certificate-awarded">@L["has completed the learning track"]</div>
+        <div class="koc-certificate-track">@_certificate.TrackTitle</div>
+
+        <div class="koc-certificate-facts">
+            <div>
+                <span class="koc-certificate-fact-label">@L["Level"]</span>
+                <span class="koc-certificate-fact">@_certificate.Level</span>
+            </div>
+            <div>
+                <span class="koc-certificate-fact-label">@L["lessons"]</span>
+                <span class="koc-certificate-fact">@_certificate.LessonCount</span>
+            </div>
+            @if (_certificate.QuizScorePercent is { } score)
+            {
+                <div>
+                    <span class="koc-certificate-fact-label">@L["Quiz"]</span>
+                    <span class="koc-certificate-fact">@score%</span>
+                </div>
+            }
+            <div>
+                <span class="koc-certificate-fact-label">@L["Completed"]</span>
+                <span class="koc-certificate-fact">@_certificate.CompletedUtc.ToLocalTime().ToString("d MMMM yyyy")</span>
+            </div>
+        </div>
+
+        @* The reference is what makes this checkable rather than decorative: it comes from the
+           completion record, so the same completion always prints the same one. *@
+        <div class="koc-certificate-ref">@L["Reference {0}", _certificate.Reference]</div>
+
+        <div class="koc-certificate-rule"></div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid TrackId { get; set; }
+
+    private CertificateDto? _certificate;
+    private bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _certificate = await Api.GetCertificateAsync(TrackId);
+        _loading = false;
+    }
+
+    private async Task Print()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("window.print");
+        }
+        catch (Exception)
+        {
+            // Nothing to recover: the browser's own print menu is still there, and failing loudly over
+            // a print dialog would be worse than the button doing nothing.
+        }
+    }
+}

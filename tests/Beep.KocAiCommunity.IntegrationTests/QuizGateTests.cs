@@ -1,5 +1,7 @@
 using Beep.KocAiCommunity.Application.Learning;
+using Beep.KocAiCommunity.Domain.Engagement;
 using Beep.KocAiCommunity.Domain.Learning;
+using Beep.KocAiCommunity.Infrastructure.Engagement;
 using Beep.KocAiCommunity.Infrastructure.Persistence;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -231,5 +233,55 @@ public class QuizGateTests(KocApiFactory factory) : IClassFixture<KocApiFactory>
 
         status.Should().Be(TrackEnrollmentStatus.Completed, "it was finished before the rule changed");
         completed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Finishing_a_track_awards_the_badge_that_track_carries()
+    {
+        // The catalogue row is created here, the first time anybody finishes, rather than being
+        // something an admin has to remember — a track that quietly awards nothing is the failure
+        // this is designed against.
+        var f = await SeedAsync();
+        await FinishTheReadingAsync("badge-earner", f);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<KocDbContext>();
+        var code = BadgeCatalog.ForTrack(f.TrackId);
+
+        (await db.Set<Badge>().AnyAsync(b => b.Code == code))
+            .Should().BeTrue("the badge's catalogue row is created on first completion");
+        (await db.Set<UserBadge>().AnyAsync(b => b.UserId == "badge-earner" && b.BadgeCode == code))
+            .Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task A_second_person_finishing_reuses_the_same_badge_row()
+    {
+        var f = await SeedAsync();
+        await FinishTheReadingAsync("badge-one", f);
+        await FinishTheReadingAsync("badge-two", f);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<KocDbContext>();
+        var code = BadgeCatalog.ForTrack(f.TrackId);
+
+        (await db.Set<Badge>().CountAsync(b => b.Code == code))
+            .Should().Be(1, "a second completion must not create a second catalogue row");
+        (await db.Set<UserBadge>().CountAsync(b => b.BadgeCode == code)).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task No_badge_while_a_mandatory_quiz_is_still_owed()
+    {
+        // The badge follows the completion, so the gate has to hold it back too. Awarding it at the end
+        // of the lessons would hand out the reward the gate exists to withhold.
+        var f = await SeedAsync(withQuiz: true, mandatory: true);
+        await FinishTheReadingAsync("badge-owed", f);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<KocDbContext>();
+
+        (await db.Set<UserBadge>().AnyAsync(b => b.UserId == "badge-owed" && b.BadgeCode == BadgeCatalog.ForTrack(f.TrackId)))
+            .Should().BeFalse();
     }
 }
