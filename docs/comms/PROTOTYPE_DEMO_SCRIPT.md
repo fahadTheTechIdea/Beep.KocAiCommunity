@@ -34,14 +34,14 @@ narration short; let the screen do the talking.
 > "Submissions are scored automatically on data we hold back, so only modelling skill moves your rank.
 > The board updates live, with medals and movement — this is what drives the friendly competition."
 
-**4 · Build a model — no code (60–75s).** Go to **Studio → AutoML** (fast path) *or* open a workflow in
-the **designer**.
-> "You don't need to be a programmer. With AutoML you pick a dataset and a task and the platform trains
-> and compares models for you. For power users, the visual designer wires data → prepare → train →
-> evaluate as a pipeline." *(Run a quick AutoML job or open a ready pipeline.)*
+**4 · Build a model — no code (60–75s).** Switch to **KOC Studio on the desktop** — AutoML (fast path)
+*or* the **designer**.
+> "You don't need to be a programmer. With AutoML you pick a dataset and a task and Studio trains and
+> compares models for you, on this machine. For power users, the visual designer wires data → prepare →
+> train → evaluate as a pipeline." *(Run a quick AutoML job or open a ready pipeline.)*
 
-**5 · Submit and see the impact (30s).** Submit the pipeline to the competition (or show a prior
-submission) → return to the **Leaderboard**.
+**5 · Submit and see the impact (30s).** Submit from Studio, or upload the predictions file on the
+competition's **My submissions** tab → return to the **Leaderboard**.
 > "Submitting trains and scores it against the hidden data, and the leaderboard reflects it. The same
 > activity that trains our people can produce a model we actually use."
 

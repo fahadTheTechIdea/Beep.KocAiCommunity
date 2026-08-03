@@ -128,10 +128,10 @@ The Studio makes model-building accessible to non-programmers:
 - **Visual workflow designer** — a drag-and-connect canvas of typed nodes (data preparation, SQL/ETL,
   transformation, model training, evaluation) that runs an end-to-end pipeline; the node catalog is
   extensible.
-- **AutoML** — a fast path: choose a dataset and a task, and the platform trains and compares models
-  automatically.
-- **Runs, experiments, models** — background training jobs, experiment comparison, and a model registry
-  with a register → approve → deploy lifecycle.
+- **AutoML** — a fast path: choose a dataset and a task, and KOC Studio trains and compares models
+  automatically. Training runs on the employee's own workstation, not on the platform.
+- **Runs, experiments, models** — experiment comparison and a model registry with a register → approve
+  → deploy lifecycle. The platform keeps the record of what was trained; it does not train.
 
 ### 5.4 Community & collaboration
 Organization-scoped discussions let employees ask questions, share solutions, and recognize peers,
