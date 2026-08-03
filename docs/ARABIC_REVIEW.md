@@ -43,7 +43,7 @@ than as a list. Correct the Arabic column and hand it back; the strings are keye
 text, so a correction is applied by editing the value against that key in
 `src/Beep.KocAiCommunity.Ui.Shared/Localization/Strings.ar.resx`.
 
-*723 strings across 52 screens.*
+*758 strings across 54 screens.*
 
 ## AggregateBuilder
 
@@ -202,9 +202,9 @@ text, so a correction is applied by editing the value against that key in
 | behind | خلف | — |
 | best {0} | أفضل نتيجة {0} | — |
 | Binary classification | تصنيف ثنائي | RunWorkflowDialog |
-| Build a pipeline in KOC Studio, or submit a predictions file below. | ابنِ مسارًا في استوديو KOC، أو أرسل ملف تنبؤات أدناه. | — |
 | Build your model | ابنِ نموذجك | — |
 | Build your model however you like — KOC Studio on the desktop, or your own tools. Only your predictions come back here. | ابنِ نموذجك بالطريقة التي تناسبك — استوديو KOC على سطح المكتب، أو أدواتك الخاصة. لا يعود إلى هنا سوى تنبؤاتك. | — |
+| Build your model in KOC Studio on the desktop, then submit your predictions below. | ابنِ نموذجك في KOC Studio على سطح المكتب، ثم أرسل تنبؤاتك أدناه. | — |
 | Clear | مسح | Runs |
 | Competition | مسابقة | CreateWorkflowDialog, Dashboard |
 | Competition data | بيانات المسابقة | — |
@@ -413,7 +413,7 @@ text, so a correction is applied by editing the value against that key in
 | Best score | أفضل نتيجة | — |
 | Competition submissions per person | مشاركات المسابقات لكل شخص | — |
 | Competitions entered | مسابقات دخلتها | — |
-| Completed | مكتمل | Learn |
+| Completed | مكتمل | Learn, TrackCertificate |
 | Dashboard | لوحة المتابعة | TopNav |
 | Enrolled | مسجَّل | Learn |
 | Find a competition | ابحث عن مسابقة | — |
@@ -685,23 +685,35 @@ text, so a correction is applied by editing the value against that key in
 |---|---|---|
 | All levels | كل المستويات | — |
 | Also available in | متاح أيضًا بـ | — |
+| best {0}% over {1} attempts | أفضل نتيجة {0}% خلال {1} محاولات | — |
+| Certificate | الشهادة | TrackCertificate |
 | Content coming soon. | المحتوى قيد الإعداد. | — |
+| End-of-track quiz | اختبار نهاية المسار | TrackQuiz |
 | Enroll | سجِّل | — |
 | Guided tracks from your first look at data to a model your team can rely on. Enroll, work through the lessons, and watch your progress. | مسارات مُرشدة من أول نظرة على البيانات إلى نموذج يعتمد عليه فريقك. سجِّل، وامضِ في الدروس، وتابع تقدّمك. | — |
 | Learn | تعلَّم | TopNav |
 | Learn & compete | تعلَّم ونافس | — |
-| lessons | دروس | — |
+| lessons | دروس | TrackCertificate |
 | lessons complete | دروس مكتملة | — |
 | Mark complete | علِّمه مكتملًا | — |
 | No track matches these filters. Widen them and something will turn up. | لا يوجد مسار يطابق هذه المرشّحات. وسّعها وستظهر نتائج. | — |
+| One step left — pass the quiz to finish. | بقيت خطوة واحدة — اجتز الاختبار لإنهاء المسار. | — |
 | Only in {0} | متاح بـ{0} فقط | — |
 | Open | افتح | Workflows |
+| Optional self-check | اختبار ذاتي اختياري | TrackQuiz |
+| Passed | ناجح | TrackQuiz |
 | Put it to work in | طبِّقه في | — |
+| Required to finish this track | مطلوب لإنهاء هذا المسار | TrackQuiz |
+| Review or retake | راجع أو أعد المحاولة | — |
 | Search tracks | ابحث في المسارات | — |
+| Sign in to take the quiz. | سجّل الدخول لأداء الاختبار. | — |
+| Take the quiz | ابدأ الاختبار | — |
 | The learning catalogue couldn't be loaded ({0}). | تعذّر تحميل دليل المسارات ({0}). | — |
 | tracks | مسارات | — |
+| Try again | حاول مرة أخرى | — |
 | {0} / {1} complete | أنجزت {0} من {1} | — |
 | {0} of {1} tracks | {0} من {1} مسار | — |
+| {0} questions · {1}% to pass | {0} سؤالًا · {1}% للنجاح | — |
 | {0} tracks | {0} مسار | — |
 
 ## LiveBoard
@@ -988,6 +1000,39 @@ text, so a correction is applied by editing the value against that key in
 |---|---|---|
 | Home | الرئيسية | — |
 | Main | الرئيسية | — |
+
+## TrackCertificate
+
+| English | Arabic | Also on |
+|---|---|---|
+| A certificate appears here once you finish the track. | تظهر الشهادة هنا بعد إنهاء المسار. | — |
+| Back to the track | العودة إلى المسار | TrackQuiz |
+| Certificate of completion | شهادة إتمام | — |
+| has completed the learning track | قد أتمّ المسار التعليمي | — |
+| Level | المستوى | — |
+| Nothing to show yet | لا شيء لعرضه بعد | — |
+| Print | طباعة | — |
+| Quiz | اختبار | TrackQuiz |
+| Reference {0} | المرجع {0} | — |
+| This is to certify that | تشهد هذه الوثيقة بأن | — |
+
+## TrackQuiz
+
+| English | Arabic | Also on |
+|---|---|---|
+| Answer every question before submitting — {0} left. | أجب عن كل الأسئلة قبل الإرسال — بقي {0}. | — |
+| answered | مُجاب عنها | — |
+| Marking… | جارٍ التصحيح… | — |
+| No questions yet | لا توجد أسئلة بعد | — |
+| Not this time | ليس هذه المرة | — |
+| Retake the quiz | أعد الاختبار | — |
+| Submit answers | أرسل الإجابات | — |
+| That finished the track. Your Barrels and badge are on your profile. | بذلك أنهيت المسار. براميلك وشارتك في ملفك الشخصي. | — |
+| This quiz has not been written yet. Nothing to do here for now. | لم تُكتب أسئلة هذا الاختبار بعد. لا شيء لفعله هنا حاليًا. | — |
+| This quiz is required to finish the track. You can retake it as often as you like. | هذا الاختبار مطلوب لإنهاء المسار، ويمكنك إعادته كما تشاء. | — |
+| your answer | إجابتك | — |
+| {0} of {1} correct — {2}% | {0} من {1} صحيحة — {2}% | — |
+| {0}% needed | المطلوب {0}% | — |
 
 ## Workflows
 

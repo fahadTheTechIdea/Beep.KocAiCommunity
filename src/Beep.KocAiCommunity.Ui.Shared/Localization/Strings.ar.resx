@@ -262,9 +262,6 @@
   <data name="Build a pipeline" xml:space="preserve">
     <value>ابنِ مسارًا</value>
   </data>
-  <data name="Build a pipeline in KOC Studio, or submit a predictions file below." xml:space="preserve">
-    <value>ابنِ مسارًا في استوديو KOC، أو أرسل ملف تنبؤات أدناه.</value>
-  </data>
   <data name="Build your model" xml:space="preserve">
     <value>ابنِ نموذجك</value>
   </data>
@@ -2334,5 +2331,8 @@
   </data>
   <data name="Reference {0}" xml:space="preserve">
     <value>المرجع {0}</value>
+  </data>
+  <data name="Build your model in KOC Studio on the desktop, then submit your predictions below." xml:space="preserve">
+    <value>ابنِ نموذجك في KOC Studio على سطح المكتب، ثم أرسل تنبؤاتك أدناه.</value>
   </data>
 </root>

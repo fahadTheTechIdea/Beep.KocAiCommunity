@@ -47,13 +47,15 @@ Some competitions recommend a track to start with — a handy on-ramp if the top
 
 ## 4. Build a model in the Studio
 
-The **Studio** is where you turn data into a model. Two ways in:
+The **Studio** is where you turn data into a model, and it is a **desktop application** — install KOC
+Studio on your workstation. Training runs on your own machine, using its cores; the website never trains
+a model. Two ways in, both in the desktop app:
 
-- **AutoML** (`Studio → AutoML`): the fast path — pick a CSV and a task (binary / multiclass / regression)
-  and let the platform find a model for you.
-- **Workflow designer** (`Studio → Workflows → Open`, or **New workflow**): the visual, hands-on path.
+- **AutoML**: the fast path — pick a CSV and a task (binary / multiclass / regression) and let it find a
+  model for you.
+- **Workflow designer**: the visual, hands-on path.
 
-![AutoML — pick a CSV and a task, and the platform trains and compares models for you](help/img/studio.png)
+![AutoML — pick a CSV and a task, and Studio trains and compares models on your machine](help/img/studio.png)
 
 ### Using the designer
 
@@ -90,10 +92,12 @@ and an **Enter the arena** button.
 ![The arena grid — filter by status or task; the leading competition gets a spotlight card with its live podium](help/img/compete.png)
 
 2. **Download** the training set (labelled) and the evaluation set (no labels) from the Data tab.
-3. **Build a pipeline** in the Studio for the competition's task.
-4. **Submit your pipeline** — the platform trains and scores it on a **hidden** test set (the same data for
-   everyone), so only your modelling choices move your rank. Every scored entry earns Barrels; the
-   **What you can win** panel on each competition lists the podium rewards and badges.
+3. **Build and train** your model in KOC Studio on the desktop, for the competition's task. Use any tool
+   you prefer if you would rather — only your predictions come back.
+4. **Submit your predictions** — a CSV, from the competition's **My submissions** tab. It is scored
+   against a **hidden** answer key (the same data for everyone), so only your modelling choices move
+   your rank. Every scored entry earns Barrels; the **What you can win** panel on each competition
+   lists the podium rewards and badges.
 5. Watch the **live leaderboard** update in real time — rank arrows (▲/▼/NEW) show who's moving.
    Final standings are revealed on the host's chosen day.
 
