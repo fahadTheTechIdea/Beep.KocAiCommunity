@@ -108,3 +108,92 @@ public class TrackCompletion : AuditableEntity
     public string UserId { get; set; } = default!;
     public DateTime CompletedUtc { get; set; }
 }
+
+// ── Quizzes ─────────────────────────────────────────────────────────────────────────────────────
+// A track may end in a quiz. Whether passing it is required to finish the track is the admin's call,
+// per track — so the same machinery serves a light self-check on an introductory track and a real
+// assessment on one that matters.
+
+/// <summary>
+/// The quiz at the end of a track. At most one per track.
+/// <para>
+/// <see cref="IsMandatory"/> is the whole point of the feature: when it is set, finishing every lesson
+/// is no longer finishing the track — the completion, its Barrels and its badge wait until the quiz is
+/// passed. When it is not, the quiz is a self-check that records a score and blocks nothing.
+/// </para>
+/// </summary>
+public class Quiz : AuditableEntity
+{
+    public Guid TrackId { get; set; }
+
+    /// <summary>Percentage of questions that must be answered correctly, 1–100.</summary>
+    public int PassMark { get; set; } = 70;
+
+    /// <summary>Whether passing gates completion of the track.</summary>
+    public bool IsMandatory { get; set; }
+
+    /// <summary>
+    /// Off hides the quiz from learners entirely. Separate from deleting it, so a quiz can be drafted,
+    /// or withdrawn after a bad question is spotted, without losing the questions or anyone's attempts.
+    /// </summary>
+    public bool IsEnabled { get; set; } = true;
+
+    /// <summary>Shown above the questions — what this covers, how long it takes.</summary>
+    public string Intro { get; set; } = string.Empty;
+}
+
+public class QuizQuestion : AuditableEntity
+{
+    public Guid QuizId { get; set; }
+    public int OrderNo { get; set; }
+    public string Text { get; set; } = default!;
+
+    /// <summary>
+    /// Why the right answer is right, shown in the review after an attempt. A quiz that only says
+    /// "wrong" teaches nothing, which for a learning platform is the point missed.
+    /// </summary>
+    public string Explanation { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// One option on a question. A question may have more than one correct answer; a response counts only
+/// when it selects every correct option and none of the incorrect ones.
+/// </summary>
+public class QuizAnswer : AuditableEntity
+{
+    public Guid QuestionId { get; set; }
+    public int OrderNo { get; set; }
+    public string Text { get; set; } = default!;
+    public bool IsCorrect { get; set; }
+}
+
+/// <summary>
+/// One sitting of a quiz. Kept whether it passed or failed: the attempt count is what "passed first
+/// time" is measured against, and deleting failures would quietly make everybody perfect.
+/// </summary>
+public class QuizAttempt : AuditableEntity
+{
+    public Guid QuizId { get; set; }
+    public string UserId { get; set; } = default!;
+
+    /// <summary>1 for this person's first sitting of this quiz, counting up.</summary>
+    public int AttemptNo { get; set; }
+
+    public DateTime SubmittedUtc { get; set; }
+    public int CorrectCount { get; set; }
+    public int QuestionCount { get; set; }
+
+    /// <summary>Rounded percentage, stored rather than derived so a later edit to the quiz cannot silently restate an old result.</summary>
+    public int ScorePercent { get; set; }
+
+    /// <summary>Judged against the pass mark as it stood when the attempt was taken.</summary>
+    public bool Passed { get; set; }
+}
+
+/// <summary>What was actually selected, so an attempt can be reviewed question by question.</summary>
+public class QuizAttemptAnswer : AuditableEntity
+{
+    public Guid AttemptId { get; set; }
+    public Guid QuestionId { get; set; }
+    public Guid AnswerId { get; set; }
+}

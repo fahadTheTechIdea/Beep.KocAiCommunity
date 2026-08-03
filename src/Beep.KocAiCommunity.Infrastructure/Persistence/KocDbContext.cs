@@ -38,6 +38,11 @@ public class KocDbContext(DbContextOptions<KocDbContext> options)
     public DbSet<TrackEnrollment> TrackEnrollments => Set<TrackEnrollment>();
     public DbSet<LessonProgress> LessonProgress => Set<LessonProgress>();
     public DbSet<TrackCompletion> TrackCompletions => Set<TrackCompletion>();
+    public DbSet<Quiz> Quizzes => Set<Quiz>();
+    public DbSet<QuizQuestion> QuizQuestions => Set<QuizQuestion>();
+    public DbSet<QuizAnswer> QuizAnswers => Set<QuizAnswer>();
+    public DbSet<QuizAttempt> QuizAttempts => Set<QuizAttempt>();
+    public DbSet<QuizAttemptAnswer> QuizAttemptAnswers => Set<QuizAttemptAnswer>();
     public DbSet<Competition> Competitions => Set<Competition>();
     public DbSet<CompetitionCategory> CompetitionCategories => Set<CompetitionCategory>();
 

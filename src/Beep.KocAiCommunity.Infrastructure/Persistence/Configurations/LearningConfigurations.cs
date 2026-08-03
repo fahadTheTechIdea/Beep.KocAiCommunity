@@ -74,3 +74,68 @@ public sealed class TrackCompletionConfiguration : IEntityTypeConfiguration<Trac
         b.HasIndex(x => new { x.TrackId, x.UserId }).IsUnique();
     }
 }
+
+public sealed class QuizConfiguration : IEntityTypeConfiguration<Quiz>
+{
+    public void Configure(EntityTypeBuilder<Quiz> b)
+    {
+        b.ToTable("Quizzes", "koc");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Intro).HasMaxLength(1024).IsRequired();
+
+        // At most one quiz per track: the learner-facing question is "is there a quiz", not "which one".
+        b.HasIndex(x => x.TrackId).IsUnique();
+        b.HasOne<LearningTrack>().WithMany().HasForeignKey(x => x.TrackId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class QuizQuestionConfiguration : IEntityTypeConfiguration<QuizQuestion>
+{
+    public void Configure(EntityTypeBuilder<QuizQuestion> b)
+    {
+        b.ToTable("QuizQuestions", "koc");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Text).HasMaxLength(1024).IsRequired();
+        b.Property(x => x.Explanation).HasMaxLength(1024).IsRequired();
+        b.HasIndex(x => new { x.QuizId, x.OrderNo });
+        b.HasOne<Quiz>().WithMany().HasForeignKey(x => x.QuizId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class QuizAnswerConfiguration : IEntityTypeConfiguration<QuizAnswer>
+{
+    public void Configure(EntityTypeBuilder<QuizAnswer> b)
+    {
+        b.ToTable("QuizAnswers", "koc");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Text).HasMaxLength(512).IsRequired();
+        b.HasIndex(x => new { x.QuestionId, x.OrderNo });
+        b.HasOne<QuizQuestion>().WithMany().HasForeignKey(x => x.QuestionId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class QuizAttemptConfiguration : IEntityTypeConfiguration<QuizAttempt>
+{
+    public void Configure(EntityTypeBuilder<QuizAttempt> b)
+    {
+        b.ToTable("QuizAttempts", "koc");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.UserId).HasMaxLength(128).IsRequired();
+
+        // Every read is "this person's attempts at this quiz, newest first" — for the best score, the
+        // attempt number, and the review screen.
+        b.HasIndex(x => new { x.QuizId, x.UserId, x.AttemptNo });
+        b.HasOne<Quiz>().WithMany().HasForeignKey(x => x.QuizId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class QuizAttemptAnswerConfiguration : IEntityTypeConfiguration<QuizAttemptAnswer>
+{
+    public void Configure(EntityTypeBuilder<QuizAttemptAnswer> b)
+    {
+        b.ToTable("QuizAttemptAnswers", "koc");
+        b.HasKey(x => x.Id);
+        b.HasIndex(x => x.AttemptId);
+        b.HasOne<QuizAttempt>().WithMany().HasForeignKey(x => x.AttemptId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
