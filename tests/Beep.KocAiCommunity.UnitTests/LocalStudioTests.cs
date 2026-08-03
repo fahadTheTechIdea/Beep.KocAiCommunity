@@ -12,6 +12,11 @@ namespace Beep.KocAiCommunity.UnitTests;
 /// The offline desktop Studio: node catalog, workflow registry, and pipeline execution all run
 /// in-process with no API server — the guarantee that the designer works when the web server is down.
 /// </summary>
+// Serialised with every other AutoML test. Training gets a fixed wall-clock budget, so when
+// several of these run at once they starve each other of cores, complete fewer trials, and fail
+// on a worse model than the same test produces alone — which reads as flakiness rather than as
+// contention. Slower in total, and honest.
+[Collection(MlTrainingCollection.Name)]
 public sealed class LocalStudioTests : IDisposable
 {
     private readonly LocalWorkspace _workspace = new()

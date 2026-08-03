@@ -16,6 +16,11 @@ namespace Beep.KocAiCommunity.UnitTests;
 /// true/false labels). Each asserts the id survives every crossing AND joins 1:1 to the key, so a real
 /// model scores perfectly. If any pipeline/scoring fix regresses, one of these fails loudly.
 /// </summary>
+// Serialised with every other AutoML test. Training gets a fixed wall-clock budget, so when
+// several of these run at once they starve each other of cores, complete fewer trials, and fail
+// on a worse model than the same test produces alone — which reads as flakiness rather than as
+// contention. Slower in total, and honest.
+[Collection(MlTrainingCollection.Name)]
 public class GoldenPipelineScoringTests
 {
     private static PluginNodeExecutor NewExecutor()

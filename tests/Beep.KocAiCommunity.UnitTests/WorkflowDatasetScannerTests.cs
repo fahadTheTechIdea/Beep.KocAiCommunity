@@ -11,6 +11,11 @@ namespace Beep.KocAiCommunity.UnitTests;
 /// the caller, so it must NOT be resolved as a secondary (which would double-load it and, on a submit that
 /// passes no secondaries, throw).
 /// </summary>
+// Serialised with every other AutoML test. Training gets a fixed wall-clock budget, so when
+// several of these run at once they starve each other of cores, complete fewer trials, and fail
+// on a worse model than the same test produces alone — which reads as flakiness rather than as
+// contention. Slower in total, and honest.
+[Collection(MlTrainingCollection.Name)]
 public class WorkflowDatasetScannerTests
 {
     private static readonly Guid Primary = Guid.Parse("11111111-1111-1111-1111-111111111111");

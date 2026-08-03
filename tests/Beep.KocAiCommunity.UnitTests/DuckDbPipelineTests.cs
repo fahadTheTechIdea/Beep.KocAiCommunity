@@ -11,6 +11,11 @@ namespace Beep.KocAiCommunity.UnitTests;
 /// DuckDB data-prep nodes feeding the ML.NET modelling nodes in one graph — DuckDB is the ETL
 /// front-end, ML.NET does the training (the two engines cross once via CSV).
 /// </summary>
+// Serialised with every other AutoML test. Training gets a fixed wall-clock budget, so when
+// several of these run at once they starve each other of cores, complete fewer trials, and fail
+// on a worse model than the same test produces alone — which reads as flakiness rather than as
+// contention. Slower in total, and honest.
+[Collection(MlTrainingCollection.Name)]
 public class DuckDbPipelineTests
 {
     private static PluginNodeExecutor NewExecutor()

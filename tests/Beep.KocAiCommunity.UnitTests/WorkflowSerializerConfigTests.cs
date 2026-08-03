@@ -10,6 +10,11 @@ namespace Beep.KocAiCommunity.UnitTests;
 /// node's target/task — through canonicalize → parse, or reopening a saved workflow loses the user's data
 /// source and settings.
 /// </summary>
+// Serialised with every other AutoML test. Training gets a fixed wall-clock budget, so when
+// several of these run at once they starve each other of cores, complete fewer trials, and fail
+// on a worse model than the same test produces alone — which reads as flakiness rather than as
+// contention. Slower in total, and honest.
+[Collection(MlTrainingCollection.Name)]
 public class WorkflowSerializerConfigTests
 {
     [Fact]

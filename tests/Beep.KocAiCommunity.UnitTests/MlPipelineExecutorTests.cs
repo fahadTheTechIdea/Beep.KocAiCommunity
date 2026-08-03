@@ -8,6 +8,11 @@ using Xunit;
 
 namespace Beep.KocAiCommunity.UnitTests;
 
+// Serialised with every other AutoML test. Training gets a fixed wall-clock budget, so when
+// several of these run at once they starve each other of cores, complete fewer trials, and fail
+// on a worse model than the same test produces alone — which reads as flakiness rather than as
+// contention. Slower in total, and honest.
+[Collection(MlTrainingCollection.Name)]
 public class MlPipelineExecutorTests
 {
     // Builds the plug-and-play executor with every registered handler (mirrors DI) so these tests are
