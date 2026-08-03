@@ -14,15 +14,53 @@
 
 <PageTitle>@L["Compete"] · @KocBrand.ProductName</PageTitle>
 
-<PageHeader Eyebrow="@L["The arena"]" Title="@L["Competitions"]"
-            Subtitle="@L["Internal, Kaggle-style challenges on real KOC problems — get the data, build your model in KOC Studio on the desktop, and climb the live leaderboard. Final standings stay hidden until reveal day."]">
-    <Actions>
-        @if (CanCreate)
+@* The arena opens with the state of the arena, not a paragraph about it. Every figure below is summed
+   from the competitions already loaded, so this costs no extra request. *@
+<div class="koc-arena-hero koc-arena-banner mb-6">
+    <div class="koc-arena-hero-ink">
+        <span class="koc-eyebrow">@L["The arena"]</span>
+        <h1 class="koc-hero-title">@L["Competitions"]</h1>
+        <MudText Typo="Typo.body2" Class="koc-arena-lede">
+            @L["Internal, Kaggle-style challenges on real KOC problems — get the data, build your model in KOC Studio on the desktop, and climb the live leaderboard. Final standings stay hidden until reveal day."]
+        </MudText>
+
+        @if (_competitions is { Count: > 0 })
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">@L["Host a competition"]</MudButton>
+            <div class="koc-hero-stats">
+                <div class="koc-hero-stat">
+                    <span class="koc-hero-stat-value koc-stat-value @(LiveCount > 0 ? "koc-live" : "")">@LiveCount</span>
+                    <span class="koc-hero-stat-label">@L["running now"]</span>
+                </div>
+                <div class="koc-hero-stat">
+                    <span class="koc-hero-stat-value koc-stat-value">@EntryCount</span>
+                    <span class="koc-hero-stat-label">@L["entries"]</span>
+                </div>
+                <div class="koc-hero-stat">
+                    <span class="koc-hero-stat-value koc-stat-value">@SubmissionCount</span>
+                    <span class="koc-hero-stat-label">@L["submissions"]</span>
+                </div>
+                @if (ClosingNext is { } closing)
+                {
+                    <div class="koc-hero-stat koc-hero-stat--clock">
+                        <CountdownTimer TargetUtc="closing.RevealUtc" Compact="true" Label="@L["until the next reveal"]" />
+                    </div>
+                }
+            </div>
         }
-    </Actions>
-</PageHeader>
+
+        <div class="koc-arena-hero-actions">
+            @* Inherit and Secondary, not Primary: primary is the banner's own blue, and a blue button on
+               a blue banner is a button nobody sees. *@
+            <MudButton Variant="Variant.Outlined" Color="Color.Inherit" Href="/leaderboards"
+                       StartIcon="@Icons.Material.Filled.Leaderboard">@L["See the standings"]</MudButton>
+            @if (CanCreate)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="koc-arena-cta"
+                           StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate">@L["Host a competition"]</MudButton>
+            }
+        </div>
+    </div>
+</div>
 
 @if (_error is not null)
 {
@@ -43,6 +81,14 @@ else if (_competitions.Count == 0)
 }
 else
 {
+    @* Search first. Three rows of chips is a fine way to narrow twelve competitions and a poor way to
+       find one among fifty — by then you know its name and want to type it. *@
+    <div class="koc-arena-search mb-3">
+        <MudTextField T="string" Value="_search" ValueChanged="@(v => _search = v ?? "")" Immediate="true"
+                      Placeholder="@L["Search competitions"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Clearable="true" />
+    </div>
+
     <!-- Filters -->
     <div class="d-flex gap-1 flex-wrap align-center mb-4">
         @foreach (var status in new[] { "all", "active", "concluded", "draft" })
@@ -83,9 +129,27 @@ else
     }
 
     var visible = Filtered();
+
+    <div class="koc-arena-count mb-3">
+        @if (visible.Count == _competitions.Count)
+        {
+            @L["{0} competitions", _competitions.Count]
+        }
+        else
+        {
+            @L["{0} of {1} competitions", visible.Count, _competitions.Count]
+        }
+    </div>
+
     @if (visible.Count == 0)
     {
-        <MudText Typo="Typo.body2" Style="opacity:.7;">@L["No competitions match this filter."]</MudText>
+        @* An empty result is a dead end unless it offers the way out of itself. *@
+        <BlueprintCard Class="pa-8" Style="text-align:center;">
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Nothing here yet"]</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">@L["No competition matches these filters. Widen them and something will turn up."]</MudText>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ClearFilters" StartIcon="@Icons.Material.Filled.FilterAltOff">@L["Clear filters"]</MudButton>
+        </BlueprintCard>
     }
     else
     {
@@ -108,6 +172,33 @@ else
     private string? _error;
     private string _statusFilter = "all";
     private string _taskFilter = "all";
+    private string _search = "";
+
+    // The state of the arena, summed from what is already loaded — no extra request for any of it.
+    private int LiveCount => _competitions?.Count(c => c.Status == "active") ?? 0;
+
+    /// <summary>
+    /// Entries, deliberately not "people": this sums participants across boards, and somebody in three
+    /// competitions is counted three times. Calling it competitors would be a number that reads as a
+    /// headcount and is not one.
+    /// </summary>
+    private int EntryCount => _competitions?.Sum(c => c.ParticipantCount) ?? 0;
+
+    private int SubmissionCount => _competitions?.Sum(c => c.SubmissionCount) ?? 0;
+
+    /// <summary>The soonest reveal still ahead of us, for the countdown in the hero.</summary>
+    private CompetitionDto? ClosingNext =>
+        _competitions?
+            .Where(c => c.Status == "active" && c.RevealUtc is { } r && r > DateTime.UtcNow)
+            .MinBy(c => c.RevealUtc);
+
+    private void ClearFilters()
+    {
+        _statusFilter = "all";
+        _taskFilter = "all";
+        _categoryFilter = "all";
+        _search = "";
+    }
 
     // Only enabled categories are served, so a switched-off one never appears as a filter.
     private string _categoryFilter = "all";
@@ -184,6 +275,11 @@ else
             .Where(c => _statusFilter == "all" || c.Status == _statusFilter)
             .Where(c => _taskFilter == "all" || c.TaskType == _taskFilter)
             .Where(c => _categoryFilter == "all" || c.CategoryCode == _categoryFilter)
+            // Title, domain and description: what somebody actually remembers a competition by.
+            .Where(c => string.IsNullOrWhiteSpace(_search)
+                     || c.Title.Contains(_search, StringComparison.OrdinalIgnoreCase)
+                     || (c.CategoryName ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase)
+                     || c.Description.Contains(_search, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
     private async Task OpenCreate()

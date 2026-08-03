@@ -1015,9 +1015,6 @@
   <data name="No competition entries yet." xml:space="preserve">
     <value>لا مشاركات في المسابقات بعد.</value>
   </data>
-  <data name="No competitions match this filter." xml:space="preserve">
-    <value>لا مسابقات تطابق هذا التصفية.</value>
-  </data>
   <data name="No competitions yet" xml:space="preserve">
     <value>لا مسابقات بعد</value>
   </data>
@@ -2181,5 +2178,35 @@
   </data>
   <data name="Build AI skills, compete with colleagues, and grow your career at KOC." xml:space="preserve">
     <value>طوّر مهاراتك في الذكاء الاصطناعي، ونافس زملاءك، وامضِ قدمًا في مسارك المهني في شركة نفط الكويت.</value>
+  </data>
+  <data name="running now" xml:space="preserve">
+    <value>تجري الآن</value>
+  </data>
+  <data name="entries" xml:space="preserve">
+    <value>مشاركات</value>
+  </data>
+  <data name="until the next reveal" xml:space="preserve">
+    <value>حتى الإعلان القادم</value>
+  </data>
+  <data name="See the standings" xml:space="preserve">
+    <value>اعرض الترتيب</value>
+  </data>
+  <data name="Search competitions" xml:space="preserve">
+    <value>ابحث في المسابقات</value>
+  </data>
+  <data name="{0} competitions" xml:space="preserve">
+    <value>{0} مسابقة</value>
+  </data>
+  <data name="{0} of {1} competitions" xml:space="preserve">
+    <value>{0} من {1} مسابقة</value>
+  </data>
+  <data name="Nothing here yet" xml:space="preserve">
+    <value>لا شيء هنا بعد</value>
+  </data>
+  <data name="No competition matches these filters. Widen them and something will turn up." xml:space="preserve">
+    <value>لا توجد مسابقة تطابق هذه المرشّحات. وسّعها وستظهر نتائج.</value>
+  </data>
+  <data name="Clear filters" xml:space="preserve">
+    <value>مسح المرشّحات</value>
   </data>
 </root>

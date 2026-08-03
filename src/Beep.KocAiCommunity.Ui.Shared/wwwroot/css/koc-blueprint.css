@@ -642,48 +642,12 @@
   100% { box-shadow: 0 0 0 0 rgba(47, 191, 113, 0); }
 }
 
-/* ── Depth without images ───────────────────────────────────────────────────────────────────────
-   Two soft accent washes behind a hero. Drawn rather than shipped: no bytes, scales to any
-   viewport, and follows the theme instead of fighting it. */
-.koc-arena-banner {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.koc-arena-banner::before,
-.koc-arena-banner::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  border-radius: 50%;
-  filter: blur(46px);
-  opacity: .5;
-  pointer-events: none;
-}
-
-.koc-arena-banner::before {
-  inline-size: 320px;
-  block-size: 320px;
-  inset-block-start: -130px;
-  inset-inline-end: -90px;
-  background: var(--mud-palette-primary);
-  animation: koc-drift 14s ease-in-out infinite alternate;
-}
-
-.koc-arena-banner::after {
-  inline-size: 260px;
-  block-size: 260px;
-  inset-block-end: -120px;
-  inset-inline-start: -70px;
-  background: var(--mud-palette-secondary);
-  animation: koc-drift 18s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes koc-drift {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to   { transform: translate3d(22px, 18px, 0) scale(1.12); }
-}
+/* The accent washes that used to live here have been removed. They targeted .koc-arena-banner::before
+   and ::after, which that component was already using for its blueprint grid overlay and its diagonal
+   shine sweep — so adding them silently deleted both wherever the banner is used, on Home and on the
+   competition detail page. The original banner is the livelier of the two anyway: an animated gradient,
+   the grid, the sweep, a glowing eyebrow pill. Anything wanting soft washes should bring its own class
+   rather than borrow the two pseudo-elements another component has already spent. */
 
 /* ── Off, for anyone who asked ──────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -693,9 +657,7 @@
   .koc-countdown-urgent,
   .koc-rise-in,
   .koc-pop,
-  .koc-live::before,
-  .koc-arena-banner::before,
-  .koc-arena-banner::after {
+  .koc-live::before {
     animation: none !important;
   }
 
@@ -1143,4 +1105,59 @@
   .koc-pick,
   .koc-pick-bar,
   .koc-rail-filter { transition: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE ARENA
+   Compete opened with a paragraph. It now opens with the state of the arena — how many contests
+   are running, how much has been entered, and how long until the next reveal — because that is
+   what makes somebody scroll. The hero shares the scoreboard type with the leaderboards room, so
+   the two pages read as the same building.
+   ════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Layout only. The look comes from .koc-arena-banner, which Home and the competition detail page
+   already wear — three pages about competing should not each invent their own hero. */
+.koc-arena-hero {
+  padding: 32px 32px 28px;
+  border-radius: 18px;
+}
+
+/* The scoreboard labels sit on the dark banner here, so they cannot use the secondary text token —
+   that is a dark grey, and on this background it disappears. */
+.koc-arena-banner .koc-hero-stat-label,
+.koc-arena-banner .koc-arena-lede {
+  color: rgba(255, 255, 255, .78);
+}
+
+.koc-arena-banner .koc-hero-title { color: #fff; }
+
+.koc-arena-hero-ink {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* The lede is supporting text, so it stops at a readable measure instead of running the full width
+   of a wide screen. */
+.koc-arena-lede {
+  max-inline-size: 62ch;
+  opacity: .82;
+}
+
+.koc-arena-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block-start: 4px;
+}
+
+.koc-arena-search {
+  max-inline-size: 420px;
+}
+
+.koc-arena-count {
+  font-size: .74rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
 }
