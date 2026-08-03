@@ -93,6 +93,99 @@ public static class LearningEndpoints
         .WithName("MyLearning")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
+        // ---- Quizzes ------------------------------------------------------------------------------
+
+        // Readable without an account, like the catalogue it belongs to: seeing that a track ends in a
+        // quiz, and what passing takes, is part of deciding whether to start it. The returned shape has
+        // no notion of a correct answer, so there is nothing here to withhold from a visitor.
+        group.MapGet("/tracks/{id:guid}/quiz", async (
+            Guid id, IKocCurrentUser me, IQuizService quizzes, CancellationToken ct) =>
+        {
+            var quiz = await quizzes.GetForLearnerAsync(id, me.UserId ?? string.Empty, ct);
+            return quiz is null ? Results.NotFound() : Results.Ok(quiz);
+        })
+        .WithName("GetTrackQuiz")
+        .AllowAnonymous();
+
+        group.MapPost("/tracks/{id:guid}/quiz/attempts", async (
+            Guid id, SubmitQuizRequest request, IKocCurrentUser me, IQuizService quizzes, CancellationToken ct) =>
+        {
+            try
+            {
+                return Results.Ok(await quizzes.SubmitAsync(id, me.UserId!, request, ct));
+            }
+            catch (QuizException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("SubmitQuizAttempt")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        group.MapGet("/tracks/{id:guid}/quiz/attempts", async (
+            Guid id, IKocCurrentUser me, IQuizService quizzes, CancellationToken ct) =>
+            Results.Ok(await quizzes.GetMyAttemptsAsync(id, me.UserId!, ct)))
+        .WithName("MyQuizAttempts")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // ---- Quiz administration ------------------------------------------------------------------
+        // These are the only endpoints that disclose which answer is correct, and they are the only ones
+        // behind PlatformAdmin. The learner routes above cannot leak it: their DTOs have no such field.
+
+        group.MapGet("/admin/tracks/{id:guid}/quiz", async (
+            Guid id, IQuizService quizzes, CancellationToken ct) =>
+        {
+            var quiz = await quizzes.GetForAdminAsync(id, ct);
+            return quiz is null ? Results.NoContent() : Results.Ok(quiz);
+        })
+        .WithName("GetQuizForAdmin")
+        .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
+
+        group.MapPut("/admin/tracks/{id:guid}/quiz", async (
+            Guid id, UpsertQuizRequest request, IKocCurrentUser me, IQuizService quizzes, CancellationToken ct) =>
+        {
+            try
+            {
+                return Results.Ok(await quizzes.UpsertAsync(id, request, me.UserId!, ct));
+            }
+            catch (QuizException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("UpsertQuiz")
+        .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
+
+        group.MapPut("/admin/tracks/{id:guid}/quiz/questions", async (
+            Guid id, UpsertQuizQuestionRequest request, IKocCurrentUser me, IQuizService quizzes, CancellationToken ct) =>
+        {
+            try
+            {
+                return Results.Ok(await quizzes.SaveQuestionAsync(id, request, me.UserId!, ct));
+            }
+            catch (QuizException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("SaveQuizQuestion")
+        .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
+
+        group.MapDelete("/admin/tracks/{id:guid}/quiz/questions/{questionId:guid}", async (
+            Guid id, Guid questionId, IKocCurrentUser me, IQuizService quizzes, CancellationToken ct) =>
+        {
+            try
+            {
+                return Results.Ok(await quizzes.DeleteQuestionAsync(id, questionId, me.UserId!, ct));
+            }
+            catch (QuizException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        })
+        .WithName("DeleteQuizQuestion")
+        .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
+
         return group;
     }
 }

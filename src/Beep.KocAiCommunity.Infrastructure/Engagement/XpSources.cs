@@ -7,6 +7,9 @@ public static class XpSources
 {
     public const string LessonCompleted = "lesson.completed";
     public const string TrackCompleted = "track.completed";
+
+    /// <summary>Passing a track's quiz. Awarded once per quiz — a retake earns the badge, not the Barrels again.</summary>
+    public const string QuizPassed = "quiz.passed";
     public const string SubmissionScored = "submission.scored";
     public const string SubmissionFirst = "submission.first";     // one-time bonus, awarded internally
     public const string CompetitionTop3 = "competition.top3";
@@ -21,6 +24,9 @@ public static class XpSources
     {
         LessonCompleted => 25,
         TrackCompleted => 150,
+        // Between a lesson and a whole track: passing is more than reading one page and less than
+        // finishing the material.
+        QuizPassed => 60,
         // Competition awards come from the shared CompetitionRewards constants so the arena UI's
         // prize copy is guaranteed to match what is actually granted.
         SubmissionScored => CompetitionRewards.ScoredSubmissionBarrels,

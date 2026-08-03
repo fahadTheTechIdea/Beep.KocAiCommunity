@@ -62,6 +62,13 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient? remote) : IKocAp
     public virtual Task EnrollAsync(Guid trackId, CancellationToken ct = default) => Remote.EnrollAsync(trackId, ct);
     public virtual Task CompleteLessonAsync(Guid trackId, Guid lessonId, CancellationToken ct = default) => Remote.CompleteLessonAsync(trackId, lessonId, ct);
     public virtual Task<IReadOnlyList<MyLearningDto>> GetMyLearningAsync(CancellationToken ct = default) => Remote.GetMyLearningAsync(ct);
+    public virtual Task<QuizDto?> GetTrackQuizAsync(Guid trackId, CancellationToken ct = default) => Remote.GetTrackQuizAsync(trackId, ct);
+    public virtual Task<(QuizAttemptResultDto? Result, string? Error)> SubmitQuizAsync(Guid trackId, SubmitQuizRequest request, CancellationToken ct = default) => Remote.SubmitQuizAsync(trackId, request, ct);
+    public virtual Task<IReadOnlyList<QuizAttemptSummaryDto>> GetMyQuizAttemptsAsync(Guid trackId, CancellationToken ct = default) => Remote.GetMyQuizAttemptsAsync(trackId, ct);
+    public virtual Task<AdminQuizDto?> GetQuizForAdminAsync(Guid trackId, CancellationToken ct = default) => Remote.GetQuizForAdminAsync(trackId, ct);
+    public virtual Task<(AdminQuizDto? Quiz, string? Error)> UpsertQuizAsync(Guid trackId, UpsertQuizRequest request, CancellationToken ct = default) => Remote.UpsertQuizAsync(trackId, request, ct);
+    public virtual Task<(AdminQuizDto? Quiz, string? Error)> SaveQuizQuestionAsync(Guid trackId, UpsertQuizQuestionRequest request, CancellationToken ct = default) => Remote.SaveQuizQuestionAsync(trackId, request, ct);
+    public virtual Task<(AdminQuizDto? Quiz, string? Error)> DeleteQuizQuestionAsync(Guid trackId, Guid questionId, CancellationToken ct = default) => Remote.DeleteQuizQuestionAsync(trackId, questionId, ct);
     public virtual Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default) => Remote.GetCompetitionsAsync(ct);
     public virtual Task<PublicShowcaseDto> GetPublicShowcaseAsync(CancellationToken ct = default) => Remote.GetPublicShowcaseAsync(ct);
     public virtual Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default) => Remote.GetCompetitionAsync(competitionId, ct);

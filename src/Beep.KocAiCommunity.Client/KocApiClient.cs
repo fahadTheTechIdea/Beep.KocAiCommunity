@@ -45,6 +45,19 @@ public interface IKocApiClient
     Task EnrollAsync(Guid trackId, CancellationToken ct = default);
     Task CompleteLessonAsync(Guid trackId, Guid lessonId, CancellationToken ct = default);
     Task<IReadOnlyList<MyLearningDto>> GetMyLearningAsync(CancellationToken ct = default);
+
+    // ---- Quizzes ----
+    // GetTrackQuizAsync returns null when a track has no quiz, which is the common case — a track
+    // without one is not an error.
+    Task<QuizDto?> GetTrackQuizAsync(Guid trackId, CancellationToken ct = default);
+    Task<(QuizAttemptResultDto? Result, string? Error)> SubmitQuizAsync(Guid trackId, SubmitQuizRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<QuizAttemptSummaryDto>> GetMyQuizAttemptsAsync(Guid trackId, CancellationToken ct = default);
+
+    // Admin. These carry the correct answers and are the only client methods that do.
+    Task<AdminQuizDto?> GetQuizForAdminAsync(Guid trackId, CancellationToken ct = default);
+    Task<(AdminQuizDto? Quiz, string? Error)> UpsertQuizAsync(Guid trackId, UpsertQuizRequest request, CancellationToken ct = default);
+    Task<(AdminQuizDto? Quiz, string? Error)> SaveQuizQuestionAsync(Guid trackId, UpsertQuizQuestionRequest request, CancellationToken ct = default);
+    Task<(AdminQuizDto? Quiz, string? Error)> DeleteQuizQuestionAsync(Guid trackId, Guid questionId, CancellationToken ct = default);
     Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default);
 
     /// <summary>A single competition with its arena stats, or null when not found.</summary>
@@ -288,6 +301,49 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
 
     public async Task<IReadOnlyList<MyLearningDto>> GetMyLearningAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<MyLearningDto>>("/api/v1/me/learning", ct) ?? [];
+
+    public async Task<QuizDto?> GetTrackQuizAsync(Guid trackId, CancellationToken ct = default)
+    {
+        // 404 is the ordinary answer for a track with no quiz, so it is read rather than thrown.
+        var response = await http.GetAsync($"/api/v1/tracks/{trackId}/quiz", ct);
+        return response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<QuizDto>(ct)
+            : null;
+    }
+
+    public Task<(QuizAttemptResultDto? Result, string? Error)> SubmitQuizAsync(
+        Guid trackId, SubmitQuizRequest request, CancellationToken ct = default) =>
+        PostJsonAsync<QuizAttemptResultDto>($"/api/v1/tracks/{trackId}/quiz/attempts", request, ct);
+
+    public async Task<IReadOnlyList<QuizAttemptSummaryDto>> GetMyQuizAttemptsAsync(
+        Guid trackId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<QuizAttemptSummaryDto>>($"/api/v1/tracks/{trackId}/quiz/attempts", ct) ?? [];
+
+    public async Task<AdminQuizDto?> GetQuizForAdminAsync(Guid trackId, CancellationToken ct = default)
+    {
+        // 204 when the track has no quiz yet: nothing to read, and not a failure.
+        var response = await http.GetAsync($"/api/v1/admin/tracks/{trackId}/quiz", ct);
+        return response.StatusCode == System.Net.HttpStatusCode.NoContent || !response.IsSuccessStatusCode
+            ? null
+            : await response.Content.ReadFromJsonAsync<AdminQuizDto>(ct);
+    }
+
+    public Task<(AdminQuizDto? Quiz, string? Error)> UpsertQuizAsync(
+        Guid trackId, UpsertQuizRequest request, CancellationToken ct = default) =>
+        PutJsonAsync<AdminQuizDto>($"/api/v1/admin/tracks/{trackId}/quiz", request, ct);
+
+    public Task<(AdminQuizDto? Quiz, string? Error)> SaveQuizQuestionAsync(
+        Guid trackId, UpsertQuizQuestionRequest request, CancellationToken ct = default) =>
+        PutJsonAsync<AdminQuizDto>($"/api/v1/admin/tracks/{trackId}/quiz/questions", request, ct);
+
+    public async Task<(AdminQuizDto? Quiz, string? Error)> DeleteQuizQuestionAsync(
+        Guid trackId, Guid questionId, CancellationToken ct = default)
+    {
+        var response = await http.DeleteAsync($"/api/v1/admin/tracks/{trackId}/quiz/questions/{questionId}", ct);
+        return response.IsSuccessStatusCode
+            ? (await response.Content.ReadFromJsonAsync<AdminQuizDto>(ct), null)
+            : (null, await ReadErrorAsync(response, ct));
+    }
 
     public async Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default) =>
         await http.GetFromJsonAsync<List<CompetitionDto>>("/api/v1/competitions", ct) ?? [];
