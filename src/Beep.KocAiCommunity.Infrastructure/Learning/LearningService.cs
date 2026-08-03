@@ -84,7 +84,7 @@ public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibi
         {
             TrackId = trackId,
             UserId = userId,
-            Status = "active",
+            Status = TrackEnrollmentStatus.Active,
             StartedUtc = DateTime.UtcNow,
             CreatedUtc = DateTime.UtcNow,
         };
@@ -144,6 +144,40 @@ public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibi
         return items;
     }
 
+    /// <summary>
+    /// Re-checks whether a track is finished, from whichever side just changed.
+    /// <para>
+    /// Called after a lesson is completed and again after a quiz is passed, because with a mandatory
+    /// quiz either one can be the last thing standing: somebody can finish the lessons and still owe
+    /// the quiz, or pass the quiz having finished the lessons weeks ago. Doing this only on the lesson
+    /// path would leave a passed quiz never completing the track.
+    /// </para>
+    /// </summary>
+    public async Task ReevaluateCompletionAsync(Guid trackId, string userId, CancellationToken ct = default)
+    {
+        var enrollment = await db.TrackEnrollments.AsNoTracking()
+            .FirstOrDefaultAsync(e => e.TrackId == trackId && e.UserId == userId, ct);
+
+        if (enrollment is not null)
+        {
+            await MaybeCompleteTrackAsync(enrollment, trackId, userId, ct);
+        }
+    }
+
+    /// <summary>
+    /// Whether the quiz gate is open for this person: no quiz, a quiz that is off, an optional quiz, or
+    /// a mandatory one they have passed. A mandatory quiz with no questions stays shut — nobody can
+    /// pass what has nothing in it, and reporting it as satisfied would hide the misconfiguration.
+    /// </summary>
+    private async Task<bool> QuizGateSatisfiedAsync(Guid trackId, string userId, CancellationToken ct)
+    {
+        var quiz = await db.Quizzes.AsNoTracking()
+            .FirstOrDefaultAsync(q => q.TrackId == trackId && q.IsEnabled && q.IsMandatory, ct);
+
+        return quiz is null
+            || await db.QuizAttempts.AsNoTracking().AnyAsync(a => a.QuizId == quiz.Id && a.UserId == userId && a.Passed, ct);
+    }
+
     private async Task MaybeCompleteTrackAsync(TrackEnrollment enrollment, Guid trackId, string userId, CancellationToken ct)
     {
         var total = await db.Lessons.CountAsync(l => l.TrackId == trackId, ct);
@@ -158,8 +192,32 @@ public sealed class LearningService(KocDbContext db, IVisibilityEvaluator visibi
             return;
         }
 
+        // A track already finished stays finished. An admin turning a quiz mandatory afterwards must not
+        // reach back and un-complete work somebody has done — and half-revoking it, which is what
+        // demoting the enrollment while leaving the completion row behind amounts to, is worse than
+        // either taking it all back or leaving it alone.
+        if (await db.TrackCompletions.AnyAsync(c => c.TrackId == trackId && c.UserId == userId, ct))
+        {
+            return;
+        }
+
+        // Every lesson is read, so the only thing that can still be owed is a mandatory quiz. Say so on
+        // the enrollment rather than leaving it "in-progress": the learner has finished the reading, and
+        // a progress bar at 8/8 next to "in progress" reads as a bug rather than as one step left.
+        if (!await QuizGateSatisfiedAsync(trackId, userId, ct))
+        {
+            var awaiting = await db.TrackEnrollments.FirstAsync(e => e.Id == enrollment.Id, ct);
+            if (awaiting.Status != TrackEnrollmentStatus.AwaitingQuiz)
+            {
+                awaiting.Status = TrackEnrollmentStatus.AwaitingQuiz;
+                await db.SaveChangesAsync(ct);
+            }
+
+            return;
+        }
+
         var tracked = await db.TrackEnrollments.FirstAsync(e => e.Id == enrollment.Id, ct);
-        tracked.Status = "completed";
+        tracked.Status = TrackEnrollmentStatus.Completed;
         tracked.CompletedUtc = DateTime.UtcNow;
 
         var alreadyRecorded = await db.TrackCompletions.AnyAsync(c => c.TrackId == trackId && c.UserId == userId, ct);

@@ -28,4 +28,11 @@ public interface ILearningService
     Task<LessonProgress> CompleteLessonAsync(string userId, Guid trackId, Guid lessonId, CancellationToken ct = default);
 
     Task<IReadOnlyList<MyLearningItem>> GetMyLearningAsync(string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Re-checks whether a track is finished. Called from the quiz side after a pass, because with a
+    /// mandatory quiz the last thing standing may be the quiz rather than a lesson — someone can pass it
+    /// having finished the reading weeks ago, and nothing on the lesson path would ever run again.
+    /// </summary>
+    Task ReevaluateCompletionAsync(Guid trackId, string userId, CancellationToken ct = default);
 }

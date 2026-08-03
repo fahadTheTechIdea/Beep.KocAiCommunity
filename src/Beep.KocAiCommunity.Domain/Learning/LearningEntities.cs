@@ -83,11 +83,24 @@ public class Lesson : AuditableEntity
 }
 
 /// <summary>A person's enrollment in a track. One per (user, track).</summary>
+/// <summary>
+/// The states an enrollment can be in. <see cref="AwaitingQuiz"/> is the one the quiz feature adds: the
+/// reading is done and a mandatory quiz is not yet passed. It is deliberately not "active" — a progress
+/// bar reading 8 of 8 next to "in progress" looks like a bug rather than like one step left.
+/// </summary>
+public static class TrackEnrollmentStatus
+{
+    public const string Active = "active";
+    public const string AwaitingQuiz = "awaiting-quiz";
+    public const string Completed = "completed";
+    public const string Abandoned = "abandoned";
+}
+
 public class TrackEnrollment : AuditableEntity
 {
     public Guid TrackId { get; set; }
     public string UserId { get; set; } = default!;
-    public string Status { get; set; } = "active";       // active, completed, abandoned
+    public string Status { get; set; } = TrackEnrollmentStatus.Active;
     public DateTime StartedUtc { get; set; }
     public DateTime? CompletedUtc { get; set; }
 }
