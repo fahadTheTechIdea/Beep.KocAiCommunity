@@ -1,0 +1,255 @@
+@page "/learn/{TrackId:guid}/quiz"
+@using Beep.KocAiCommunity.Contracts.Learning
+@using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Web.Components.Shared
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IKocApiClient Api
+@inject IStringLocalizer<Strings> L
+@inject DevIdentity Identity
+@inject NavigationManager Nav
+
+@* Its own page rather than a dialog over the track. A quiz is a thing you sit down to, it wants the
+   whole screen, and on a phone a dialog with eight questions in it is a scroll trap. Having a URL also
+   means a half-finished attempt survives a stray back-button press. *@
+
+<PageTitle>@L["Quiz"] · @KocBrand.ProductName</PageTitle>
+
+<MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/learn/{TrackId}")" Class="mb-3"
+           StartIcon="@Icons.Material.Filled.ArrowBack">@L["Back to the track"]</MudButton>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">@_error</MudAlert>
+}
+
+@if (_quiz is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_result is not null)
+{
+    @* ── The result ──────────────────────────────────────────────────────────────────────────── *@
+    <div class="@($"koc-quiz-verdict {(_result.Passed ? "koc-quiz-verdict--pass" : "koc-quiz-verdict--fail")} mb-5")">
+        <span class="koc-quiz-verdict-mark">@(_result.Passed ? "✓" : "↻")</span>
+        <div>
+            <MudText Typo="Typo.h5" Class="koc-heading">
+                @(_result.Passed ? L["Passed"] : L["Not this time"])
+            </MudText>
+            <MudText Typo="Typo.body2">
+                @L["{0} of {1} correct — {2}%", _result.CorrectCount, _result.QuestionCount, _result.ScorePercent]
+                · @L["{0}% needed", _quiz.PassMark]
+            </MudText>
+        </div>
+        <span class="koc-quiz-verdict-score koc-stat-value">@_result.ScorePercent<span class="koc-quiz-pct">%</span></span>
+    </div>
+
+    @if (_result.CompletedTrack)
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.EmojiEvents" Class="mb-4">
+            @L["That finished the track. Your Barrels and badge are on your profile."]
+        </MudAlert>
+    }
+    else if (!_result.Passed && _quiz.IsMandatory)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4">
+            @L["This quiz is required to finish the track. You can retake it as often as you like."]
+        </MudAlert>
+    }
+
+    @* The review is the reason the explanations exist. A quiz that only reports a number teaches
+       nothing, and the wrong answers are exactly the ones worth reading about. *@
+    @foreach (var q in _result.Questions)
+    {
+        <BlueprintCard Class="@($"pa-5 mb-3 koc-review {(q.WasCorrect ? "koc-review--right" : "koc-review--wrong")}")">
+            <div class="d-flex align-center gap-2 mb-2">
+                <MudIcon Icon="@(q.WasCorrect ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+                         Color="@(q.WasCorrect ? Color.Success : Color.Error)" Size="Size.Small" />
+                <MudText Typo="Typo.subtitle2"><b>@q.Text</b></MudText>
+            </div>
+
+            @foreach (var option in OptionsFor(q.QuestionId))
+            {
+                var isCorrect = q.CorrectAnswerIds.Contains(option.Id);
+                var wasPicked = q.SelectedAnswerIds.Contains(option.Id);
+                <div class="@ReviewOptionClass(isCorrect, wasPicked)">
+                    <span class="koc-review-mark">@(isCorrect ? "✓" : wasPicked ? "✗" : "")</span>
+                    <span>@option.Text</span>
+                    @if (wasPicked)
+                    {
+                        <span class="koc-review-tag">@L["your answer"]</span>
+                    }
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(q.Explanation))
+            {
+                <MudText Typo="Typo.body2" Class="koc-review-why mt-2">@q.Explanation</MudText>
+            }
+        </BlueprintCard>
+    }
+
+    <div class="d-flex flex-wrap gap-2 mt-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Restart"
+                   StartIcon="@Icons.Material.Filled.Replay">@L["Retake the quiz"]</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="@($"/learn/{TrackId}")">@L["Back to the track"]</MudButton>
+    </div>
+}
+else if (_quiz.Questions.Count == 0)
+{
+    <BlueprintCard Class="pa-8" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.Quiz" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["No questions yet"]</MudText>
+        <MudText Typo="Typo.body2">@L["This quiz has not been written yet. Nothing to do here for now."]</MudText>
+    </BlueprintCard>
+}
+else
+{
+    @* ── Sitting it ──────────────────────────────────────────────────────────────────────────── *@
+    <div class="koc-quiz-head mb-4">
+        <div>
+            <span class="koc-eyebrow">@(_quiz.IsMandatory ? L["Required to finish this track"] : L["Optional self-check"])</span>
+            <MudText Typo="Typo.h5" Class="koc-heading">@L["End-of-track quiz"]</MudText>
+            @if (!string.IsNullOrWhiteSpace(_quiz.Intro))
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">@_quiz.Intro</MudText>
+            }
+        </div>
+        <div class="koc-quiz-progress">
+            <span class="koc-pulse-value koc-stat-value">@AnsweredCount<span class="koc-pulse-of">/@_quiz.Questions.Count</span></span>
+            <span class="koc-pulse-label">@L["answered"]</span>
+        </div>
+    </div>
+
+    @foreach (var question in _quiz.Questions)
+    {
+        <BlueprintCard Class="pa-5 mb-3">
+            <MudText Typo="Typo.subtitle2" Class="mb-3"><b>@question.OrderNo.</b> @question.Text</MudText>
+
+            @foreach (var answer in question.Answers)
+            {
+                var picked = IsPicked(question.Id, answer.Id);
+                <div class="@(picked ? "koc-option koc-option--on" : "koc-option")" @onclick="@(() => Toggle(question.Id, answer.Id))">
+                    <span class="koc-option-box">@(picked ? "●" : "")</span>
+                    <span>@answer.Text</span>
+                </div>
+            }
+        </BlueprintCard>
+    }
+
+    @* Blocked rather than warned: submitting with three unanswered questions records a real attempt
+       and a real failure, and "I meant to go back" is not something the score can be told afterwards. *@
+    @if (AnsweredCount < _quiz.Questions.Count)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-3">
+            @L["Answer every question before submitting — {0} left.", _quiz.Questions.Count - AnsweredCount]
+        </MudAlert>
+    }
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+               Disabled="@(_submitting || AnsweredCount < _quiz.Questions.Count)" OnClick="Submit"
+               StartIcon="@Icons.Material.Filled.Check">
+        @(_submitting ? L["Marking…"] : L["Submit answers"])
+    </MudButton>
+}
+
+@code {
+    [Parameter] public Guid TrackId { get; set; }
+
+    private QuizDto? _quiz;
+    private QuizAttemptResultDto? _result;
+    private string? _error;
+    private bool _submitting;
+
+    /// <summary>What is selected, per question. A set, because a question may have several right options.</summary>
+    private readonly Dictionary<Guid, HashSet<Guid>> _picked = [];
+
+    private int AnsweredCount => _picked.Count(p => p.Value.Count > 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Sitting a quiz needs an account; reading the track does not. Send a visitor back rather than
+        // letting them fill one in and be refused at the end.
+        if (Identity.IsGuest)
+        {
+            Nav.NavigateTo($"/learn/{TrackId}");
+            return;
+        }
+
+        try
+        {
+            _quiz = await Api.GetTrackQuizAsync(TrackId);
+            if (_quiz is null)
+            {
+                Nav.NavigateTo($"/learn/{TrackId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private bool IsPicked(Guid questionId, Guid answerId) =>
+        _picked.TryGetValue(questionId, out var set) && set.Contains(answerId);
+
+    /// <summary>
+    /// Toggles an option. Deliberately multi-select even when only one answer is right: the learner is
+    /// not told how many are correct, and radio buttons would tell them.
+    /// </summary>
+    private void Toggle(Guid questionId, Guid answerId)
+    {
+        if (!_picked.TryGetValue(questionId, out var set))
+        {
+            set = [];
+            _picked[questionId] = set;
+        }
+
+        if (!set.Remove(answerId))
+        {
+            set.Add(answerId);
+        }
+    }
+
+    private async Task Submit()
+    {
+        if (_quiz is null || _submitting)
+        {
+            return;
+        }
+
+        _submitting = true;
+        _error = null;
+
+        var (result, error) = await Api.SubmitQuizAsync(TrackId,
+            new SubmitQuizRequest([.. _picked.Select(p => new QuizResponseDto(p.Key, [.. p.Value]))]));
+
+        _submitting = false;
+
+        if (error is not null)
+        {
+            _error = error;
+            return;
+        }
+
+        _result = result;
+    }
+
+    private async Task Restart()
+    {
+        _picked.Clear();
+        _result = null;
+
+        // Re-read so the card's best score and attempt count reflect the attempt just made.
+        _quiz = await Api.GetTrackQuizAsync(TrackId);
+    }
+
+    /// <summary>The options for a question, for the review — the result carries ids, not option text.</summary>
+    private IReadOnlyList<QuizAnswerDto> OptionsFor(Guid questionId) =>
+        _quiz?.Questions.FirstOrDefault(q => q.Id == questionId)?.Answers ?? [];
+
+    private static string ReviewOptionClass(bool isCorrect, bool wasPicked) => isCorrect
+        ? "koc-review-option koc-review-option--right"
+        : wasPicked ? "koc-review-option koc-review-option--wrong" : "koc-review-option";
+}

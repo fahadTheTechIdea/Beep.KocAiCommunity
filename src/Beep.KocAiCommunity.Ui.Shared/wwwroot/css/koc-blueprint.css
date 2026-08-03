@@ -1391,3 +1391,173 @@
 .koc-track-progress {
   min-inline-size: 220px;
 }
+
+/* ── Quizzes ────────────────────────────────────────────────────────────────────────────────────
+   The card at the end of a track, sitting the quiz, and reading the result back. */
+
+.koc-quiz-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.koc-quiz-card-ink {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-inline-size: 0;
+}
+
+.koc-quiz-card-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.koc-quiz-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.koc-quiz-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: end;
+}
+
+/* ── An option, before it is marked ─────────────────────────────────────────────────────────────
+   The whole row is the target, not a checkbox the size of a full stop. */
+.koc-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  margin-block-end: 6px;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.koc-option:hover { border-color: var(--mud-palette-primary); }
+
+.koc-option--on {
+  border-color: var(--mud-palette-primary);
+  background: color-mix(in srgb, var(--mud-palette-primary) 10%, transparent);
+}
+
+.koc-option-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--mud-palette-lines-default);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--mud-palette-primary);
+}
+
+.koc-option--on .koc-option-box { border-color: var(--mud-palette-primary); }
+
+/* ── The verdict ────────────────────────────────────────────────────────────────────────────────
+   Passing and failing look different at a glance, and failing is not styled as an error: retaking is
+   expected, and red is for something going wrong. */
+.koc-quiz-verdict {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 26px;
+  border-radius: 16px;
+  border: 1px solid var(--mud-palette-lines-default);
+}
+
+.koc-quiz-verdict--pass {
+  border-color: color-mix(in srgb, var(--mud-palette-success) 55%, transparent);
+  background: color-mix(in srgb, var(--mud-palette-success) 10%, transparent);
+}
+
+.koc-quiz-verdict--fail {
+  border-color: color-mix(in srgb, var(--mud-palette-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--mud-palette-primary) 7%, transparent);
+}
+
+.koc-quiz-verdict-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 46px;
+  block-size: 46px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  background: var(--mud-palette-surface);
+}
+
+.koc-quiz-verdict-score {
+  margin-inline-start: auto;
+  font-size: 2.4rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.koc-quiz-pct { font-size: 1rem; opacity: .6; }
+
+/* ── The review ─────────────────────────────────────────────────────────────────────────────────
+   A wrong answer is where the learning is, so it gets the accent rail; a right one stays quiet. */
+.koc-review { border-inline-start: 3px solid transparent; }
+.koc-review--right { border-inline-start-color: var(--mud-palette-success); }
+.koc-review--wrong { border-inline-start-color: var(--mud-palette-warning); }
+
+.koc-review-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  margin-block-end: 4px;
+  border-radius: 8px;
+  font-size: .9rem;
+}
+
+.koc-review-option--right {
+  background: color-mix(in srgb, var(--mud-palette-success) 12%, transparent);
+  font-weight: 600;
+}
+
+.koc-review-option--wrong {
+  background: color-mix(in srgb, var(--mud-palette-warning) 14%, transparent);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.koc-review-mark {
+  inline-size: 14px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.koc-review-tag {
+  margin-inline-start: auto;
+  font-size: .72rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
+}
+
+.koc-review-why {
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--mud-palette-lines-default);
+  color: var(--mud-palette-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .koc-option { transition: none !important; }
+}

@@ -241,6 +241,51 @@ else
             }
         </MudExpansionPanels>
         </div>
+
+        @* The quiz sits after the lessons, because that is where it belongs in the reading. It says
+           plainly whether it is required, and shows the best result so far rather than only offering to
+           start — somebody returning to a track wants to know where they got to. *@
+        @if (_quiz is not null)
+        {
+            <BlueprintCard Class="pa-6 mt-6 koc-quiz-card">
+                <div class="koc-quiz-card-ink">
+                    <span class="koc-eyebrow">@(_quiz.IsMandatory ? L["Required to finish this track"] : L["Optional self-check"])</span>
+                    <MudText Typo="Typo.h6" Class="koc-heading">@L["End-of-track quiz"]</MudText>
+
+                    @if (!string.IsNullOrWhiteSpace(_quiz.Intro))
+                    {
+                        <MudText Typo="Typo.body2" Class="mb-1">@_quiz.Intro</MudText>
+                    }
+
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        @L["{0} questions · {1}% to pass", _quiz.Questions.Count, _quiz.PassMark]
+                        @if (_quiz.AttemptCount > 0)
+                        {
+                            <text> · </text>@L["best {0}% over {1} attempts", _quiz.BestScorePercent ?? 0, _quiz.AttemptCount]
+                        }
+                    </MudText>
+                </div>
+
+                <div class="koc-quiz-card-action">
+                    @if (_quiz.HasPassed)
+                    {
+                        <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Icon="@Icons.Material.Filled.CheckCircle">@L["Passed"]</MudChip>
+                    }
+
+                    @if (Identity.IsGuest)
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@L["Sign in to take the quiz."]</MudText>
+                    }
+                    else
+                    {
+                        <MudButton Variant="@(_quiz.HasPassed ? Variant.Outlined : Variant.Filled)" Color="Color.Primary"
+                                   Href="@($"/learn/{_selected.Id}/quiz")" EndIcon="@Icons.Material.Filled.ArrowForward">
+                            @(_quiz.AttemptCount == 0 ? L["Take the quiz"] : _quiz.HasPassed ? L["Review or retake"] : L["Try again"])
+                        </MudButton>
+                    }
+                </div>
+            </BlueprintCard>
+        }
     }
 }
 
@@ -248,6 +293,7 @@ else
     private IReadOnlyList<TrackDto>? _tracks;
     private Dictionary<Guid, MyLearningDto> _mine = [];
     private TrackDetailDto? _selected;
+    private QuizDto? _quiz;
     private string? _error;
     /// <summary>
     /// The interface language, which is also the catalogue language asked of the API. A track with no
@@ -317,6 +363,10 @@ else
         if (_selected?.Id != TrackId)
         {
             _selected = await Api.GetTrackAsync(TrackId.Value);
+
+            // Most tracks have no quiz, and the client returns null for those rather than throwing —
+            // a track without one is not an error.
+            _quiz = await Api.GetTrackQuizAsync(TrackId.Value);
         }
     }
 

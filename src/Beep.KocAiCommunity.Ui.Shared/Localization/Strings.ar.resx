@@ -2230,4 +2230,79 @@
   <data name="All levels" xml:space="preserve">
     <value>كل المستويات</value>
   </data>
+  <data name="Required to finish this track" xml:space="preserve">
+    <value>مطلوب لإنهاء هذا المسار</value>
+  </data>
+  <data name="Optional self-check" xml:space="preserve">
+    <value>اختبار ذاتي اختياري</value>
+  </data>
+  <data name="End-of-track quiz" xml:space="preserve">
+    <value>اختبار نهاية المسار</value>
+  </data>
+  <data name="{0} questions · {1}% to pass" xml:space="preserve">
+    <value>{0} سؤالًا · {1}% للنجاح</value>
+  </data>
+  <data name="best {0}% over {1} attempts" xml:space="preserve">
+    <value>أفضل نتيجة {0}% خلال {1} محاولات</value>
+  </data>
+  <data name="Passed" xml:space="preserve">
+    <value>ناجح</value>
+  </data>
+  <data name="Sign in to take the quiz." xml:space="preserve">
+    <value>سجّل الدخول لأداء الاختبار.</value>
+  </data>
+  <data name="Take the quiz" xml:space="preserve">
+    <value>ابدأ الاختبار</value>
+  </data>
+  <data name="Review or retake" xml:space="preserve">
+    <value>راجع أو أعد المحاولة</value>
+  </data>
+  <data name="Try again" xml:space="preserve">
+    <value>حاول مرة أخرى</value>
+  </data>
+  <data name="Quiz" xml:space="preserve">
+    <value>اختبار</value>
+  </data>
+  <data name="Back to the track" xml:space="preserve">
+    <value>العودة إلى المسار</value>
+  </data>
+  <data name="Not this time" xml:space="preserve">
+    <value>ليس هذه المرة</value>
+  </data>
+  <data name="{0} of {1} correct — {2}%" xml:space="preserve">
+    <value>{0} من {1} صحيحة — {2}%</value>
+  </data>
+  <data name="{0}% needed" xml:space="preserve">
+    <value>المطلوب {0}%</value>
+  </data>
+  <data name="That finished the track. Your Barrels and badge are on your profile." xml:space="preserve">
+    <value>بذلك أنهيت المسار. براميلك وشارتك في ملفك الشخصي.</value>
+  </data>
+  <data name="This quiz is required to finish the track. You can retake it as often as you like." xml:space="preserve">
+    <value>هذا الاختبار مطلوب لإنهاء المسار، ويمكنك إعادته كما تشاء.</value>
+  </data>
+  <data name="your answer" xml:space="preserve">
+    <value>إجابتك</value>
+  </data>
+  <data name="Retake the quiz" xml:space="preserve">
+    <value>أعد الاختبار</value>
+  </data>
+  <data name="No questions yet" xml:space="preserve">
+    <value>لا توجد أسئلة بعد</value>
+  </data>
+  <data name="This quiz has not been written yet. Nothing to do here for now." xml:space="preserve">
+    <value>لم تُكتب أسئلة هذا الاختبار بعد. لا شيء لفعله هنا حاليًا.</value>
+  </data>
+  <data name="answered" xml:space="preserve">
+    <value>مُجاب عنها</value>
+  </data>
+  <data name="Answer every question before submitting — {0} left." xml:space="preserve">
+    <value>أجب عن كل الأسئلة قبل الإرسال — بقي {0}.</value>
+  </data>
+  <data name="Marking…" xml:space="preserve">
+    <value>جارٍ التصحيح…</value>
+  </data>
+  <data name="Submit answers" xml:space="preserve">
+    <value>أرسل الإجابات</value>
+  </data>
 </root>
