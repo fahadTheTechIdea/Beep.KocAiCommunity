@@ -1,6 +1,7 @@
 @page "/leaderboards"
 @page "/leaderboards/{Id:guid}"
 @using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Contracts.Engagement
 @using Beep.KocAiCommunity.Client
 @using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Ui.Shared.Components
@@ -22,12 +23,106 @@
 
 <PageTitle>@L["Leaderboards"] · @KocBrand.ProductName</PageTitle>
 
+@* Three kinds of standing, one room. Competition boards rank a score on a hidden holdout; the People
+   and Team boards rank Barrels earned across the platform. They used to live on Community, which meant
+   somebody looking for "where do I stand" had two places to look and no way to know which. *@
+<div class="koc-standings-switch" role="tablist" aria-label="@L["Leaderboards"]">
+    @foreach (var (key, label, icon) in Sections)
+    {
+        <button type="button" role="tab" aria-selected="@(_section == key)" class="@SectionClass(key)"
+                @onclick="@(() => SelectSectionAsync(key))">
+            <MudIcon Icon="@icon" Size="Size.Small" />
+            <span>@label</span>
+        </button>
+    }
+</div>
+
 @if (_error is not null)
 {
     <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">@L["Couldn't reach the API ({0}).", _error]</MudAlert>
 }
 
-@if (_competitions is null)
+@if (_section != "competitions")
+{
+    <div class="koc-period-row mb-4">
+        @foreach (var (key, label) in Periods)
+        {
+            <button type="button" class="@PeriodClass(key)" @onclick="@(() => ChangePeriodAsync(key))">@label</button>
+        }
+    </div>
+}
+
+@if (_section == "people")
+{
+    @if (_people is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (_people.Count == 0)
+    {
+        <BlueprintCard Class="pa-8" Style="text-align:center;">
+            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["No Barrels yet"]</MudText>
+            <MudText Typo="Typo.body2">@L["Nobody has earned Barrels in this period. Be the first."]</MudText>
+        </BlueprintCard>
+    }
+    else
+    {
+        <BlueprintCard Class="pa-6">
+            <div class="koc-board">
+                @foreach (var row in _people)
+                {
+                    <div class="@(row.IsMe ? "koc-board-row koc-board-me" : "koc-board-row") koc-board-row--person">
+                        <span class="@RankBoxClass(row.Rank)">@row.Rank</span>
+                        <MudAvatar Size="Size.Small" Style="background:#fff;cursor:pointer;" @onclick="@(() => ViewProfile(row.UserId))">
+                            <MudImage Src="@KocBrand.Icon(row.AvatarIcon)" />
+                        </MudAvatar>
+                        <span class="koc-board-name koc-board-person" @onclick="@(() => ViewProfile(row.UserId))">
+                            <span class="koc-board-person-name">@row.DisplayName</span>
+                            <span class="koc-board-person-sub">@L["Lvl {0}", row.Level] · @row.LevelTitle</span>
+                        </span>
+                        <span class="koc-barrels koc-board-score">@row.XpTotal</span>
+                    </div>
+                }
+            </div>
+        </BlueprintCard>
+    }
+}
+else if (_section == "teams")
+{
+    @if (_teams is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else if (_teams.Count == 0)
+    {
+        <BlueprintCard Class="pa-8" Style="text-align:center;">
+            <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["No team standings yet"]</MudText>
+            <MudText Typo="Typo.body2">@L["Team standings appear once colleagues start earning Barrels."]</MudText>
+        </BlueprintCard>
+    }
+    else
+    {
+        <BlueprintCard Class="pa-6">
+            <div class="koc-board">
+                @foreach (var t in _teams)
+                {
+                    <div class="@(t.IsMyTeam ? "koc-board-row koc-board-me" : "koc-board-row")">
+                        <span class="@RankBoxClass(t.Rank)">@t.Rank</span>
+                        <span class="koc-board-name koc-board-person">
+                            <span class="koc-board-person-name">@t.OrgUnitName</span>
+                            <span class="koc-board-person-sub">@L["{0} active · {1} bbl total", t.MemberCount, t.TotalXp]</span>
+                        </span>
+                        @* Ranked on the average, so a large team cannot win by being large. *@
+                        <span class="koc-board-score koc-stat-value">@L["{0} avg", t.AverageXp.ToString("0.#")]</span>
+                    </div>
+                }
+            </div>
+        </BlueprintCard>
+    }
+}
+else if (_competitions is null)
 {
     <MudProgressCircular Indeterminate="true" />
 }
@@ -283,6 +378,26 @@ else
     private string _search = "";
     private string _filter = "all";
 
+    // Which kind of standing is on screen, and the window the Barrel boards are counted over.
+    private string _section = "competitions";
+    private string _period = "month";
+    private IReadOnlyList<XpLeaderboardRowDto>? _people;
+    private IReadOnlyList<TeamLeaderboardRowDto>? _teams;
+
+    private (string Key, string Label, string Icon)[] Sections =>
+    [
+        ("competitions", L["Competitions"], Icons.Material.Filled.EmojiEvents),
+        ("people", L["People"], Icons.Material.Filled.Person),
+        ("teams", L["Teams"], Icons.Material.Filled.Groups),
+    ];
+
+    private (string Key, string Label)[] Periods =>
+    [
+        ("week", L["This week"]),
+        ("month", L["This month"]),
+        ("all", L["All time"]),
+    ];
+
     // Board-wide extremes, computed once per load rather than per row.
     private double _best, _span;
 
@@ -351,6 +466,47 @@ else
     }
 
     private void OnSearch(string value) => _search = value ?? "";
+
+    /// <summary>Switches section, fetching that board the first time it is asked for.</summary>
+    private async Task SelectSectionAsync(string key)
+    {
+        _section = key;
+        await LoadBarrelBoardsAsync(force: false);
+    }
+
+    private async Task ChangePeriodAsync(string period)
+    {
+        _period = period;
+
+        // The window changed, so what is cached is now the wrong answer.
+        await LoadBarrelBoardsAsync(force: true);
+    }
+
+    private async Task LoadBarrelBoardsAsync(bool force)
+    {
+        try
+        {
+            if (_section == "people" && (force || _people is null))
+            {
+                _people = null;
+                StateHasChanged();
+                _people = await Api.GetXpLeaderboardAsync(_period);
+            }
+            else if (_section == "teams" && (force || _teams is null))
+            {
+                _teams = null;
+                StateHasChanged();
+                _teams = await Api.GetTeamLeaderboardAsync(_period);
+            }
+        }
+        catch
+        {
+            // One board failing is not the page failing — the others still work.
+            if (_section == "people") { _people = []; } else if (_section == "teams") { _teams = []; }
+        }
+    }
+
+    private void ViewProfile(string userId) => Nav.NavigateTo($"/profile/{userId}");
 
     private void SetFilter(string key)
     {
@@ -454,6 +610,16 @@ else
         "draft" => L["Draft"],
         _ => status,
     };
+
+    private string SectionClass(string key) =>
+        _section == key ? "koc-standings-tab koc-standings-tab--on" : "koc-standings-tab";
+
+    private string PeriodClass(string key) =>
+        _period == key ? "koc-period koc-period--on" : "koc-period";
+
+    /// <summary>Shared with the competition board: top three get the metal, everyone else the plain box.</summary>
+    private static string RankBoxClass(int rank) =>
+        rank is >= 1 and <= 3 ? $"koc-board-rank koc-rank-{rank}" : "koc-board-rank";
 
     private string FilterClass(string key) =>
         _filter == key ? "koc-rail-filter koc-rail-filter--on" : "koc-rail-filter";

@@ -283,9 +283,6 @@
   <data name="Cancel" xml:space="preserve">
     <value>إلغاء</value>
   </data>
-  <data name="Champions this month" xml:space="preserve">
-    <value>أبطال هذا الشهر</value>
-  </data>
   <data name="Check the columns below. If they look wrong, change the separator or the encoding." xml:space="preserve">
     <value>راجع الأعمدة أدناه. إن بدت خاطئة، غيّر الفاصل أو الترميز.</value>
   </data>
@@ -321,9 +318,6 @@
   </data>
   <data name="Community" xml:space="preserve">
     <value>المجتمع</value>
-  </data>
-  <data name="Community pulse" xml:space="preserve">
-    <value>نبض المجتمع</value>
   </data>
   <data name="Company" xml:space="preserve">
     <value>الشركة</value>
@@ -850,9 +844,6 @@
   <data name="Learn machine learning on real KOC subsurface, production, and facilities data — take a track, enter an internal competition, and share your work with colleagues." xml:space="preserve">
     <value>تعلَّم تعلُّم الآلة على بيانات KOC الحقيقية في المكامن والإنتاج والمرافق — اسلك مسارًا، وادخل مسابقة داخلية، وشارك عملك مع زملائك.</value>
   </data>
-  <data name="Learn together, cheer each other on, and climb the leaderboards — everything stays inside KOC." xml:space="preserve">
-    <value>تعلّموا معًا، وشجّعوا بعضكم، وارتقوا في لوحات الصدارة — ويبقى كل شيء داخل KOC.</value>
-  </data>
   <data name="Learning" xml:space="preserve">
     <value>التعلُّم</value>
   </data>
@@ -994,14 +985,8 @@
   <data name="No" xml:space="preserve">
     <value>لا</value>
   </data>
-  <data name="No Barrels earned in this period yet — be the first!" xml:space="preserve">
-    <value>لم تُكسب براميل في هذه الفترة بعد — كن الأول!</value>
-  </data>
   <data name="No Barrels earned this month yet." xml:space="preserve">
     <value>لم تُكسب براميل هذا الشهر بعد.</value>
-  </data>
-  <data name="No Barrels earned yet this month — the podium is wide open." xml:space="preserve">
-    <value>لم تُكسب براميل بعد هذا الشهر — المنصة مفتوحة للجميع.</value>
   </data>
   <data name="No account yet?" xml:space="preserve">
     <value>لا تملك حسابًا بعد؟</value>
@@ -1990,9 +1975,6 @@
   <data name="your local score {0}" xml:space="preserve">
     <value>نتيجتك المحلية {0}</value>
   </data>
-  <data name="your rank (month)" xml:space="preserve">
-    <value>ترتيبك (الشهر)</value>
-  </data>
   <data name="your team" xml:space="preserve">
     <value>فريقك</value>
   </data>
@@ -2165,7 +2147,7 @@
     <value>يتصدّر في {0}</value>
   </data>
   <data name="KOC Training and Career Development" xml:space="preserve">
-    <value>التدريب والتطوير الوظيفي — شركة نفط الكويت</value>
+    <value>منصة مجموعة التدريب والتطوير الوظيفي - شركة نفط الكويت</value>
   </data>
   <data name="KOC T&amp;CD" xml:space="preserve">
     <value>التدريب والتطوير الوظيفي</value>
@@ -2208,5 +2190,44 @@
   </data>
   <data name="Clear filters" xml:space="preserve">
     <value>مسح المرشّحات</value>
+  </data>
+  <data name="Ask, answer, and cheer each other on. Everything here stays inside KOC." xml:space="preserve">
+    <value>اسأل وأجب وشجّع زملاءك. كل ما هنا يبقى داخل شركة نفط الكويت.</value>
+  </data>
+  <data name="No Barrels yet" xml:space="preserve">
+    <value>لا توجد براميل بعد</value>
+  </data>
+  <data name="Nobody has earned Barrels in this period. Be the first." xml:space="preserve">
+    <value>لم يكسب أحد براميل في هذه الفترة. كن الأول.</value>
+  </data>
+  <data name="No team standings yet" xml:space="preserve">
+    <value>لا يوجد ترتيب للفرق بعد</value>
+  </data>
+  <data name="Teams" xml:space="preserve">
+    <value>الفرق</value>
+  </data>
+  <data name="tracks" xml:space="preserve">
+    <value>مسارات</value>
+  </data>
+  <data name="lessons" xml:space="preserve">
+    <value>دروس</value>
+  </data>
+  <data name="lessons complete" xml:space="preserve">
+    <value>دروس مكتملة</value>
+  </data>
+  <data name="Search tracks" xml:space="preserve">
+    <value>ابحث في المسارات</value>
+  </data>
+  <data name="{0} tracks" xml:space="preserve">
+    <value>{0} مسار</value>
+  </data>
+  <data name="{0} of {1} tracks" xml:space="preserve">
+    <value>{0} من {1} مسار</value>
+  </data>
+  <data name="No track matches these filters. Widen them and something will turn up." xml:space="preserve">
+    <value>لا يوجد مسار يطابق هذه المرشّحات. وسّعها وستظهر نتائج.</value>
+  </data>
+  <data name="All levels" xml:space="preserve">
+    <value>كل المستويات</value>
   </data>
 </root>

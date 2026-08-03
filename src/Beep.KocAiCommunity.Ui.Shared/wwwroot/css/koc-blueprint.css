@@ -1161,3 +1161,204 @@
   text-transform: uppercase;
   color: var(--mud-palette-text-secondary);
 }
+
+/* ── Three kinds of standing, one room ──────────────────────────────────────────────────────────
+   Competition boards, People, Teams. A segmented control rather than tabs: there are three of them,
+   they are peers, and the choice should be readable without opening anything. */
+.koc-standings-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin-block-end: 22px;
+  padding: 4px;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: 999px;
+  background: var(--mud-palette-surface);
+}
+
+.koc-standings-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mud-palette-text-secondary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.koc-standings-tab:hover { color: var(--mud-palette-primary); }
+
+.koc-standings-tab--on {
+  background: var(--mud-palette-primary);
+  color: var(--mud-palette-primary-text);
+}
+
+/* ── The window a Barrel board counts over ──────────────────────────────────────────────────── */
+.koc-period-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.koc-period {
+  padding: 5px 14px;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mud-palette-text-secondary);
+  font: inherit;
+  font-size: .8rem;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+
+.koc-period:hover { border-color: var(--mud-palette-primary); }
+
+.koc-period--on {
+  border-color: var(--mud-palette-primary);
+  background: color-mix(in srgb, var(--mud-palette-primary) 14%, transparent);
+  color: var(--mud-palette-primary);
+  font-weight: 650;
+}
+
+/* ── A person on a board ─────────────────────────────────────────────────────────────────────────
+   Name and level on two lines, so the row carries who somebody is and not only what they scored. */
+.koc-board-row--person {
+  grid-template-columns: 40px auto minmax(0, 1fr) auto;
+}
+
+.koc-board-person {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-inline-size: 0;
+  cursor: pointer;
+}
+
+.koc-board-person-name {
+  font-weight: 620;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.koc-board-person-sub {
+  font-size: .74rem;
+  color: var(--mud-palette-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .koc-standings-tab,
+  .koc-period { transition: none !important; }
+}
+
+/* ── Community pulse ────────────────────────────────────────────────────────────────────────────
+   One horizontal strip rather than two cards of unequal weight. The figures were set with inline
+   font sizes, which is how a page ends up with six slightly different definitions of "big number". */
+.koc-pulse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 22px;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: 14px;
+  background: var(--mud-palette-surface);
+}
+
+.koc-pulse-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 34px;
+}
+
+.koc-pulse-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.koc-pulse-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The denominator is context, not the number being reported. */
+.koc-pulse-of {
+  font-size: .85rem;
+  font-weight: 600;
+  opacity: .5;
+}
+
+.koc-pulse-label {
+  font-size: .74rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
+}
+
+/* ── The learning catalogue ─────────────────────────────────────────────────────────────────────
+   Grouped by level, because a curriculum is a ladder: a flat grid makes a beginner track and an
+   advanced one look like equivalent choices. */
+.koc-learn-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.koc-learn-search {
+  flex: 1 1 260px;
+  max-inline-size: 380px;
+}
+
+.koc-learn-rung {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block: 8px 16px;
+}
+
+.koc-learn-rung-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* Filled dots, one per rung, so the level reads before the word does. */
+.koc-learn-rung-dot {
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 50%;
+  background: var(--mud-palette-primary);
+}
+
+.koc-learn-rung-dot--1 { opacity: .45; }
+.koc-learn-rung-dot--2 { opacity: .72; }
+.koc-learn-rung-dot--3 { opacity: 1; }
+.koc-learn-rung-dot--4 { background: var(--mud-palette-text-secondary); opacity: .5; }
+
+.koc-learn-rung-count {
+  font-size: .74rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--mud-palette-text-secondary);
+}
+
+/* A rule that runs to the end of the row, so each rung reads as a section break. */
+.koc-learn-rung::after {
+  content: "";
+  flex: 1;
+  block-size: 1px;
+  background: var(--mud-palette-lines-default);
+}

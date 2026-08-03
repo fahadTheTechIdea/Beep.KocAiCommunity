@@ -31,8 +31,83 @@ else if (_tracks is null)
 }
 else
 {
-    <MudGrid Spacing="6">
-        @foreach (var track in _tracks)
+    @* Where you are in the catalogue, before the catalogue. A curriculum with no sense of how far
+       through it you are is a list of files. *@
+    <div class="koc-pulse mb-5">
+        <div class="koc-pulse-stats">
+            <div class="koc-pulse-stat">
+                <span class="koc-pulse-value koc-stat-value">@_tracks.Count</span>
+                <span class="koc-pulse-label">@L["tracks"]</span>
+            </div>
+            <div class="koc-pulse-stat">
+                <span class="koc-pulse-value koc-stat-value">@_tracks.Sum(t => t.LessonCount)</span>
+                <span class="koc-pulse-label">@L["lessons"]</span>
+            </div>
+            @if (!Identity.IsGuest)
+            {
+                <div class="koc-pulse-stat">
+                    <span class="koc-pulse-value koc-stat-value">@_mine.Count</span>
+                    @* "Enrolled" already exists and .resx names are case-insensitive, so this reuses it
+                       rather than adding a lowercase twin that would collide. *@
+                    <span class="koc-pulse-label">@L["Enrolled"]</span>
+                </div>
+                <div class="koc-pulse-stat">
+                    <span class="koc-pulse-value koc-stat-value">@LessonsDone<span class="koc-pulse-of">/@LessonsEnrolled</span></span>
+                    <span class="koc-pulse-label">@L["lessons complete"]</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="koc-learn-toolbar mb-2">
+        <MudTextField T="string" Value="_search" ValueChanged="@(v => _search = v ?? "")" Immediate="true"
+                      Placeholder="@L["Search tracks"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true" Class="koc-learn-search" />
+
+        <div class="koc-period-row">
+            @foreach (var level in LevelFilters)
+            {
+                <button type="button" class="@LevelClass(level)" @onclick="@(() => _levelFilter = level)">@LevelLabel(level)</button>
+            }
+        </div>
+    </div>
+
+    var shown = Filtered();
+    <div class="koc-arena-count mb-4">
+        @if (shown.Count == _tracks.Count)
+        {
+            @L["{0} tracks", _tracks.Count]
+        }
+        else
+        {
+            @L["{0} of {1} tracks", shown.Count, _tracks.Count]
+        }
+    </div>
+
+    @if (shown.Count == 0)
+    {
+        <BlueprintCard Class="pa-8" Style="text-align:center;">
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+            <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Nothing here yet"]</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">@L["No track matches these filters. Widen them and something will turn up."]</MudText>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterAltOff"
+                       OnClick="@(() => { _search = ""; _levelFilter = "all"; })">@L["Clear filters"]</MudButton>
+        </BlueprintCard>
+    }
+
+    @* Grouped by level, in order. A curriculum is a ladder and should be laid out as one — a single
+       flat grid makes a beginner and an advanced track look like equivalent choices. *@
+    @foreach (var group in shown.GroupBy(t => t.Level).OrderBy(g => LevelOrder(g.Key)))
+    {
+        <div class="koc-learn-rung">
+            <span class="@($"koc-learn-rung-dot koc-learn-rung-dot--{LevelOrder(group.Key)}")"></span>
+            <h2 class="koc-learn-rung-title">@group.Key</h2>
+            <span class="koc-learn-rung-count">@L["{0} tracks", group.Count()]</span>
+        </div>
+
+        <MudGrid Spacing="6" Class="mb-8">
+        @foreach (var track in group)
         {
             var progress = _mine.GetValueOrDefault(track.Id);
             var rtl = KocLanguages.IsRightToLeft(track.Language);
@@ -86,7 +161,8 @@ else
                 </BlueprintCard>
             </MudItem>
         }
-    </MudGrid>
+        </MudGrid>
+    }
 
     @if (_selected is not null)
     {
@@ -160,6 +236,40 @@ else
     private static readonly MarkdownPipeline _md = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
     private static MarkupString Md(string markdown) => (MarkupString)Markdown.ToHtml(markdown, _md);
+
+    private string _search = "";
+    private string _levelFilter = "all";
+
+    /// <summary>The levels actually present in the catalogue, so a filter never offers an empty result.</summary>
+    private IReadOnlyList<string> LevelFilters =>
+        ["all", .. (_tracks ?? []).Select(t => t.Level).Distinct().OrderBy(LevelOrder)];
+
+    private int LessonsDone => _mine.Values.Sum(p => p.CompletedLessons);
+    private int LessonsEnrolled => _mine.Values.Sum(p => p.TotalLessons);
+
+    /// <summary>
+    /// Beginner before advanced, whatever order the API returned them in. Anything unrecognised sorts
+    /// last rather than being dropped — a new level should appear at the bottom, not vanish.
+    /// </summary>
+    private static int LevelOrder(string level) => level.ToLowerInvariant() switch
+    {
+        "beginner" or "foundation" or "intro" => 1,
+        "intermediate" => 2,
+        "advanced" or "expert" => 3,
+        _ => 4,
+    };
+
+    private string LevelLabel(string level) => level == "all" ? L["All levels"] : level;
+
+    private string LevelClass(string level) =>
+        _levelFilter == level ? "koc-period koc-period--on" : "koc-period";
+
+    private List<TrackDto> Filtered() =>
+        [.. (_tracks ?? [])
+            .Where(t => _levelFilter == "all" || t.Level == _levelFilter)
+            .Where(t => string.IsNullOrWhiteSpace(_search)
+                     || t.Title.Contains(_search, StringComparison.OrdinalIgnoreCase)
+                     || t.Summary.Contains(_search, StringComparison.OrdinalIgnoreCase))];
 
     protected override async Task OnInitializedAsync()
     {
