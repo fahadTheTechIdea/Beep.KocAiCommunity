@@ -94,11 +94,13 @@ public static class KocLocalServiceCollectionExtensions
             sp.GetRequiredService<ConnectionState>()));
 
         // Deliberately NOT the local façade: its SubmitAsync is the one that enqueues, so draining
-        // through it would have re-queued every entry instead of sending it.
-        services.AddScoped<ISubmissionSender>(sp => new ApiSubmissionSender(
-            platformDatabase is { Length: > 0 }
-                ? sp.GetRequiredService<DesktopPlatformClient>()
-                : sp.GetRequiredService<IKocApiClient>()));
+        // through it would have re-queued every entry instead of sending it — and, because the façade
+        // swallows the failure and returns without throwing, the sync loop would have counted each of
+        // those re-queues as a successful send. With no platform configured there is genuinely nowhere
+        // to send to, and saying so is the only honest answer.
+        services.AddScoped<ISubmissionSender>(sp => platformDatabase is { Length: > 0 }
+            ? new ApiSubmissionSender(sp.GetRequiredService<DesktopPlatformClient>())
+            : new NoPlatformSubmissionSender());
         services.AddScoped<SyncService>();
 
         return services;

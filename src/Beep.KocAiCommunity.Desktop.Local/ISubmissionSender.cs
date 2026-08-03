@@ -23,7 +23,11 @@ public interface ISubmissionSender
         Guid competitionId, Stream predictions, string fileName, string idempotencyKey, CancellationToken ct = default);
 }
 
-/// <summary>The real one: the platform, over HTTP.</summary>
+/// <summary>
+/// The real one. Whatever client it is handed is the platform: on a workstation configured with the
+/// platform database that is the direct client, which opens the database the website opens; elsewhere
+/// it is an HTTP client. Either way the submission is recorded once, against the same service.
+/// </summary>
 public sealed class ApiSubmissionSender(IKocApiClient api) : ISubmissionSender
 {
     public async Task<bool> IsReachableAsync(CancellationToken ct = default)
@@ -46,4 +50,27 @@ public sealed class ApiSubmissionSender(IKocApiClient api) : ISubmissionSender
         var result = await api.SubmitAsync(competitionId, predictions, fileName, idempotencyKey, ct);
         return result?.Score;
     }
+}
+
+/// <summary>
+/// Studio with no platform behind it — no database configured, no website to post to.
+/// <para>
+/// This exists because the honest answer is "there is nowhere to send this", and the alternative was
+/// worse than it looks. Handing the sync loop the local façade instead makes draining pathological:
+/// the façade's <c>SubmitAsync</c> is the one that <em>enqueues</em>, and with no platform behind it
+/// the send fails, is swallowed, and the entry is written back to the outbox — while returning without
+/// throwing, which the sync loop reads as success. The queue would churn every entry forever and
+/// report each one as sent.
+/// </para>
+/// </summary>
+public sealed class NoPlatformSubmissionSender : ISubmissionSender
+{
+    /// <summary>Never reachable: there is no platform configured on this machine to reach.</summary>
+    public Task<bool> IsReachableAsync(CancellationToken ct = default) => Task.FromResult(false);
+
+    public Task<double?> SendAsync(
+        Guid competitionId, Stream predictions, string fileName, string idempotencyKey, CancellationToken ct = default) =>
+        throw new NotSupportedException(
+            "This copy of KOC Studio has no platform configured, so there is nowhere to send a "
+            + "submission. Set the platform database in settings, or submit from the website.");
 }

@@ -195,6 +195,26 @@ public sealed class SyncServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task With_no_platform_configured_the_queue_is_held_rather_than_churned()
+    {
+        // Studio with no platform database behind it. The sender used to be the local façade, whose
+        // SubmitAsync is the one that *enqueues* — so a drain wrote every entry straight back to the
+        // outbox, and because the façade swallows the failure and returns without throwing, the sync
+        // loop counted each re-queue as a send. Submissions were reported as delivered and never left
+        // the machine. Refusing outright is the behaviour worth pinning.
+        await QueueAsync("nowhere-to-go");
+        var service = new SyncService(new NoPlatformSubmissionSender(), _outbox, _connection);
+
+        (await service.IsReachableAsync()).Should().BeFalse("there is no platform on this machine");
+
+        var outcome = await service.DrainAsync();
+
+        outcome.Sent.Should().Be(0, "nothing can be sent, so nothing may be counted as sent");
+        _outbox.List().Should().ContainSingle()
+            .Which.Id.Should().Be("nowhere-to-go", "the submission is still here, waiting for a platform");
+    }
+
+    [Fact]
     public async Task Whatever_order_it_happens_in_each_submission_is_sent_once_or_explicitly_rejected()
     {
         // The convergence property. A queue drained across an unreliable, intermittently reachable
