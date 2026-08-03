@@ -2101,4 +2101,49 @@
   <data name="…or import from URL" xml:space="preserve">
     <value>…أو استورد من رابط</value>
   </data>
+  <data name="Standings" xml:space="preserve">
+    <value>الترتيب</value>
+  </data>
+  <data name="Every board on the platform, live. Scores update as submissions land — final standings stay concealed until reveal day." xml:space="preserve">
+    <value>كل لوحات الترتيب في المنصة، مباشرةً. تتحدّث النتائج مع وصول المشاركات — ويبقى الترتيب النهائي مخفيًا حتى يوم الإعلان.</value>
+  </data>
+  <data name="No boards yet" xml:space="preserve">
+    <value>لا توجد لوحات ترتيب بعد</value>
+  </data>
+  <data name="The first competition to open will put its standings here." xml:space="preserve">
+    <value>أول مسابقة تُفتح ستعرض ترتيبها هنا.</value>
+  </data>
+  <data name="Live" xml:space="preserve">
+    <value>مباشر</value>
+  </data>
+  <data name="{0} competing" xml:space="preserve">
+    <value>{0} متسابقًا</value>
+  </data>
+  <data name="Ranked on {0}" xml:space="preserve">
+    <value>الترتيب حسب {0}</value>
+  </data>
+  <data name="{0} submissions" xml:space="preserve">
+    <value>{0} مشاركة</value>
+  </data>
+  <data name="Open competition" xml:space="preserve">
+    <value>فتح المسابقة</value>
+  </data>
+  <data name="Nobody has scored yet" xml:space="preserve">
+    <value>لم يسجّل أحد نتيجة بعد</value>
+  </data>
+  <data name="This board is empty. First submission takes first place." xml:space="preserve">
+    <value>هذه اللوحة فارغة. أول مشاركة تحتل المركز الأول.</value>
+  </data>
+  <data name="You're {0} off rank {1}." xml:space="preserve">
+    <value>تفصلك {0} عن المركز {1}.</value>
+  </data>
+  <data name="Want your name on this board?" xml:space="preserve">
+    <value>هل تريد اسمك على هذه اللوحة؟</value>
+  </data>
+  <data name="Sign in to join a competition, download the data and submit a score." xml:space="preserve">
+    <value>سجّل الدخول للانضمام إلى مسابقة وتنزيل البيانات وإرسال نتيجتك.</value>
+  </data>
+  <data name="That&#39;s you" xml:space="preserve">
+    <value>هذا أنت</value>
+  </data>
 </root>

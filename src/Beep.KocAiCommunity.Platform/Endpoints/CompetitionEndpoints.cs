@@ -64,13 +64,20 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
 
         group.MapGet("/competitions", async (IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
         {
-            var visible = await svc.BrowseVisibleAsync(me.UserId!, ct);
+            // Browsing the arena is open, the way Learn and Community are: you should be able to see what
+            // people are competing on before deciding to sign in. Joining, downloading the data and
+            // submitting all stay behind RequireEmployee below — it is the shop window that is public,
+            // not the shop. A signed-out caller sees company-wide competitions only.
+            var visible = me.UserId is { Length: > 0 } userId
+                ? await svc.BrowseVisibleAsync(userId, ct)
+                : await svc.BrowsePublicAllAsync(ct);
+
             var stats = await svc.GetStatsAsync([.. visible.Select(c => c.Id)], ct);
             var categories = await CategoryNamesAsync(svc, ct);
             return Results.Ok(visible.Select(c => ToDto(c, stats.GetValueOrDefault(c.Id), scorers, categories)).ToList());
         })
         .WithName("BrowseCompetitions")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         // The arena's category filter. Enabled only — a disabled category should not even be offered.
         group.MapGet("/competitions/categories", async (
@@ -95,9 +102,15 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         .WithName("BrowseCompetitionCategories")
         .AllowAnonymous();
 
-        group.MapGet("/competitions/{id:guid}", async (Guid id, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
+        group.MapGet("/competitions/{id:guid}", async (
+            Guid id, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
         {
-            var competition = await svc.GetAsync(id, ct);
+            // A signed-out visitor reads through the leak rule, so holding the id is not enough to open a
+            // team-private competition.
+            var competition = me.UserId is { Length: > 0 }
+                ? await svc.GetAsync(id, ct)
+                : await svc.GetPublicAsync(id, ct);
+
             if (competition is null)
             {
                 return Results.NotFound();
@@ -107,7 +120,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             return Results.Ok(ToDto(competition, stats.GetValueOrDefault(id), scorers, await CategoryNamesAsync(svc, ct)));
         })
         .WithName("GetCompetition")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         group.MapPost("/competitions/{id:guid}/answer-key", async (Guid id, IFormFile file, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
         {
@@ -283,9 +296,13 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         .WithName("DownloadCompetitionData")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
-        group.MapGet("/competitions/{id:guid}/leaderboard", async (Guid id, string? board, ICompetitionService svc, CancellationToken ct) =>
+        group.MapGet("/competitions/{id:guid}/leaderboard", async (
+            Guid id, string? board, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
         {
-            var competition = await svc.GetAsync(id, ct);
+            var competition = me.UserId is { Length: > 0 }
+                ? await svc.GetAsync(id, ct)
+                : await svc.GetPublicAsync(id, ct);
+
             if (competition is null)
             {
                 return Results.NotFound();
@@ -303,7 +320,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             return Results.Ok(entries.Select(e => new LeaderboardEntryDto(e.Rank, e.UserId, e.DisplayName, e.Score)).ToList());
         })
         .WithName("Leaderboard")
-        .RequireAuthorization(KocPolicies.RequireEmployee);
+        .AllowAnonymous();
 
         group.MapGet("/competitions/{id:guid}/submissions", async (Guid id, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
         {

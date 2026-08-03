@@ -455,6 +455,33 @@ public sealed class CompetitionService(
         return [.. open.Where(c => !IsHidden(c, disabled))];
     }
 
+    public async Task<IReadOnlyList<Competition>> BrowsePublicAllAsync(CancellationToken ct = default)
+    {
+        // Same leak rule as BrowsePublicAsync — Company scope only — without the status filter, so a
+        // visitor sees the whole arena rather than only whatever happens to be running today.
+        var all = await db.Set<Competition>().AsNoTracking()
+            .Where(c => c.VisibilityScope == VisibilityScope.Company)
+            .OrderByDescending(c => c.IsFeatured)
+            .ThenByDescending(c => c.CreatedUtc)
+            .ToListAsync(ct);
+
+        var disabled = await DisabledCategoryCodesAsync(ct);
+        return [.. all.Where(c => !IsHidden(c, disabled))];
+    }
+
+    public async Task<Competition?> GetPublicAsync(Guid competitionId, CancellationToken ct = default)
+    {
+        var competition = await GetAsync(competitionId, ct);
+
+        // Null rather than a 403: telling an anonymous caller that a private competition exists is itself
+        // the leak. To them it simply is not there.
+        return competition is null
+            || competition.VisibilityScope != VisibilityScope.Company
+            || await IsHiddenAsync(competition, ct)
+                ? null
+                : competition;
+    }
+
     public async Task<IReadOnlyList<CompetitionCategory>> ListCategoriesAsync(bool includeDisabled, CancellationToken ct = default) =>
         await db.CompetitionCategories.AsNoTracking()
             .Where(c => includeDisabled || c.IsEnabled)

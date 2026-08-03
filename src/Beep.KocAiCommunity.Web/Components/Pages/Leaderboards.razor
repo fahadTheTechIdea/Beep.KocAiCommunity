@@ -1,0 +1,249 @@
+@page "/leaderboards"
+@page "/leaderboards/{Id:guid}"
+@using Beep.KocAiCommunity.Contracts.Competitions
+@using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Web.Components.Shared
+@using Beep.KocAiCommunity.Ui.Shared.Components
+@using Beep.KocAiCommunity.Ui.Shared.Localization
+@using Microsoft.Extensions.Localization
+@inject IKocApiClient Api
+@inject IStringLocalizer<Strings> L
+@inject DevIdentity Identity
+@inject NavigationManager Nav
+
+@* Standings had no home of their own — you could only reach a board by opening the competition it
+   belonged to and scrolling. This is the room where the boards live, and it is open to everyone: seeing
+   who is winning is the most persuasive thing on the platform, and it was behind the sign-in wall. *@
+
+<PageTitle>@L["Leaderboards"] · @KocBrand.ProductName</PageTitle>
+
+<PageHeader Eyebrow="@L["Standings"]" Title="@L["Leaderboards"]"
+            Subtitle="@L["Every board on the platform, live. Scores update as submissions land — final standings stay concealed until reveal day."]" />
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">@L["Couldn't reach the API ({0}).", _error]</MudAlert>
+}
+
+@if (_competitions is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_competitions.Count == 0)
+{
+    <BlueprintCard Class="pa-8" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Filled.Leaderboard" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+        <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["No boards yet"]</MudText>
+        <MudText Typo="Typo.body2">@L["The first competition to open will put its standings here."]</MudText>
+    </BlueprintCard>
+}
+else
+{
+    @* The picker. Running competitions first — a live board is the one worth looking at. *@
+    <div class="koc-board-picker mb-5">
+        @foreach (var c in _competitions)
+        {
+            <button type="button" class="@PickerClass(c)" @onclick="@(() => SelectAsync(c))">
+                <span class="koc-board-pick-title">@c.Title</span>
+                <span class="koc-board-pick-meta">
+                    @if (c.Status == "active")
+                    {
+                        <span class="koc-live">@L["Live"]</span>
+                    }
+                    else
+                    {
+                        <span>@StatusLabel(c.Status)</span>
+                    }
+                    · @L["{0} competing", c.ParticipantCount]
+                </span>
+            </button>
+        }
+    </div>
+
+    @if (_selected is not null)
+    {
+        <BlueprintCard Class="pa-6 koc-arena-banner">
+            <div class="d-flex flex-wrap align-center justify-space-between gap-3 mb-1">
+                <div>
+                    <MudText Typo="Typo.h5" Class="koc-heading">@_selected.Title</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        @L["Ranked on {0}", MetricLabel(_selected)] · @L["{0} submissions", _selected.SubmissionCount]
+                    </MudText>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                           Href="@($"/competitions/{_selected.Id}")" EndIcon="@Icons.Material.Filled.ArrowForward">
+                    @L["Open competition"]
+                </MudButton>
+            </div>
+
+            @if (_board is null)
+            {
+                <MudProgressCircular Indeterminate="true" Class="mt-4" />
+            }
+            else if (_board.Count == 0)
+            {
+                <div class="koc-board-empty mt-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Flag" Size="Size.Large" Color="Color.Primary" Class="mb-2" />
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Nobody has scored yet"]</MudText>
+                    <MudText Typo="Typo.body2">@L["This board is empty. First submission takes first place."]</MudText>
+                </div>
+            }
+            else
+            {
+                @* The podium carries the top three; the table underneath carries everyone. Splitting them
+                   is the whole point of a leaderboard — a flat table of 200 rows buries the result. *@
+                @if (_board.Count >= 3)
+                {
+                    <div class="koc-podium mt-5 mb-5">
+                        @foreach (var (entry, place) in Podium())
+                        {
+                            <div class="koc-podium-col koc-podium-col-@place">
+                                <div class="koc-podium-name">@entry.DisplayName</div>
+                                <div class="@($"koc-podium-block koc-rank-{place}")">
+                                    <span class="koc-podium-place">@place</span>
+                                    <span class="koc-podium-score">@Score(entry)</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="koc-board mt-4">
+                    @foreach (var entry in _board)
+                    {
+                        <div class="@RowClass(entry)">
+                            <span class="@RankClass(entry)">@entry.Rank</span>
+                            <span class="koc-board-name">
+                                @entry.DisplayName
+                                @if (IsMe(entry))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" Class="ms-2">@L["That's you"]</MudChip>
+                                }
+                            </span>
+                            <span class="koc-board-score koc-stat-value">@Score(entry)</span>
+                        </div>
+                    }
+                </div>
+
+                @* The gap to the place above is the number that makes somebody try again tonight. *@
+                @if (MyGap() is { } gap)
+                {
+                    <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.TrendingUp" Class="mt-4">
+                        @L["You're {0} off rank {1}.", gap.Difference.ToString("0.####"), gap.TargetRank]
+                    </MudAlert>
+                }
+            }
+        </BlueprintCard>
+
+        @if (Identity.IsGuest)
+        {
+            <BlueprintCard Class="pa-5 mt-4" Style="text-align:center;">
+                <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Want your name on this board?"]</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3">@L["Sign in to join a competition, download the data and submit a score."]</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/compete" EndIcon="@Icons.Material.Filled.EmojiEvents">@L["Browse competitions"]</MudButton>
+            </BlueprintCard>
+        }
+    }
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private IReadOnlyList<CompetitionDto>? _competitions;
+    private CompetitionDto? _selected;
+    private IReadOnlyList<LeaderboardEntryDto>? _board;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Running boards first, then the rest by newest — the order somebody scanning wants them in.
+            _competitions = [.. (await Api.GetCompetitionsAsync())
+                .OrderByDescending(c => c.Status == "active")
+                .ThenByDescending(c => c.IsFeatured)
+                .ThenByDescending(c => c.CreatedUtc ?? DateTime.MinValue)];
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            _competitions = [];
+            return;
+        }
+
+        // A deep link picks its board; otherwise the first one, so the page is never an empty frame with
+        // a "choose something" instruction on it.
+        var initial = Id is { } id ? _competitions.FirstOrDefault(c => c.Id == id) : null;
+        if ((initial ?? _competitions.FirstOrDefault()) is { } pick)
+        {
+            await SelectAsync(pick);
+        }
+    }
+
+    private async Task SelectAsync(CompetitionDto competition)
+    {
+        _selected = competition;
+        _board = null;
+        StateHasChanged();
+
+        try
+        {
+            _board = await Api.GetLeaderboardAsync(competition.Id);
+        }
+        catch
+        {
+            // A board that will not load is not a page error — the other boards still work.
+            _board = [];
+        }
+    }
+
+    /// <summary>Top three in podium order: silver, gold, bronze, so first place stands in the middle.</summary>
+    private IEnumerable<(LeaderboardEntryDto Entry, int Place)> Podium() =>
+        _board is null ? [] : [(_board[1], 2), (_board[0], 1), (_board[2], 3)];
+
+    private bool IsMe(LeaderboardEntryDto entry) =>
+        !Identity.IsGuest && !string.IsNullOrEmpty(Identity.UserId)
+        && string.Equals(entry.UserId, Identity.UserId, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>How far the caller is from the rank above them, or null if they are not on the board.</summary>
+    private (int TargetRank, double Difference)? MyGap()
+    {
+        if (_board is null)
+        {
+            return null;
+        }
+
+        var mine = _board.Select((e, i) => (Entry: e, Index: i)).FirstOrDefault(x => IsMe(x.Entry));
+        if (mine.Entry is null || mine.Index == 0)
+        {
+            return null;
+        }
+
+        var above = _board[mine.Index - 1];
+        return (above.Rank, Math.Abs(above.Score - mine.Entry.Score));
+    }
+
+    private static string Score(LeaderboardEntryDto entry) => entry.Score.ToString("0.####");
+
+    private string MetricLabel(CompetitionDto c) =>
+        // "Score" already exists as a key, and .resx names are case-insensitive — reusing it rather than
+        // adding a lowercase twin that would collide.
+        string.IsNullOrWhiteSpace(c.MetricName) ? L["Score"] : c.MetricName;
+
+    private string StatusLabel(string status) => status switch
+    {
+        "active" => L["Live"],
+        "concluded" => L["Concluded"],
+        "draft" => L["Draft"],
+        _ => status,
+    };
+
+    private string PickerClass(CompetitionDto c) =>
+        _selected?.Id == c.Id ? "koc-board-pick koc-board-pick--on" : "koc-board-pick";
+
+    private string RowClass(LeaderboardEntryDto entry) =>
+        IsMe(entry) ? "koc-board-row koc-board-me" : "koc-board-row";
+
+    private static string RankClass(LeaderboardEntryDto entry) =>
+        entry.Rank is >= 1 and <= 3 ? $"koc-board-rank koc-rank-{entry.Rank}" : "koc-board-rank";
+}

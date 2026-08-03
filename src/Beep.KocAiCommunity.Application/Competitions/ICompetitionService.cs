@@ -128,6 +128,22 @@ public interface ICompetitionService
     /// is applied — only Company-visible competitions are returned, so nothing team/group-private leaks.
     /// </summary>
     Task<IReadOnlyList<Competition>> BrowsePublicAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Every company-wide competition whatever its status, for signed-out browsing of the arena and the
+    /// leaderboards. <see cref="BrowsePublicAsync"/> is the landing preview and shows only what is running;
+    /// somebody browsing the arena wants to see what has already been run too — a concluded competition
+    /// with a finished board is the most interesting thing here, not the least.
+    /// </summary>
+    Task<IReadOnlyList<Competition>> BrowsePublicAllAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// One competition, but only if a signed-out visitor is allowed to see it. Returns null for anything
+    /// team/group/directorate-scoped or in a disabled category, so holding the id is not enough to read a
+    /// private competition. This is the leak rule for every anonymous read — keep it in one place.
+    /// </summary>
+    Task<Competition?> GetPublicAsync(Guid competitionId, CancellationToken ct = default);
+
     Task<Competition?> GetAsync(Guid competitionId, CancellationToken ct = default);
 
     // ---- Categories ----

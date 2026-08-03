@@ -39,12 +39,15 @@
         {
             new("/", L["Home"], Icons.Material.Filled.Home, ExactMatch: true),
             new("/learn", L["Learn"], Icons.Material.Filled.School),
+            new("/compete", L["Compete"], Icons.Material.Filled.EmojiEvents),
+            new("/leaderboards", L["Leaderboards"], Icons.Material.Filled.Leaderboard),
             new("/community", L["Community"], Icons.Material.Filled.Forum),
         };
 
+        // Dashboard is the only one of these that is genuinely personal — there is nothing on it to show
+        // somebody without an account. The rest are open.
         if (Identity.HasAnyPosition)
         {
-            items.Add(new("/compete", L["Compete"], Icons.Material.Filled.EmojiEvents));
             items.Add(new("/dashboard", L["Dashboard"], Icons.Material.Filled.Dashboard));
         }
 

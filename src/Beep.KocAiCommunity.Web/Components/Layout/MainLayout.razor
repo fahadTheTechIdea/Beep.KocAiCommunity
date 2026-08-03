@@ -258,7 +258,11 @@
         var seg = new Uri(Nav.Uri).AbsolutePath.Trim('/').ToLowerInvariant().Split('/')[0];
         return seg switch
         {
-            "" or "learn" or "community" => true,       // public browsing
+            // Public browsing. Compete and the leaderboards are here for the same reason Learn is: seeing
+            // what people are competing on, and who is winning, is what makes somebody want an account.
+            // The server agrees — browse, detail and leaderboard are AllowAnonymous, and everything that
+            // acts (join, download, submit) is still RequireEmployee.
+            "" or "learn" or "community" or "compete" or "leaderboards" => true,
             "supervision" => Identity.IsSupervisor,
             "admin" => Identity.IsPlatformAdmin,
             _ => Identity.HasAnyPosition,                // dashboard, compete, profile — the Studio surfaces are the desktop app now
