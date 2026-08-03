@@ -56,6 +56,106 @@ public static class LearningSeeder
         }
 
         await db.SaveChangesAsync(ct);
+
+        await SeedEntryTrackQuizAsync(db, stamp, ct);
+    }
+
+    /// <summary>
+    /// A quiz on the entry-point track, so the feature is visible without an admin having to author one
+    /// before anybody can see what it does.
+    /// <para>
+    /// Seeded <b>optional</b> on purpose. A mandatory quiz appearing on an existing database would stop
+    /// everybody currently part-way through that track from finishing it, for a quiz they never agreed
+    /// to sit. Making it required is a decision for whoever owns the track, in the admin console.
+    /// </para>
+    /// <para>
+    /// Written once and then left alone: it is skipped entirely if the track already has a quiz, so an
+    /// admin's edits survive the next deployment rather than being overwritten by this.
+    /// </para>
+    /// </summary>
+    private static async Task SeedEntryTrackQuizAsync(KocDbContext db, DateTime stamp, CancellationToken ct)
+    {
+        var track = await db.LearningTracks
+            .FirstOrDefaultAsync(t => t.ContentKey == "ai-for-everyone" && t.Language == TrackLanguages.English, ct);
+
+        if (track is null || await db.Quizzes.AnyAsync(q => q.TrackId == track.Id, ct))
+        {
+            return;
+        }
+
+        var quiz = new Quiz
+        {
+            TrackId = track.Id,
+            Intro = "Five questions on what you have just read. It takes a couple of minutes, nothing is timed, and you can retake it as often as you like.",
+            PassMark = 70,
+            IsMandatory = false,
+            IsEnabled = true,
+            CreatedUtc = stamp,
+        };
+        db.Quizzes.Add(quiz);
+
+        // (question, explanation, [(answer, isCorrect)])
+        (string Q, string Why, (string Text, bool Correct)[] Answers)[] questions =
+        [
+            ("What does a machine learning model actually learn from?",
+             "A model learns patterns from examples it is shown. Nobody writes the rules by hand — that is the difference from ordinary software.",
+             [("Examples in data it has been shown", true),
+              ("Rules an engineer wrote out by hand", false),
+              ("The internet, continuously", false)]),
+
+            ("Why is a model tested on data it has never seen?",
+             "Scoring on data it trained on measures memory, not skill. The held-out data is the only honest estimate of how it will behave on tomorrow's readings.",
+             [("To find out how it does on new readings", true),
+              ("To make training finish faster", false),
+              ("Because the training data runs out", false)]),
+
+            ("A pump-failure dataset has 998 healthy rows and 2 failures. A model predicts \"healthy\" every time. What is its accuracy?",
+             "99.8% — and it is useless, because it never finds the thing you care about. This is why accuracy is the wrong metric on imbalanced data.",
+             [("About 99.8%, and it is still useless", true),
+              ("About 50%, because there are two classes", false),
+              ("About 0.2%, because it misses both failures", false)]),
+
+            ("What is a label?",
+             "The label is the answer for each row — the thing you want the model to work out for rows where you do not have it yet.",
+             [("The answer you want the model to predict", true),
+              ("The name of the file the data came from", false),
+              ("The units a sensor reports in", false)]),
+
+            ("You have a year of daily readings and want next month's production. What is wrong with splitting the data at random?",
+             "A random split lets the model see the future while it trains, so it scores far better in testing than it ever will in use. Time-series data is split chronologically.",
+             [("The model would train on days that come after the ones it is tested on", true),
+              ("Random splits are slower to compute", false),
+              ("Nothing — random is always the right split", false)]),
+        ];
+
+        var order = 1;
+        foreach (var (text, why, answers) in questions)
+        {
+            var question = new QuizQuestion
+            {
+                QuizId = quiz.Id,
+                OrderNo = order++,
+                Text = text,
+                Explanation = why,
+                CreatedUtc = stamp,
+            };
+            db.QuizQuestions.Add(question);
+
+            var answerOrder = 1;
+            foreach (var (answerText, isCorrect) in answers)
+            {
+                db.QuizAnswers.Add(new QuizAnswer
+                {
+                    QuestionId = question.Id,
+                    OrderNo = answerOrder++,
+                    Text = answerText,
+                    IsCorrect = isCorrect,
+                    CreatedUtc = stamp,
+                });
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
     }
 
     private static async Task EnsureTrackAsync(
