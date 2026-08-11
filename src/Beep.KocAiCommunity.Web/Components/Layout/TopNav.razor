@@ -1,9 +1,11 @@
 @using Beep.KocAiCommunity.Ui.Shared.Localization
 @using Microsoft.Extensions.Localization
 @using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Contracts.Competitions
 @inject IStringLocalizer<Strings> L
 @inject DevIdentity Identity
 @inject NavigationManager Nav
+@inject IKocApiClient Api
 @implements IDisposable
 
 @* The navigation lives on the top bar. A drawer costs a click before you can go anywhere and eats a
@@ -19,6 +21,31 @@
     }
 </nav>
 
+@* Which part of KOC you want to see. The platform now spans subsurface to the hospital to HR, and a
+   production engineer has no reason to scroll past payroll challenges to find theirs. Chosen here rather
+   than on the page because it is a standing preference, not a per-page control — and it survives in the
+   address, so a filtered view can be sent to a colleague. *@
+@if (_categories is { Count: > 0 })
+{
+    <MudMenu Dense="true" Class="koc-areafilter" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft"
+             aria-label="@L["Filter by area"]">
+        @* ActivatorContent does not open the menu on its own — the activator has to call ToggleAsync, the
+           same way the Admin menu on this bar does. A plain div here rendered a button that did nothing. *@
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="koc-areafilter-button"
+                       StartIcon="@Icons.Material.Filled.FilterList" EndIcon="@Icons.Material.Filled.ArrowDropDown"
+                       OnClick="@context.ToggleAsync">@(SelectedCategoryName ?? L["All areas"].Value)</MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Icon="@Icons.Material.Filled.ClearAll" OnClick="@(() => Filter(null))">@L["All areas"]</MudMenuItem>
+            @foreach (var c in _categories)
+            {
+                <MudMenuItem OnClick="@(() => Filter(c.Code))">@c.Name</MudMenuItem>
+            }
+        </ChildContent>
+    </MudMenu>
+}
+
 @* Below md the same destinations, one tap away, without the bar wrapping into two rows. *@
 <MudMenu Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Dense="true" Class="d-flex d-md-none"
          AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" aria-label="@L["Main"]">
@@ -29,6 +56,25 @@
 </MudMenu>
 
 @code {
+    private IReadOnlyList<CompetitionCategoryDto>? _categories;
+
+    /// <summary>The area currently in force, read from the address so a filtered view can be shared.</summary>
+    private string? SelectedCategory =>
+        Microsoft.AspNetCore.WebUtilities.QueryHelpers
+            .ParseQuery(new Uri(Nav.Uri).Query).TryGetValue("category", out var v)
+                ? v.ToString() is { Length: > 0 } code ? code : null
+                : null;
+
+    private string? SelectedCategoryName =>
+        _categories?.FirstOrDefault(c => string.Equals(c.Code, SelectedCategory, StringComparison.OrdinalIgnoreCase))?.Name;
+
+    /// <summary>
+    /// Filtering is a home-page idea, so choosing an area takes you there. Anything else would leave
+    /// somebody on, say, the profile page wondering what their choice had done.
+    /// </summary>
+    private void Filter(string? code) =>
+        Nav.NavigateTo(code is null ? "/" : $"/?category={Uri.EscapeDataString(code)}");
+
     private sealed record NavItem(string Href, string Label, string Icon, bool ExactMatch = false);
 
     private List<NavItem> Items()
@@ -78,6 +124,23 @@
     {
         Identity.Changed += OnChanged;
         Nav.LocationChanged += OnLocationChanged;
+    }
+
+    /// <summary>
+    /// The areas come from the database, already translated, so a category an administrator adds turns
+    /// up here without a code change. A failure here hides the filter rather than breaking the bar —
+    /// nobody should lose their navigation because one query did not answer.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _categories = await Api.GetCompetitionCategoriesAsync();
+        }
+        catch
+        {
+            _categories = null;
+        }
     }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);

@@ -1,34 +1,44 @@
-@* A one-time, bilingual (English + Arabic) notice shown at startup whenever demonstration
-   content is present, so no one mistakes the sample colleagues/competitions for real KOC data.
-   Anonymous check via /api/v1/meta; dismissed per browser session. *@
-@using Beep.KocAiCommunity.Client
-@inject IKocApiClient Api
-@inject IJSRuntime JS
+@* The prototype notice, shown once per browser session to everyone who opens the platform.
+   Deliberately NOT localised: it says the same thing in English and Arabic side by side, in whichever
+   language the page happens to be in. A notice of this kind has to be readable by whoever is looking at
+   the screen — including someone reading over a colleague's shoulder — so both languages are always
+   present rather than one being chosen for the reader. *@
 @using Beep.KocAiCommunity.Ui.Shared.Localization
-@using Microsoft.Extensions.Localization
-@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
 
 @if (_show)
 {
     <MudOverlay Visible="true" DarkBackground="true" AutoClose="false" ZIndex="10050">
-        <MudPaper Elevation="12" Class="pa-6 mx-auto" Style="max-width:600px;width:calc(100vw - 32px);border-radius:16px;">
+        <MudPaper Elevation="12" Class="pa-6 mx-auto" Style="max-width:640px;width:calc(100vw - 32px);border-radius:16px;">
             <div class="d-flex align-center gap-3 mb-4">
                 <MudIcon Icon="@Icons.Material.Outlined.Info" Color="Color.Primary" Size="Size.Large" />
                 <div>
-                    <MudText Typo="Typo.h6" Class="koc-heading" Style="line-height:1.2;">@L["Demonstration environment"]</MudText>
+                    <MudText Typo="Typo.h6" Class="koc-heading" Style="line-height:1.2;">Prototype — demonstration only</MudText>
+                    <MudText Typo="Typo.h6" Class="koc-heading" Style="line-height:1.2;direction:rtl;">نموذج أولي — لأغراض العرض فقط</MudText>
                 </div>
             </div>
 
-            @* One language, the reader's own. This said everything twice because there was no
-               language switch; now there is, and repeating it would only be noise. *@
-            <MudText Typo="Typo.body2" Class="mb-1">
-                @L["You're exploring a demonstration of the {0} platform. The colleagues, competitions, leaderboards, discussions, and datasets shown here are illustrative sample data — not real {1} records — provided to show how the platform works. Nothing here represents actual employees, results, or official company information.", L[KocBrand.ProductName], L[KocBrand.Company]]
+            <MudText Typo="Typo.body2" Class="mb-3">
+                This is a prototype of the @KocBrand.ProductName, built for review by the AI Digital Campus
+                task force. Everything you see — competitions, datasets, leaderboards, colleagues and
+                discussions — is illustrative sample content, not real @KocBrand.Company data. Nothing here
+                represents actual employees, results, decisions, or official company information, and no
+                content on this site should be relied upon for any operational or personnel purpose.
+            </MudText>
+
+            <MudDivider Class="my-3" />
+
+            <MudText Typo="Typo.body2" Style="direction:rtl;text-align:right;">
+                هذه نسخة أولية من منصة مجموعة التدريب والتطوير الوظيفي في شركة نفط الكويت، أُعدّت لمراجعة فريق العمل. وكل ما يظهر
+                فيها — من مسابقات وبيانات ولوحات صدارة وزملاء ونقاشات — هو محتوى توضيحي وليس بيانات حقيقية
+                لشركة نفط الكويت. ولا يمثّل أي منه موظفين فعليين أو نتائج أو قرارات أو معلومات رسمية للشركة،
+                ولا يجوز الاعتماد على أي محتوى في هذا الموقع لأي غرض تشغيلي أو متعلق بالموارد البشرية.
             </MudText>
 
             <div class="d-flex justify-end mt-6">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
                            StartIcon="@Icons.Material.Filled.Check" OnClick="Acknowledge">
-                    @L["I understand"]
+                    I understand · أفهم ذلك
                 </MudButton>
             </div>
         </MudPaper>
@@ -39,6 +49,12 @@
     private bool _show;
     private bool _checked;
 
+    /// <summary>
+    /// Shown by default now, rather than only when demonstration accounts happen to be seeded. The whole
+    /// site is the prototype — the competitions and datasets that ship with it are illustrative whether or
+    /// not an administrator has added sample colleagues, so gating the notice on that left the site making
+    /// no disclaimer at all on a fresh deployment.
+    /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || _checked)
@@ -49,24 +65,21 @@
         _checked = true;
         try
         {
-            // Already acknowledged in this browser session? Stay out of the way.
+            // Acknowledged already in this browser session? Stay out of the way until the next visit.
             var acked = await JS.InvokeAsync<string?>("sessionStorage.getItem", "koc-demo-disclaimer-ack");
             if (acked == "1")
             {
                 return;
             }
-
-            var meta = await Api.GetPlatformMetaAsync();
-            if (meta?.DemoDataSeeded == true)
-            {
-                _show = true;
-                StateHasChanged();
-            }
         }
         catch
         {
-            // A metadata hiccup must never block the app — simply skip the notice.
+            // No session storage (or no JS yet): show the notice. Erring towards showing it is the
+            // only safe direction for a disclaimer.
         }
+
+        _show = true;
+        StateHasChanged();
     }
 
     private async Task Acknowledge()

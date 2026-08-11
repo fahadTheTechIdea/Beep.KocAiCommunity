@@ -327,7 +327,7 @@ public static class AdminEndpoints
             u.PositionLevel.ToString(), u.MaxCompetitionScope?.ToString(), u.Roles ?? []);
 
     private static DemoDataStatusDto ToDemoDto(DemoDataStatus s) =>
-        new(s.Seeded, s.Users, s.Competitions, s.Discussions, s.Datasets);
+        new(s.Seeded, s.Users, s.Submissions, s.Discussions, s.Datasets);
 
     private static SettingDto ToSettingDto(SettingView s) =>
         new(s.Key, s.Category, s.DisplayName, s.Description, s.IsSecret, s.Value, s.IsSet, s.Version, s.UpdatedUtc, s.UpdatedByUserId);

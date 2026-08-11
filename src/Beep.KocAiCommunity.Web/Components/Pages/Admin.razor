@@ -120,10 +120,12 @@ else
 
         <MudTabPanel Text="Demo data" Icon="@Icons.Material.Filled.AutoAwesome" OnClick="EnsureDemo">
             <MudText Typo="Typo.body2" Class="mb-3" Style="max-width:70ch;">
-                Populate the platform with a self-contained demo — colleagues with Barrels and badges, a
-                competition with a leaderboard, a discussion, and a dataset — so a fresh install can be
-                explored immediately. Everything is namespaced to <code>demo-*</code>, so <b>Unseed</b>
-                removes exactly the demo and never touches real KOC records.
+                Populate the platform with demonstration <b>people and their activity</b> — colleagues
+                with Barrels and badges, submissions on the leaderboards, discussions, and datasets — so
+                a fresh install looks lived-in. The competitions, learning tracks and badge catalogue are
+                already here; they ship with the platform. This adds who is using them.
+                Everything is namespaced to <code>demo-*</code>, so <b>Unseed</b> removes exactly the
+                demo — the challenges and their data are left untouched.
             </MudText>
 
             @if (_demo is null)
@@ -138,7 +140,7 @@ else
                             @(_demo.Seeded ? "Demo data present" : "No demo data")
                         </MudChip>
                         <MudText Typo="Typo.caption">
-                            @_demo.Users people · @_demo.Competitions competition(s) · @_demo.Discussions discussion(s) · @_demo.Datasets dataset(s)
+                            @_demo.Users people · @_demo.Submissions submission(s) · @_demo.Discussions discussion(s) · @_demo.Datasets dataset(s)
                         </MudText>
                         <MudSpacer />
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoAwesome"

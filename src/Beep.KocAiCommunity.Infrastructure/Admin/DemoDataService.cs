@@ -58,10 +58,10 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
     public async Task<DemoDataStatus> GetStatusAsync(CancellationToken ct = default)
     {
         var users = await db.Set<UserProfile>().CountAsync(p => p.UserId.StartsWith(Prefix), ct);
-        var competitions = await db.Set<Competition>().CountAsync(c => c.CreatedByUserId == Marker, ct);
+        var submissions = await db.Set<Submission>().CountAsync(s => s.CreatedByUserId == Marker, ct);
         var discussions = await db.Set<Discussion>().CountAsync(d => d.CreatedByUserId == Marker, ct);
         var datasets = await db.Set<Dataset>().CountAsync(d => d.CreatedByUserId == Marker, ct);
-        return new DemoDataStatus(users > 0, users, competitions, discussions, datasets);
+        return new DemoDataStatus(users > 0, users, submissions, discussions, datasets);
     }
 
     public async Task<DemoDataStatus> SeedAsync(string actorUserId, CancellationToken ct = default)
@@ -82,7 +82,7 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
         var teams = SeedOrg(now);
         SeedPeople(teams, now);
         await SeedLearningAsync(now, ct);
-        var active = await SeedCompetitionsAsync(now, ct);
+        var active = await SeedParticipationsAsync(now, ct);
         SeedDiscussions(now);
         await SeedDatasetsAsync(now, ct);
         SeedExperiment(now);
@@ -113,7 +113,8 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
         await db.Set<Discussion>().Where(x => x.CreatedByUserId == Marker || x.AuthorUserId.StartsWith(Prefix)).ExecuteDeleteAsync(ct);
         await db.Set<LeaderboardEntry>().Where(x => x.CreatedByUserId == Marker || x.SubmitterUserId.StartsWith(Prefix)).ExecuteDeleteAsync(ct);
         await db.Set<Submission>().Where(x => x.CreatedByUserId == Marker || x.SubmitterUserId.StartsWith(Prefix)).ExecuteDeleteAsync(ct);
-        await db.Set<Competition>().Where(x => x.CreatedByUserId == Marker || x.CreatedByUserId!.StartsWith(Prefix)).ExecuteDeleteAsync(ct);
+        // No Competition delete: the demo enters the platform's own competitions rather than inventing
+        // its own, and unseeding must leave the arena exactly as it found it.
         await db.Set<TrackCompletion>().Where(x => x.CreatedByUserId == Marker).ExecuteDeleteAsync(ct);
         await db.Set<TrackEnrollment>().Where(x => x.CreatedByUserId == Marker).ExecuteDeleteAsync(ct);
         await db.Set<Kudos>().Where(x => x.CreatedByUserId == Marker || x.FromUserId.StartsWith(Prefix)).ExecuteDeleteAsync(ct);
@@ -304,36 +305,37 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
         }
     }
 
-    // ---- Competitions: one live (full leaderboard incl. dev personas) + one concluded ----
+    // ---- Participation: a leaderboard on the platform's own competitions ----
 
-    private async Task<Competition> SeedCompetitionsAsync(DateTime now, CancellationToken ct)
+    /// <summary>
+    /// Puts people on the board of competitions that already exist. The competitions themselves ship
+    /// with the platform (<see cref="Competitions.CompetitionSeeder"/>) and are not created here — the
+    /// demo contributes the part a real deployment gets from its members: submissions, standings, and
+    /// the badge a win earns. Returns the competition the notifications point at, or null when there is
+    /// nothing to compete in.
+    /// </summary>
+    private async Task<Competition?> SeedParticipationsAsync(DateTime now, CancellationToken ct)
     {
-        // Real, usable data files so the challenge is playable end to end.
-        var (training, evaluation, answerKey) = BuildEspData();
-        var trainingRef = await SaveCsvAsync(training, "demo/esp/training.csv", ct);
-        var evalRef = await SaveCsvAsync(evaluation, "demo/esp/evaluation.csv", ct);
-        var keyRef = await SaveCsvAsync(answerKey, "demo/esp/answer-key.csv", ct);
+        // Anything a person could enter. Ordered oldest-first so the same competition is chosen every
+        // time — a demo that pointed at a different challenge on each install would be hard to talk
+        // about, and the notifications link straight to it.
+        var open = await db.Set<Competition>()
+            .Where(c => c.Status == "active")
+            .OrderBy(c => c.CreatedUtc).ThenBy(c => c.Title)
+            .Take(2)
+            .ToListAsync(ct);
 
-        var active = new Competition
+        if (open.Count == 0)
         {
-            Title = "[Demo] ESP Failure Challenge",
-            Description = "Predict electric submersible pump failures from pressure and vibration readings. "
-                + "Download the training data, build a pipeline in Studio, and submit — you're scored on a hidden test set.",
-            Status = "active",
-            VisibilityScope = VisibilityScope.Company,
-            VisibilityOrgUnitId = Guid.Empty,
-            ScorerCode = "accuracy",
-            TrainingDatasetArtifactId = trainingRef.Id,
-            EvaluationArtifactId = evalRef.Id,
-            AnswerKeyArtifactId = keyRef.Id,
-            LabelColumn = "label",
-            IdColumn = "id",
-            TaskType = "BinaryClassification",
-            SubmissionQuotaPerDay = 10,
-            CreatedByUserId = Marker,
-            CreatedUtc = now.AddDays(-14),
-        };
-        db.Add(active);
+            return null;
+        }
+
+        var active = open[0];
+
+        // A submission points at the predictions that were scored. Nothing was really run here, so it
+        // points at the competition's own evaluation set — a real artifact that exists, rather than an
+        // id referring to nothing.
+        var predictions = active.EvaluationArtifactId ?? Guid.Empty;
 
         // A leaderboard of 8 demo people + 3 dev personas, with plausible score decay and submissions.
         var contenders = People.Take(8).Select(p => p.UserId).Concat(["dev-admin", "dev-user", "dev-emp-1"]).ToArray();
@@ -344,7 +346,7 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
             {
                 CompetitionId = active.Id,
                 SubmitterUserId = contenders[i],
-                PredictionArtifactId = evalRef.Id,   // placeholder artifact; scoring already happened
+                PredictionArtifactId = predictions,
                 SubmittedUtc = now.AddDays(-1 - i),
                 Status = "scored",
                 Score = score,
@@ -359,7 +361,7 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
                 {
                     CompetitionId = active.Id,
                     SubmitterUserId = contenders[i],
-                    PredictionArtifactId = evalRef.Id,
+                    PredictionArtifactId = predictions,
                     SubmittedUtc = now.AddDays(-4 - i),
                     Status = "scored",
                     Score = Math.Round(score - 0.05, 3),
@@ -380,39 +382,27 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
             });
         }
 
-        // A concluded challenge with revealed final standings — shows the full lifecycle.
-        var concluded = new Competition
+        // A second board, so the arena is not one busy challenge and the rest deserted, and so the
+        // winner's badge belongs to a different name than the one leading the first.
+        if (open.Count > 1)
         {
-            Title = "[Demo] Well-Log Facies (concluded)",
-            Description = "Classify well-log intervals into rock facies. Concluded — final standings revealed.",
-            Status = "concluded",
-            VisibilityScope = VisibilityScope.Company,
-            VisibilityOrgUnitId = Guid.Empty,
-            ScorerCode = "accuracy",
-            LabelColumn = "label",
-            IdColumn = "id",
-            TaskType = "MulticlassClassification",
-            RevealUtc = now.AddDays(-2),
-            SubmissionQuotaPerDay = 5,
-            CreatedByUserId = Marker,
-            CreatedUtc = now.AddDays(-45),
-        };
-        db.Add(concluded);
-        var winners = new[] { People[3].UserId, People[0].UserId, People[6].UserId, "dev-emp-1", People[9].UserId };
-        for (var i = 0; i < winners.Length; i++)
-        {
-            db.Add(new LeaderboardEntry
+            var winners = new[] { People[3].UserId, People[0].UserId, People[6].UserId, "dev-emp-1", People[9].UserId };
+            for (var i = 0; i < winners.Length; i++)
             {
-                CompetitionId = concluded.Id,
-                SubmitterUserId = winners[i],
-                Score = Math.Round(0.90 - (i * 0.04), 3),
-                Rank = i + 1,
-                CreatedByUserId = Marker,
-                CreatedUtc = now.AddDays(-3),
-            });
+                db.Add(new LeaderboardEntry
+                {
+                    CompetitionId = open[1].Id,
+                    SubmitterUserId = winners[i],
+                    Score = Math.Round(0.90 - (i * 0.04), 3),
+                    Rank = i + 1,
+                    CreatedByUserId = Marker,
+                    CreatedUtc = now.AddDays(-3),
+                });
+            }
+
+            db.Add(new UserBadge { UserId = winners[0], BadgeCode = BadgeCatalog.CompetitionWinner, CreatedByUserId = Marker, CreatedUtc = now.AddDays(-2) });
         }
 
-        db.Add(new UserBadge { UserId = winners[0], BadgeCode = BadgeCatalog.CompetitionWinner, CreatedByUserId = Marker, CreatedUtc = now.AddDays(-2) });
         return active;
     }
 
@@ -603,12 +593,17 @@ public sealed class DemoDataService(KocDbContext db, IArtifactService artifacts,
 
     // ---- Notifications: make the dev personas' bells ring ----
 
-    private void SeedNotifications(Competition active, DateTime now)
+    private void SeedNotifications(Competition? active, DateTime now)
     {
         foreach (var user in new[] { "dev-admin", "dev-user" })
         {
-            db.Add(new Notification { UserId = user, Type = "welcome", Title = "Demo data is live", Message = "Explore the ESP Failure Challenge, the leaderboards, and the demo colleagues.", LinkUrl = "/compete", CreatedByUserId = Marker, CreatedUtc = now });
-            db.Add(new Notification { UserId = user, Type = "submission-scored", Title = "Submission scored", Message = "Your ESP challenge entry landed on the leaderboard.", LinkUrl = $"/compete/{active.Id}", CreatedByUserId = Marker, CreatedUtc = now.AddHours(-2) });
+            db.Add(new Notification { UserId = user, Type = "welcome", Title = "Demo data is live", Message = "Explore the leaderboards, the challenges, and the demo colleagues.", LinkUrl = "/compete", CreatedByUserId = Marker, CreatedUtc = now });
+
+            // Only where there was something to enter — the scored notification links to a board.
+            if (active is not null)
+            {
+                db.Add(new Notification { UserId = user, Type = "submission-scored", Title = "Submission scored", Message = $"Your entry in \"{active.Title}\" landed on the leaderboard.", LinkUrl = $"/compete/{active.Id}", CreatedByUserId = Marker, CreatedUtc = now.AddHours(-2) });
+            }
         }
 
         db.Add(new Notification { UserId = "dev-emp-1", Type = "kudos", Title = "You received kudos 👏", Message = $"{People[3].Name}: Welcome to the challenge — strong first submission!", LinkUrl = "/profile", CreatedByUserId = Marker, CreatedUtc = now.AddDays(-3) });

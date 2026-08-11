@@ -1688,3 +1688,355 @@
 
   @page { margin: 18mm; }
 }
+
+/* ---- Home: the newcomer's path -------------------------------------------------------------
+   Shown only to guests and to members who have not earned anything yet. Everything here exists to
+   answer one unspoken question — "is this for someone like me?" — before the visitor decides it is
+   not. Kept to the blueprint vocabulary: hairline rules, corner ticks, accent used sparingly. */
+
+/* The four worries, answered in a row. Not chips: chips read as filters, and these are statements. */
+.koc-reassure {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+}
+
+.koc-reassure > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--koc-accent-700);
+}
+
+/* The plain-words explainer. A tinted ground so it reads as an aside rather than another product
+   section, and grid paper behind it because this is the page's one moment of teaching. */
+.koc-explainer {
+    background:
+        linear-gradient(rgba(20, 102, 165, .05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20, 102, 165, .05) 1px, transparent 1px);
+    background-size: 26px 26px;
+    border-inline-start: 3px solid var(--koc-accent);
+}
+
+.koc-explainer-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .koc-explainer-grid { grid-template-columns: 1fr; gap: 24px; }
+}
+
+/* Three concrete questions, so "prediction" stops being an abstraction. */
+.koc-example-stack { display: flex; flex-direction: column; gap: 12px; }
+
+.koc-example {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--koc-bg);
+    border: 1px solid var(--koc-divider);
+    border-inline-start: 2px solid var(--koc-accent-300);
+}
+
+.koc-example img { flex: none; }
+.koc-example b { display: block; font-size: 14.5px; line-height: 1.35; }
+.koc-example span { display: block; font-size: 12.5px; opacity: .72; margin-top: 2px; }
+
+/* The three steps. The number is a drawing annotation, not a decoration — the order is real. */
+.koc-step { position: relative; }
+
+.koc-step-num {
+    position: absolute;
+    inset-block-start: 14px;
+    inset-inline-end: 16px;
+    font-family: var(--koc-font-heading);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--koc-accent);
+    opacity: .18;
+}
+
+/* The one safe first move, marked out from the steps above it. */
+.koc-firststep { border-inline-start: 3px solid var(--koc-accent); }
+
+@media (prefers-reduced-motion: reduce) {
+    .koc-step, .koc-example { transition: none !important; }
+}
+
+/* ---- Home: emphasis inside the newcomer explainer -------------------------------------------
+   The first version of this section was one flat grey wall of prose. Everything below exists to
+   give a scanning reader something to land on — the claim, the scale, and the flattery — because
+   most people will not read three paragraphs to find out whether a platform is for them. */
+
+/* The sentence the page turns on. Set larger and ruled, so it survives being skimmed past. */
+.koc-pullquote {
+    margin: 0 0 18px;
+    padding: 2px 0 2px 18px;
+    border-inline-start: 3px solid var(--koc-accent);
+    font-family: var(--koc-font-heading);
+    font-size: 1.16rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -.01em;
+    color: var(--koc-accent-900);
+    text-wrap: balance;
+}
+
+/* The scale, as figures rather than prose. "Fifty thousand" reads as a word; 50,000 reads as a lot. */
+.koc-scale {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.koc-scale > div {
+    flex: 1 1 110px;
+    padding: 10px 14px;
+    background: var(--koc-surface);
+    border: 1px solid var(--koc-divider);
+    border-block-start: 2px solid var(--koc-accent-300);
+}
+
+.koc-scale b {
+    display: block;
+    font-family: var(--koc-font-heading);
+    font-size: 1.5rem;
+    line-height: 1.1;
+    color: var(--koc-accent-700);
+    font-variant-numeric: tabular-nums;
+}
+
+.koc-scale span {
+    display: block;
+    font-size: 12.5px;
+    opacity: .75;
+    margin-top: 2px;
+}
+
+/* The line that hands the credit back to the reader. The one place on the page that earns a tint. */
+.koc-punchline {
+    margin: 0;
+    padding: 14px 16px;
+    background: rgba(31, 138, 140, .08);
+    border: 1px solid var(--koc-divider);
+    border-inline-start: 3px solid #1F8A8C;
+    font-size: 1.02rem;
+    line-height: 1.6;
+}
+
+/* The ask, once the explaining is done. */
+.koc-startnow {
+    border-inline-start: 3px solid var(--koc-accent);
+    background: var(--koc-surface);
+}
+
+/* ---- Home hero -------------------------------------------------------------------------------
+   The first version was a headline, a paragraph and two links: nothing to look at, and nothing that
+   said what the platform DOES. Landing-page research is blunt about this — a hero needs a "hero shot"
+   that shows the offer, and the eye should run headline → copy → visual. So the right-hand panel is
+   one prediction, start to finish, on a pump anyone here recognises. */
+
+.koc-hero {
+    position: relative;
+    padding: 8px 0 4px;
+}
+
+.koc-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+    gap: 44px;
+    align-items: center;
+}
+
+@media (max-width: 1000px) {
+    .koc-hero-grid { grid-template-columns: 1fr; gap: 28px; }
+    .koc-hero-visual { order: -1; }     /* on a phone the picture earns the first screen */
+}
+
+.koc-hero-title {
+    font-size: clamp(2rem, 4.4vw, 3.1rem);
+    line-height: 1.08;
+    letter-spacing: -.025em;
+    text-wrap: balance;
+    max-width: 15ch;
+}
+
+.koc-hero-lede {
+    font-size: 1.08rem;
+    line-height: 1.62;
+    max-width: 52ch;
+    opacity: .88;
+}
+
+/* The four worries, as tiles. As inline text they read as fine print; the whole point is that they
+   are the objection, answered. */
+.koc-reassure {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: 10px;
+    max-width: 560px;
+}
+
+.koc-reassure > div {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 12px;
+    background: var(--koc-bg);
+    border: 1px solid var(--koc-divider);
+    border-block-end: 2px solid var(--koc-accent-300);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.koc-reassure .mud-icon-root { color: var(--koc-accent); flex: none; font-size: 20px; }
+
+/* ---- the hero shot ---- */
+.koc-hero-visual { min-width: 0; }
+
+.koc-shot {
+    position: relative;
+    background: var(--koc-bg);
+    border: 1px solid var(--koc-divider);
+    padding: 20px 22px 22px;
+    box-shadow: 0 1px 2px rgba(16, 34, 47, .05), 0 18px 44px rgba(16, 34, 47, .10);
+    background-image:
+        linear-gradient(rgba(20, 102, 165, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20, 102, 165, .045) 1px, transparent 1px);
+    background-size: 26px 26px;
+}
+
+/* Corner ticks: the same drawing device the rest of the platform uses. */
+.koc-shot::before,
+.koc-shot::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--koc-accent);
+}
+.koc-shot::before { inset-block-start: -1px; inset-inline-start: -1px; border-inline-end: 0; border-block-end: 0; }
+.koc-shot::after { inset-block-end: -1px; inset-inline-end: -1px; border-inline-start: 0; border-block-start: 0; }
+
+.koc-shot-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.koc-shot-head b { display: block; font-size: 15px; line-height: 1.2; }
+.koc-shot-head span { display: block; font-size: 12px; opacity: .68; }
+
+.koc-shot-label {
+    display: block;
+    font-family: var(--koc-font-heading);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--koc-accent-700);
+    margin-bottom: 6px;
+}
+
+.koc-spark { display: block; width: 100%; height: 74px; }
+
+.koc-shot-meta {
+    display: flex;
+    gap: 14px;
+    margin-top: 4px;
+    font-size: 11px;
+    opacity: .6;
+}
+
+.koc-shot-arrow {
+    display: flex;
+    justify-content: center;
+    margin: 12px 0 10px;
+    color: var(--koc-accent);
+    opacity: .55;
+}
+
+/* The payoff. The one filled element in the panel, so the eye ends here. */
+.koc-shot-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 15px;
+    background: rgba(31, 138, 140, .10);
+    border: 1px solid rgba(31, 138, 140, .35);
+    border-inline-start: 3px solid #1F8A8C;
+}
+
+.koc-shot-result .mud-icon-root { color: #1F8A8C; flex: none; }
+.koc-shot-result b { display: block; font-size: 14.5px; line-height: 1.3; }
+.koc-shot-result span { display: block; font-size: 12.5px; opacity: .75; margin-top: 2px; }
+
+/* ---------------------------------------------------------------------------
+   Area filter — choosing which part of KOC the home page shows.
+   The activator is deliberately quieter than the navigation links beside it:
+   it is a preference, not a destination, and should not compete with them.
+   --------------------------------------------------------------------------- */
+
+.koc-areafilter-button {
+    padding: .3rem .7rem;
+    border: 1px solid var(--koc-divider, #E1E7EC);
+    border-radius: 999px;
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: none;   /* it names an area, it is not a shouted command */
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.koc-areafilter-button:hover,
+.koc-areafilter-button:focus-visible {
+    background: rgba(20, 102, 165, .08);
+    border-color: var(--koc-accent, #1466A5);
+}
+
+/* The standing reminder of what is filtered, on the page itself. */
+.koc-filterbar {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    padding: .55rem .9rem;
+    border: 1px solid var(--koc-divider, #E1E7EC);
+    border-inline-start: 3px solid var(--koc-accent, #1466A5);
+    border-radius: 8px;
+    background: var(--koc-surface, #F6F8FA);
+    color: var(--koc-ink, #10222F);
+}
+
+.koc-filterbar-text { font-size: .9rem; }
+.koc-filterbar-clear { margin-inline-start: auto; }
+
+/* An area with nothing running yet — a stated fact with a way out, not a blank page. */
+.koc-emptyarea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: .5rem;
+    padding: 2.5rem 1.5rem;
+    border: 1px dashed var(--koc-divider, #E1E7EC);
+    border-radius: 12px;
+    background: var(--koc-surface, #F6F8FA);
+}
+
+.koc-emptyarea .mud-icon-root { color: var(--koc-accent-light, #5FA3D4); }
+.koc-emptyarea .koc-muted { max-width: 52ch; }
+
+/* The Material glyph standing in for a KOC icon on the areas the oilfield icon set has nothing for
+   (a lab panel, a course, a payroll run). Sized to match the 40px PNGs beside it. */
+.koc-shot-glyph {
+    width: 40px;
+    height: 40px;
+    font-size: 40px;
+    color: var(--koc-accent, #1466A5);
+    flex: 0 0 auto;
+}

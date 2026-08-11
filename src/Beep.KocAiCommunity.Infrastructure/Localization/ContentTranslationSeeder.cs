@@ -41,6 +41,15 @@ public static class ContentTranslationSeeder
         (TranslatedContent.CompetitionCategory, "maintenance", TranslatedContent.Name, "الصيانة والموثوقية"),
         (TranslatedContent.CompetitionCategory, "maintenance", TranslatedContent.Description,
             "التنبؤ بالأعطال، والعمر التشغيلي المتبقي، وقطع الغيار."),
+        (TranslatedContent.CompetitionCategory, "medical", TranslatedContent.Name, "الطب والصحة"),
+        (TranslatedContent.CompetitionCategory, "medical", TranslatedContent.Description,
+            "مستشفى الأحمدي: الفحوصات المخبرية، والتشخيص، وحركة المرضى، والصحة المهنية."),
+        (TranslatedContent.CompetitionCategory, "training", TranslatedContent.Name, "التدريب والتطوير"),
+        (TranslatedContent.CompetitionCategory, "training", TranslatedContent.Description,
+            "التدريب وتطوير المسار الوظيفي: الطلب على الدورات، والحضور، وإتمامها، والزمن اللازم للكفاءة."),
+        (TranslatedContent.CompetitionCategory, "people", TranslatedContent.Name, "الموارد البشرية"),
+        (TranslatedContent.CompetitionCategory, "people", TranslatedContent.Description,
+            "سجلات القوى العاملة، وسلامة الرواتب، وتوفير الكوادر، وتخطيط الغياب."),
     ];
 
     public static async Task SeedAsync(KocDbContext db, CancellationToken ct = default)

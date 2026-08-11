@@ -1,4 +1,5 @@
 @page "/compete/{Id:guid}"
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.SignalR.Client
 @using Beep.KocAiCommunity.Contracts.Competitions
@@ -316,6 +317,26 @@ else
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(_competition.Status)">@L[CompetitionDisplay.StatusLabel(_competition.Status)]</MudChip>
                     </div>
 
+                    @* Translation lives with the other things only the host can change. An author who published
+                       in English and wants the Arabic later had nowhere to do it — the create dialog was the only
+                       door, and it closes behind you. *@
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Languages"]</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
+                        @L["What Arabic-speaking colleagues see. Leave blank and they see your English — nothing breaks."]
+                    </MudText>
+                    <MudTextField @bind-Value="_titleAr" Label="@L["Competition title (العربية)"]" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Class="mb-2" Style="direction:rtl;" />
+                    <MudTextField @bind-Value="_descriptionAr" Label="@L["Overview (العربية)"]" Variant="Variant.Outlined"
+                                  Lines="4" Class="mb-2" Style="direction:rtl;" />
+                    <div class="d-flex align-center gap-3 mb-6">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_savingTranslation"
+                                   StartIcon="@Icons.Material.Filled.Translate" OnClick="SaveTranslation">@L["Save Arabic"]</MudButton>
+                        @if (_translationSaved)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Success">@L["Saved"]</MudText>
+                        }
+                    </div>
+
                     <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Competition data"]</MudText>
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
                         @L["Competitors download the training data, build a model, and are scored on the evaluation set against your hidden answer key."]
@@ -466,6 +487,15 @@ else
     private string? _maxScope;
     private bool CanCreate => _maxScope is not null;
 
+    /// <summary>Who is asking, when anyone at all may be asking. Null outside an auth-aware render.</summary>
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
+    private string _titleAr = "";
+    private string _descriptionAr = "";
+    private bool _savingTranslation;
+    private bool _translationSaved;
+
     private HubConnection? _hub;
     private Guid? _joinedCompetition;
 
@@ -525,6 +555,7 @@ else
         await LoadLeaderboard();
         await LoadMySubmissions();
         await LoadData();
+        await LoadTranslations();
     }
 
     private async Task LoadLeaderboard()
@@ -532,7 +563,77 @@ else
         _leaderboard = await Api.GetLeaderboardAsync(Id);
     }
 
-    private async Task LoadMySubmissions() => _mySubmissions = await Api.GetMySubmissionsAsync(Id);
+    /// <summary>
+    /// "My submissions" needs a "me". Anyone may read a competition — the arena is how people decide
+    /// whether to join — so an anonymous visitor reaches here routinely, and asking the API for their
+    /// submissions returns 401 and takes the whole page down with it. Nobody signed in simply has none.
+    /// </summary>
+    private async Task LoadMySubmissions()
+    {
+        if (AuthState is null || !(await AuthState).User.Identity!.IsAuthenticated)
+        {
+            _mySubmissions = null;
+            return;
+        }
+
+        _mySubmissions = await Api.GetMySubmissionsAsync(Id);
+    }
+
+    /// <summary>
+    /// Reads the Arabic as written, for the editor. The competition on screen has already been
+    /// translated for whoever is reading it, so echoing that back into these boxes would show an Arabic
+    /// reader their own translation as if it were the English, and an English reader nothing at all.
+    /// </summary>
+    private async Task LoadTranslations()
+    {
+        if (_competition is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var translations = await Api.GetCompetitionTranslationsAsync(Id);
+            var arabic = translations.FirstOrDefault(t => t.Language == "ar");
+            _titleAr = arabic?.Title ?? "";
+            _descriptionAr = arabic?.Description ?? "";
+        }
+        catch
+        {
+            // Only the host can read these; a competitor opening the page is not an error worth showing.
+            _titleAr = _descriptionAr = "";
+        }
+    }
+
+    private async Task SaveTranslation()
+    {
+        _savingTranslation = true;
+        _translationSaved = false;
+        try
+        {
+            var error = await Api.SetCompetitionTranslationAsync(Id, new SetCompetitionTranslationRequest("ar", _titleAr, _descriptionAr));
+            if (error is not null)
+            {
+                Snackbar.Add(error, Severity.Error);
+                return;
+            }
+
+            _translationSaved = true;
+            Snackbar.Add(L["Arabic saved."], Severity.Success);
+
+            // Re-read the competition: if the person editing is reading in Arabic, the page around them
+            // should now say what they just wrote.
+            await LoadAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _savingTranslation = false;
+        }
+    }
 
     private async Task LoadData()
     {

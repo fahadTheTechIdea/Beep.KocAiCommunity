@@ -1,7 +1,12 @@
-# Local production-shape stack: SQL Server + API + Web + Worker.
+# Local production-shape stack: SQL Server + Web + Worker.
 #
 #   docker compose up --build
 #   open http://localhost:5150
+#
+# Two services, not three. The platform surface — /api/v1, the leaderboard hub, the outbox dispatcher —
+# is a library the website hosts in its own process (since 2026-08-02), so there is no API container and
+# nothing for the web to call across the network. The website owns the database directly, which is why
+# the connection string and the seed switch live on it here rather than on a separate API service.
 #
 # This compose runs a SEEDED DEMO (dev auth + starter data on SQL Server). For real production,
 # see docs/DEPLOYMENT.md: set ASPNETCORE_ENVIRONMENT=Production, configure AzureAd (Entra), and
@@ -21,33 +26,23 @@ services:
       timeout: 5s
       retries: 12
 
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      Database__Provider: SqlServer
-      ConnectionStrings__kocdb: "Server=sql;Database=koc;User Id=sa;Password=Koc_Str0ng_Pass!;TrustServerCertificate=True"
-      Seed__Enabled: "true"          # migrate (SQL Server) + seed starter tracks and dev org
-      DevAuth__Enabled: "true"       # demo only — replace with AzureAd in production
-      DevAuth__Roles: "Employee,Manager,CompetitionAdmin"
-      Outbox__DispatcherEnabled: "true"
-    depends_on:
-      sql:
-        condition: service_healthy
-    ports:
-      - "5250:8080"
-
   web:
     build:
       context: .
       dockerfile: Dockerfile.web
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      KocApi__BaseUrl: "http://api:8080"
+      Database__Provider: SqlServer
+      ConnectionStrings__kocdb: "Server=sql;Database=koc;User Id=sa;Password=Koc_Str0ng_Pass!;TrustServerCertificate=True"
+      Seed__Enabled: "true"          # migrate (SQL Server) + seed the demo data on top of the catalogue
+      DevAuth__Enabled: "true"       # demo only — replace with AzureAd in production
+      DevAuth__Roles: "Employee,Manager,CompetitionAdmin"
+      Outbox__DispatcherEnabled: "true"
+      # KocApi__BaseUrl is deliberately unset: the surface is in this process, so the client defaults to
+      # the host's own loopback listener. Set it only for an install that genuinely keeps it elsewhere.
     depends_on:
-      - api
+      sql:
+        condition: service_healthy
     ports:
       - "5150:8080"
 

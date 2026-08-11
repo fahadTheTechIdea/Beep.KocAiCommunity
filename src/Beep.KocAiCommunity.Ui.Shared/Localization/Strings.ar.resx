@@ -475,9 +475,6 @@
   <data name="Deleted “{0}”." xml:space="preserve">
     <value>حُذف “{0}”.</value>
   </data>
-  <data name="Demonstration environment" xml:space="preserve">
-    <value>بيئة عرض تجريبية</value>
-  </data>
   <data name="Department and profile details load from the KOC directory once its API is configured." xml:space="preserve">
     <value>تُحمَّل تفاصيل الدائرة والملف الشخصي من دليل شركة نفط الكويت بمجرد إعداد واجهته البرمجية.</value>
   </data>
@@ -714,9 +711,6 @@
   </data>
   <data name="How it works" xml:space="preserve">
     <value>كيف تسير</value>
-  </data>
-  <data name="I understand" xml:space="preserve">
-    <value>أفهم</value>
   </data>
   <data name="Id column" xml:space="preserve">
     <value>عمود المعرّف</value>
@@ -1789,9 +1783,6 @@
   <data name="You're all caught up." xml:space="preserve">
     <value>لا جديد لديك.</value>
   </data>
-  <data name="You're exploring a demonstration of the {0} platform. The colleagues, competitions, leaderboards, discussions, and datasets shown here are illustrative sample data — not real {1} records — provided to show how the platform works. Nothing here represents actual employees, results, or official company information." xml:space="preserve">
-    <value>أنت تستعرض نسخةً تجريبيةً من منصة {0}. جميع ما يظهر من زملاء ومسابقات ولوحات صدارة ونقاشات ومجموعات بيانات هو محتوى توضيحي افتراضي — وليس بيانات حقيقية لـ{1} — أُعِدّ لعرض إمكانات المنصة. ولا يمثّل أيٌّ من هذا المحتوى موظفين فعليين أو نتائج أو معلومات رسمية للشركة.</value>
-  </data>
   <data name="You're not enrolled in a track yet." xml:space="preserve">
     <value>لم تسجّل في أي مسار بعد.</value>
   </data>
@@ -2334,5 +2325,350 @@
   </data>
   <data name="Build your model in KOC Studio on the desktop, then submit your predictions below." xml:space="preserve">
     <value>ابنِ نموذجك في KOC Studio على سطح المكتب، ثم أرسل تنبؤاتك أدناه.</value>
+  </data>
+  <data name="No programming" xml:space="preserve">
+    <value>بدون برمجة</value>
+  </data>
+  <data name="No maths" xml:space="preserve">
+    <value>بدون رياضيات</value>
+  </data>
+  <data name="10 minutes to start" xml:space="preserve">
+    <value>ابدأ في ١٠ دقائق</value>
+  </data>
+  <data name="English &amp; العربية" xml:space="preserve">
+    <value>بالعربية والإنجليزية</value>
+  </data>
+  <data name="Start from zero — 10 minutes" xml:space="preserve">
+    <value>ابدأ من الصفر — ١٠ دقائق</value>
+  </data>
+  <data name="See what colleagues are solving" xml:space="preserve">
+    <value>شاهد ما يعمل عليه زملاؤك</value>
+  </data>
+  <data name="You know the job. Teach a computer to help." xml:space="preserve">
+    <value>أنت تعرف عملك. علّم الحاسوب أن يساعدك.</value>
+  </data>
+  <data name="No experience needed, and nothing to install to begin. Learn what machine learning actually is in plain words, then try it on a real KOC problem — pumps, wells, production, safety, even the hospital lab." xml:space="preserve">
+    <value>لا تحتاج خبرة سابقة، ولا إلى تثبيت أي برنامج لتبدأ. تعرّف على معنى تعلّم الآلة بكلمات بسيطة، ثم جرّبه على مسألة حقيقية من مسائل الشركة — المضخّات والآبار والإنتاج والسلامة، وحتى مختبر المستشفى.</value>
+  </data>
+  <data name="In plain words" xml:space="preserve">
+    <value>بكلمات بسيطة</value>
+  </data>
+  <data name="You already do this. Every day." xml:space="preserve">
+    <value>أنت تفعل هذا أصلاً. كل يوم.</value>
+  </data>
+  <data name="An experienced operator walks past a pump and knows it sounds wrong. Nobody taught them a formula — they have simply seen thousands of pumps, and the pattern is in their head." xml:space="preserve">
+    <value>المشغّل الخبير يمرّ بجانب مضخّة فيعرف أن صوتها ليس كالمعتاد. لم يعلّمه أحد معادلة — لكنه رأى آلاف المضخّات، فاستقرّ النمط في ذهنه.</value>
+  </data>
+  <data name="Machine learning is that same trick, at a size no person can hold." xml:space="preserve">
+    <value>تعلّم الآلة هو الأمر نفسه، لكن بحجم لا يستطيع عقل بشري أن يحيط به.</value>
+  </data>
+  <data name="And it only works because people like you already know which patterns matter. Your experience is the ingredient — the computer just counts faster." xml:space="preserve">
+    <value>وهو لا ينجح إلا لأن أشخاصاً مثلك يعرفون أي الأنماط تهمّ فعلاً. خبرتك هي المادة الأساسية — والحاسوب يكتفي بالعدّ الأسرع.</value>
+  </data>
+  <data name="Which pump fails next month?" xml:space="preserve">
+    <value>أي مضخّة ستتعطّل الشهر القادم؟</value>
+  </data>
+  <data name="Maintenance, planned instead of urgent" xml:space="preserve">
+    <value>صيانة مُخطّطة بدل صيانة طارئة</value>
+  </data>
+  <data name="Which well needs a visit?" xml:space="preserve">
+    <value>أي بئر يحتاج إلى زيارة؟</value>
+  </data>
+  <data name="Send the rig where it earns its day" xml:space="preserve">
+    <value>أرسل الحفّارة حيث تستحق يومها</value>
+  </data>
+  <data name="Which reading is wrong?" xml:space="preserve">
+    <value>أي قراءة غير صحيحة؟</value>
+  </data>
+  <data name="Catch the fault before the shutdown" xml:space="preserve">
+    <value>اكتشف الخلل قبل التوقّف</value>
+  </data>
+  <data name="Build" xml:space="preserve">
+    <value>ابنِ</value>
+  </data>
+  <data name="Short lessons in plain language, with pictures instead of equations. Start with 'AI for Everyone' — it assumes you know nothing, because most people don't." xml:space="preserve">
+    <value>دروس قصيرة بلغة بسيطة، بالصور بدل المعادلات. ابدأ بمسار «الذكاء الاصطناعي للجميع» — يفترض أنك لا تعرف شيئاً، لأن أغلب الناس كذلك.</value>
+  </data>
+  <data name="Drag boxes and join them with lines — load the data, clean it, train. You describe the steps; the computer does the arithmetic. Nothing to install to look around." xml:space="preserve">
+    <value>اسحب المربّعات وصِلها بخطوط — حمّل البيانات، نظّفها، درّب النموذج. أنت تصف الخطوات، والحاسوب يتولّى الحساب. ولا تحتاج إلى تثبيت شيء لمجرّد الاستكشاف.</value>
+  </data>
+  <data name="Enter a challenge on a real KOC problem, see your score against colleagues, and collect Barrels and badges on the way. Friendly, and genuinely addictive." xml:space="preserve">
+    <value>ادخل تحدّياً على مسألة حقيقية من مسائل الشركة، وقارن نتيجتك بنتائج زملائك، واجمع البراميل والأوسمة في الطريق. منافسة ودّية… ومُشوّقة أكثر مما تتوقّع.</value>
+  </data>
+  <data name="Never done this before? Start with a shipwreck." xml:space="preserve">
+    <value>لم تجرّب هذا من قبل؟ ابدأ بحطام سفينة.</value>
+  </data>
+  <data name="The Titanic challenge is the world's most famous first machine-learning puzzle. No oil-and-gas knowledge needed — just a passenger list and a question: who survived? Most people submit their first model within the hour." xml:space="preserve">
+    <value>تحدّي تايتانيك هو أشهر لغز أول في تعلّم الآلة في العالم. لا يتطلّب أي معرفة بالنفط والغاز — مجرّد قائمة ركّاب وسؤال واحد: مَن نجا؟ أغلب المشاركين يقدّمون أول نموذج لهم خلال ساعة.</value>
+  </data>
+  <data name="Take the first challenge" xml:space="preserve">
+    <value>ابدأ التحدي الأول</value>
+  </data>
+  <data name="Add Arabic" xml:space="preserve">
+    <value>أضف العربية</value>
+  </data>
+  <data name="(optional)" xml:space="preserve">
+    <value>(اختياري)</value>
+  </data>
+  <data name="Added" xml:space="preserve">
+    <value>تمت الإضافة</value>
+  </data>
+  <data name="Competition title (العربية)" xml:space="preserve">
+    <value>عنوان المسابقة (بالعربية)</value>
+  </data>
+  <data name="Overview (العربية)" xml:space="preserve">
+    <value>نبذة عن المسابقة (بالعربية)</value>
+  </data>
+  <data name="Arabic-speaking colleagues will see these instead. Leave them blank and they simply see the English — nothing breaks." xml:space="preserve">
+    <value>سيرى الزملاء الناطقون بالعربية هذه النصوص بدلاً من الإنجليزية. واتركها فارغة فيرون النص الإنجليزي كما هو — لا شيء يتعطّل.</value>
+  </data>
+  <data name="Languages" xml:space="preserve">
+    <value>اللغات</value>
+  </data>
+  <data name="Save Arabic" xml:space="preserve">
+    <value>احفظ العربية</value>
+  </data>
+  <data name="Saved" xml:space="preserve">
+    <value>تم الحفظ</value>
+  </data>
+  <data name="Arabic saved." xml:space="preserve">
+    <value>تم حفظ النص العربي.</value>
+  </data>
+  <data name="What Arabic-speaking colleagues see. Leave blank and they see your English — nothing breaks." xml:space="preserve">
+    <value>ما يراه الزملاء الناطقون بالعربية. اتركه فارغاً فيرون نصّك الإنجليزي — لا شيء يتعطّل.</value>
+  </data>
+  <data name="pumps" xml:space="preserve">
+    <value>مضخّة</value>
+  </data>
+  <data name="readings each" xml:space="preserve">
+    <value>قراءة لكل واحدة</value>
+  </data>
+  <data name="years of history" xml:space="preserve">
+    <value>سنوات من السجلات</value>
+  </data>
+  <data name="It finds the patterns nobody has time to look for." xml:space="preserve">
+    <value>فيجد الأنماط التي لا يملك أحد وقتاً للبحث عنها.</value>
+  </data>
+  <data name="That is the whole idea. Ready to try it?" xml:space="preserve">
+    <value>تلك هي الفكرة كلها. هل تجرّبها؟</value>
+  </data>
+  <data name="The first lesson is ten minutes, in plain words, and nothing to install." xml:space="preserve">
+    <value>الدرس الأول عشر دقائق، بكلمات بسيطة، ودون تثبيت أي برنامج.</value>
+  </data>
+  <data name="Live sensor readings" xml:space="preserve">
+    <value>قراءات الحسّاسات المباشرة</value>
+  </data>
+  <data name="What the model sees" xml:space="preserve">
+    <value>ما يراه النموذج</value>
+  </data>
+  <data name="What it tells you" xml:space="preserve">
+    <value>ما يخبرك به</value>
+  </data>
+  <data name="vibration" xml:space="preserve">
+    <value>الاهتزاز</value>
+  </data>
+  <data name="motor temp" xml:space="preserve">
+    <value>حرارة المحرّك</value>
+  </data>
+  <data name="current" xml:space="preserve">
+    <value>التيار</value>
+  </data>
+  <data name="Likely to fail within 12 days" xml:space="preserve">
+    <value>يُرجَّح تعطّلها خلال ١٢ يوماً</value>
+  </data>
+  <data name="Book the service now, not at 3am" xml:space="preserve">
+    <value>احجز الصيانة الآن، لا عند الثالثة فجراً</value>
+  </data>
+  <data name="Filter by area" xml:space="preserve">
+    <value>التصفية حسب المجال</value>
+  </data>
+  <data name="All areas" xml:space="preserve">
+    <value>كل المجالات</value>
+  </data>
+  <data name="Showing" xml:space="preserve">
+    <value>المعروض</value>
+  </data>
+  <data name="Show all areas" xml:space="preserve">
+    <value>عرض كل المجالات</value>
+  </data>
+  <data name="Start learning" xml:space="preserve">
+    <value>ابدأ التعلّم</value>
+  </data>
+  <data name="Nothing running in {0} just yet" xml:space="preserve">
+    <value>لا يوجد تحدٍّ جارٍ في {0} حتى الآن</value>
+  </data>
+  <data name="Challenges are added as departments bring their own problems forward. In the meantime, everything else is still open." xml:space="preserve">
+    <value>تُضاف التحديات كلما طرحت الإدارات مسائلها الخاصة. وحتى ذلك الحين، يبقى كل ما عداها متاحًا.</value>
+  </data>
+  <data name="Well A-27, at 2,340 m" xml:space="preserve">
+    <value>البئر A-27، على عمق 2,340 م</value>
+  </data>
+  <data name="One interval of the wireline log" xml:space="preserve">
+    <value>فترة واحدة من سجل الأسلاك</value>
+  </data>
+  <data name="gamma ray" xml:space="preserve">
+    <value>أشعة غاما</value>
+  </data>
+  <data name="density" xml:space="preserve">
+    <value>الكثافة</value>
+  </data>
+  <data name="neutron" xml:space="preserve">
+    <value>النيوترون</value>
+  </data>
+  <data name="This interval is sandstone" xml:space="preserve">
+    <value>هذه الفترة صخر رملي</value>
+  </data>
+  <data name="Pick the pay zone without waiting on core" xml:space="preserve">
+    <value>حدّد النطاق المنتج دون انتظار العيّنات اللبّية</value>
+  </data>
+  <data name="Well B-9, current section" xml:space="preserve">
+    <value>البئر B-9، القسم الحالي</value>
+  </data>
+  <data name="Readings from the last stand drilled" xml:space="preserve">
+    <value>قراءات آخر مجموعة أنابيب حُفرت</value>
+  </data>
+  <data name="weight on bit" xml:space="preserve">
+    <value>الحمل على الريشة</value>
+  </data>
+  <data name="rotary speed" xml:space="preserve">
+    <value>سرعة الدوران</value>
+  </data>
+  <data name="mud flow" xml:space="preserve">
+    <value>تدفّق الطين</value>
+  </data>
+  <data name="The bit is about to slow down" xml:space="preserve">
+    <value>الريشة على وشك التباطؤ</value>
+  </data>
+  <data name="Change it on this trip, not the next one" xml:space="preserve">
+    <value>غيّرها في هذه الرحلة لا في التالية</value>
+  </data>
+  <data name="Well C-41, last 90 days" xml:space="preserve">
+    <value>البئر C-41، آخر 90 يومًا</value>
+  </data>
+  <data name="Daily production history" xml:space="preserve">
+    <value>سجلّ الإنتاج اليومي</value>
+  </data>
+  <data name="oil rate" xml:space="preserve">
+    <value>معدّل النفط</value>
+  </data>
+  <data name="water cut" xml:space="preserve">
+    <value>نسبة الماء</value>
+  </data>
+  <data name="wellhead pressure" xml:space="preserve">
+    <value>ضغط رأس البئر</value>
+  </data>
+  <data name="Below target rate within six weeks" xml:space="preserve">
+    <value>دون المعدّل المستهدف خلال ستة أسابيع</value>
+  </data>
+  <data name="Plan the intervention before it gets there" xml:space="preserve">
+    <value>خطّط للتدخّل قبل أن يصل إلى ذلك</value>
+  </data>
+  <data name="Gas train 2" xml:space="preserve">
+    <value>خط الغاز 2</value>
+  </data>
+  <data name="Plant readings across this shift" xml:space="preserve">
+    <value>قراءات المصنع خلال هذه الوردية</value>
+  </data>
+  <data name="inlet pressure" xml:space="preserve">
+    <value>ضغط المدخل</value>
+  </data>
+  <data name="compressor duty" xml:space="preserve">
+    <value>حِمل الضاغط</value>
+  </data>
+  <data name="ambient temp" xml:space="preserve">
+    <value>حرارة الجو</value>
+  </data>
+  <data name="Throughput is 6% under target" xml:space="preserve">
+    <value>الطاقة الإنتاجية أقل من المستهدف بـ 6%</value>
+  </data>
+  <data name="And the cause is upstream, not the compressor" xml:space="preserve">
+    <value>والسبب أعلى الخط لا في الضاغط</value>
+  </data>
+  <data name="A near-miss report" xml:space="preserve">
+    <value>بلاغ حالة وشيكة</value>
+  </data>
+  <data name="What the reporter wrote down" xml:space="preserve">
+    <value>ما دوّنه مُقدّم البلاغ</value>
+  </data>
+  <data name="task type" xml:space="preserve">
+    <value>نوع المهمة</value>
+  </data>
+  <data name="location" xml:space="preserve">
+    <value>الموقع</value>
+  </data>
+  <data name="hours into shift" xml:space="preserve">
+    <value>ساعات منذ بدء الوردية</value>
+  </data>
+  <data name="This one could have hurt somebody" xml:space="preserve">
+    <value>هذه كانت قد تصيب أحدهم</value>
+  </data>
+  <data name="Escalate it before the pattern repeats" xml:space="preserve">
+    <value>ارفعها قبل أن يتكرّر النمط</value>
+  </data>
+  <data name="A routine lab panel" xml:space="preserve">
+    <value>تحليل مخبري روتيني</value>
+  </data>
+  <data name="Results from one screening visit" xml:space="preserve">
+    <value>نتائج زيارة فحص واحدة</value>
+  </data>
+  <data name="fasting glucose" xml:space="preserve">
+    <value>سكر الصائم</value>
+  </data>
+  <data name="HbA1c" xml:space="preserve">
+    <value>الهيموغلوبين السكري</value>
+  </data>
+  <data name="body mass index" xml:space="preserve">
+    <value>مؤشّر كتلة الجسم</value>
+  </data>
+  <data name="Worth screening for diabetes" xml:space="preserve">
+    <value>يستحق الفحص لداء السكري</value>
+  </data>
+  <data name="Ask them back before they feel unwell" xml:space="preserve">
+    <value>استدعِه قبل أن تظهر عليه الأعراض</value>
+  </data>
+  <data name="A course with 24 seats booked" xml:space="preserve">
+    <value>دورة حُجز فيها 24 مقعدًا</value>
+  </data>
+  <data name="What is known on enrolment day" xml:space="preserve">
+    <value>ما هو معروف يوم التسجيل</value>
+  </data>
+  <data name="booked ahead" xml:space="preserve">
+    <value>التسجيل المبكر</value>
+  </data>
+  <data name="courses finished" xml:space="preserve">
+    <value>الدورات المُتمّة</value>
+  </data>
+  <data name="workload" xml:space="preserve">
+    <value>حجم العمل</value>
+  </data>
+  <data name="Six of them will not finish" xml:space="preserve">
+    <value>ستة منهم لن يُكملوا</value>
+  </data>
+  <data name="A nudge in week one beats a wasted seat in week six" xml:space="preserve">
+    <value>متابعة في الأسبوع الأول خير من مقعد ضائع في الأسبوع السادس</value>
+  </data>
+  <data name="One month's payroll run" xml:space="preserve">
+    <value>تشغيلة رواتب شهر واحد</value>
+  </data>
+  <data name="Every component of the run" xml:space="preserve">
+    <value>كل بنود التشغيلة</value>
+  </data>
+  <data name="hours" xml:space="preserve">
+    <value>الساعات</value>
+  </data>
+  <data name="base pay" xml:space="preserve">
+    <value>الراتب الأساسي</value>
+  </data>
+  <data name="overtime" xml:space="preserve">
+    <value>العمل الإضافي</value>
+  </data>
+  <data name="This run breaks the pattern" xml:space="preserve">
+    <value>هذه التشغيلة تخرج عن النمط</value>
+  </data>
+  <data name="Check it before it is paid, not after" xml:space="preserve">
+    <value>راجعها قبل الصرف لا بعده</value>
+  </data>
+  <data name="Pump P-114" xml:space="preserve">
+    <value>المضخة P-114</value>
   </data>
 </root>

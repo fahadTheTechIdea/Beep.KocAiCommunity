@@ -24,6 +24,9 @@ public static class CompetitionCategorySeeder
         ("facilities", "Facilities & Plant", "Process performance, energy use, and plant throughput.", "Factory"),
         ("hse", "HSE", "Incidents, near-misses, and abnormal sensor behaviour.", "HealthAndSafety"),
         ("maintenance", "Maintenance & Reliability", "Failure prediction, remaining useful life, and spares.", "Build"),
+        ("medical", "Medical & Health", "Ahmadi Hospital: laboratory testing, diagnostics, patient flow, and occupational health.", "MedicalServices"),
+        ("training", "Training & Development", "T&CD: course demand, attendance, completion, and time to competency.", "School"),
+        ("people", "People & HR", "Workforce records, payroll integrity, resourcing, and absence planning.", "Groups"),
     ];
 
     public static async Task SeedAsync(KocDbContext db, CancellationToken ct = default)

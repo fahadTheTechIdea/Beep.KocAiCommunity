@@ -63,6 +63,35 @@
                             <MudText Typo="Typo.caption" Style="opacity:.6;">@_description.Length characters</MudText>
                         </div>
 
+                        @* Optional Arabic, collapsed by default. Somebody writing only English should not
+                           feel they have left the form half-finished; somebody writing both should not have
+                           to go somewhere else afterwards to do it. *@
+                        <MudExpansionPanels Elevation="0" Class="mb-3">
+                            <MudExpansionPanel Dense="true">
+                                <TitleContent>
+                                    <div class="d-flex align-center gap-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.Translate" Size="Size.Small" />
+                                        <MudText Typo="Typo.body2"><b>@L["Add Arabic"]</b> <span style="opacity:.6;">@L["(optional)"]</span></MudText>
+                                        @if (_titleAr.Length > 0 || _descriptionAr.Length > 0)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["Added"]</MudChip>
+                                        }
+                                    </div>
+                                </TitleContent>
+                                <ChildContent>
+                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
+                                        @L["Arabic-speaking colleagues will see these instead. Leave them blank and they simply see the English — nothing breaks."]
+                                    </MudText>
+                                    <MudTextField @bind-Value="_titleAr" Immediate="true" Label="@L["Competition title (العربية)"]"
+                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2"
+                                                  Style="direction:rtl;" />
+                                    <MudTextField @bind-Value="_descriptionAr" Immediate="true" Label="@L["Overview (العربية)"]"
+                                                  Variant="Variant.Outlined" Lines="5"
+                                                  Style="direction:rtl;" />
+                                </ChildContent>
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+
                         <MudText Typo="Typo.body2" Class="mb-1"><b>@L["Hero image"]</b> <span style="opacity:.6;">(optional)</span></MudText>
                         <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;">A banner shown on the competition — and, if it's featured, on the landing-page hero. PNG or JPG.</MudText>
                         <InputFile OnChange="OnHeroImagePicked" accept="image/*" />
@@ -284,6 +313,8 @@
     private string? _heroImageName;
     private string _title = "";
     private string _description = "";
+    private string _titleAr = "";
+    private string _descriptionAr = "";
     private string _scope = "Company";
     private string _task = "BinaryClassification";
     private int _quota = 5;
@@ -415,7 +446,8 @@
         {
             var reveal = _revealDate is { } d ? DateTime.SpecifyKind(d.Date.AddHours(12), DateTimeKind.Utc) : (DateTime?)null;
             var dto = await Api.CreateCompetitionAsync(new CreateCompetitionRequest(
-                _title.Trim(), _description.Trim(), _scope, null, reveal, _quota, CurrentTask.Scorer));
+                _title.Trim(), _description.Trim(), _scope, null, reveal, _quota, CurrentTask.Scorer,
+                TitleAr: _titleAr.Trim(), DescriptionAr: _descriptionAr.Trim()));
 
             // Upload the hero image to the freshly-created competition (best effort — the competition still
             // gets created even if the image fails).

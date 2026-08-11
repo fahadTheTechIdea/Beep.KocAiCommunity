@@ -17,7 +17,7 @@ public sealed record AuditLogDto(
 public sealed record HealthComponentDto(string Component, string Status, string Detail);
 
 /// <summary>What demo content is currently seeded.</summary>
-public sealed record DemoDataStatusDto(bool Seeded, int Users, int Competitions, int Discussions, int Datasets);
+public sealed record DemoDataStatusDto(bool Seeded, int Users, int Submissions, int Discussions, int Datasets);
 
 public sealed record AdminDashboardDto(
     int Users, int Workflows, int Competitions, int Models, int Discussions,

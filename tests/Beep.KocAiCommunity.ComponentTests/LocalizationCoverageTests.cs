@@ -83,6 +83,9 @@ public class LocalizationCoverageTests
             // The masthead. Constants rather than literals, so the markup scan cannot see them, and an
             // untranslated one is the most visible gap on the site — it sits above every page.
             (nameof(KocBrand), KocBrand.Translatable),
+
+            // The home-page worked example, one per area of KOC. Every line of it is a computed key.
+            (nameof(HeroShots), HeroShots.Translatable),
         }
         .SelectMany(set => set.Item2.Select(key => (File: set.Item1 + ".cs", Key: key)));
 

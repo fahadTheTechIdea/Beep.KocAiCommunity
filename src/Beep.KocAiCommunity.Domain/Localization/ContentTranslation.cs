@@ -42,6 +42,12 @@ public static class TranslatedContent
     public const string CompetitionCategory = "competition-category";
     public const string Badge = "badge";
 
+    /// <summary>
+    /// A competition's own title and description. Keyed by <c>Id</c> rather than a slug, because a
+    /// member may rename their challenge and the translation has to follow it rather than orphan.
+    /// </summary>
+    public const string Competition = "competition";
+
     public const string Name = "name";
     public const string Description = "description";
 }

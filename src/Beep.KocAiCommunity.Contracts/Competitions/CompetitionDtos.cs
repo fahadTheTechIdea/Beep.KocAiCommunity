@@ -8,7 +8,17 @@ public sealed record CreateCompetitionRequest(
     Guid? VisibilityOrgUnitId,
     DateTime? RevealUtc,
     int QuotaPerDay,
-    string ScorerCode);
+    string ScorerCode,
+    // Optional Arabic. Left null the challenge simply reads in English for an Arabic visitor, which is
+    // the same bargain the interface strings make — a gap shows English, never a blank.
+    string? TitleAr = null,
+    string? DescriptionAr = null);
+
+/// <summary>What a competition says in one non-English language, for the author to fill in or edit.</summary>
+public sealed record CompetitionTranslationDto(string Language, string? Title, string? Description);
+
+/// <summary>Replaces the translation for one language. Blank fields clear it back to the original.</summary>
+public sealed record SetCompetitionTranslationRequest(string Language, string? Title, string? Description);
 
 public sealed record CompetitionDto(
     Guid Id,

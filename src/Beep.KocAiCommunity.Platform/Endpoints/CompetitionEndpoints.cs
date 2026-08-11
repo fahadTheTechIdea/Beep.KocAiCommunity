@@ -1,3 +1,4 @@
+using Beep.KocAiCommunity.Contracts.Localization;
 using Beep.KocAiCommunity.Domain.Localization;
 using Beep.KocAiCommunity.Application.Localization;
 using Beep.KocAiCommunity.Platform.Security;
@@ -33,7 +34,7 @@ public static class CompetitionEndpoints
         // so a singleton captured here still answers each request in its own language.
         var messages = group.ServiceMessages();
 
-group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
+group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, IContentTranslator translator, CancellationToken ct) =>
         {
             if (!Enum.TryParse<VisibilityScope>(req.Scope, ignoreCase: true, out var scope))
             {
@@ -48,6 +49,13 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             {
                 var isPlatformAdmin = me.IsInRole(KocRoles.PlatformAdmin);
                 var competition = await svc.CreateAsync(me.UserId!, isPlatformAdmin, req.Title, req.Description, scope, unit, req.RevealUtc, req.QuotaPerDay, req.ScorerCode, ct);
+
+                // The author may have written it in both languages. Saved against the new id, so a
+                // later rename of the English title does not orphan the Arabic.
+                var key = competition.Id.ToString();
+                await translator.SetAsync(TranslatedContent.Competition, key, TranslatedContent.Name, KocLanguages.Arabic, req.TitleAr, ct);
+                await translator.SetAsync(TranslatedContent.Competition, key, TranslatedContent.Description, KocLanguages.Arabic, req.DescriptionAr, ct);
+
                 return Results.Ok(ToDto(competition, stats: null, scorers));
             }
             catch (CompetitionAccessException ex)
@@ -62,7 +70,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         .WithName("CreateCompetition")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
-        group.MapGet("/competitions", async (IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
+        group.MapGet("/competitions", async (HttpContext http, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, IContentTranslator translator, CancellationToken ct) =>
         {
             // Browsing the arena is open, the way Learn and Community are: you should be able to see what
             // people are competing on before deciding to sign in. Joining, downloading the data and
@@ -74,7 +82,14 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
 
             var stats = await svc.GetStatsAsync([.. visible.Select(c => c.Id)], ct);
             var categories = await CategoryNamesAsync(svc, ct);
-            return Results.Ok(visible.Select(c => ToDto(c, stats.GetValueOrDefault(c.Id), scorers, categories)).ToList());
+
+            // Two lookups for the whole arena rather than one per card. An untranslated challenge keeps
+            // the words its author wrote, which is the same bargain the categories make above.
+            var (titles, descriptions) = await CompetitionTextAsync(translator, http.RequestLanguage(), ct);
+
+            return Results.Ok(visible
+                .Select(c => Translate(ToDto(c, stats.GetValueOrDefault(c.Id), scorers, categories), titles, descriptions))
+                .ToList());
         })
         .WithName("BrowseCompetitions")
         .AllowAnonymous();
@@ -102,8 +117,62 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         .WithName("BrowseCompetitionCategories")
         .AllowAnonymous();
 
+        // What this challenge says in another language — for the author's editor, so it shows the
+        // Arabic itself rather than whatever the reader's language happens to resolve to.
+        group.MapGet("/competitions/{id:guid}/translations", async (
+            Guid id, ICompetitionService svc, IContentTranslator translator, CancellationToken ct) =>
+        {
+            if (await svc.GetAsync(id, ct) is null)
+            {
+                return Results.NotFound();
+            }
+
+            var key = id.ToString();
+            var titles = await translator.LookupAsync(TranslatedContent.Competition, TranslatedContent.Name, KocLanguages.Arabic, ct);
+            var descriptions = await translator.LookupAsync(TranslatedContent.Competition, TranslatedContent.Description, KocLanguages.Arabic, ct);
+
+            return Results.Ok(new List<CompetitionTranslationDto>
+            {
+                new(KocLanguages.Arabic, titles.GetValueOrDefault(key), descriptions.GetValueOrDefault(key)),
+            });
+        })
+        .WithName("GetCompetitionTranslations")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // Only the person who created it, or a platform admin, may put words in its mouth.
+        group.MapPut("/competitions/{id:guid}/translations", async (
+            Guid id, SetCompetitionTranslationRequest req, IKocCurrentUser me, ICompetitionService svc,
+            IContentTranslator translator, CancellationToken ct) =>
+        {
+            var competition = await svc.GetAsync(id, ct);
+            if (competition is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (competition.CreatedByUserId != me.UserId && !me.IsInRole(KocRoles.PlatformAdmin))
+            {
+                return Results.Json(new { error = "Only the competition creator can translate it." },
+                    statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            var language = KocLanguages.Normalize(req.Language);
+            if (language == KocLanguages.English)
+            {
+                return Results.BadRequest(new { error = "English is the competition itself — edit the competition, not a translation of it." });
+            }
+
+            var key = id.ToString();
+            await translator.SetAsync(TranslatedContent.Competition, key, TranslatedContent.Name, language, req.Title, ct);
+            await translator.SetAsync(TranslatedContent.Competition, key, TranslatedContent.Description, language, req.Description, ct);
+            return Results.NoContent();
+        })
+        .WithName("SetCompetitionTranslation")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
         group.MapGet("/competitions/{id:guid}", async (
-            Guid id, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers, CancellationToken ct) =>
+            Guid id, HttpContext http, IKocCurrentUser me, ICompetitionService svc, IScorerRegistry scorers,
+            IContentTranslator translator, CancellationToken ct) =>
         {
             // A signed-out visitor reads through the leak rule, so holding the id is not enough to open a
             // team-private competition.
@@ -117,7 +186,11 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             }
 
             var stats = await svc.GetStatsAsync([id], ct);
-            return Results.Ok(ToDto(competition, stats.GetValueOrDefault(id), scorers, await CategoryNamesAsync(svc, ct)));
+            var (titles, descriptions) = await CompetitionTextAsync(translator, http.RequestLanguage(), ct);
+
+            return Results.Ok(Translate(
+                ToDto(competition, stats.GetValueOrDefault(id), scorers, await CategoryNamesAsync(svc, ct)),
+                titles, descriptions));
         })
         .WithName("GetCompetition")
         .AllowAnonymous();
@@ -318,11 +391,20 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         // Anonymous landing preview: active company-wide competitions, the featured live top-3, and this
         // month's top learners — everything a signed-out visitor needs to be enticed to sign in. Read-only
         // and non-private (only Company-visible competitions), so no authorization is required.
-        group.MapGet("/public/showcase", async (ICompetitionService svc, IEngagementService engagement, IScorerRegistry scorers, CancellationToken ct) =>
+        group.MapGet("/public/showcase", async (HttpContext http, ICompetitionService svc, IEngagementService engagement, IScorerRegistry scorers, IContentTranslator translator, CancellationToken ct) =>
         {
             var list = await svc.BrowsePublicAsync(ct);
             var stats = await svc.GetStatsAsync([.. list.Select(c => c.Id)], ct);
-            var dtos = list.Select(c => ToDto(c, stats.GetValueOrDefault(c.Id), scorers)).ToList();
+            // The landing page is the first thing an Arabic-speaking visitor sees, so it has to be the
+            // first thing translated — this was serving the featured competition in English while the
+            // rest of the page had already switched.
+            var (titles, descriptions) = await CompetitionTextAsync(translator, http.RequestLanguage(), ct);
+            // Category names too: the landing page filters by area, and a card that knows its code but
+            // not its name shows a blank chip to exactly the visitor least able to guess what it meant.
+            var categories = await CategoryNamesAsync(svc, ct);
+            var dtos = list
+                .Select(c => Translate(ToDto(c, stats.GetValueOrDefault(c.Id), scorers, categories), titles, descriptions))
+                .ToList();
 
             var featured = list.FirstOrDefault(c => c.IsFeatured) ?? list.FirstOrDefault();
             IReadOnlyList<LeaderboardEntryDto> board = [];
@@ -352,6 +434,27 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
 
     /// <summary>How many rows the anonymous showcase carries — the landing page shows a full board.</summary>
     private const int PublicBoardSize = 10;
+
+    /// <summary>Both translated fields for every competition, in two queries rather than two per row.</summary>
+    private static async Task<(IReadOnlyDictionary<string, string> Titles, IReadOnlyDictionary<string, string> Descriptions)>
+        CompetitionTextAsync(IContentTranslator translator, string language, CancellationToken ct) =>
+        (await translator.LookupAsync(TranslatedContent.Competition, TranslatedContent.Name, language, ct),
+         await translator.LookupAsync(TranslatedContent.Competition, TranslatedContent.Description, language, ct));
+
+    /// <summary>
+    /// Swaps in the translated title and description where one exists. Falls back to what the author
+    /// wrote, so a half-translated arena reads as mixed language rather than as blank cards.
+    /// </summary>
+    private static CompetitionDto Translate(
+        CompetitionDto dto, IReadOnlyDictionary<string, string> titles, IReadOnlyDictionary<string, string> descriptions)
+    {
+        var key = dto.Id.ToString();
+        return dto with
+        {
+            Title = titles.GetValueOrDefault(key, dto.Title),
+            Description = descriptions.GetValueOrDefault(key, dto.Description),
+        };
+    }
 
     private static CompetitionDto ToDto(
         Competition c, CompetitionStats? stats, IScorerRegistry scorers,

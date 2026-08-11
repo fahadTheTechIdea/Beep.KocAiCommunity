@@ -74,6 +74,8 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient? remote) : IKocAp
     public virtual Task<PublicShowcaseDto> GetPublicShowcaseAsync(CancellationToken ct = default) => Remote.GetPublicShowcaseAsync(ct);
     public virtual Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default) => Remote.GetCompetitionAsync(competitionId, ct);
     public virtual Task<CompetitionDto?> CreateCompetitionAsync(CreateCompetitionRequest request, CancellationToken ct = default) => Remote.CreateCompetitionAsync(request, ct);
+    public virtual Task<IReadOnlyList<CompetitionTranslationDto>> GetCompetitionTranslationsAsync(Guid competitionId, CancellationToken ct = default) => Remote.GetCompetitionTranslationsAsync(competitionId, ct);
+    public virtual Task<string?> SetCompetitionTranslationAsync(Guid competitionId, SetCompetitionTranslationRequest request, CancellationToken ct = default) => Remote.SetCompetitionTranslationAsync(competitionId, request, ct);
     public virtual Task SetAnswerKeyAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default) => Remote.SetAnswerKeyAsync(competitionId, csv, fileName, ct);
     public virtual Task<SubmissionResultDto?> SubmitAsync(Guid competitionId, Stream csv, string fileName, string? idempotencyKey = null, CancellationToken ct = default) => Remote.SubmitAsync(competitionId, csv, fileName, idempotencyKey, ct);
     public virtual Task<SubmissionResultDto?> SubmitPipelineAsync(Guid competitionId, WorkflowDefinition definition, string? idempotencyKey = null, CancellationToken ct = default) => Remote.SubmitPipelineAsync(competitionId, definition, idempotencyKey, ct);
@@ -142,8 +144,7 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient? remote) : IKocAp
     public virtual Task<IReadOnlyList<AuditLogDto>> GetAuditAsync(string? action = null, CancellationToken ct = default) => Remote.GetAuditAsync(action, ct);
     public virtual Task<DemoDataStatusDto?> GetDemoStatusAsync(CancellationToken ct = default) => Remote.GetDemoStatusAsync(ct);
     public virtual Task<(DemoDataStatusDto? Status, string? Error)> SeedDemoAsync(CancellationToken ct = default) => Remote.SeedDemoAsync(ct);
-    public virtual Task<(DemoDataStatusDto? Status, string? Error)> UnseedDemoAsync(CancellationToken ct = default) => Remote.UnseedDemoAsync(ct);
-    public virtual Task<IReadOnlyList<AdminUserDto>> GetAdminUsersAsync(CancellationToken ct = default) => Remote.GetAdminUsersAsync(ct);
+    public virtual Task<(DemoDataStatusDto? Status, string? Error)> UnseedDemoAsync(CancellationToken ct = default) => Remote.UnseedDemoAsync(ct);    public virtual Task<IReadOnlyList<AdminUserDto>> GetAdminUsersAsync(CancellationToken ct = default) => Remote.GetAdminUsersAsync(ct);
     public virtual Task<IReadOnlyList<OrgUnitCodeDto>> GetAdminOrgUnitsAsync(CancellationToken ct = default) => Remote.GetAdminOrgUnitsAsync(ct);
     public virtual Task<(AdminUserDto? User, string? Error)> UpsertUserProfileAsync(string userId, UpsertUserProfileRequest request, CancellationToken ct = default) => Remote.UpsertUserProfileAsync(userId, request, ct);
     public virtual Task<string?> SetCompetitionGrantAsync(string userId, string maxScope, CancellationToken ct = default) => Remote.SetCompetitionGrantAsync(userId, maxScope, ct);

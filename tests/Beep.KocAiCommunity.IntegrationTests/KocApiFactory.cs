@@ -299,6 +299,13 @@ public class KocApiFactory : WebApplicationFactory<Program>
                 // last, after the rows they translate exist.
                 Beep.KocAiCommunity.Infrastructure.Engagement.EngagementSeeder.SeedBadgesAsync(db).GetAwaiter().GetResult();
                 Beep.KocAiCommunity.Infrastructure.Competitions.CompetitionCategorySeeder.SeedAsync(db).GetAwaiter().GetResult();
+
+                // Competitions and their data ship with the platform too, so a test host has the same
+                // arena a deployed one does — and the demo data has something to enter.
+                var artifacts = scope.ServiceProvider.GetRequiredService<Beep.KocAiCommunity.Application.Storage.IArtifactService>();
+                Beep.KocAiCommunity.Infrastructure.Competitions.CompetitionSeeder
+                    .SeedCompetitionsAsync(db, artifacts).GetAwaiter().GetResult();
+
                 Beep.KocAiCommunity.Infrastructure.Localization.ContentTranslationSeeder.SeedAsync(db).GetAwaiter().GetResult();
             }
 

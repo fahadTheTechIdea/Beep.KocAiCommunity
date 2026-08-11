@@ -25,9 +25,19 @@ appsettings.*.local.json
 ## Aspire
 **/aspire-manifest.json
 
+# Deployment secrets — the filled-in production settings and Web Deploy profiles carry the database
+# password, the token signing key, and the hosting login. Only the templates are tracked.
+deploy/**/appsettings.Production.json
+*.publishSettings
+*.pubxml.user
+
 # Control-panel screenshots — these carry hosting server names and logins.
 *.jpg
 *.jpeg
 *.png
 !src/**/wwwroot/**/*.png
 !src/**/wwwroot/**/*.jpg
+
+# Local database backups left behind by a migration. The uploaded competition images under
+# wwwroot/uploads stay tracked — they were committed deliberately and a clone needs them.
+*.db.bak-*

@@ -163,7 +163,10 @@ public static class PlatformApi
     public const string HubPath = "/hubs/leaderboard";
 
     /// <summary>
-    /// Brings the database up to date, and in development seeds the starter content.
+    /// Brings the database up to date and puts the platform's own content in it — learning, badges,
+    /// categories, workflow templates, and the competitions with their data. <c>Seed:Enabled</c> adds
+    /// the dev personas' org on top, and people and their participation come from an administrator
+    /// (<see cref="Application.Admin.IDemoDataService"/>) or from whoever registers.
     /// <para>
     /// Both hosts may call this; migrating twice is a no-op, and on the desktop it is what lets a
     /// workstation open a database nobody has migrated for it.
@@ -188,21 +191,34 @@ public static class PlatformApi
             await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
         }
 
+        // The platform's own content, in every environment. Tracks to learn, badges to earn, the
+        // operational domains a challenge belongs to, the starter workflow templates, the competitions
+        // with their training, evaluation and answer-key data, and the Arabic for all of it. This ships
+        // with the product the way the pages do — a site without it is not an empty platform waiting to
+        // be filled in, it is a broken one.
+        //
+        // Each seeder matches its items by key: missing ones are added, existing rows are never
+        // overwritten. So this is also how a later release's additions reach a database that already
+        // exists, and anything an administrator renamed, disabled or retranslated stays as they left it.
+        await LearningSeeder.SeedTracksAsync(db);
+        await Infrastructure.Engagement.EngagementSeeder.SeedBadgesAsync(db);
+        await Infrastructure.Workflow.WorkflowTemplateSeeder.SeedAsync(db);
+        await Infrastructure.Competitions.CompetitionCategorySeeder.SeedAsync(db);
+
+        var artifacts = scope.ServiceProvider.GetRequiredService<Application.Storage.IArtifactService>();
+        await Infrastructure.Competitions.CompetitionSeeder.SeedCompetitionsAsync(db, artifacts);
+
+        // After the rows it translates exist, so a fresh install has both from the first request.
+        await Infrastructure.Localization.ContentTranslationSeeder.SeedAsync(db);
+
         if (!seed)
         {
             return;
         }
 
-        await LearningSeeder.SeedTracksAsync(db);
-        await Infrastructure.Engagement.EngagementSeeder.SeedBadgesAsync(db);
+        // Development only: the personas dev auth signs people in as, and the org they sit in. People
+        // are not platform content — a real deployment gets them from its administrator (demo data) or
+        // from whoever registers.
         await Infrastructure.Organization.DevOrgSeeder.SeedDevOrgAsync(db);
-        await Infrastructure.Workflow.WorkflowTemplateSeeder.SeedAsync(db);
-        await Infrastructure.Competitions.CompetitionCategorySeeder.SeedAsync(db);
-
-        // After the rows it translates exist, so a fresh install has both from the first request.
-        await Infrastructure.Localization.ContentTranslationSeeder.SeedAsync(db);
-
-        var artifacts = scope.ServiceProvider.GetRequiredService<Application.Storage.IArtifactService>();
-        await Infrastructure.Competitions.CompetitionSeeder.SeedDemoAsync(db, artifacts);
     }
 }

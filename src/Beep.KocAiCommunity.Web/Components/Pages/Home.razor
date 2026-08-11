@@ -24,26 +24,111 @@
 
 <PageTitle>@KocBrand.ProductName</PageTitle>
 
-<!-- 1 · Hero -->
-<section class="mb-8">
-    <span class="koc-eyebrow mb-3 d-block">@L[KocBrand.Company] · @(Identity.IsGuest ? L["Guest preview"] : Identity.Current.Label)</span>
-    <MudText Typo="Typo.h3" HtmlTag="h1" Class="koc-heading mb-4" Style="text-wrap:balance;max-width:22ch;">@Content.Headline</MudText>
-    <MudText Typo="Typo.body1" Class="mb-6" Style="max-width:60ch;">@Content.Sub</MudText>
+@* A filter you cannot see is a bug report waiting to happen: somebody picks an area, forgets, and later
+   reports that competitions have vanished. It says what is in force and clears in one click. *@
+@if (FilterName is { } areaName)
+{
+    <div class="koc-filterbar mb-6">
+        <MudIcon Icon="@Icons.Material.Filled.FilterList" Size="Size.Small" />
+        <span class="koc-filterbar-text">@L["Showing"] <strong>@areaName</strong></span>
+        <MudButton Href="/" Variant="Variant.Text" Size="Size.Small" Class="koc-filterbar-clear">@L["Show all areas"]</MudButton>
+    </div>
+}
 
-    <div class="d-flex gap-3 flex-wrap align-center">
-        @if (Identity.IsGuest)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.Login" OnClick="PrimaryCta">@SignInPrompt.ButtonText(Setup, L)</MudButton>
-        }
-        else
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.Dashboard" OnClick="PrimaryCta">@L["Continue where you left off"]</MudButton>
-        }
-        @* Secondary actions are links, not buttons — only one thing on this page is the main action. *@
-        <MudLink Href="/compete" Typo="Typo.body1" Class="ml-2">@L["Browse competitions"] →</MudLink>
-        <MudLink Href="/learn" Typo="Typo.body1">@Content.SecondaryCta →</MudLink>
+<!-- 1 · Hero -->
+@* Research on landing heroes is consistent: a headline alone converts badly, and the hero needs a
+   "hero shot" that shows the offer, with the eye led headline → copy → visual. For a colleague who has
+   never met machine learning, the fastest way to say what this is is to SHOW one prediction being made
+   on something they recognise — a pump, its readings, and a warning — rather than describe it. *@
+<section class="koc-hero mb-8">
+    <div class="koc-hero-grid">
+        <div class="koc-hero-copy">
+            <span class="koc-eyebrow mb-3 d-block">@L[KocBrand.Company] · @(Identity.IsGuest ? L["Guest preview"] : Identity.Current.Label)</span>
+            <MudText Typo="Typo.h2" HtmlTag="h1" Class="koc-heading koc-hero-title mb-4">@Content.Headline</MudText>
+            <MudText Typo="Typo.body1" Class="koc-hero-lede mb-5">@Content.Sub</MudText>
+
+            @* The four worries, as tiles rather than a line of small text. Nearly everyone who lands
+               here believes this platform is for someone more technical than they are. *@
+            @if (ShowNewcomerGuide)
+            {
+                <div class="koc-reassure mb-5">
+                    <div><MudIcon Icon="@Icons.Material.Filled.Code" /><span>@L["No programming"]</span></div>
+                    <div><MudIcon Icon="@Icons.Material.Filled.Functions" /><span>@L["No maths"]</span></div>
+                    <div><MudIcon Icon="@Icons.Material.Filled.Schedule" /><span>@L["10 minutes to start"]</span></div>
+                    <div><MudIcon Icon="@Icons.Material.Filled.Translate" /><span>@L["English & العربية"]</span></div>
+                </div>
+            }
+
+            <div class="d-flex gap-3 flex-wrap align-center">
+                @if (!ShowNewcomerGuide)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.Dashboard" OnClick="PrimaryCta">@L["Continue where you left off"]</MudButton>
+                }
+                <MudLink Href="/compete" Typo="Typo.body1">@L["See what colleagues are solving"] →</MudLink>
+                @if (Identity.IsGuest)
+                {
+                    <MudLink OnClick="PrimaryCta" Typo="Typo.body1" Style="cursor:pointer;">@SignInPrompt.ButtonText(Setup, L) →</MudLink>
+                }
+            </div>
+        </div>
+
+        @* The hero shot: one prediction, start to finish, on something the reader recognises — which is
+           why it follows the chosen area. A colleague from HR has no reason to know what a vibration
+           trace looks like, and showing them one is a worse explanation than showing them a payroll run. *@
+        <div class="koc-hero-visual" aria-hidden="true">
+            @{
+                var shot = HeroShots.For(CategoryFilter);
+                var (markX, markY) = HeroShots.Endpoint(shot);
+            }
+            <div class="koc-shot" @key="shot.Subject">
+                <div class="koc-shot-head">
+                    @if (HeroShots.ImagePath(shot) is { } shotIcon)
+                    {
+                        <img src="@shotIcon" alt="" width="40" height="40" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@shot.Glyph" Class="koc-shot-glyph" />
+                    }
+                    <div>
+                        <b>@L[shot.Subject]</b>
+                        <span>@L[shot.Caption]</span>
+                    </div>
+                </div>
+
+                <span class="koc-shot-label">@L["What the model sees"]</span>
+                <svg class="koc-spark" viewBox="0 0 320 74" preserveAspectRatio="none" role="img">
+                    <defs>
+                        <linearGradient id="kocSparkFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#1466A5" stop-opacity=".28" />
+                            <stop offset="100%" stop-color="#1466A5" stop-opacity="0" />
+                        </linearGradient>
+                    </defs>
+                    <path d="@HeroShots.AreaPath(shot)" fill="url(#kocSparkFill)" />
+                    <polyline points="@shot.Points"
+                              fill="none" stroke="#1466A5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+                    <circle cx="@markX" cy="@markY" r="5" fill="#1F8A8C" stroke="#fff" stroke-width="2" />
+                </svg>
+                <div class="koc-shot-meta">
+                    @foreach (var reading in shot.Readings)
+                    {
+                        <span>@L[reading]</span>
+                    }
+                </div>
+
+                <div class="koc-shot-arrow"><MudIcon Icon="@Icons.Material.Filled.SouthEast" Size="Size.Small" /></div>
+
+                <span class="koc-shot-label">@L["What it tells you"]</span>
+                <div class="koc-shot-result">
+                    <MudIcon Icon="@Icons.Material.Filled.WarningAmber" />
+                    <div>
+                        <b>@L[shot.Verdict]</b>
+                        <span>@L[shot.Advice]</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     @* The platform's pulse in three figures — proof of life before any prose about what it does. *@
@@ -53,6 +138,125 @@
         <div class="koc-stat"><b>@TotalSubmissions</b><span>@L["submissions scored"]</span></div>
     </div>
 </section>
+
+@if (ShowNewcomerGuide)
+{
+    <!-- 1b · What machine learning actually is, for someone who has never been told.
+         This is the section that decides whether a non-technical colleague stays. It does not define
+         the term — it points at something they already do expertly and names that as the same thing. -->
+    <section class="mb-8">
+        <BlueprintCard Class="koc-explainer pa-6">
+            <span class="koc-eyebrow d-block mb-3">@L["In plain words"]</span>
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading mb-4" Style="max-width:26ch;">@L["You already do this. Every day."]</MudText>
+
+            <div class="koc-explainer-grid">
+                <div>
+                    <MudText Typo="Typo.body1" Class="mb-4">
+                        @L["An experienced operator walks past a pump and knows it sounds wrong. Nobody taught them a formula — they have simply seen thousands of pumps, and the pattern is in their head."]
+                    </MudText>
+
+                    @* The sentence the whole page turns on, set as a pull quote so a scanning reader
+                       cannot miss it even if they read nothing else. *@
+                    <p class="koc-pullquote">@L["Machine learning is that same trick, at a size no person can hold."]</p>
+
+                    @* The scale, as figures. Prose numbers slide past the eye; these are the argument. *@
+                    <div class="koc-scale">
+                        <div><b>50,000</b><span>@L["pumps"]</span></div>
+                        <div><b>200</b><span>@L["readings each"]</span></div>
+                        <div><b>3</b><span>@L["years of history"]</span></div>
+                    </div>
+                    <MudText Typo="Typo.body1" Class="mb-4">@L["It finds the patterns nobody has time to look for."]</MudText>
+
+                    <p class="koc-punchline">@L["And it only works because people like you already know which patterns matter. Your experience is the ingredient — the computer just counts faster."]</p>
+                </div>
+
+                @* Three real questions from three real parts of KOC, so "prediction" stops being abstract. *@
+                <div class="koc-example-stack">
+                    <div class="koc-example">
+                        <img src="@KocBrand.Icon("034-pump-1.png")" alt="" width="34" height="34" />
+                        <div>
+                            <b>@L["Which pump fails next month?"]</b>
+                            <span>@L["Maintenance, planned instead of urgent"]</span>
+                        </div>
+                    </div>
+                    <div class="koc-example">
+                        <img src="@KocBrand.Icon("039-oil-well.png")" alt="" width="34" height="34" />
+                        <div>
+                            <b>@L["Which well needs a visit?"]</b>
+                            <span>@L["Send the rig where it earns its day"]</span>
+                        </div>
+                    </div>
+                    <div class="koc-example">
+                        <img src="@KocBrand.Icon("021-pressure-gauge.png")" alt="" width="34" height="34" />
+                        <div>
+                            <b>@L["Which reading is wrong?"]</b>
+                            <span>@L["Catch the fault before the shutdown"]</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </BlueprintCard>
+    </section>
+
+    @* Asked here, not in the hero: at the top a newcomer has no idea what they would be starting.
+       By this point they have been told, in their own terms, and the ask is a small one. *@
+    <section class="mb-8">
+        <BlueprintCard Class="koc-startnow pa-6">
+            <div class="d-flex align-center justify-space-between flex-wrap gap-4">
+                <div style="flex:1 1 340px;">
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["That is the whole idea. Ready to try it?"]</MudText>
+                    <MudText Typo="Typo.body2" Style="opacity:.8;">@L["The first lesson is ten minutes, in plain words, and nothing to install."]</MudText>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                           StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartLearning">@L["Start from zero — 10 minutes"]</MudButton>
+            </div>
+        </BlueprintCard>
+    </section>
+
+    <!-- 1c · The three steps, so the whole platform fits in one glance. -->
+    <section class="mb-8">
+        <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading mb-4">@L["How it works"]</MudText>
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-6 koc-step" Style="height:100%;">
+                    <span class="koc-step-num">01</span>
+                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-2">@L["Learn"]</MudText>
+                    <MudText Typo="Typo.body2">@L["Short lessons in plain language, with pictures instead of equations. Start with 'AI for Everyone' — it assumes you know nothing, because most people don't."]</MudText>
+                </BlueprintCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-6 koc-step" Style="height:100%;">
+                    <span class="koc-step-num">02</span>
+                    <MudIcon Icon="@Icons.Material.Filled.Hub" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-2">@L["Build"]</MudText>
+                    <MudText Typo="Typo.body2">@L["Drag boxes and join them with lines — load the data, clean it, train. You describe the steps; the computer does the arithmetic. Nothing to install to look around."]</MudText>
+                </BlueprintCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-6 koc-step" Style="height:100%;">
+                    <span class="koc-step-num">03</span>
+                    <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-2">@L["Compete"]</MudText>
+                    <MudText Typo="Typo.body2">@L["Enter a challenge on a real KOC problem, see your score against colleagues, and collect Barrels and badges on the way. Friendly, and genuinely addictive."]</MudText>
+                </BlueprintCard>
+            </MudItem>
+        </MudGrid>
+
+        @* One safe first move. The Titanic is deliberately not an oil problem: nobody can feel out of
+           their depth on it, which is the entire reason it is the starter. *@
+        <BlueprintCard Class="koc-firststep pa-5 mt-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+                <MudIcon Icon="@Icons.Material.Filled.Sailing" Color="Color.Primary" Size="Size.Large" />
+                <div style="flex:1 1 320px;">
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Never done this before? Start with a shipwreck."]</MudText>
+                    <MudText Typo="Typo.body2">@L["The Titanic challenge is the world's most famous first machine-learning puzzle. No oil-and-gas knowledge needed — just a passenger list and a question: who survived? Most people submit their first model within the hour."]</MudText>
+                </div>
+                <MudButton Href="/compete" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowForward">@L["Take the first challenge"]</MudButton>
+            </div>
+        </BlueprintCard>
+    </section>
+}
 
 @if (!Identity.IsGuest && _myProfile is not null)
 {
@@ -194,7 +398,23 @@
     </MudGrid>
 </section>
 
-@if (_activeCompetitions is { Count: > 0 })
+@if (Competitions is { Count: 0 } && FilterName is { } emptyArea)
+{
+    <!-- 4 · The chosen area has nothing running. Say so, and offer the way out. -->
+    <section class="koc-emptyarea mb-8">
+        <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large" />
+        @* One string, not three fragments: Arabic puts these words in a different order. *@
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="koc-heading">@L["Nothing running in {0} just yet", emptyArea]</MudText>
+        <MudText Typo="Typo.body2" Class="koc-muted">
+            @L["Challenges are added as departments bring their own problems forward. In the meantime, everything else is still open."]
+        </MudText>
+        <div class="d-flex gap-2 mt-4 flex-wrap justify-center">
+            <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary">@L["Show all areas"]</MudButton>
+            <MudButton Href="/learn" Variant="Variant.Outlined" Color="Color.Primary">@L["Start learning"]</MudButton>
+        </div>
+    </section>
+}
+else if (Competitions is { Count: > 0 })
 {
     <!-- 4 · Everything currently running. -->
     <section class="mb-8">
@@ -203,7 +423,7 @@
             <MudLink Href="/compete" Typo="Typo.body2">@L["All competitions"] →</MudLink>
         </div>
         <MudGrid Spacing="4">
-            @foreach (var c in _activeCompetitions.Take(3))
+            @foreach (var c in Competitions.Take(3))
             {
                 <MudItem xs="12" md="4">
                     <CompetitionCard Competition="c" MyUserId="@Identity.UserId" />
@@ -305,6 +525,36 @@
     };
 
     private IReadOnlyList<CompetitionDto>? _activeCompetitions;
+
+    /// <summary>
+    /// The area chosen on the top bar, carried in the address so a filtered page can be sent to somebody.
+    /// </summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "category")]
+    public string? CategoryFilter { get; set; }
+
+    /// <summary>
+    /// What the page actually shows. Filtering here rather than in the query keeps one fetch behind both
+    /// views, so switching areas is instant and a stale filter can never empty the page permanently —
+    /// clearing it brings everything straight back.
+    /// </summary>
+    private IReadOnlyList<CompetitionDto>? Competitions =>
+        _activeCompetitions is null || CategoryFilter is not { Length: > 0 } code
+            ? _activeCompetitions
+            : _activeCompetitions
+                .Where(c => string.Equals(c.CategoryCode, code, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+    /// <summary>
+    /// The chosen area's own name, for the banner. Read from the category list rather than from a
+    /// competition, so an area with nothing running in it is still named properly instead of showing
+    /// its code — which is exactly the case where the banner matters most.
+    /// </summary>
+    private string? FilterName => CategoryFilter is { Length: > 0 } code
+        ? _categories?.FirstOrDefault(c => string.Equals(c.Code, code, StringComparison.OrdinalIgnoreCase))?.Name ?? code
+        : null;
+
+    private IReadOnlyList<CompetitionCategoryDto>? _categories;
     private PublicShowcaseDto? _showcase;      // signed-out landing preview (competitions + leaderboards)
     private ProfileDto? _myProfile;
     private SupervisionRollupDto? _rollup;
@@ -322,14 +572,15 @@
     /// reveal is nearest (undated last, then newest).
     /// </summary>
     private CompetitionDto? Featured =>
-        _activeCompetitions?.FirstOrDefault(c => c.IsFeatured)
-        ?? (_activeCompetitions is { Count: > 0 } ? _activeCompetitions[0] : null);
+        Competitions?.FirstOrDefault(c => c.IsFeatured)
+        ?? (Competitions is { Count: > 0 } ? Competitions[0] : null);
 
     // ---- Headline figures ----
 
-    private int LiveCompetitionCount => _activeCompetitions?.Count ?? 0;
-    private int TotalCompetitors => _activeCompetitions?.Sum(c => c.ParticipantCount) ?? 0;
-    private int TotalSubmissions => _activeCompetitions?.Sum(c => c.SubmissionCount) ?? 0;
+    // Counted off the filtered view, so the figures always describe what is on the screen.
+    private int LiveCompetitionCount => Competitions?.Count ?? 0;
+    private int TotalCompetitors => Competitions?.Sum(c => c.ParticipantCount) ?? 0;
+    private int TotalSubmissions => Competitions?.Sum(c => c.SubmissionCount) ?? 0;
 
     // When the competition has an uploaded hero image, use it as the banner background under a dark gradient
     // that keeps the white text readable.
@@ -345,6 +596,10 @@
         // The catalogue is open to everyone, so a signed-out visitor sees the tracks too.
         try { _liveTracks = await Api.GetTracksAsync(); }
         catch { _liveTracks = []; }
+
+        // Only used to name the area in the filter banner; failing quietly costs a label, nothing more.
+        try { _categories = await Api.GetCompetitionCategoriesAsync(); }
+        catch { _categories = null; }
     }
 
     // Leaderboards are for everyone (fun first); the KPI rollup only for supervisors with scope.
@@ -482,6 +737,22 @@
         Nav.NavigateTo("/dashboard");
     }
 
+    /// <summary>
+    /// Whether to show the "what is this, and is it for me?" material: the plain-words explainer, the
+    /// three steps, and the starter challenge.
+    /// <para>
+    /// Shown to guests and to anyone who has signed in but not yet earned anything — the two states in
+    /// which somebody genuinely does not know what this place is. A member with a single Barrel to their
+    /// name has already been told, and being re-taught the basics every visit reads as being talked down
+    /// to. Leaders and above get their own framing and never see it.
+    /// </para>
+    /// </summary>
+    private bool ShowNewcomerGuide =>
+        _role is RoleView.Employee && (Identity.IsGuest || _myProfile is null || _myProfile.XpTotal <= 0);
+
+    /// <summary>The newcomer's first step is the entry track, not a dashboard with nothing on it yet.</summary>
+    private void StartLearning() => Nav.NavigateTo("/learn");
+
     private sealed record RoleContent(string Headline, string Sub, string SecondaryCta);
 
     /// <summary>
@@ -506,6 +777,10 @@
             L["KOC's AI & ML workspace."],
             L["A company-wide view of KOC's own machine-learning environment — participation across directorates, skills building on company data, and governance keeping it sovereign."],
             L["View governance"]),
+        _ when ShowNewcomerGuide => new(
+            L["You know the job. Teach a computer to help."],
+            L["No experience needed, and nothing to install to begin. Learn what machine learning actually is in plain words, then try it on a real KOC problem — pumps, wells, production, safety, even the hospital lab."],
+            L["Browse learning tracks"]),
         _ => new(
             L["Your AI & ML workspace."],
             L["Learn machine learning on real KOC subsurface, production, and facilities data — take a track, enter an internal competition, and share your work with colleagues."],

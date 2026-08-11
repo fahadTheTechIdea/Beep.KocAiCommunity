@@ -21,4 +21,16 @@ public interface IContentTranslator
     /// <summary>Convenience for a single value, falling back to <paramref name="fallback"/>.</summary>
     Task<string> TranslateAsync(
         string entityType, string entityKey, string field, string language, string fallback, CancellationToken ct = default);
+
+    /// <summary>
+    /// Records what a person wrote for one field in one language, replacing whatever was there.
+    /// <para>
+    /// Everything translated used to ship with the platform, so this interface only read. A member
+    /// writing their own competition in Arabic is the first case where the translation comes from a
+    /// person, and theirs must win over anything seeded — unlike the seeders, which never overwrite.
+    /// </para>
+    /// <para>Blank clears the translation, so the field falls back to the original text.</para>
+    /// </summary>
+    Task SetAsync(
+        string entityType, string entityKey, string field, string language, string? value, CancellationToken ct = default);
 }

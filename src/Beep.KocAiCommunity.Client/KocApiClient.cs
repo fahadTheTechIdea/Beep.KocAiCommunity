@@ -66,6 +66,8 @@ public interface IKocApiClient
     /// <summary>A single competition with its arena stats, or null when not found.</summary>
     Task<CompetitionDto?> GetCompetitionAsync(Guid competitionId, CancellationToken ct = default);
     Task<CompetitionDto?> CreateCompetitionAsync(CreateCompetitionRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<CompetitionTranslationDto>> GetCompetitionTranslationsAsync(Guid competitionId, CancellationToken ct = default);
+    Task<string?> SetCompetitionTranslationAsync(Guid competitionId, SetCompetitionTranslationRequest request, CancellationToken ct = default);
     Task SetAnswerKeyAsync(Guid competitionId, Stream csv, string fileName, CancellationToken ct = default);
     /// <summary>
     /// Submits a prediction file. <paramref name="idempotencyKey"/> makes a retry safe — resending with
@@ -368,6 +370,16 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
     {
         var response = await http.GetAsync($"/api/v1/competitions/{competitionId}", ct);
         return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<CompetitionDto>(ct) : null;
+    }
+
+    public async Task<IReadOnlyList<CompetitionTranslationDto>> GetCompetitionTranslationsAsync(Guid competitionId, CancellationToken ct = default) =>
+        await http.GetFromJsonAsync<List<CompetitionTranslationDto>>($"/api/v1/competitions/{competitionId}/translations", ct) ?? [];
+
+    /// <summary>Null on success; the server's message otherwise, so the page can say what went wrong.</summary>
+    public async Task<string?> SetCompetitionTranslationAsync(Guid competitionId, SetCompetitionTranslationRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PutAsJsonAsync($"/api/v1/competitions/{competitionId}/translations", request, ct);
+        return response.IsSuccessStatusCode ? null : await ErrorAsync(response, ct);
     }
 
     public async Task<CompetitionDto?> CreateCompetitionAsync(CreateCompetitionRequest request, CancellationToken ct = default)

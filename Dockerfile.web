@@ -6,6 +6,10 @@ RUN dotnet restore src/Beep.KocAiCommunity.Web/Beep.KocAiCommunity.Web.csproj
 RUN dotnet publish src/Beep.KocAiCommunity.Web/Beep.KocAiCommunity.Web.csproj -c Release -o /app --no-restore /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+# ML.NET's native libraries need OpenMP. The API image carried this because it hosted the platform
+# surface; since that surface merged into the website (2026-08-02) this image hosts the same ML.NET
+# code, and inherited the requirement along with it.
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app .
 ENV ASPNETCORE_URLS=http://+:8080

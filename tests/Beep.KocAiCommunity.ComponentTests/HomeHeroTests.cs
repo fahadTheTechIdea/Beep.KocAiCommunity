@@ -94,11 +94,21 @@ public class HomeHeroTests : TestContext
         var cut = Render(asGuest: true, Competition());
 
         // Four sign-in buttons competed for attention before; the ask belongs in the hero alone.
-        var signInButtons = cut.FindComponents<MudButton>()
-            .Where(b => b.Markup.Contains("Sign in", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        //
+        // Since the newcomer revamp the ask is a link beside the primary button rather than the button
+        // itself: someone who has never heard of machine learning cannot decide whether to sign in
+        // before they know what this place is, so the primary action offers them the first lesson and
+        // the ask sits next to it. /learn is browsable by guests, so that is a real door, not a gate.
+        // Counted across both element kinds — "exactly once" is the rule the page has to keep; being a
+        // button was only ever how it happened to be kept.
+        var asks = cut.FindComponents<MudButton>().Select(b => b.Markup)
+            .Concat(cut.FindComponents<MudLink>().Select(l => l.Markup))
+            .Count(m => m.Contains("Sign in", StringComparison.OrdinalIgnoreCase));
 
-        signInButtons.Should().ContainSingle("the page has one primary call to action");
+        asks.Should().Be(1, "the page asks once, in the hero");
+
+        // …and what the guest is offered first is the way in, not the gate.
+        cut.Markup.Should().Contain("Start from zero", "a newcomer's first step is a lesson");
     }
 
     [Fact]

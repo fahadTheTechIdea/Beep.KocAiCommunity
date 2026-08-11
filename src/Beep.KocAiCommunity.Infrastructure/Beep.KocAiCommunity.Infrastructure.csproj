@@ -29,6 +29,12 @@
     <!-- Translated help articles. Same WithCulture=false for the same reason: `faq.ar.md` would
          otherwise be read as a localized resource and moved into an ar/ satellite assembly. -->
     <EmbeddedResource Include="Help\Content\*.md" WithCulture="false" />
+
+    <!-- The real Titanic passenger manifest, vendored byte-for-byte (see Competitions\Data\README.md
+         for source, checksum and licence). Embedded so the seeder needs no files on disk and no network
+         at startup — a deployment that fetched its competition data on boot would be one blocked
+         outbound connection away from an empty arena. -->
+    <EmbeddedResource Include="Competitions\Data\*.csv" WithCulture="false" />
   </ItemGroup>
 
 </Project>
