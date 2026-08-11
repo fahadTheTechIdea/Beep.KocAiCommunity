@@ -1,21 +1,29 @@
-# Deployment
+# Deployment — website and worker
 
-KocAiCommunity ships as three containers — **API**, **Web**, **Worker** — backed by **SQL Server**
+> **This is one of two.** The desktop app ships and updates on its own schedule and has its own
+> document: [`DEPLOYMENT_DESKTOP.md`](DEPLOYMENT_DESKTOP.md).
+
+KocAiCommunity ships as two containers — **Web** and **Worker** — backed by **SQL Server**
 (Azure SQL in production). Target hosting is the **Azure Kuwait Central** region for data residency.
+
+There is no API container. The platform surface — `/api/v1`, the leaderboard hub, the outbox
+dispatcher — is a library (`Beep.KocAiCommunity.Platform`) that the website hosts **in its own
+process** since 2026-08-02, so the website owns the database directly and calls the surface over
+loopback rather than across the network.
 
 ## Container images
 
-Built from the repository root (multi-stage; the API and Worker images add `libgomp1` for ML.NET):
+Built from the repository root (multi-stage; both images add `libgomp1`, which ML.NET's native
+libraries need — the Web inherited that requirement when the platform surface moved into it):
 
 ```bash
-docker build -f Dockerfile.api    -t koc-api    .
 docker build -f Dockerfile.web    -t koc-web    .
 docker build -f Dockerfile.worker -t koc-worker .
 ```
 
 ## Local production-shape stack
 
-`docker compose up --build` starts SQL Server + all three services and opens a **seeded demo** on
+`docker compose up --build` starts SQL Server + both services and opens a **seeded demo** on
 SQL Server at <http://localhost:5150>. This uses dev auth and starter data — see the compose file's
 header and the production section below before using it for anything real.
 
@@ -31,7 +39,8 @@ Migrations are provider-specific and live in two places:
 Apply them one of two ways:
 
 - **On startup** — set `Database:MigrateOnStartup=true` (production) or `Seed:Enabled=true` (dev). The
-  correct provider's migrations are chosen automatically.
+  correct provider's migrations are chosen automatically, and the platform's own content goes in with
+  them (see the next section).
 - **Explicitly** — `dotnet ef database update --project src/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations --startup-project src/Beep.KocAiCommunity.Infrastructure.SqlServerMigrations --connection "<azure-sql-connection>"`.
 
 Add a SQL Server migration after a model change:
@@ -44,6 +53,24 @@ dotnet ef migrations add <Name> \
 ```
 
 (Also add the matching SQLite migration in the Infrastructure project for dev parity.)
+
+## What is in the database after a migration
+
+The platform's **own content** goes in with the schema, in every environment, as part of the same startup
+step: learning tracks and their quizzes, the badge catalogue, competition categories, starter workflow
+templates, **the competitions with their training, evaluation and answer-key data**, and the Arabic for
+all of it. This ships with the product the way the pages do — a deployment does not have to be filled in
+before it works.
+
+Every seeder matches its items by key: missing ones are added, existing rows are never overwritten. So
+the same step carries a later release's additions into a database that already exists, and anything an
+administrator has renamed, disabled, concluded or retranslated stays as they left it.
+
+What is **not** seeded is people and what people do. Those come from whoever registers — or, for a
+walkthrough, from **/admin → Demo data**, which adds demonstration colleagues, their submissions and
+standings on the platform's competitions, discussions, and datasets. Unseeding removes exactly those and
+leaves the arena untouched. `Seed:Enabled=true` (development only; Production refuses it) additionally
+creates the org the dev-auth personas live in.
 
 ## Environment resolution (dev vs production)
 
@@ -73,8 +100,10 @@ Configuration binds from environment variables using the `__` separator.
 | `Database__Provider` | `SqlServer` in production |
 | `ConnectionStrings__kocdb` | Azure SQL connection string (or a Key Vault reference) |
 | `Database__MigrateOnStartup` | `true` to apply migrations at startup |
-| `AzureAd__TenantId`, `AzureAd__ClientId`, `AzureAd__ClientSecret`, `AzureAd__Instance`, `AzureAd__Audience` | Microsoft Entra (KOC tenant). Presence of TenantId + ClientId switches auth from dev-fallback to real Entra (OIDC for Web, JWT for API) |
-| `KocApi__BaseUrl` (Web) | Internal URL of the API |
+| `AzureAd__TenantId`, `AzureAd__ClientId`, `AzureAd__ClientSecret`, `AzureAd__Instance`, `AzureAd__Audience` | Microsoft Entra (KOC tenant). Presence of TenantId + ClientId switches auth from dev-fallback to real Entra (OIDC for the browser, JWT bearer for `/api/v1`) |
+| `KocApi__BaseUrl` (Web) | Where the website reaches its own platform surface. **Leave unset** on a normal deployment — it defaults to this host's loopback listener. Set it only for an install that genuinely keeps the surface on another machine |
+| `Platform__InternalPort` | Port for the loopback-only listener that serves `/api/v1`. `0` disables the second listener and maps the surface on the public one — **required under IIS in-process hosting, which ignores `UseUrls`** |
+| `Platform__InternalApiOnly` | `true` (default) refuses `/api/v1` from anywhere but this machine. Set `false` only where the loopback listener cannot exist (see IIS above), understanding that the surface is then publicly reachable |
 | `Artifacts__RootPath` | Local artifact path (or configure the Azure Blob provider) |
 
 ## Database credentials & connection strings

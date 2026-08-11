@@ -1,0 +1,269 @@
+<title>TFT Prototype Review Request — AI Digital Campus</title>
+
+<style>
+  /* The KOC blueprint theme, taken from the product itself —
+     src/Beep.KocAiCommunity.Ui.Shared/wwwroot/css/koc-blueprint.css and Branding/KocBrand.cs.
+     Accent 700/500/300/900 are KOC petroleum blue; the teal is the product's secondary.
+     A document for this initiative should look like the thing it is describing. */
+  :root {
+    --ink:#10222F; --ink-soft:#5A6B78; --ink-faint:#8496A3;
+    --paper:#F6F8FA; --surface:#FFFFFF; --rule:#E1E7EC; --rule-strong:#C6D2DB;
+    --petrol:#1466A5; --petrol-deep:#0B2E4C; --petrol-mid:#2A7CBE; --petrol-wash:#EAF2F8;
+    --brass:#1F8A8C; --brass-wash:#E9F4F4;
+    --stop:#9B2C2C; --stop-wash:#FBEAEA;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+    --sans: "Inter","IBM Plex Sans","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+    --measure: 68ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+    --ink:#DCE6EE; --ink-soft:#93A5B4; --ink-faint:#7A8C9B;
+    --paper:#0B1620; --surface:#12222E; --rule:#23384A; --rule-strong:#33506A;
+    --petrol:#5FA3D4; --petrol-deep:#A8CDE6; --petrol-mid:#2A7CBE; --petrol-wash:#12283A;
+    --brass:#4FB3B5; --brass-wash:#122A2B;
+    --stop:#E88A8A; --stop-wash:#2C1618;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#DCE6EE; --ink-soft:#93A5B4; --ink-faint:#7A8C9B;
+    --paper:#0B1620; --surface:#12222E; --rule:#23384A; --rule-strong:#33506A;
+    --petrol:#5FA3D4; --petrol-deep:#A8CDE6; --petrol-mid:#2A7CBE; --petrol-wash:#12283A;
+    --brass:#4FB3B5; --brass-wash:#122A2B;
+    --stop:#E88A8A; --stop-wash:#2C1618;
+  }
+  :root[data-theme="light"]{
+    --ink:#10222F;--ink-soft:#5A6B78;--ink-faint:#8496A3;
+    --paper:#F6F8FA;--surface:#FFFFFF;--rule:#E1E7EC;--rule-strong:#C6D2DB;
+    --petrol:#1466A5;--petrol-deep:#0B2E4C;--petrol-mid:#2A7CBE;--petrol-wash:#EAF2F8;
+    --brass:#1F8A8C;--brass-wash:#E9F4F4;--stop:#9B2C2C;--stop-wash:#FBEAEA;
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.68;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px 96px;}
+  h1,h2,h3{line-height:1.22;text-wrap:balance;margin:0;}
+  h1{font-size:clamp(1.5rem,3.4vw,2.15rem);font-weight:700;letter-spacing:-.02em;}
+  h2{font-size:1.06rem;font-weight:600;letter-spacing:.01em;text-transform:uppercase;margin:38px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--rule-strong);}
+  p{max-width:var(--measure);}
+  a{color:var(--petrol);}
+  code{font-family:var(--mono);font-size:.87em;background:var(--petrol-wash);color:var(--petrol-deep);padding:.1em .36em;border-radius:4px;}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9FC8E4;}
+
+  .masthead{background:linear-gradient(135deg,var(--petrol-deep),var(--petrol));color:#fff;padding:44px 0 38px;margin-bottom:34px;border-bottom:3px solid var(--brass);}
+  .masthead .wrap{padding-bottom:0;}
+  .masthead h1{color:#fff;margin:9px 0 0;}
+
+  .headers{margin:26px 0 0;display:grid;gap:1px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.18);border-radius:8px;overflow:hidden;}
+  .hrow{background:var(--petrol-deep);padding:11px 15px;display:grid;grid-template-columns:78px 1fr;gap:14px;align-items:baseline;}
+  .hrow dt{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9FC8E4;}
+  .hrow dd{margin:0;font-size:.9rem;color:#fff;}
+  .hrow dd.sub{font-weight:650;}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 30px;}
+  button{font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;border-radius:6px;padding:9px 15px;border:1px solid var(--petrol);background:var(--surface);color:var(--petrol);}
+  button:hover{background:var(--petrol-wash);}
+  button:focus-visible{outline:2px solid var(--brass);outline-offset:2px;}
+  .said{font-size:.82rem;color:var(--ink-faint);align-self:center;}
+
+  .letter{position:relative;background:var(--surface);border:1px solid var(--rule);padding:clamp(22px,4vw,42px);}
+  .letter::before,.letter::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--petrol);pointer-events:none;}
+  .letter::before{inset-block-start:-1px;inset-inline-start:-1px;border-inline-end:0;border-block-end:0;}
+  .letter::after{inset-block-end:-1px;inset-inline-end:-1px;border-inline-start:0;border-block-start:0;}
+  .lead{font-size:1.06rem;}
+  .url{display:inline-block;font-family:var(--mono);font-size:1.02rem;font-weight:650;background:var(--petrol-wash);color:var(--petrol-deep);border:1px solid var(--rule-strong);border-radius:6px;padding:11px 16px;margin:6px 0 4px;word-break:break-all;}
+
+  .scroll{overflow-x:auto;margin:18px 0;border:1px solid var(--rule);border-radius:8px;}
+  table{border-collapse:collapse;width:100%;font-size:.9rem;}
+  th,td{text-align:start;padding:10px 13px;border-bottom:1px solid var(--rule);vertical-align:top;}
+  th{width:36%;font-weight:650;color:var(--petrol-deep);background:var(--petrol-wash);white-space:nowrap;}
+  tbody tr:last-child td,tbody tr:last-child th{border-bottom:none;}
+
+  ol.path{counter-reset:s;list-style:none;padding:0;max-width:var(--measure);}
+  ol.path>li{counter-increment:s;position:relative;padding-inline-start:40px;margin:14px 0;}
+  ol.path>li::before{content:counter(s);position:absolute;inset-inline-start:0;top:1px;width:26px;height:26px;border-radius:50%;background:var(--petrol);color:#fff;display:grid;place-items:center;font-weight:700;font-size:.78rem;font-family:var(--mono);}
+
+  ol.asks{padding-inline-start:1.3rem;max-width:var(--measure);}
+  ol.asks>li{margin:12px 0;} ol.asks>li::marker{color:var(--brass);font-weight:700;}
+
+  .note{border:1px solid var(--rule);border-inline-start:4px solid var(--petrol);background:var(--paper);padding:15px 19px;margin:18px 0;max-width:var(--measure);
+        border-start-start-radius:0;border-end-start-radius:0;border-start-end-radius:8px;border-end-end-radius:8px;}
+  .note.stop{border-inline-start-color:var(--stop);background:var(--stop-wash);}
+  .note p:first-child{margin-top:0;} .note p:last-child{margin-bottom:0;}
+
+  ul{max-width:var(--measure);padding-inline-start:1.3rem;} li{margin:6px 0;} ul li::marker{color:var(--brass);}
+  .sig{margin-top:34px;padding-top:20px;border-top:1px solid var(--rule);}
+  .sig p{margin:2px 0;font-size:.93rem;}
+  .sig .name{font-weight:700;font-size:1rem;}
+  .sig .role{color:var(--ink-soft);}
+  .foot{margin-top:26px;font-size:.83rem;color:var(--ink-faint);max-width:var(--measure);}
+  mark{background:var(--brass-wash);color:inherit;padding:.05em .25em;border-radius:3px;}
+
+  @media print{
+    .masthead{background:var(--petrol-deep)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .actions{display:none;} .letter{border:0;padding:0;}
+  }
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">AI Digital Campus · Task Force Team</div>
+    <h1>Working prototype is live — your review and ideas requested</h1>
+    <dl class="headers">
+      <div class="hrow"><dt>Subject</dt><dd class="sub">AI Digital Campus | Working Prototype Is Live — Your Review and Ideas Requested</dd></div>
+      <div class="hrow"><dt>To</dt><dd>Saja AbdulRedha Salem; Dalal Abdullah Al-Jassim; Muhammad Imran; Fatma Hamada; Bader Al-Shatti; Laila Bahbahani; Dr. Ali Qubian; Fahad Al-Hamlan; Fai Al-Asfour</dd></div>
+      <div class="hrow"><dt>Cc</dt><dd>[Sponsor / Line Manager, as appropriate]</dd></div>
+      <div class="hrow"><dt>From</dt><dd>Fahad Al-Dhubaib — Training &amp; Career Development</dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="actions">
+    <button type="button" id="copy">Copy email body</button>
+    <button type="button" id="print">Print / PDF</button>
+    <span class="said" id="said" role="status" aria-live="polite"></span>
+  </div>
+
+  <div class="letter" id="letter">
+    <p>Dear Colleagues,</p>
+
+    <p class="lead">
+      A working prototype of the <strong>AI Digital Campus</strong> is now online, and I would like each of
+      you to spend <strong>twenty to thirty minutes</strong> with it before our next meeting.
+    </p>
+
+    <p><a class="url" href="https://kocaitraining.premiumasp.net">https://kocaitraining.premiumasp.net</a></p>
+
+    <p>
+      Until now we have discussed this initiative on paper. This is the same idea you can actually click
+      through — and it will tell us far more about feasibility than another document can.
+    </p>
+
+    <h2>The idea, in one paragraph</h2>
+    <p>
+      Most AI training gives people a course and stops there. Nobody becomes competent that way; they
+      become briefly informed. The Campus is built on the opposite order — <strong>learn a little, then
+      immediately do something real with it, then compare your result with a colleague's.</strong> An
+      employee reads a short plain-language lesson, opens a real KOC-shaped problem, builds a model by
+      dragging boxes rather than writing code, submits it, and sees where it placed on a leaderboard. The
+      competition is not a gimmick; it is what turns a lesson somebody attended into a skill somebody
+      practised.
+    </p>
+
+    <h2>What is in it today</h2>
+    <div class="scroll">
+      <table>
+        <tbody>
+          <tr><th>12 learning tracks</th><td>From <em>AI for Everyone — Start Here</em> (no maths, no code, for anyone) through preparing data, predicting a category or a number, forecasting, and judging a model honestly</td></tr>
+          <tr><th>15 challenges</th><td>Across <strong>Subsurface, Drilling &amp; Wells, Production, Facilities &amp; Plant, HSE, Maintenance &amp; Reliability</strong>, and <strong>Medical &amp; Health</strong> — the last built around Ahmadi Hospital: screening from a routine lab panel, analyser quality control, emergency triage, and length of stay</td></tr>
+          <tr><th>Every kind of prediction</th><td>Yes/no, multiple categories, a number, a forecast over time, and finding the abnormal reading nobody labelled</td></tr>
+          <tr><th>A start with no oil in it</th><td>The Titanic challenge — the world's most famous first machine-learning problem — so somebody with no background has an obvious first step</td></tr>
+          <tr><th>Arabic throughout</th><td>The interface and the learning content both, right-to-left</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      You do not need any technical background to look at this. <mark>If anything on the site requires
+      one, that is a finding I want to hear about.</mark>
+    </p>
+
+    <h2>Please try this path</h2>
+    <ol class="path">
+      <li><strong>Register</strong> with your name and any email address. It takes a moment.</li>
+      <li><strong>Open <em>Learn</em></strong> and read the first lesson of <em>AI for Everyone — Start Here</em>. Ask yourself whether a colleague in your directorate with no AI exposure would follow it.</li>
+      <li><strong>Open <em>Compete</em></strong> and browse the challenges. Look at the one closest to your own area — read the description and the data description, not just the title.</li>
+      <li><strong>Switch to العربية</strong> using the language selector and see whether the Arabic reads naturally to you.</li>
+      <li>If you have the appetite, <strong>build and submit a model</strong> on the Titanic challenge and see your score.</li>
+    </ol>
+
+    <h2>What I am asking you for</h2>
+    <p>Please do not send only "it looks good". The specific questions I need answered are:</p>
+    <ol class="asks">
+      <li><strong>Is the learning path right?</strong> Would somebody in your directorate with no AI background actually get through the first track — and would they want to continue?</li>
+      <li><strong>Are the challenges credible?</strong> Do the problems look like KOC problems to someone who does that work? Which ones are wrong, thin, or missing? <strong>What challenge would you add for your own area?</strong></li>
+      <li><strong>Who is this for first?</strong> Which group of colleagues should be the pilot cohort, and why that group?</li>
+      <li><strong>What would make people actually use it</strong> — and what would stop them? Time, permission, relevance, confidence, recognition, something else?</li>
+      <li><strong>What is missing</strong> before this could be taken seriously inside KOC?</li>
+    </ol>
+    <p>Blunt answers are more useful than kind ones. It is far cheaper to change this now than after a rollout.</p>
+
+    <h2>Two things to be clear about</h2>
+    <div class="note stop">
+      <p>
+        <strong>This is a demonstration host, not a KOC system.</strong> It sits with an external hosting
+        provider on the public internet, outside the KOC network and outside Kuwait. Please treat it
+        accordingly: <strong>do not upload any real KOC data, and do not use your KOC network password when
+        registering.</strong> Every dataset you see on it is synthetic — generated to behave like the real
+        thing — apart from the public Titanic passenger list. A KOC-hosted deployment would sit inside our
+        own environment with corporate sign-in; that is a decision for us to make, not something already
+        done.
+      </p>
+    </div>
+    <div class="note">
+      <p>
+        <strong>It is a prototype, and it will show.</strong> You will find rough edges. Note them, but
+        please weigh the <em>idea</em> rather than the finish — whether this way of building capability is
+        right for KOC is the question in front of us.
+      </p>
+    </div>
+
+    <h2>Where this feeds</h2>
+    <p>
+      Your feedback goes directly into the TFT's three deliverables: the <strong>feasibility
+      assessment</strong>, the <strong>alignment with our organisational goals</strong>, and the
+      <strong>way forward and action plan</strong>. At our next meeting I would like us to reach a view on:
+    </p>
+    <ul>
+      <li>whether to proceed to a <strong>pilot</strong>, and with which group;</li>
+      <li>what the pilot must prove before any wider rollout;</li>
+      <li>what it would take to host this <strong>inside KOC</strong> — the environment, the sign-in, the data;</li>
+      <li>who owns the content, and how it stays current.</li>
+    </ul>
+
+    <p>
+      Please send your notes to me by <strong>[date]</strong>, or bring them to the meeting if you prefer
+      to discuss them in person. If you would rather walk through the site together, I am happy to arrange
+      a short session — in a group or one to one, whichever suits you.
+    </p>
+
+    <p>Thank you for the time. What you tell me after actually using it will shape what we recommend.</p>
+
+    <div class="sig">
+      <p>Best regards,</p>
+      <p class="name">Fahad Al-Dhubaib</p>
+      <p class="role">TPL Specialist (IT) — Training &amp; Career Development</p>
+      <p class="role">Head, AI Digital Campus Initiative Task Force Team</p>
+      <p class="role">Kuwait Oil Company</p>
+      <p class="role">[Phone] · [Email]</p>
+    </div>
+  </div>
+
+  <p class="foot">
+    Bracketed items are placeholders to complete before sending. Confirm the site is reachable from the
+    KOC network before circulating — if outbound access to the host is blocked, ask recipients to open it
+    from a personal device, or arrange a screen-shared walkthrough instead.
+  </p>
+</div>
+
+<script>
+(function () {
+  var said = document.getElementById("said");
+  function say(msg) { said.textContent = msg; setTimeout(function () { said.textContent = ""; }, 2600); }
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var text = document.getElementById("letter").innerText;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { say("Copied — paste into Outlook."); },
+        function () { say("Could not copy. Select the text and copy manually."); }
+      );
+      return;
+    }
+    say("Could not copy. Select the text and copy manually.");
+  });
+
+  document.getElementById("print").addEventListener("click", function () { window.print(); });
+})();
+</script>

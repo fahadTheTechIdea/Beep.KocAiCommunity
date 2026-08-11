@@ -3,10 +3,10 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KOC Studio — Help</title>
 <style>
-  :root{--bg:#f6f8fb;--panel:#fff;--ink:#172033;--muted:#5b6b86;--accent:#0369a1;--accent-700:#075985;--border:#e2e8f0;--code:#0b3a52;--codebg:#eef4f9;--shadow:0 1px 3px rgba(16,24,40,.08),0 10px 30px rgba(16,24,40,.09)}
-  @media (prefers-color-scheme:dark){:root{--bg:#0e141f;--panel:#151d2b;--ink:#e6edf7;--muted:#9fb0c8;--accent:#38bdf8;--accent-700:#7dd3fc;--border:#243044;--code:#bfe3f5;--codebg:#0c1622;--shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4)}}
-  :root[data-theme="dark"]{--bg:#0e141f;--panel:#151d2b;--ink:#e6edf7;--muted:#9fb0c8;--accent:#38bdf8;--accent-700:#7dd3fc;--border:#243044;--code:#bfe3f5;--codebg:#0c1622;--shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4)}
-  :root[data-theme="light"]{--bg:#f6f8fb;--panel:#fff;--ink:#172033;--muted:#5b6b86;--accent:#0369a1;--accent-700:#075985;--border:#e2e8f0;--code:#0b3a52;--codebg:#eef4f9;--shadow:0 1px 3px rgba(16,24,40,.08),0 10px 30px rgba(16,24,40,.09)}
+  :root{--bg:#F6F8FA;--panel:#fff;--ink:#10222F;--muted:#5A6B78;--accent:#1466A5;--accent-700:#0B2E4C;--border:#E1E7EC;--code:#0B2E4C;--codebg:#EAF2F8;--shadow:0 1px 3px rgba(16,24,40,.08),0 10px 30px rgba(16,24,40,.09)}
+  @media (prefers-color-scheme:dark){:root{--bg:#0B1620;--panel:#12222E;--ink:#DCE6EE;--muted:#93A5B4;--accent:#5FA3D4;--accent-700:#8FC4E6;--border:#23384A;--code:#A8CDE6;--codebg:#07202F;--shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4)}}
+  :root[data-theme="dark"]{--bg:#0B1620;--panel:#12222E;--ink:#DCE6EE;--muted:#93A5B4;--accent:#5FA3D4;--accent-700:#8FC4E6;--border:#23384A;--code:#A8CDE6;--codebg:#07202F;--shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4)}
+  :root[data-theme="light"]{--bg:#F6F8FA;--panel:#fff;--ink:#10222F;--muted:#5A6B78;--accent:#1466A5;--accent-700:#0B2E4C;--border:#E1E7EC;--code:#0B2E4C;--codebg:#EAF2F8;--shadow:0 1px 3px rgba(16,24,40,.08),0 10px 30px rgba(16,24,40,.09)}
   *{box-sizing:border-box}
   body{margin:0;font:15px/1.65 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
   a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
@@ -410,14 +410,12 @@ is cross-platform.</li>
 tests/              UnitTests, IntegrationTests, ComponentTests (bUnit), ArchitectureTests, EndToEndTests.
 </code></pre>
 <p><strong>Dependency direction is enforced</strong> by <code>ArchitectureTests</code>: Domain/Application stay free of EF Core,
-ASP.NET, MudBlazor, and ML.NET; the Web talks to the API, never the database.</p>
+ASP.NET, MudBlazor, and ML.NET.</p>
 <h2>4. Run it locally</h2>
-<p>Two terminals (the API migrates + seeds a local SQLite DB and enables dev auth):</p>
-<pre><code class="language-bash"># API on :5250 (migrate + seed + dev auth)
-ASPNETCORE_ENVIRONMENT=Development Seed__Enabled=true ASPNETCORE_URLS=http://localhost:5250 \
-  dotnet run --project src/Beep.KocAiCommunity.Api
-
-# Web on :5150 (calls the API)
+<p>One terminal. Since 2026-08-02 the platform surface (<code>/api/v1</code>, the leaderboard hub) is a library the
+website hosts in its own process, so there is no separate API to start — the website migrates and seeds the
+local SQLite database itself:</p>
+<pre><code class="language-bash"># Everything on :5150 — pages, /api/v1, migrate + seed + dev auth
 ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5150 \
   dotnet run --project src/Beep.KocAiCommunity.Web
 </code></pre>
@@ -444,7 +442,7 @@ Migrations are <strong>generated for both providers</strong>:</p>
 <pre><code class="language-bash"># SQLite (default provider project)
 dotnet ef migrations add &lt;Name&gt; \
   --project src/Beep.KocAiCommunity.Infrastructure \
-  --startup-project src/Beep.KocAiCommunity.Api
+  --startup-project src/Beep.KocAiCommunity.Web
 
 # SQL Server (its own migrations assembly)
 dotnet ef migrations add &lt;Name&gt; \

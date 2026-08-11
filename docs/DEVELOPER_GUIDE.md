@@ -22,7 +22,7 @@ reuses the same designer and runs offline.
 - **.NET SDK 10** (pinned in `global.json`).
 - Windows is required only for the **desktop app** (`net10.0-windows`) and SQL Server LocalDB; the rest
   is cross-platform.
-- No database to install for dev — the API auto-creates a local **SQLite** file.
+- No database to install for dev — the website auto-creates a local **SQLite** file.
 
 ## 3. Solution layout
 
@@ -51,7 +51,11 @@ tests/              UnitTests, IntegrationTests, ComponentTests (bUnit), Archite
 ```
 
 **Dependency direction is enforced** by `ArchitectureTests`: Domain/Application stay free of EF Core,
-ASP.NET, MudBlazor, and ML.NET; the Web talks to the API, never the database.
+ASP.NET, MudBlazor, and ML.NET.
+
+Since **2026-08-02** there is no API website. `Platform` is a *library* — `/api/v1`, the leaderboard hub
+and the outbox dispatcher — that the Web hosts in its own process, so the Web owns the database and calls
+the surface over loopback. `InternalApiGuard` refuses `/api/v1` from off-machine.
 
 ## 4. Run it locally
 
@@ -74,11 +78,11 @@ dotnet run --project src/Beep.KocAiCommunity.WinForms
 
 ## 5. Identity & auth in dev
 
-- **Dev personas.** With no Entra tenant, the Web forwards a selected persona to the API via
+- **Dev personas.** With no Entra tenant, the Web forwards a selected persona to the platform surface via
   `X-Dev-User`/`X-Dev-Roles` headers (`DevIdentity` + `DevIdentityHandler` in `Client`). The app-bar
   **"view as"** switcher changes persona live. Personas: `guest, employee, teamleader, manager, dceo,
   ceo, compadmin, platformadmin` (default **platformadmin**, so every area is visible out of the box).
-- **The API** resolves the current user from claims (`IKocCurrentUser` → `ClaimsKocCurrentUser`). In dev
+- **The platform surface** resolves the current user from claims (`IKocCurrentUser` → `ClaimsKocCurrentUser`). In dev
   those claims come from the forwarded headers (`DevAutoAuthHandler`); in prod from Entra or Windows auth.
 - **Roles**: positions (`Employee → TeamLeader → Manager → DCEO → CEO`) + function roles
   (`PlatformAdmin, CompetitionAdmin, LearningAdmin, Auditor`). Policies live in `KocPolicies` /

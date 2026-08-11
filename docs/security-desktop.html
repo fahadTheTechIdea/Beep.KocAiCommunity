@@ -1,0 +1,373 @@
+<title>Security — KOC Studio (desktop)</title>
+
+<style>
+  /* The KOC blueprint theme, taken from the product: koc-blueprint.css and Branding/KocBrand.cs. */
+  :root {
+    --ink:#10222F; --ink-soft:#5A6B78; --ink-faint:#8496A3;
+    --paper:#F6F8FA; --surface:#FFFFFF; --rule:#E1E7EC; --rule-strong:#C6D2DB;
+    --accent:#1466A5; --accent-mid:#2A7CBE; --accent-soft:#5FA3D4; --accent-wash:#EAF2F8;
+    --ground-deep:#0B2E4C; --teal:#1F8A8C; --teal-wash:#E9F4F4;
+    --risk:#9B2C2C; --risk-wash:#FBEAEA; --grid:rgba(20,102,165,.055);
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+    --sans: "Inter","IBM Plex Sans","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+    --measure: 72ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:#DCE6EE; --ink-soft:#93A5B4; --ink-faint:#7A8C9B;
+      --paper:#0B1620; --surface:#12222E; --rule:#23384A; --rule-strong:#33506A;
+      --accent:#5FA3D4; --accent-mid:#2A7CBE; --accent-soft:#8FC4E6; --accent-wash:#12283A;
+      --ground-deep:#07202F; --teal:#4FB3B5; --teal-wash:#122A2B;
+      --risk:#E88A8A; --risk-wash:#2C1618; --grid:rgba(95,163,212,.05);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink:#DCE6EE; --ink-soft:#93A5B4; --ink-faint:#7A8C9B;
+    --paper:#0B1620; --surface:#12222E; --rule:#23384A; --rule-strong:#33506A;
+    --accent:#5FA3D4; --accent-mid:#2A7CBE; --accent-soft:#8FC4E6; --accent-wash:#12283A;
+    --ground-deep:#07202F; --teal:#4FB3B5; --teal-wash:#122A2B;
+    --risk:#E88A8A; --risk-wash:#2C1618; --grid:rgba(95,163,212,.05);
+  }
+  :root[data-theme="light"] {
+    --ink:#10222F; --ink-soft:#5A6B78; --ink-faint:#8496A3;
+    --paper:#F6F8FA; --surface:#FFFFFF; --rule:#E1E7EC; --rule-strong:#C6D2DB;
+    --accent:#1466A5; --accent-mid:#2A7CBE; --accent-soft:#5FA3D4; --accent-wash:#EAF2F8;
+    --ground-deep:#0B2E4C; --teal:#1F8A8C; --teal-wash:#E9F4F4;
+    --risk:#9B2C2C; --risk-wash:#FBEAEA; --grid:rgba(20,102,165,.055);
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.68;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px 96px;}
+
+  /* The blueprint is drawn on white paper, not printed white on navy: surface ground, a hairline
+     accent rule, grid-paper behind it. A dark banner belongs to a different design system. */
+  .masthead{background:var(--surface);color:var(--ink);padding:40px 0 32px;margin-bottom:32px;
+    border-block-start:3px solid var(--accent);border-block-end:1px solid var(--rule);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:28px 28px;}
+  .masthead .wrap{padding-bottom:0;}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
+  .masthead h1{color:var(--ink);font-size:clamp(1.6rem,3.6vw,2.3rem);font-weight:700;letter-spacing:-.02em;line-height:1.2;text-wrap:balance;margin:10px 0 12px;}
+  .masthead p{color:var(--ink-soft);max-width:68ch;margin:0;font-size:1.02rem;}
+
+  .doc{position:relative;background:var(--surface);border:1px solid var(--rule);padding:clamp(22px,4vw,44px);}
+  .doc::before,.doc::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--accent);pointer-events:none;}
+  .doc::before{inset-block-start:-1px;inset-inline-start:-1px;border-inline-end:0;border-block-end:0;}
+  .doc::after{inset-block-end:-1px;inset-inline-end:-1px;border-inline-start:0;border-block-start:0;}
+
+  h1,h2,h3,h4{line-height:1.25;text-wrap:balance;}
+  .doc>h1:first-child{margin-top:0;font-size:1.65rem;font-weight:700;letter-spacing:-.015em;}
+  h2{font-size:1.08rem;font-weight:600;letter-spacing:.01em;text-transform:uppercase;margin:2.1em 0 .6em;padding-bottom:7px;border-bottom:1px solid var(--rule-strong);}
+  h3{font-size:1rem;font-weight:650;margin:1.7em 0 .4em;}
+  p,li{overflow-wrap:break-word;} p{max-width:var(--measure);}
+  a{color:var(--accent);text-underline-offset:2px;}
+  strong{font-weight:650;}
+  code{font-family:var(--mono);font-size:.86em;background:var(--accent-wash);color:var(--accent);border:1px solid var(--rule);border-radius:3px;padding:.1em .35em;word-break:break-word;}
+  pre{background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-inline-start:2px solid var(--teal);padding:14px 16px;border-radius:3px;overflow-x:auto;margin:1.3em 0;}
+  pre code{background:none;border:0;padding:0;color:inherit;font-size:.82rem;line-height:1.55;}
+  blockquote{margin:1.4em 0;padding:14px 18px;border:1px solid var(--rule);border-inline-start:4px solid var(--accent);background:var(--accent-wash);max-width:var(--measure);}
+  blockquote p:first-child{margin-top:0;} blockquote p:last-child{margin-bottom:0;}
+  .table-scroll{overflow-x:auto;margin:1.4em 0;border:1px solid var(--rule);border-radius:6px;}
+  table{border-collapse:collapse;width:100%;font-size:.88rem;}
+  th,td{text-align:start;padding:9px 13px;border-bottom:1px solid var(--rule);vertical-align:top;}
+  th{background:var(--accent-wash);color:var(--accent);font-size:.69rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;}
+  tbody tr:last-child td{border-bottom:none;}
+  ul,ol{max-width:var(--measure);padding-inline-start:1.35rem;} li{margin:6px 0;} li::marker{color:var(--teal);}
+  hr{border:0;border-top:1px solid var(--rule);margin:2.2em 0;}
+  input[type=checkbox]{accent-color:var(--accent);margin-inline-end:.4em;}
+  .foot{margin-top:28px;font-size:.83rem;color:var(--ink-faint);max-width:var(--measure);}
+  @media print{
+    .masthead{background:none;border-block-start-width:2px;}
+    .doc{border:0;padding:0;} .doc::before,.doc::after{display:none;}
+  }
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">KOC Studio · Information security</div>
+    <h1>Security — KOC Studio (desktop)</h1>
+    <p>Why a workstation reading the platform database directly is a different trust model from the website, and which SQL identity KOC Studio should be given.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="doc" dir="auto">
+<p>KOC Studio is installed on <strong>KOC-managed Windows workstations inside the KOC environment</strong>:
+domain-joined, on the SOE image, under group policy, with endpoint protection and disk encryption
+already enforced by the estate. This document assumes that and states what the application adds on
+top, what it requires of the estate, and what KOC must still decide.</p>
+<p><a href="SECURITY.md"><code>SECURITY.md</code></a> covers the website and the platform surface. Read both.
+Facts below are from the source; anything that is a KOC choice rather than an application behaviour is
+marked <strong>Decision</strong>.</p>
+<h2>1. The trust shift, and why it governs everything else</h2>
+<p>Since <strong>2026-08-02</strong> KOC Studio <strong>opens the platform database directly</strong>. No API website sits between
+the workstation and the data, so nothing on a server checks the desktop's work.</p>
+<pre><code>website      browser ──▶ Web ──(token the Web issued, verified server-side)──▶ data
+KOC Studio   workstation ──(its own database connection)──────────────────────▶ data
+</code></pre>
+<p><strong>The process decides who the user is.</strong> The website verifies a token it issued. On a workstation the
+identity is the signed-in Windows account, taken on trust as a KOC employee (<code>DesktopPlatformClient</code>).
+Anyone who can run code as that user <em>is</em> that user.</p>
+<p><strong>Authorization still runs — on the workstation's word.</strong> Studio calls the same application services
+the website does, so org-scoped visibility is applied (<code>BrowseVisibleAsync(UserId)</code> and the rest).
+What is absent is the server that used to vouch for <code>UserId</code>.</p>
+<p><strong>The deliberate mitigation:</strong> the desktop exposes <strong>no administrative surface at all</strong> — no RBAC
+console, no role granting, no competition administration, no answer keys. A compromised workstation is
+a compromised employee account, not a compromised platform. That absence is a control. It should not
+be "filled in later".</p>
+<h2>2. Threat model</h2>
+<table>
+<thead>
+<tr>
+<th>Asset</th>
+<th>Threat</th>
+<th>Control</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Platform database</td>
+<td>A workstation credential reused from another machine</td>
+<td><strong>Integrated auth</strong> (§3) — the credential is the domain account, unusable elsewhere without it</td>
+</tr>
+<tr>
+<td>Platform database</td>
+<td>A user escalating their own visibility</td>
+<td>Cannot self-grant: no admin surface on the desktop; roles are read, never written</td>
+</tr>
+<tr>
+<td>Platform database</td>
+<td>Schema damage, mass export</td>
+<td><strong>Least-privilege SQL role</strong> (§3) — no DDL, no audit-trail read</td>
+</tr>
+<tr>
+<td>Datasets on disk</td>
+<td>Laptop lost or stolen</td>
+<td>BitLocker (estate policy) + §5</td>
+</tr>
+<tr>
+<td>Datasets on disk</td>
+<td>Copied to removable media or personal cloud</td>
+<td>Estate DLP — <strong>outside this application's control</strong> (§5)</td>
+</tr>
+<tr>
+<td>The installed binaries</td>
+<td>Tampered or spoofed build</td>
+<td><strong>Code signing + managed distribution</strong> (§6)</td>
+</tr>
+<tr>
+<td>Competition integrity</td>
+<td>Faked scores</td>
+<td>Scoring is server-side against a hidden key; the desktop cannot score itself (<a href="SECURITY.md"><code>SECURITY.md</code></a> §6)</td>
+</tr>
+<tr>
+<td>Leaver retains access</td>
+<td>Account not revoked</td>
+<td>Integrated auth revokes with the AD account (§10)</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Database access — the one decision that matters most</h2>
+<p><strong>Use Windows Integrated authentication. In a domain environment there is no good reason not to.</strong></p>
+<pre><code>Server=&lt;sql-host&gt;;Database=&lt;db&gt;;Integrated Security=true;Encrypt=True;TrustServerCertificate=False
+</code></pre>
+<ul>
+<li><strong>No secret is written to the machine.</strong> Nothing to extract from a config file, nothing to rotate.</li>
+<li><strong>Access follows the directory.</strong> Disabling the AD account removes database access at the same
+  moment, with no action on the endpoint.</li>
+<li><strong>Grant to an AD group</strong> — <code>KOC-KocStudio-Users</code> or similar — not to individuals, so joiner/mover/
+  leaver is a group membership change.</li>
+</ul>
+<p><strong>The SQL role that group is given must be least-privilege.</strong> Studio needs to read competitions,
+learning content and datasets, and to write submissions, runs and its own artifacts. It must <strong>not</strong>
+have:</p>
+<ul>
+<li><code>db_owner</code>, <code>db_ddladmin</code>, or any DDL right — the desktop never migrates the schema</li>
+<li>read on the audit trail</li>
+<li>write to roles, grants, org units or competition definitions</li>
+</ul>
+<p><strong>Never give a workstation the website's connection string.</strong> The site's login is a service credential
+on one controlled host. Copying it onto laptops converts a single guarded secret into as many copies as
+you have installs, and removes any ability to tell one user's activity from another's.</p>
+<p><strong>Decision — KOC:</strong> the AD group, the SQL role definition, and whether workstations may reach the
+database host at all, or must go through a jump/proxy path.</p>
+<blockquote>
+<p><strong>Default to no database connection.</strong> With none configured Studio runs fully offline — designer,
+AutoML, local datasets — and anything needing the platform says so by name. That is the correct build
+for training rooms, pilots and anyone still learning, and it removes this entire section for them.</p>
+</blockquote>
+<h2>4. Encryption in transit</h2>
+<ul>
+<li><strong>To SQL Server:</strong> <code>Encrypt=True</code> with <code>TrustServerCertificate=False</code>, so the server certificate is
+  validated against the KOC PKI. Do not disable validation to make a certificate warning go away.</li>
+<li><strong>To the leaderboard hub:</strong> HTTPS/WSS to the platform website, bearer token, standard TLS validation.</li>
+<li><strong>Nothing else leaves the machine.</strong> Training data never does (§8).</li>
+</ul>
+<h2>5. Data at rest on the workstation</h2>
+<p>The workspace is <code>%LOCALAPPDATA%\KocStudio</code> — <code>datasets</code>, <code>workflows</code>, <code>temp</code>, <code>logs</code> — created on
+first run. <strong>The application encrypts nothing.</strong> It relies on the estate.</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Position</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full-disk encryption</td>
+<td><strong>Required.</strong> BitLocker via estate policy on any machine given a database connection or KOC data</td>
+</tr>
+<tr>
+<td>Classification</td>
+<td>The download checks that gate Confidential and Restricted datasets <strong>do not follow a file onto a laptop</strong>. Once exported it is a file under the user's control</td>
+</tr>
+<tr>
+<td>Removable media / cloud sync</td>
+<td>Outside this application. Ensure <code>%LOCALAPPDATA%</code> is excluded from personal cloud sync and covered by estate DLP</td>
+</tr>
+<tr>
+<td><code>temp</code></td>
+<td>Swept at start and after runs; a crash can leave intermediates behind until the next launch</td>
+</tr>
+<tr>
+<td>Uninstall</td>
+<td><strong>Does not remove the workspace.</strong> Datasets, models and queued submissions survive. Say so in the uninstall notes, and decide whether decommissioning wipes it</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Decision — KOC:</strong> retention for the workspace, and whether device decommissioning must wipe
+<code>%LOCALAPPDATA%\KocStudio</code> explicitly.</p>
+<h2>6. Software integrity and distribution</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Position</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Code signing</strong></td>
+<td>The published build <strong>must be signed with a KOC code-signing certificate</strong> before distribution. Unsigned, neither the estate nor the user can tell a genuine build from a substituted one. <strong>Decision — KOC:</strong> which certificate, and signing in the build pipeline</td>
+</tr>
+<tr>
+<td><strong>Distribution</strong></td>
+<td>Through the managed channel — SCCM / Intune / the software portal — never a file share or an emailed archive. That gives an inventory of who has which version, and the ability to withdraw one</td>
+</tr>
+<tr>
+<td><strong>Elevation</strong></td>
+<td>Per-user install into the profile needs no admin rights and matches the per-user workspace. Per-machine needs packaging and admin rights; the workspace stays per-user either way</td>
+</tr>
+<tr>
+<td><strong>Updates</strong></td>
+<td>There is <strong>no auto-update mechanism in the application.</strong> Versions are whatever the estate has pushed. <strong>Decision — KOC:</strong> the update channel and cadence, and how a build with a security fix is forced out</td>
+</tr>
+<tr>
+<td><strong>Allow-listing</strong></td>
+<td>If application control (WDAC / AppLocker) is enforced, the signed publisher must be allow-listed, including the training child process</td>
+</tr>
+</tbody>
+</table>
+<h2>7. Endpoint protection</h2>
+<p>Studio spawns a <strong>child process for training</strong> and writes intermediates to <code>temp</code> at speed. On an
+EDR-monitored estate that pattern draws attention.</p>
+<ul>
+<li>Test against the KOC EDR build <strong>before</strong> fleet rollout — a false positive that quarantines the child
+  process presents to users as "training silently fails".</li>
+<li>Do <strong>not</strong> blanket-exclude <code>%LOCALAPPDATA%\KocStudio</code> from scanning. If exclusions prove necessary,
+  scope them to the training executable, and record why.</li>
+</ul>
+<p><strong>Decision — KOC:</strong> whether any exclusion is granted, and its scope.</p>
+<h2>8. Training stays on the machine</h2>
+<p>AutoML runs in a <strong>child process with a memory ceiling</strong> (<code>LocalTrainingLimits</code>, <code>TrainingHost</code>), so a
+runaway fit takes the child rather than Studio or the workstation. Server-side training no longer
+exists (<a href="STUDIO_IS_A_DESKTOP_APP.md"><code>STUDIO_IS_A_DESKTOP_APP.md</code></a>).</p>
+<p>The security consequence is favourable and worth stating to reviewers: <strong>the data being trained on
+never leaves the machine it is on.</strong></p>
+<h2>9. Logs and support</h2>
+<p><code>%LOCALAPPDATA%\KocStudio\logs</code> holds crash and session logs. Diagnostics of a data pipeline can
+contain <strong>column names, sample values and error payloads</strong> — that is, fragments of whatever the user
+loaded.</p>
+<ul>
+<li>Treat a log bundle as carrying the classification of the data that produced it.</li>
+<li><strong>Decision — KOC:</strong> whether users may send logs to support unreviewed, retention on the endpoint, and
+  whether Windows Error Reporting is permitted to leave the estate for this application.</li>
+</ul>
+<h2>10. Joiner, mover, leaver, and lost devices</h2>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>With Integrated auth</th>
+<th>With a stored credential</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Leaver</td>
+<td>Disable the AD account — database access ends immediately</td>
+<td>Rotate the credential <strong>on every install</strong>, or it remains valid</td>
+</tr>
+<tr>
+<td>Mover</td>
+<td>Group membership change; visibility follows their new org placement on next use</td>
+<td>Same rotation problem if scope changes</td>
+</tr>
+<tr>
+<td>Lost or stolen device</td>
+<td>Disable the account; BitLocker protects data at rest</td>
+<td>The credential is on the disk. Assume compromise and rotate</td>
+</tr>
+</tbody>
+</table>
+<p>That asymmetry is the strongest practical argument for §3.</p>
+<p><strong>Decision — KOC:</strong> the incident procedure for a lost machine that held a platform connection, and who
+is notified.</p>
+<h2>11. Shared and multi-user machines</h2>
+<p>The workspace is per-user, so one person's datasets are not another's. On a shared training PC:</p>
+<ul>
+<li>Every user gets their own <code>%LOCALAPPDATA%\KocStudio</code>; data accumulates per profile.</li>
+<li>With Integrated auth the identity is whoever is signed in — correct behaviour, and another reason not
+  to use a shared service credential.</li>
+<li><strong>Decision — KOC:</strong> whether shared/kiosk machines get the offline build only.</li>
+</ul>
+<h2>12. Supply chain</h2>
+<p>The application carries third-party dependencies (ML.NET and the .NET stack via NuGet) and requires the
+<strong>WebView2 runtime</strong>, which is evergreen and updated by Microsoft outside this application's release
+cycle. <code>NuGetAuditMode</code> is set to audit direct dependencies at build time.</p>
+<p><strong>Decision — KOC:</strong> whether WebView2's evergreen update channel is acceptable or must be pinned, and
+where dependency scanning reports go.</p>
+<h2>13. What the desktop deliberately cannot do</h2>
+<p>No RBAC console, no role granting, no competition administration, no answer keys, no schema changes.
+This is the compensating control for §1 and should be verified as still true at each release.</p>
+<h2>14. Pre-rollout checklist</h2>
+<ul>
+<li>[ ] <strong>Integrated authentication</strong> via an AD group — no credential on any endpoint</li>
+<li>[ ] SQL role reviewed: no DDL, no audit read, no writes to roles/grants/competition definitions</li>
+<li>[ ] Confirmed the website's connection string is <strong>not</strong> used anywhere on a workstation</li>
+<li>[ ] <code>Encrypt=True</code>, <code>TrustServerCertificate=False</code>, server certificate validating against KOC PKI</li>
+<li>[ ] Build <strong>code-signed</strong>; publisher allow-listed if application control is enforced</li>
+<li>[ ] Distributed through the managed channel with version inventory and a withdrawal path</li>
+<li>[ ] Update channel and cadence agreed, including forced rollout of a security fix</li>
+<li>[ ] BitLocker confirmed on every machine receiving a database connection</li>
+<li>[ ] EDR tested against the training child process; exclusions scoped and justified if any</li>
+<li>[ ] Log handling, retention and support-bundle rules agreed</li>
+<li>[ ] Lost-device and leaver procedures written and owned</li>
+<li>[ ] Training rooms and shared machines receive the <strong>offline</strong> build</li>
+<li>[ ] Uninstall/decommission behaviour for <code>%LOCALAPPDATA%\KocStudio</code> agreed</li>
+</ul></article>
+  <p class="foot">Source: <code>docs/SECURITY_DESKTOP.md</code> in the Beep.KocAiCommunity repository. Edit that file and
+  rebuild with <code>python docs/build-doc-page.py</code> — this page is generated.</p>
+</div>
+
+<script>
+document.querySelectorAll(".doc table").forEach(function (t) {
+  var box = document.createElement("div");
+  box.className = "table-scroll";
+  t.parentNode.insertBefore(box, t);
+  box.appendChild(t);
+});
+</script>

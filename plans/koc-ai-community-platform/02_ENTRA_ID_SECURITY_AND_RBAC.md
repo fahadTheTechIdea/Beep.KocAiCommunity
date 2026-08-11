@@ -2,6 +2,14 @@
 
 **Status:** 🟡 PLANNING
 **Dependencies:** Phase 01
+
+> **Topology superseded 2026-08-02.** This phase was written when the API was its own website, so it
+> speaks of "downstream API" JWT validation across a network hop. The API is now a library the website
+> hosts in its own process: the same two audiences remain (browser cookie, bearer token for KOC Studio),
+> but `/api/v1` is loopback-only by default rather than a remote endpoint, and there is one secret store
+> instead of two. The RBAC model below — position levels, function roles, org-scoped visibility,
+> supervisory rollup — is unchanged and shipped. For what is actually built, read
+> [`docs/SECURITY.md`](../../docs/SECURITY.md); this file stays as the record of what was planned.
 **Goal:** Configure Microsoft Entra ID authentication, KOC **position-level** app roles, the **KOC org hierarchy** (Team/Group/Directorate/Company), **supervisory rollup scoping**, the **org-scoped visibility** model, EF-backed resource permissions, and the audit envelope.
 
 ## 1. Goal and dependencies

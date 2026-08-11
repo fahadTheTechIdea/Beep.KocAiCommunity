@@ -17,7 +17,15 @@ Built on **.NET 10**, **ASP.NET Core**, **Blazor (MudBlazor)**, **EF Core**, **M
   desktop app, testing, and how to extend the platform.
 - **[Administrator Guide](docs/ADMIN_GUIDE.md)** — the admin console, RBAC / users, competition-creation
   grants, org codes, demo data, settings, and audit.
-- **[Deployment Guide](docs/DEPLOYMENT.md)** — hosting, auth modes, SQL Server, publishing.
+- **[Deployment — website](docs/DEPLOYMENT.md)** — containers, migrations, seeding, auth modes, configuration.
+- **[Security — website](docs/SECURITY.md)** — identity, tokens, what closes `/api/v1`, RBAC and
+  org-scoped visibility, competition integrity, and secrets.
+- **[Security — desktop](docs/SECURITY_DESKTOP.md)** — why a workstation reading the database directly
+  is a different trust model, and which SQL identity KOC Studio should be given.
+- **[Deployment — desktop](docs/DEPLOYMENT_DESKTOP.md)** — prerequisites, offline vs connected builds,
+  distribution and upgrades for KOC Studio.
+- **[Published artifacts](docs/PUBLISHED_ARTIFACTS.md)** — every page published to claude.ai, the HTML
+  in this repo it is built from, and which ones are currently out of step.
 - **[Visual Help](docs/help/index.html)** — one HTML page with a screenshot tour of every screen **plus** the
   User, Administrator, and Developer guides (open in a browser).
 
@@ -52,7 +60,7 @@ A **notification bell** (live, per-user) sits in the app bar across every surfac
   and L2 (SDCA/LBFGS); blank fields fall back to ML.NET defaults.
 - **Three task types**: binary (accuracy), multiclass (MicroAccuracy), regression (RMSE) — type-aware transforms
   and trainers throughout (SDCA, FastTree, FastForest, LBFGS, AveragedPerceptron, SdcaMaximumEntropy, NaiveBayes).
-- **AutoML** (`/studio`) via `Microsoft.ML.AutoML`, time-boxed, recorded as immutable training runs.
+- **AutoML** via `Microsoft.ML.AutoML`, time-boxed, recorded as immutable training runs — in **KOC Studio on the desktop**, in a child process with a memory ceiling. The website does not train.
 
 ## Competitions
 
@@ -85,7 +93,8 @@ src/
   Beep.KocAiCommunity.Ui.Community/Studio/Admin   Feature RCLs (Ui.Studio is desktop-only)
   Beep.KocAiCommunity.Client             Framework-agnostic HTTP API client + dev identity (Web + desktop)
   Beep.KocAiCommunity.ServiceDefaults    Aspire defaults + shared security wiring
-  Beep.KocAiCommunity.Web                Blazor Web App (Interactive Server) — calls the API, live via SignalR
+  Beep.KocAiCommunity.Web                Blazor Web App (Interactive Server) — hosts the platform surface
+                                         in-process and calls it over loopback; live via SignalR
   Beep.KocAiCommunity.Platform           The platform surface as a LIBRARY: /api/v1 endpoints,
                                          SignalR hub, outbox dispatcher. Hosted by the Web; there is
                                          no separate API website since 2026-08-02.
@@ -101,7 +110,8 @@ Backing all of it: Microsoft Entra authentication (config-driven), the KOC org h
 org-scoped visibility, and governed artifact storage with information-security classification.
 
 Dependency direction is enforced by `ArchitectureTests` (Domain/Application stay free of EF, ASP.NET, MudBlazor,
-and ML.NET; the Web calls the API, never the database).
+and ML.NET). Since 2026-08-02 the Web hosts the platform surface in-process and owns the database; there is
+no API website to call.
 
 ## Run it
 

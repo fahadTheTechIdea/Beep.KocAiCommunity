@@ -26,8 +26,10 @@ people-leaders also get **Supervision**; platform administrators get the **Admin
 
 ## 2. The home page & getting around
 
-The left menu is your map: **Home, Learn, Community, Help**, your **profile** and **dashboard**, **Compete**,
-and the **Studio** group (Datasets, Workflows, AutoML, Node catalog, Runs, Experiments, Models). A live
+The left menu is your map: **Home, Learn, Community, Help**, your **profile** and **dashboard**, and
+**Compete**. Building and training models happens in **KOC Studio on your desktop** — the website shows
+you the datasets, runs and models that come out of it, but the designer and AutoML live on your machine
+(see [Studio is a desktop app](STUDIO_IS_A_DESKTOP_APP.md)). A live
 **notification bell** in the app bar tells you when a competition concludes, someone replies to you, or you
 earn a badge.
 

@@ -73,10 +73,12 @@ recommend (or not) a company-wide rollout. The pilot is the empirical core of th
 ## 7. Participant onboarding
 
 - **Launch webinar / clinics** introducing the platform and the first challenge.
-- **Self-serve start:** sign in with the KOC account (no install), complete the Getting Started track,
-  enter the featured competition.
+- **Self-serve start:** sign in with the KOC account — nothing to install to learn, browse challenges or
+  follow a leaderboard — complete the Getting Started track, enter the featured competition.
 - **Weekly office hours** and a **community channel** for questions and peer help.
-- **Desktop Studio** available for hands-on classroom sessions and low-connectivity users.
+- **KOC Studio (desktop)** is required to *build* a model: the designer and AutoML run on the
+  participant's own machine. Budget for the install in the pilot's onboarding — it is the one step that
+  needs IT, and the pilot should measure how much friction it adds.
 
 ## 8. Roles & responsibilities
 

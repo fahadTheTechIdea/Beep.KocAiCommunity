@@ -3,29 +3,29 @@
     --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
     --sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
-    --accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9;
-    --gold:#a9761a;
-    --ink:#151c24; --muted:#586a7b; --border:#e3e9ef;
-    --bg:#ffffff; --panel:#f7f9fb; --panel-2:#eef3f8;
+    --accent:#1466A5; --accent-deep:#1466A5; --accent-tint:#EAF2F8;
+    --gold:#1F8A8C;
+    --ink:#10222F; --muted:#5A6B78; --border:#E1E7EC;
+    --bg:#ffffff; --panel:#F6F8FA; --panel-2:#EAF2F8;
     --shadow:0 1px 2px rgba(16,32,48,.06), 0 12px 32px rgba(16,32,48,.08);
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --accent:#57a6de; --accent-deep:#8ac6ee; --accent-tint:#122636;
-      --gold:#d6ac5c;
-      --ink:#e7edf4; --muted:#9fb0c2; --border:#25313e;
-      --bg:#0d141c; --panel:#131c26; --panel-2:#18232f;
+      --accent:#5FA3D4; --accent-deep:#A8CDE6; --accent-tint:#12283A;
+      --gold:#4FB3B5;
+      --ink:#E1E7EC; --muted:#93A5B4; --border:#23384A;
+      --bg:#0B1620; --panel:#12222E; --panel-2:#182B3A;
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.45);
     }
   }
   :root[data-theme="dark"]{
-    --accent:#57a6de; --accent-deep:#8ac6ee; --accent-tint:#122636; --gold:#d6ac5c;
-    --ink:#e7edf4; --muted:#9fb0c2; --border:#25313e; --bg:#0d141c; --panel:#131c26; --panel-2:#18232f;
+    --accent:#5FA3D4; --accent-deep:#A8CDE6; --accent-tint:#12283A; --gold:#4FB3B5;
+    --ink:#E1E7EC; --muted:#93A5B4; --border:#23384A; --bg:#0B1620; --panel:#12222E; --panel-2:#182B3A;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.45);
   }
   :root[data-theme="light"]{
-    --accent:#1466A5; --accent-deep:#0E4F80; --accent-tint:#eaf2f9; --gold:#a9761a;
-    --ink:#151c24; --muted:#586a7b; --border:#e3e9ef; --bg:#ffffff; --panel:#f7f9fb; --panel-2:#eef3f8;
+    --accent:#1466A5; --accent-deep:#1466A5; --accent-tint:#EAF2F8; --gold:#1F8A8C;
+    --ink:#10222F; --muted:#5A6B78; --border:#E1E7EC; --bg:#ffffff; --panel:#F6F8FA; --panel-2:#EAF2F8;
     --shadow:0 1px 2px rgba(16,32,48,.06), 0 12px 32px rgba(16,32,48,.08);
   }
 
@@ -123,7 +123,7 @@
     nav.toc ol{columns:2;column-gap:22px}
   }
   @media print{
-    :root{--bg:#fff;--ink:#111;--muted:#333;--border:#bbb;--accent:#0E4F80;--accent-tint:#f0f4f8}
+    :root{--bg:#fff;--ink:#111;--muted:#333;--border:#bbb;--accent:#1466A5;--accent-tint:#f0f4f8}
     .stats,nav.toc{display:none!important}
     .cover{color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .layout{display:block;margin-top:26px}
@@ -260,7 +260,7 @@
           <li><strong>Services</strong> — a versioned Web API, a background worker for durable jobs (model training), and real-time updates for live leaderboards.</li>
           <li><strong>Machine learning</strong> — ML.NET with an embedded analytical engine for data/ETL nodes.</li>
           <li><strong>Data</strong> — a relational database via a standard ORM, with a dual-provider design: a lightweight file database for development and <strong>Microsoft SQL Server / Azure SQL</strong> for production.</li>
-          <li><strong>Deployment</strong> — three containers (API, Web, Worker) for IIS intranet or Azure, with health probes and a continuous-integration quality gate.</li>
+          <li><strong>Deployment</strong> — two containers (Web, Worker) for IIS intranet or Azure, with health probes and a continuous-integration quality gate.</li>
         </ul>
         <p>The design deliberately separates concerns — the web tier never touches the database directly, all access flows through the API, and the ML engine is extensible via self-contained plug-ins.</p>
       </section>

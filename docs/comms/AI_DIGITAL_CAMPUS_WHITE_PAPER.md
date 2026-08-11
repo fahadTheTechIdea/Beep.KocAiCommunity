@@ -165,7 +165,7 @@ low operating cost:
 - **Machine learning:** ML.NET with an embedded analytical engine for the data/ETL nodes.
 - **Data:** relational database via a standard ORM, with a **dual-provider** design — a lightweight file
   database for development and **Microsoft SQL Server (Azure SQL)** for production.
-- **Orchestration & deployment:** three containers (API, Web, Worker) deployable to the IIS intranet or
+- **Orchestration & deployment:** two containers (Web, Worker) deployable to the IIS intranet or
   to Azure, with health probes and a continuous-integration quality gate.
 
 The design deliberately separates concerns so the web tier never touches the database directly, all data

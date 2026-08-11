@@ -1,0 +1,240 @@
+<title>Deployment — KOC Studio (desktop)</title>
+
+<style>
+  /* The KOC blueprint theme, taken from the product: koc-blueprint.css and Branding/KocBrand.cs. */
+  :root {
+    --ink:#10222F; --ink-soft:#5A6B78; --ink-faint:#8496A3;
+    --paper:#F6F8FA; --surface:#FFFFFF; --rule:#E1E7EC; --rule-strong:#C6D2DB;
+    --accent:#1466A5; --accent-mid:#2A7CBE; --accent-soft:#5FA3D4; --accent-wash:#EAF2F8;
+    --ground-deep:#0B2E4C; --teal:#1F8A8C; --teal-wash:#E9F4F4;
+    --risk:#9B2C2C; --risk-wash:#FBEAEA; --grid:rgba(20,102,165,.055);
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+    --sans: "Inter","IBM Plex Sans","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+    --measure: 72ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:#DCE6EE; --ink-soft:#93A5B4; --ink-faint:#7A8C9B;
+      --paper:#0B1620; --surface:#12222E; --rule:#23384A; --rule-strong:#33506A;
+      --accent:#5FA3D4; --accent-mid:#2A7CBE; --accent-soft:#8FC4E6; --accent-wash:#12283A;
+      --ground-deep:#07202F; --teal:#4FB3B5; --teal-wash:#122A2B;
+      --risk:#E88A8A; --risk-wash:#2C1618; --grid:rgba(95,163,212,.05);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink:#DCE6EE; --ink-soft:#93A5B4; --ink-faint:#7A8C9B;
+    --paper:#0B1620; --surface:#12222E; --rule:#23384A; --rule-strong:#33506A;
+    --accent:#5FA3D4; --accent-mid:#2A7CBE; --accent-soft:#8FC4E6; --accent-wash:#12283A;
+    --ground-deep:#07202F; --teal:#4FB3B5; --teal-wash:#122A2B;
+    --risk:#E88A8A; --risk-wash:#2C1618; --grid:rgba(95,163,212,.05);
+  }
+  :root[data-theme="light"] {
+    --ink:#10222F; --ink-soft:#5A6B78; --ink-faint:#8496A3;
+    --paper:#F6F8FA; --surface:#FFFFFF; --rule:#E1E7EC; --rule-strong:#C6D2DB;
+    --accent:#1466A5; --accent-mid:#2A7CBE; --accent-soft:#5FA3D4; --accent-wash:#EAF2F8;
+    --ground-deep:#0B2E4C; --teal:#1F8A8C; --teal-wash:#E9F4F4;
+    --risk:#9B2C2C; --risk-wash:#FBEAEA; --grid:rgba(20,102,165,.055);
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.68;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px 96px;}
+
+  /* The blueprint is drawn on white paper, not printed white on navy: surface ground, a hairline
+     accent rule, grid-paper behind it. A dark banner belongs to a different design system. */
+  .masthead{background:var(--surface);color:var(--ink);padding:40px 0 32px;margin-bottom:32px;
+    border-block-start:3px solid var(--accent);border-block-end:1px solid var(--rule);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:28px 28px;}
+  .masthead .wrap{padding-bottom:0;}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
+  .masthead h1{color:var(--ink);font-size:clamp(1.6rem,3.6vw,2.3rem);font-weight:700;letter-spacing:-.02em;line-height:1.2;text-wrap:balance;margin:10px 0 12px;}
+  .masthead p{color:var(--ink-soft);max-width:68ch;margin:0;font-size:1.02rem;}
+
+  .doc{position:relative;background:var(--surface);border:1px solid var(--rule);padding:clamp(22px,4vw,44px);}
+  .doc::before,.doc::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--accent);pointer-events:none;}
+  .doc::before{inset-block-start:-1px;inset-inline-start:-1px;border-inline-end:0;border-block-end:0;}
+  .doc::after{inset-block-end:-1px;inset-inline-end:-1px;border-inline-start:0;border-block-start:0;}
+
+  h1,h2,h3,h4{line-height:1.25;text-wrap:balance;}
+  .doc>h1:first-child{margin-top:0;font-size:1.65rem;font-weight:700;letter-spacing:-.015em;}
+  h2{font-size:1.08rem;font-weight:600;letter-spacing:.01em;text-transform:uppercase;margin:2.1em 0 .6em;padding-bottom:7px;border-bottom:1px solid var(--rule-strong);}
+  h3{font-size:1rem;font-weight:650;margin:1.7em 0 .4em;}
+  p,li{overflow-wrap:break-word;} p{max-width:var(--measure);}
+  a{color:var(--accent);text-underline-offset:2px;}
+  strong{font-weight:650;}
+  code{font-family:var(--mono);font-size:.86em;background:var(--accent-wash);color:var(--accent);border:1px solid var(--rule);border-radius:3px;padding:.1em .35em;word-break:break-word;}
+  pre{background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-inline-start:2px solid var(--teal);padding:14px 16px;border-radius:3px;overflow-x:auto;margin:1.3em 0;}
+  pre code{background:none;border:0;padding:0;color:inherit;font-size:.82rem;line-height:1.55;}
+  blockquote{margin:1.4em 0;padding:14px 18px;border:1px solid var(--rule);border-inline-start:4px solid var(--accent);background:var(--accent-wash);max-width:var(--measure);}
+  blockquote p:first-child{margin-top:0;} blockquote p:last-child{margin-bottom:0;}
+  .table-scroll{overflow-x:auto;margin:1.4em 0;border:1px solid var(--rule);border-radius:6px;}
+  table{border-collapse:collapse;width:100%;font-size:.88rem;}
+  th,td{text-align:start;padding:9px 13px;border-bottom:1px solid var(--rule);vertical-align:top;}
+  th{background:var(--accent-wash);color:var(--accent);font-size:.69rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;}
+  tbody tr:last-child td{border-bottom:none;}
+  ul,ol{max-width:var(--measure);padding-inline-start:1.35rem;} li{margin:6px 0;} li::marker{color:var(--teal);}
+  hr{border:0;border-top:1px solid var(--rule);margin:2.2em 0;}
+  input[type=checkbox]{accent-color:var(--accent);margin-inline-end:.4em;}
+  .foot{margin-top:28px;font-size:.83rem;color:var(--ink-faint);max-width:var(--measure);}
+  @media print{
+    .masthead{background:none;border-block-start-width:2px;}
+    .doc{border:0;padding:0;} .doc::before,.doc::after{display:none;}
+  }
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">KOC Studio · Deployment</div>
+    <h1>Deployment — KOC Studio (desktop)</h1>
+    <p>Prerequisites, offline versus connected builds, distribution, upgrades, and how to verify an install of the desktop app.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="doc" dir="auto">
+<p>Getting KOC Studio onto a colleague's machine. <a href="DEPLOYMENT.md"><code>DEPLOYMENT.md</code></a> covers the website and
+the worker; this covers the desktop app, which ships and updates on its own schedule.</p>
+<p>Read <a href="SECURITY_DESKTOP.md"><code>SECURITY_DESKTOP.md</code></a> first if this install will be given a database
+connection — that decision is harder to reverse than the install itself.</p>
+<h2>What it is</h2>
+<p><code>Beep.KocAiCommunity.WinForms</code> — a Windows app that hosts the Studio designer in a <code>BlazorWebView</code>, so
+the same Razor components run on the desktop as in the browser. Model building lives here and only
+here (see <a href="STUDIO_IS_A_DESKTOP_APP.md"><code>STUDIO_IS_A_DESKTOP_APP.md</code></a>).</p>
+<h2>Prerequisites on the machine</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Windows</strong></td>
+<td>The app targets <code>net10.0-windows</code>; the rest of the solution is cross-platform, this is not</td>
+</tr>
+<tr>
+<td><strong>.NET 10 Desktop Runtime</strong></td>
+<td>Or publish self-contained and carry it — see below</td>
+</tr>
+<tr>
+<td><strong>WebView2 Runtime</strong></td>
+<td><code>BlazorWebView</code> will not start without it. Evergreen on current Windows; confirm on older SOE images</td>
+</tr>
+<tr>
+<td><strong>Network</strong></td>
+<td>Only for the leaderboard hub and the platform database, and only if configured. It runs offline otherwise</td>
+</tr>
+</tbody>
+</table>
+<h2>Two modes — decide before you package</h2>
+<p><strong>Offline (recommended default).</strong> No platform database configured. The designer, AutoML, local
+datasets and workflows all work; anything needing the platform says so by name rather than failing
+obscurely. This is the right build for classrooms, pilots and anyone who is learning.</p>
+<p><strong>Connected.</strong> A platform connection string is supplied, and Studio reads competitions, submits
+entries and records runs directly against the database. Only for people who need it, and only with the
+SQL identity decided in <code>SECURITY_DESKTOP.md</code> §3.</p>
+<h2>Build</h2>
+<pre><code class="language-bash"># Framework-dependent — smaller, needs the .NET 10 Desktop Runtime on the machine
+dotnet publish src/Beep.KocAiCommunity.WinForms -c Release -r win-x64 --self-contained false
+
+# Self-contained — larger, carries the runtime, no prerequisite beyond WebView2
+dotnet publish src/Beep.KocAiCommunity.WinForms -c Release -r win-x64 --self-contained true
+</code></pre>
+<p>Self-contained is usually the better trade for a managed SOE: one thing to approve, no runtime
+dependency to chase.</p>
+<h2>Configuration</h2>
+<p>Supply per install. Leave the database settings unset for the offline build.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ConnectionStrings:kocdb</code></td>
+<td>The platform database. <strong>Omit for offline.</strong> Prefer <code>Integrated Security=true</code> so no secret is written to the machine</td>
+</tr>
+<tr>
+<td><code>Database:Provider</code></td>
+<td><code>SqlServer</code> for a real platform</td>
+</tr>
+<tr>
+<td>Workspace root</td>
+<td>Defaults to <code>%LOCALAPPDATA%\KocStudio</code>. Override for a redirected-profile estate</td>
+</tr>
+</tbody>
+</table>
+<h2>First run</h2>
+<p>Studio creates its workspace — <code>datasets</code>, <code>workflows</code>, <code>temp</code>, <code>logs</code> — under
+<code>%LOCALAPPDATA%\KocStudio</code>, writes a <code>firstrun.marker</code> so the welcome appears exactly once, and opens
+the designer. Nothing is installed centrally and nothing is registered system-wide.</p>
+<h2>Distribution</h2>
+<ul>
+<li><strong>Per-user</strong> install into the profile avoids admin rights and matches the per-user workspace.</li>
+<li><strong>Per-machine</strong> needs packaging and admin rights; then the workspace is still per-user, which is what
+  you want — one person's datasets are not another's.</li>
+<li>Ship through the <strong>software portal</strong> so the version is tracked and revocable, rather than a file share.</li>
+<li>The launch communications point people at the portal: see
+  <a href="comms/ANNOUNCEMENT_EMAIL.md"><code>comms/ANNOUNCEMENT_EMAIL.md</code></a>, which carries a <code>[software portal link]</code>
+  placeholder to fill in.</li>
+</ul>
+<h2>Upgrades</h2>
+<p>The workspace survives an upgrade — datasets, workflows and queued submissions are files, not app
+state. Uninstalling does <strong>not</strong> remove <code>%LOCALAPPDATA%\KocStudio</code>; say so in the uninstall notes, or
+people will assume their work went with it.</p>
+<h2>Verify an install</h2>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>App launches, designer renders</td>
+<td>WebView2 present and working</td>
+</tr>
+<tr>
+<td>Create a workflow, save it</td>
+<td>Workspace writable</td>
+</tr>
+<tr>
+<td>Import a small CSV, run AutoML</td>
+<td>Training works; the child process respects its memory ceiling</td>
+</tr>
+<tr>
+<td><strong>Offline build:</strong> open Compete</td>
+<td>Says the platform is not configured — by name, not a crash</td>
+</tr>
+<tr>
+<td><strong>Connected build:</strong> open Compete</td>
+<td>Competitions listed, scoped to what that person may see</td>
+</tr>
+<tr>
+<td><strong>Connected build:</strong> submit an entry</td>
+<td>Appears on the leaderboard; queued and drained if offline at the time</td>
+</tr>
+</tbody>
+</table>
+<h2>What the desktop deliberately cannot do</h2>
+<p>No RBAC console, no role granting, no competition administration, no answer keys. That is not an
+omission to be filled in later — it is the mitigation for the workstation deciding its own user
+(<code>SECURITY_DESKTOP.md</code> §1). Administration stays on the website.</p></article>
+  <p class="foot">Source: <code>docs/DEPLOYMENT_DESKTOP.md</code> in the Beep.KocAiCommunity repository. Edit that file and
+  rebuild with <code>python docs/build-doc-page.py</code> — this page is generated.</p>
+</div>
+
+<script>
+document.querySelectorAll(".doc table").forEach(function (t) {
+  var box = document.createElement("div");
+  box.className = "table-scroll";
+  t.parentNode.insertBefore(box, t);
+  box.appendChild(t);
+});
+</script>

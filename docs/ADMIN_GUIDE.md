@@ -146,12 +146,12 @@ administer beyond ensuring the competitions API is reachable from their machines
 | Symptom | Likely cause / fix |
 |---|---|
 | "You need the PlatformAdmin role" on `/admin` | You're not signed in as an admin — switch persona (dev) or check your Entra/AD role. |
-| Admin dashboard shows 0 users | No org/profile data yet — seed the dev org or connect the directory; check the API is running. |
+| Admin dashboard shows 0 users | No org/profile data yet — seed the dev org or connect the directory. (There is no separate API to check: the platform surface runs inside the website.) |
 | A user can't create a competition | They have no active creator grant — set their level in RBAC / Users. |
 | "You can only create competitions up to X scope" | The user targeted an audience wider than their granted maximum — raise their grant or pick a narrower scope. |
 | Duplicate org code rejected | Codes are unique — pick a free code. |
 | Competition final board is empty/locked | It's before the **reveal time**, or the answer key/datasets aren't set. |
-| Desktop app: competitions unavailable | The machine can't reach the API — the designer still works offline; check `KOC_API_BASEURL`/network. |
+| Desktop app: competitions unavailable | Since 2026-08-02 KOC Studio reads the database directly — check its connection string, not a network path to a server. The designer still works with no database at all. |
 
 ## 12. Reference
 

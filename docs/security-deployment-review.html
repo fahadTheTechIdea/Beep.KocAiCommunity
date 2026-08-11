@@ -1,0 +1,895 @@
+<title>Security Deployment Review — KOC AI Digital Campus</title>
+
+<style>
+  /* ---- Tokens ------------------------------------------------------------
+     The KOC blueprint theme, taken from the product itself: koc-blueprint.css
+     and Branding/KocBrand.cs. Accent 700/500/300/900 are KOC petroleum blue and
+     the secondary is the product's teal, so this document and the platform it
+     reviews share one identity rather than two.                               */
+  :root {
+    --ink:#10222F; --ink-soft:#5A6B78; --ink-faint:#8496A3;
+    --paper:#F6F8FA; --surface:#FFFFFF; --rule:#E1E7EC; --rule-strong:#C6D2DB;
+    --petrol:#1466A5; --petrol-deep:#0B2E4C; --petrol-wash:#EAF2F8; --ground-deep:#0B2E4C;
+    --brass:#1F8A8C; --brass-wash:#E9F4F4;
+    --ok:#1F8A8C; --ok-wash:#E9F4F4;
+    --warn:#A8681B; --warn-wash:#FBF1E2;
+    --risk:#9b2c2c; --risk-wash:#fcecec;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: "Inter", "IBM Plex Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    --measure: 76ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:#DCE6EE; --ink-soft:#93A5B4; --ink-faint:#7A8C9B;
+      --paper:#0B1620; --surface:#12222E; --rule:#23384A; --rule-strong:#33506A;
+      --petrol:#5FA3D4; --petrol-deep:#A8CDE6; --petrol-wash:#12283A; --ground-deep:#07202F; --ground-deep:#07202F;
+      --brass:#4FB3B5; --brass-wash:#122A2B;
+      --ok:#4FB3B5; --ok-wash:#122A2B;
+      --warn:#D8A651; --warn-wash:#122A2B;
+      --risk:#e88a8a; --risk-wash:#2c1618;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink:#DCE6EE; --ink-soft:#93A5B4; --ink-faint:#7A8C9B;
+    --paper:#0B1620; --surface:#12222E; --rule:#23384A; --rule-strong:#33506A;
+    --petrol:#5FA3D4; --petrol-deep:#A8CDE6; --petrol-wash:#12283A; --ground-deep:#07202F;
+    --brass:#4FB3B5; --brass-wash:#122A2B;
+    --ok:#4FB3B5; --ok-wash:#122A2B; --warn:#D8A651; --warn-wash:#122A2B;
+    --risk:#e88a8a; --risk-wash:#2c1618;
+  }
+  :root[data-theme="light"] {
+    --ink:#10222F; --ink-soft:#5A6B78; --ink-faint:#8496A3;
+    --paper:#F6F8FA; --surface:#FFFFFF; --rule:#E1E7EC; --rule-strong:#C6D2DB;
+    --petrol:#1466A5; --petrol-deep:#0B2E4C; --petrol-wash:#EAF2F8; --ground-deep:#0B2E4C;
+    --brass:#1F8A8C; --brass-wash:#E9F4F4;
+    --ok:#1F8A8C; --ok-wash:#E9F4F4; --warn:#A8681B; --warn-wash:#FBF1E2;
+    --risk:#9b2c2c; --risk-wash:#fcecec;
+  }
+
+  body {
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--sans); font-size:16px; line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1040px; margin:0 auto; padding:0 24px 96px; }
+  h1,h2,h3,h4 { line-height:1.2; text-wrap:balance; margin:0; }
+  h1 { font-size:clamp(1.9rem,4.2vw,2.9rem); font-weight:700; letter-spacing:-.02em; }
+  h2 { font-size:1.2rem; font-weight:600; letter-spacing:.01em; text-transform:uppercase; }
+  h3 { font-size:1.05rem; font-weight:650; margin-top:28px; }
+  h4 { font-size:.92rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); margin-top:22px; }
+  p { max-width:var(--measure); }
+  a { color:var(--petrol); }
+  code,kbd { font-family:var(--mono); font-size:.87em; }
+  code { background:var(--petrol-wash); color:var(--petrol-deep); padding:.1em .36em; border-radius:4px; word-break:break-word; }
+  .eyebrow { font-size:.75rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--petrol); }
+
+  .masthead {
+    background:linear-gradient(135deg,var(--ground-deep),var(--petrol));
+    color:#fff; padding:52px 0 44px; margin-bottom:40px; border-bottom:3px solid var(--brass);
+  }
+  .masthead .wrap { padding-bottom:0; }
+  .masthead .eyebrow { color:#9FC8E4; }
+  .masthead h1 { color:#fff; margin:10px 0 14px; }
+  .masthead p { color:#CFE0EE; max-width:70ch; font-size:1.05rem; margin:0; }
+  .facts {
+    display:grid; gap:1px; margin-top:34px;
+    grid-template-columns:repeat(auto-fit,minmax(148px,1fr));
+    background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.18);
+    border-radius:8px; overflow:hidden;
+  }
+  .fact { background:var(--ground-deep); padding:14px 16px; }
+  .fact dt { font-size:.66rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#9FC8E4; margin-bottom:4px; }
+  .fact dd { margin:0; font-size:.94rem; color:#fff; font-weight:600; }
+
+  nav.toc {
+    background:var(--surface); border:1px solid var(--rule); border-radius:8px;
+    padding:18px 22px; margin-bottom:44px;
+  }
+  nav.toc ol { columns:2; column-gap:36px; margin:0; padding-inline-start:1.2rem; font-size:.9rem; }
+  @media (max-width:640px) { nav.toc ol { columns:1; } }
+  nav.toc li { margin:3px 0; }
+
+  section { margin-top:56px; scroll-margin-top:20px; }
+  .sec-head { display:flex; align-items:baseline; gap:14px; border-bottom:2px solid var(--rule-strong); padding-bottom:10px; margin-bottom:22px; }
+  .sec-num { font-family:var(--mono); font-size:.95rem; font-weight:700; color:var(--brass); flex:none; }
+
+  .note {
+    border:1px solid var(--rule); border-inline-start:4px solid var(--petrol);
+    background:var(--surface); padding:16px 20px; margin:20px 0;
+    border-start-start-radius:0; border-end-start-radius:0;
+    border-start-end-radius:8px; border-end-end-radius:8px;
+  }
+  .note.risk{border-inline-start-color:var(--risk);background:var(--risk-wash);}
+  .note.warn{border-inline-start-color:var(--warn);background:var(--warn-wash);}
+  .note.action{border-inline-start-color:var(--brass);background:var(--brass-wash);}
+  .note p:last-child{margin-bottom:0;} .note p:first-child{margin-top:0;}
+  .note strong{color:var(--ink);}
+
+  .scroll { overflow-x:auto; margin:20px 0; border:1px solid var(--rule); border-radius:8px; }
+  table { border-collapse:collapse; width:100%; font-size:.88rem; background:var(--surface); }
+  th,td { text-align:start; padding:9px 13px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  thead th {
+    background:var(--petrol-wash); color:var(--petrol-deep);
+    font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    white-space:nowrap; border-bottom:2px solid var(--rule-strong);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  .num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td code { white-space:nowrap; }
+
+  .pill {
+    display:inline-block; font-size:.67rem; font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; padding:3px 9px; border-radius:100px;
+    border:1px solid currentColor; white-space:nowrap;
+  }
+  .pill.ok{color:var(--ok);background:var(--ok-wash);}
+  .pill.warn{color:var(--warn);background:var(--warn-wash);}
+  .pill.risk{color:var(--risk);background:var(--risk-wash);}
+  .pill.na{color:var(--ink-faint);background:transparent;}
+
+  .cards { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin:20px 0; }
+  .card { background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:18px 20px; }
+  .card h3 { margin:0 0 6px; color:var(--petrol-deep); font-size:1rem; }
+  .card p { font-size:.89rem; color:var(--ink-soft); margin:0; }
+
+  pre {
+    background:var(--ground-deep); color:#DFEAF3; padding:16px 18px; border-radius:8px;
+    overflow-x:auto; font-family:var(--mono); font-size:.82rem; line-height:1.55; margin:18px 0;
+  }
+  pre code { background:none; color:inherit; padding:0; }
+
+  figure{margin:24px 0;}
+  figcaption{font-size:.82rem;color:var(--ink-faint);margin-top:10px;max-width:var(--measure);}
+  .diagram{width:100%;height:auto;display:block;}
+
+  ul,ol{max-width:var(--measure);padding-inline-start:1.3rem;}
+  li{margin:6px 0;} li::marker{color:var(--brass);}
+
+  .foot{margin-top:64px;padding-top:20px;border-top:1px solid var(--rule);font-size:.85rem;color:var(--ink-faint);}
+  @media print {
+    .masthead{background:var(--petrol-deep)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    section{break-inside:avoid-page;} nav.toc{display:none;}
+  }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Kuwait Oil Company · Training &amp; Career Development</div>
+    <h1>Security Deployment Review</h1>
+    <p>
+      AI Digital Campus — internal learning and competition platform. Technical security documentation
+      for information-security review prior to deployment into the KOC environment.
+    </p>
+    <dl class="facts">
+      <div class="fact"><dt>Application</dt><dd>Beep.KocAiCommunity</dd></div>
+      <div class="fact"><dt>Runtime</dt><dd>.NET 10 / ASP.NET Core</dd></div>
+      <div class="fact"><dt>Tenancy</dt><dd>Single-tenant</dd></div>
+      <div class="fact"><dt>Data residency</dt><dd>On-premises, KOC</dd></div>
+      <div class="fact"><dt>Reviewed</dt><dd>4 Aug 2026</dd></div>
+      <div class="fact"><dt>Commit</dt><dd><code>6383167</code></dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="note action">
+    <p>
+      <strong>Provenance.</strong> Every control, port, algorithm and limit below was read out of the
+      source at commit <code>0035f23</code>, and the file it lives in is cited so it can be checked
+      independently. §11 lists what is <em>absent</em>. Where a value is a deployment choice rather than
+      a code fact, it is marked <span class="pill na">Deployment</span> — those are the rows the hosting
+      engineer must confirm, not assertions about the software.
+    </p>
+  </div>
+
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><a href="#scope">Scope and data held</a></li>
+      <li><a href="#topology">Components and topology</a></li>
+      <li><a href="#ports">Network ports and protocols</a></li>
+      <li><a href="#flows">Data flows and trust boundaries</a></li>
+      <li><a href="#authn">Authentication</a></li>
+      <li><a href="#crypto">Cryptography and secrets</a></li>
+      <li><a href="#authz">Authorization model</a></li>
+      <li><a href="#surface">Anonymous attack surface</a></li>
+      <li><a href="#controls">Application controls</a></li>
+      <li><a href="#decision">Decision requiring sign-off</a></li>
+      <li><a href="#gaps">Known gaps</a></li>
+      <li><a href="#checklist">Pre-deployment checklist</a></li>
+      <li><a href="#assurance">Assurance and scope of this document</a></li>
+    </ol>
+  </nav>
+
+  <!-- ================================================== 1 -->
+  <section id="scope">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Scope and data held</h2></div>
+
+    <p>
+      A single-tenant internal web application. Employees work through machine-learning learning tracks,
+      enter internal competitions on KOC operational data, and discuss their work with colleagues.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Data category</th><th>Examples</th><th>Classification handling</th></tr></thead>
+        <tbody>
+          <tr><td>Employee identity</td><td>User id, display name, work email, department code, org placement</td><td>From the KOC directory in an intranet deployment; the application stores a copy</td></tr>
+          <tr><td>Uploaded datasets</td><td>CSV files of subsurface, production, facilities and HSE sensor data</td><td>Per-dataset classification: Public / Internal / Confidential / Restricted, enforced on download</td></tr>
+          <tr><td>Competition answer keys</td><td>Hidden ground-truth labels</td><td>Stored Restricted; never returned by any endpoint</td></tr>
+          <tr><td>User-generated content</td><td>Discussions, replies, file attachments, competition descriptions</td><td>Visibility-scoped: Team / Group / Directorate / Company</td></tr>
+          <tr><td>Engagement records</td><td>Points, badges, streaks, leaderboard standings, activity feed</td><td>Company-visible by default — see §10</td></tr>
+          <tr><td>Trained models</td><td>ML.NET model binaries and their metrics</td><td>Stored as artifacts; inference gated on promotion state and ownership</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Not held:</strong> customer data, financial records, HSE incidents of record, payment
+      instruments, or any personal data beyond directory identity and platform activity.</p>
+  </section>
+
+  <!-- ================================================== 2 -->
+  <section id="topology">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Components and topology</h2></div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Component</th><th>Assembly</th><th>Hosting</th><th>DB access</th><th>Inbound</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Web</strong></td><td><code>Beep.KocAiCommunity.Web</code></td><td>IIS, in-process</td><td><span class="pill warn">Read/write</span></td><td>Browsers; KOC Studio (hub only)</td></tr>
+          <tr><td><strong>Platform surface</strong></td><td><code>Beep.KocAiCommunity.Platform</code></td><td colspan="3"><strong>A library, not a host.</strong> <code>/api/v1</code>, the leaderboard hub and the outbox dispatcher run inside the Web process. No port, no separate site.</td></tr>
+          <tr><td><strong>Worker</strong></td><td><code>Beep.KocAiCommunity.Worker</code></td><td>Windows Service</td><td><span class="pill warn">Read/write</span></td><td><span class="pill ok">None</span></td></tr>
+          <tr><td><strong>Desktop</strong></td><td><code>Beep.KocAiCommunity.WinForms</code></td><td>Workstation, optional</td><td><span class="pill na">None</span></td><td><span class="pill ok">None</span></td></tr>
+          <tr><td><strong>AppHost</strong></td><td><code>Beep.KocAiCommunity.AppHost</code></td><td colspan="3"><strong>Development orchestration only — must not be deployed.</strong> It provisions a SQL Server container and wires local endpoints.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Changed since the 30 July review — read this before the rest.</strong> The API was its own
+        website then, and this document said so: the Web held no connection string, and compromise of the
+        Web tier yielded a session rather than database access. On <strong>2 August 2026</strong> the API
+        became a library hosted inside the website. <strong>The website now holds the connection string
+        and is the data-access boundary</strong>, so that mitigation no longer exists and the Web tier
+        must be assessed as a data-tier component. What replaced it is <code>InternalApiGuard</code> (§08):
+        <code>/api/v1</code> is refused from anywhere but the machine itself, so the surface that was
+        network-reachable is now loopback-only. The Worker is unchanged — same data path, no inbound port.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== 3 -->
+  <section id="ports">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Network ports and protocols</h2></div>
+
+    <div class="note warn">
+      <p>
+        <strong>The application does not hard-code any listening port.</strong> It binds whatever the host
+        gives it. Under IIS the binding is the site's, so the production ports are <strong>443/TCP</strong>
+        (and 80/TCP for redirect only). The numbered ports below appear in
+        <code>Properties/launchSettings.json</code> and are <em>developer-workstation defaults</em>; they
+        are not used in an IIS deployment and should not appear in a firewall request for one.
+      </p>
+    </div>
+
+    <h3>Inbound — production (IIS)</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Port</th><th>Proto</th><th>Component</th><th>Source</th><th>Purpose</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="num">443</td><td>TCP / HTTPS</td><td>Web</td><td>KOC workstations</td><td>Browser UI</td><td>Primary. TLS terminated at IIS.</td></tr>
+          <tr><td class="num">443</td><td>TCP / WSS</td><td>Web</td><td>KOC workstations</td><td>Blazor Server circuit</td><td>WebSocket upgrade on the same port. <strong>Required</strong> — the UI is server-rendered and will not function if WebSocket upgrade is blocked by a proxy.</td></tr>
+          <tr><td class="num">443</td><td>TCP / WSS</td><td>Web</td><td>KOC Studio workstations</td><td>Leaderboard hub</td><td>The one remotely-reachable part of the platform surface, on the site's own binding. <code>/api/v1</code> beside it is refused from off-machine (§08).</td></tr>
+          <tr><td class="num">80</td><td>TCP / HTTP</td><td>Web, API</td><td>Same as above</td><td>Redirect to HTTPS only</td><td><code>UseHttpsRedirection()</code> + HSTS active outside Development.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Outbound</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Port</th><th>Proto</th><th>From</th><th>To</th><th>Purpose</th><th>Required?</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1433</td><td>TCP / TDS</td><td>Web, Worker</td><td>SQL Server</td><td>All persistence</td><td><span class="pill risk">Mandatory</span></td></tr>
+          <tr><td class="num">—</td><td>loopback</td><td>Web</td><td>Itself</td><td>Every data operation, in-process since 2 Aug 2026</td><td><span class="pill ok">No network hop</span></td></tr>
+          <tr><td class="num">88 / 464</td><td>TCP+UDP</td><td>Web</td><td>Domain controllers</td><td>Kerberos, in <code>KocEnvironment</code> mode</td><td><span class="pill warn">Windows auth only</span></td></tr>
+          <tr><td class="num">389 / 636</td><td>TCP</td><td>Web</td><td>Domain controllers</td><td>LDAP, if directory lookup is enabled</td><td><span class="pill na">Optional</span></td></tr>
+          <tr><td class="num">443</td><td>TCP / HTTPS</td><td>Web</td><td>Arbitrary internet hosts</td><td>Dataset import by URL, initiated by a user</td><td><span class="pill warn">Feature-dependent</span> — see below</td></tr>
+          <tr><td class="num">443</td><td>TCP / HTTPS</td><td>Web (browser)</td><td>youtube.com</td><td>One embedded video in a beginner lesson</td><td><span class="pill na">Optional</span> — degrades gracefully when blocked</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note risk">
+      <p>
+        <strong>Outbound dataset import is the only egress the application initiates on user instruction.</strong>
+        A user may paste a URL and have the API fetch a CSV from it. The implementation refuses private and
+        internal addresses, applies a 30-second timeout and a 200&nbsp;MB cap
+        (<code>Datasets/DatasetContentService.cs</code>). If KOC policy forbids server-initiated egress,
+        block outbound 443 from the API host: the rest of the platform is unaffected and the feature fails
+        closed with a clear message.
+      </p>
+    </div>
+
+    <h3>Developer-workstation ports <span class="pill na">Not production</span></h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Port</th><th>Component</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td class="num">7150 / 5150</td><td>Web (HTTPS / HTTP)</td><td><code>Web/Properties/launchSettings.json</code></td></tr>
+          <tr><td class="num">5151</td><td>Loopback listener for <code>/api/v1</code> (<code>Platform:InternalPort</code>; <code>0</code> disables it, which IIS in-process hosting requires)</td><td><code>Web/Program.cs</code></td></tr>
+          <tr><td class="num">1433</td><td>SQL Server container, provisioned by AppHost</td><td><code>AppHost/Program.cs</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>HTTP endpoints of operational interest</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Path</th><th>Component</th><th>Auth</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>/health</code></td><td>API, Worker</td><td><span class="pill risk">None</span></td><td>Readiness. Returns status only, no detail.</td></tr>
+          <tr><td><code>/alive</code></td><td>API, Worker</td><td><span class="pill risk">None</span></td><td>Liveness.</td></tr>
+          <tr><td><code>/hubs/leaderboard</code></td><td>API</td><td>Bearer</td><td>SignalR hub, live leaderboard push. WebSocket with long-polling fallback.</td></tr>
+          <tr><td><code>/api/v1/*</code></td><td>API</td><td>Bearer (16 exceptions, §08)</td><td>All application operations.</td></tr>
+          <tr><td><code>/account/login</code>, <code>/account/register</code>, <code>/account/logout</code></td><td>Web</td><td>Form POST</td><td>Session establishment. Present only in <code>SiteAccounts</code> mode.</td></tr>
+          <tr><td><code>/culture/set</code></td><td>Web</td><td><span class="pill risk">None</span></td><td>Writes the language cookie and redirects. Redirect target is validated as site-relative.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Recommendation:</strong> restrict <code>/health</code> and <code>/alive</code> to the
+        monitoring subnet at the IIS or firewall layer. They disclose nothing beyond up/down, but there is
+        no reason to expose them to workstations.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== 4 -->
+  <section id="flows">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Data flows and trust boundaries</h2></div>
+
+    <figure>
+      <svg class="diagram" viewBox="0 0 920 260" role="img"
+           aria-label="Workstation reaches the Web over HTTPS 443; the Web calls the API over 443 carrying an HMAC-signed identity assertion and a bearer token; the API alone reaches SQL Server on 1433 and the artifact file share; the Worker also reaches SQL Server but has no inbound port.">
+        <defs>
+          <marker id="a2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <path d="M0,0 L8,3.5 L0,7 Z" fill="#1F8A8C"/>
+          </marker>
+        </defs>
+
+        <rect x="6" y="18" width="196" height="226" rx="10" fill="none" stroke="#C6D2DB" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="104" y="38" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#8496A3">KOC WORKSTATION</text>
+        <rect x="26" y="84" width="156" height="60" rx="8" fill="#EAF2F8" stroke="#1466A5" stroke-width="2"/>
+        <text x="104" y="108" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="600" fill="#0B2E4C">Browser</text>
+        <text x="104" y="126" text-anchor="middle" font-family="system-ui" font-size="11" fill="#5A6B78">koc.auth cookie</text>
+
+        <line x1="206" y1="114" x2="252" y2="114" stroke="#1F8A8C" stroke-width="2.5" marker-end="url(#a2)"/>
+        <text x="229" y="104" text-anchor="middle" font-family="system-ui" font-size="10" fill="#5A6B78">443</text>
+        <text x="229" y="130" text-anchor="middle" font-family="system-ui" font-size="9" fill="#8496A3">+ WSS</text>
+
+        <rect x="256" y="18" width="404" height="226" rx="10" fill="none" stroke="#1466A5" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="458" y="38" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#1466A5">APPLICATION TIER · IIS</text>
+
+        <rect x="276" y="80" width="150" height="68" rx="8" fill="#1466A5"/>
+        <text x="351" y="106" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="600" fill="#fff">Web</text>
+        <text x="351" y="124" text-anchor="middle" font-family="system-ui" font-size="10" fill="#CFE0EE">holds the credential</text>
+        <text x="351" y="138" text-anchor="middle" font-family="system-ui" font-size="10" fill="#CFE0EE">session + data access</text>
+
+        <line x1="430" y1="114" x2="486" y2="114" stroke="#1F8A8C" stroke-width="2.5" marker-end="url(#a2)"/>
+        <text x="458" y="104" text-anchor="middle" font-family="system-ui" font-size="10" fill="#5A6B78">loopback</text>
+        <text x="458" y="130" text-anchor="middle" font-family="system-ui" font-size="9" fill="#8496A3">same host</text>
+
+        <rect x="490" y="80" width="150" height="68" rx="8" fill="#1466A5"/>
+        <text x="565" y="106" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="600" fill="#fff">/api/v1 (library)</text>
+        <text x="565" y="124" text-anchor="middle" font-family="system-ui" font-size="10" fill="#CFE0EE">same process</text>
+        <text x="565" y="138" text-anchor="middle" font-family="system-ui" font-size="10" fill="#CFE0EE">loopback only</text>
+
+        <rect x="490" y="172" width="150" height="52" rx="8" fill="#5A6B78"/>
+        <text x="565" y="194" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="600" fill="#fff">Worker</text>
+        <text x="565" y="211" text-anchor="middle" font-family="system-ui" font-size="10" fill="#CFD8DE">no inbound port</text>
+
+        <line x1="644" y1="104" x2="700" y2="94" stroke="#1F8A8C" stroke-width="2.5" marker-end="url(#a2)"/>
+        <line x1="644" y1="132" x2="700" y2="164" stroke="#1F8A8C" stroke-width="2.5" marker-end="url(#a2)"/>
+        <line x1="644" y1="198" x2="700" y2="110" stroke="#1F8A8C" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a2)"/>
+        <text x="676" y="86" text-anchor="middle" font-family="system-ui" font-size="10" fill="#5A6B78">1433</text>
+
+        <rect x="704" y="18" width="210" height="226" rx="10" fill="none" stroke="#C6D2DB" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="809" y="38" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#8496A3">DATA TIER</text>
+
+        <rect x="724" y="74" width="170" height="56" rx="8" fill="#EAF2F8" stroke="#1466A5" stroke-width="2"/>
+        <text x="809" y="98" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="600" fill="#0B2E4C">SQL Server</text>
+        <text x="809" y="115" text-anchor="middle" font-family="system-ui" font-size="10" fill="#5A6B78">TDS 1433</text>
+
+        <rect x="724" y="144" width="170" height="56" rx="8" fill="#EAF2F8" stroke="#1466A5" stroke-width="2"/>
+        <text x="809" y="168" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="600" fill="#0B2E4C">Artifact store</text>
+        <text x="809" y="185" text-anchor="middle" font-family="system-ui" font-size="10" fill="#5A6B78">filesystem path</text>
+      </svg>
+      <figcaption>
+        Two trust boundaries since 2 August 2026, not three. <code>/api/v1</code> is a library inside the
+        website, reached over loopback and refused from off-machine; the website and the Worker are the
+        two things holding a connection string. The browser still never reaches the surface directly.
+      </figcaption>
+    </figure>
+
+    <h4>Sign-in sequence — <code>KocEnvironment</code> mode</h4>
+    <pre><code>1.  Browser  → Web    GET /            (IIS has already completed Kerberos/NTLM)
+2.  Web             reads the Windows principal from the request
+3.  Web      → self  POST /api/v1/auth/exchange   (loopback; same process since 2 Aug 2026)
+                     body:    { userId, displayName, email }
+                     headers: X-Koc-Exchange     = base64(HMACSHA256(key, "userId|unixSeconds"))
+                              X-Koc-Exchange-At  = unixSeconds
+4.  Surface         verifies HMAC, rejects if clock skew &gt; 5 minutes
+5.  Surface         provisions the user if unseen; reads roles from the database
+6.  Surface  → Web   200 { accessToken (JWT HS256, 8 h), expiresUtc, roles }
+7.  Web             issues koc.auth cookie, expiry pinned to the token's
+8.  Web      → self  every later call: Authorization: Bearer &lt;token&gt;</code></pre>
+
+    <div class="note">
+      <p>
+        <strong>Step 4 is the load-bearing control.</strong> Without a valid HMAC no token is issued for
+        any user id, and anyone holding the key can mint an assertion for any employee — which is why it
+        is a Tier-0 secret in §06. Note what the merge changed: this exchange no longer crosses the
+        network, so it is no longer interceptable in transit, but it is also no longer a boundary between
+        two processes. The key now protects a call the host makes to itself.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== 5 -->
+  <section id="authn">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Authentication</h2></div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Mode</th><th>Verifier</th><th>Credential stored by the application</th><th>Registration surface</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>KocEnvironment</code> <span class="pill ok">Recommended</span></td>
+            <td>IIS Windows Integrated (Negotiate/Kerberos), or Entra when configured</td>
+            <td><strong>None.</strong> No password is received or stored.</td>
+            <td>None — no registration page exists</td>
+          </tr>
+          <tr>
+            <td><code>SiteAccounts</code></td>
+            <td>The application, via ASP.NET Core Identity</td>
+            <td>Password hash</td>
+            <td>Open <span class="pill warn">§11</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Control</th><th>Value</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>Access token format</td><td>JWT, <code>HS256</code></td><td><code>Api/Security/AccessTokenIssuer.cs</code></td></tr>
+          <tr><td>Token lifetime</td><td class="num">8 hours</td><td><code>AccessTokenIssuer.Lifetime</code></td></tr>
+          <tr><td>Token validation</td><td>Issuer <code>koc-ai-community</code>, audience <code>koc-ai-community-api</code>, lifetime and signing key all validated; clock skew 1 minute</td><td><code>SecurityExtensions.TokenValidation</code></td></tr>
+          <tr><td>Inbound claim mapping</td><td>Disabled (<code>MapInboundClaims = false</code>) — claim names are not rewritten</td><td><code>SecurityExtensions</code></td></tr>
+          <tr><td>Session cookie</td><td><code>koc.auth</code>; <code>HttpOnly</code>; <code>SameSite=Lax</code>; 8-hour sliding</td><td><code>AddKocWebAuthentication</code></td></tr>
+          <tr><td>Cookie <code>Secure</code> flag</td><td><code>SameAsRequest</code> <span class="pill warn">§11</span></td><td><code>AddKocWebAuthentication</code></td></tr>
+          <tr><td>Session/token coupling</td><td>Cookie <code>ExpiresUtc</code> is set to the token's expiry, so a live session cannot outlive its token</td><td><code>Web/Security/AccountEndpoints.cs</code></td></tr>
+          <tr><td>Password hashing</td><td>ASP.NET Core Identity default — PBKDF2-HMAC-SHA256, 100,000 iterations, 128-bit salt</td><td>Framework default; not overridden</td></tr>
+          <tr><td>Password policy</td><td>Minimum 8 characters; non-alphanumeric <em>not</em> required <span class="pill warn">§11</span></td><td><code>Identity/LocalAccountService.cs</code></td></tr>
+          <tr><td>Account lockout</td><td>10 failed attempts → 15 minutes</td><td><code>Identity/LocalAccountService.cs</code></td></tr>
+          <tr><td>Sign-in rate limit</td><td>20 requests/minute per source IP on <code>/auth/*</code>; HTTP 429 on breach</td><td><code>Api/Program.cs</code></td></tr>
+          <tr><td>Account enumeration</td><td>"No such account" and "wrong password" return one identical message</td><td><code>LocalAccountService.SignInAsync</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note warn">
+      <p>
+        <strong>Username character validation is disabled.</strong>
+        <code>IdentityOptions.User.AllowedUserNameCharacters</code> is set to empty, because a corporate
+        account name such as <code>KOC\aldhubaib</code> contains a backslash the default validator rejects
+        — which silently failed to record the person and left them with no roles at all. The username is
+        an identifier supplied by the directory, not free user input, and it is never concatenated into a
+        query: all data access is through EF Core parameterised commands. Recorded here because a reviewer
+        will find it and should have the reasoning.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== 6 -->
+  <section id="crypto">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Cryptography and secrets</h2></div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Purpose</th><th>Algorithm</th><th>Key</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Access-token signature</td><td>HMAC-SHA256 (JWS <code>HS256</code>)</td><td>256-bit symmetric, base64 in configuration</td><td>One host holds it; the desktop verifies against the same issuer</td></tr>
+          <tr><td>Identity assertion (loopback)</td><td>HMAC-SHA256 over <code>userId|unixSeconds</code></td><td>The same key</td><td>5-minute validity window</td></tr>
+          <tr><td>Password storage</td><td>PBKDF2-HMAC-SHA256</td><td>Per-user 128-bit salt</td><td>Identity v3 format; <code>SiteAccounts</code> mode only</td></tr>
+          <tr><td>Transport</td><td>TLS</td><td>Host certificate</td><td>Version and cipher suite are the IIS/Schannel policy <span class="pill na">Deployment</span></td></tr>
+          <tr><td>Data at rest — database</td><td>Not implemented in the application</td><td>—</td><td>Use SQL Server TDE <span class="pill na">Deployment</span></td></tr>
+          <tr><td>Data at rest — artifacts</td><td>Not implemented in the application</td><td>—</td><td>Use BitLocker or an encrypted volume <span class="pill na">Deployment</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Secret inventory</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Secret</th><th>Setting</th><th>Default location</th><th>Sensitivity</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Token signing key</td>
+            <td><code>Auth:TokenSigningKey</code></td>
+            <td><code>%LOCALAPPDATA%\KocAiCommunity\setup.json</code>, or the path in <code>Setup:File</code></td>
+            <td><span class="pill risk">Tier 0</span> — mints a token for any user</td>
+          </tr>
+          <tr>
+            <td>Database connection string</td>
+            <td><code>ConnectionStrings:kocdb</code></td>
+            <td>Host configuration</td>
+            <td><span class="pill risk">Tier 0</span> — use Integrated Security so no password exists</td>
+          </tr>
+          <tr>
+            <td>Entra client secret</td>
+            <td><code>AzureAd:*</code></td>
+            <td>Host configuration</td>
+            <td><span class="pill warn">Tier 1</span> — only if Entra sign-in is configured</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note risk">
+      <p>
+        <strong>The signing key is written to disk in plain text by first-run setup.</strong> Anyone who can
+        read <code>setup.json</code> can forge an access token for any user, including a Platform Admin.
+        For production, supply <code>Auth:TokenSigningKey</code> from the KOC secret store through
+        configuration instead of completing the setup wizard, and restrict the file's ACL to the
+        application-pool identity. There is no key-rotation mechanism in the application: rotating means
+        changing the value on both hosts and restarting, which invalidates every live session.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== 7 -->
+  <section id="authz">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Authorization model</h2></div>
+
+    <p>
+      Authorization is owned entirely by the application database and re-evaluated per request. Two
+      deliberately separate notions:
+    </p>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Position</h3>
+        <p>Employee · Team Leader · Manager · DCEO · CEO. Derived from the primary org-unit membership — the reporting line. Never granted by hand; an administrator cannot assign one.</p>
+      </div>
+      <div class="card">
+        <h3>Function role</h3>
+        <p>Platform Admin · Competition Admin · Learning Admin · Auditor. Granted in the RBAC console. Cannot contain a position; the service rejects the attempt.</p>
+      </div>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Policy</th><th>Satisfied by</th></tr></thead>
+        <tbody>
+          <tr><td><code>RequireEmployee</code></td><td>Any position</td></tr>
+          <tr><td><code>RequireSupervisor</code></td><td>Team Leader, Manager, DCEO, CEO, or Platform Admin</td></tr>
+          <tr><td><code>RequirePlatformAdmin</code></td><td>Platform Admin</td></tr>
+          <tr><td><code>RequireCompetitionAdmin</code></td><td>Competition Admin or Platform Admin</td></tr>
+          <tr><td><code>RequireLearningAdmin</code></td><td>Learning Admin or Platform Admin</td></tr>
+          <tr><td><code>RequireAuditor</code></td><td>Auditor or Platform Admin</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>External role claims are discarded.</strong> If an identity provider asserts Platform Admin,
+        the application ignores the assertion and uses its own record — otherwise whoever administers the
+        directory could grant themselves the platform. Enforced in <code>KocUserDirectory</code>; covered by
+        an integration test.
+      </p>
+    </div>
+
+    <h3>Object-level controls</h3>
+    <ul>
+      <li><strong>Visibility scope</strong> — datasets, competitions, discussions and tracks each carry Team / Group / Directorate / Company, resolved against the requester's org membership. Enforced in the service layer, not at the endpoint, because six routes can reach a competition and gating only the browse list would leave five open.</li>
+      <li><strong>Data classification</strong> — Confidential and Restricted dataset downloads require the owner or a Platform Admin.</li>
+      <li><strong>Answer keys</strong> — stored Restricted, never returned by any endpoint; scoring is server-side.</li>
+      <li><strong>Model inference</strong> — a non-production model version is usable only by its owner or a Platform Admin; promotion requires two approvals from <em>different</em> people, and the registrant cannot approve their own.</li>
+      <li><strong>Last-admin guard</strong> — the final Platform Admin cannot be demoted, so the console cannot lock everyone out.</li>
+    </ul>
+  </section>
+
+  <!-- ================================================== 8 -->
+  <section id="surface">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Anonymous attack surface</h2></div>
+
+    <p>
+      Sixteen API endpoints are reachable without authentication — the complete set, enumerated from source
+      rather than recalled. Everything else requires a valid bearer token.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong><code>/api/v1</code> is refused from off-machine before authentication is even considered.</strong>
+        Since the surface moved in-process, <code>InternalApiGuard</code> answers <strong>404, not 403</strong>,
+        to any request that did not originate on this host — a refusal would tell a prober there is something
+        to find. The leaderboard hub is deliberately exempt: KOC Studio connects to it from a workstation, so
+        it is the one part with a genuine remote caller. The sixteen anonymous endpoints below are therefore
+        reachable <em>from the host itself</em>; from a workstation they do not exist.
+      </p>
+      <p>
+        <strong>Two settings govern this, and one deployment turns it off.</strong>
+        <code>Platform:InternalPort</code> opens the loopback listener; IIS in-process hosting ignores
+        <code>UseUrls</code>, so it must be <code>0</code> there, and the surface is then mapped on the site's
+        own listener with <code>Platform:InternalApiOnly=false</code> — which makes it publicly reachable.
+        That is the configuration of the public demo host (§11); a KOC intranet deployment should keep the
+        guard on.
+      </p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Method</th><th>Route</th><th>Purpose</th><th>Exposure / mitigation</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST</code></td><td><code>/auth/login</code></td><td>Password sign-in</td><td>20/min per IP; lockout after 10 failures</td></tr>
+          <tr><td><code>POST</code></td><td><code>/auth/register</code></td><td>Account creation</td><td>20/min per IP · <span class="pill warn">§11</span></td></tr>
+          <tr><td><code>POST</code></td><td><code>/auth/exchange</code></td><td>Web vouches for a corporate user</td><td>HMAC required; 5-min window</td></tr>
+          <tr><td><code>GET</code></td><td><code>/auth/state</code></td><td>Is this a fresh install?</td><td>Single boolean</td></tr>
+          <tr><td><code>GET</code></td><td><code>/meta</code></td><td>Build metadata</td><td>Non-sensitive</td></tr>
+          <tr><td><code>GET</code></td><td><code>/tracks</code>, <code>/tracks/{id}</code></td><td>Learning catalogue</td><td>Company-scope only</td></tr>
+          <tr><td><code>GET</code></td><td><code>/discussions</code>, <code>/discussions/{id}</code></td><td>Community threads</td><td>Company-scope only</td></tr>
+          <tr><td><code>GET</code></td><td><code>/community/attachments/{id}</code></td><td>Files posted to a thread</td><td>Company-scope only · <span class="pill warn">§10</span></td></tr>
+          <tr><td><code>GET</code></td><td><code>/engagement/leaderboard</code></td><td>Individual standings</td><td>Real names + user ids · <span class="pill risk">§10</span></td></tr>
+          <tr><td><code>GET</code></td><td><code>/engagement/teams</code></td><td>Team standings</td><td>Org-unit names · <span class="pill risk">§10</span></td></tr>
+          <tr><td><code>GET</code></td><td><code>/engagement/activity</code></td><td>Activity feed</td><td>Company-scope, names · <span class="pill risk">§10</span></td></tr>
+          <tr><td><code>GET</code></td><td><code>/engagement/badges/catalog</code></td><td>Badge definitions</td><td>No personal data</td></tr>
+          <tr><td><code>GET</code></td><td><code>/competitions/categories</code></td><td>Category list</td><td>No personal data</td></tr>
+          <tr><td><code>GET</code></td><td><code>/public/showcase</code></td><td>Landing-page preview</td><td>Real names + ids · <span class="pill risk">§10</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Anonymous still means scoped.</strong> A caller with no account resolves to no org
+        membership, so the visibility evaluator yields company-wide rows only. Team- and Group-scoped
+        discussions are unreachable anonymously — covered by an integration test
+        (<em>Opening the community up does not open the narrower discussions</em>).
+      </p>
+      <p>
+        The colleague-directory search behind <code>@mentions</code>
+        (<code>/community/mention-candidates</code>) is <strong>not</strong> anonymous: reading a post is
+        open, enumerating who works at KOC is not.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== 9 -->
+  <section id="controls">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Application controls</h2></div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Area</th><th>Implementation</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>SQL injection</td><td>All access through EF Core parameterised queries; no dynamic SQL built from user input</td><td><span class="pill ok">In place</span></td></tr>
+          <tr><td>Cross-site scripting</td><td>Razor output-encodes by default. User-supplied Markdown is rendered as HTML in lesson and help bodies — that content is authored by the platform, not by users <span class="pill warn">see note</span></td><td><span class="pill warn">Qualified</span></td></tr>
+          <tr><td>CSRF</td><td>Antiforgery enabled; disabled on 12 endpoints that are bearer-authenticated APIs or pre-session form posts</td><td><span class="pill warn">By design</span></td></tr>
+          <tr><td>Transport</td><td><code>UseHttpsRedirection()</code> and <code>UseHsts()</code> outside Development</td><td><span class="pill ok">In place</span></td></tr>
+          <tr><td>Rate limiting</td><td>Fixed-window, partitioned by source IP: 1000/min global, 20/min on auth. HTTP 429 on breach</td><td><span class="pill ok">In place</span></td></tr>
+          <tr><td>SSRF</td><td>URL import rejects private and internal addresses; 30 s timeout; 200 MB cap</td><td><span class="pill ok">In place</span></td></tr>
+          <tr><td>Upload limits</td><td>200 MB default (<code>Artifacts:MaxSizeBytes</code>); optional extension allowlist (<code>Artifacts:AllowedExtensions</code>, empty = permit all)</td><td><span class="pill warn">Allowlist empty by default</span></td></tr>
+          <tr><td>Open redirect</td><td>Return URLs validated as site-relative on sign-in and on <code>/culture/set</code></td><td><span class="pill ok">In place</span></td></tr>
+          <tr><td>Audit</td><td>Administrative mutations written via <code>IAuditEnvelope</code>; queryable by Auditor or Platform Admin</td><td><span class="pill ok">In place</span></td></tr>
+          <tr><td>Fail-fast configuration</td><td>Production refuses to boot on unsafe settings — see below</td><td><span class="pill ok">In place</span></td></tr>
+          <tr><td>Security response headers</td><td>CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy</td><td><span class="pill risk">Absent</span></td></tr>
+          <tr><td>CORS</td><td>No policy registered; the API is not intended for cross-origin browser calls</td><td><span class="pill na">Not configured</span></td></tr>
+          <tr><td>MFA</td><td>Delegated to the KOC environment / Entra; none in the application's own password mode</td><td><span class="pill warn">Delegated</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note warn">
+      <p>
+        <strong>Markdown rendering.</strong> Learning lessons and help articles are Markdown rendered to
+        HTML with inline SVG and iframes permitted, because the content includes diagrams and one embedded
+        video. That content ships with the application and is not user-editable through any endpoint. If an
+        admin authoring surface for lessons is ever added, this becomes a stored-XSS vector and will need
+        sanitisation at that point.
+      </p>
+    </div>
+
+    <h3>Production start-up guard</h3>
+    <p>
+      With <code>ASPNETCORE_ENVIRONMENT=Production</code> the host validates its own configuration and
+      throws at start-up if any of the following holds — a deliberate fail-loud, so a misconfigured
+      production host stops rather than serving quietly.
+    </p>
+    <pre><code>DevAuth:Enabled          == true   → authenticates every request as a dev user
+Auth:DemoPersonas        == true   → anyone may choose an identity without a password
+Auth:SignInWith          unset     → nobody has said where people sign in
+Auth:TokenSigningKey     unset     → no signing key
+Seed:Enabled             == true   → would load demonstration data
+Database:Provider        != SqlServer</code></pre>
+    <p style="font-size:.9rem;color:var(--ink-soft)"><code>ServiceDefaults/KocProductionPreflight.cs</code></p>
+  </section>
+
+  <!-- ================================================== 10 -->
+  <section id="decision">
+    <div class="sec-head"><span class="sec-num">10</span><h2>Decision requiring sign-off</h2></div>
+
+    <div class="note risk">
+      <p><strong>The community is readable without an account, including colleagues' real names.</strong></p>
+      <p>
+        Learning material, discussions, thread attachments, individual and team leaderboards, the badge wall
+        and the activity feed are all served to unauthenticated callers with real display names and user
+        ids. An earlier build masked names to initials for signed-out visitors; the masking was removed on
+        30 July 2026 at the product owner's direction, on the reasoning that a visitor should see the same
+        company data any employee sees.
+      </p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Deployment</th><th>Reachable by</th><th>Assessment</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>KOC intranet (IIS, Windows auth)</td>
+            <td>Anyone on the KOC network</td>
+            <td><span class="pill ok">Low</span> — the network is the boundary. "Anonymous" here means an employee who has not yet completed the sign-in exchange, not a stranger.</td>
+          </tr>
+          <tr>
+            <td>Published to the public internet</td>
+            <td>Anyone, including search-engine crawlers</td>
+            <td><span class="pill risk">Requires sign-off</span> — employee names, standings, activity, and any file attached to a company-scope discussion become publicly readable and indexable.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note action">
+      <p><strong>Recommendation.</strong> For an intranet deployment, no change. If the platform is ever published beyond the KOC network, three options exist in increasing order of effort:</p>
+      <ol>
+        <li>Accept it, and keep the site behind the corporate network boundary.</li>
+        <li>Restore name masking for unauthenticated callers — removed in commit <code>0035f23</code>, reinstatable in under an hour.</li>
+        <li>Require authentication for the community entirely, leaving only the learning catalogue open.</li>
+      </ol>
+      <p>This document does not assume an answer. It is recorded because it is the one decision here with a material external-exposure consequence.</p>
+    </div>
+  </section>
+
+  <!-- ================================================== 11 -->
+  <section id="gaps">
+    <div class="sec-head"><span class="sec-num">11</span><h2>Known gaps</h2></div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Gap</th><th>Detail</th><th>Suggested action</th><th>Effort</th></tr></thead>
+        <tbody>
+          <tr><td><strong>No security response headers</strong></td><td>No CSP, X-Content-Type-Options, X-Frame-Options or Referrer-Policy is emitted.</td><td>Header middleware, or set at the IIS layer.</td><td>Low</td></tr>
+          <tr><td><strong>Signing key on disk in plain text</strong></td><td>Setup writes it to <code>setup.json</code>. Read access equals full impersonation.</td><td>Supply via configuration from the KOC secret store; restrict the ACL.</td><td>Low</td></tr>
+          <tr><td><strong>Cookie <code>Secure</code> conditional</strong></td><td><code>SameAsRequest</code> — only marked Secure when the request arrived over HTTPS.</td><td>Set <code>Always</code> for production.</td><td>Low</td></tr>
+          <tr><td><strong>Upload allowlist empty by default</strong></td><td>Any file extension is accepted as a thread attachment unless <code>Artifacts:AllowedExtensions</code> is configured. Files are stored, never executed, and served with their recorded content type.</td><td>Configure an allowlist.</td><td>Low</td></tr>
+          <tr><td><strong>Symmetric token signing</strong></td><td>HS256 with a secret shared between Web and API; either host can mint a token for any user.</td><td>Acceptable when both are equally trusted and co-located. Revisit if they are ever split.</td><td>Medium</td></tr>
+          <tr><td><strong>No key rotation</strong></td><td>Rotating the signing key means changing it on both hosts and restarting; all sessions drop.</td><td>Accept, or schedule rotation in a maintenance window.</td><td>Medium</td></tr>
+          <tr><td><strong>Open registration</strong></td><td><code>SiteAccounts</code> mode only — anyone reachable can create an account. Not applicable to <code>KocEnvironment</code>.</td><td>Email-domain allowlist or invite flow if ever published.</td><td>Medium</td></tr>
+          <tr><td><strong>First-account bootstrap</strong></td><td>The first account on an empty install becomes Platform Admin. No out-of-band bootstrap; it is a race until claimed.</td><td>Register the intended administrator before the URL is reachable.</td><td>Process</td></tr>
+          <tr><td><strong>Password policy modest</strong></td><td>8 characters, no symbol requirement. Lockout mitigates online guessing.</td><td>Align with the KOC password standard if passwords are ever held in production.</td><td>Low</td></tr>
+          <tr><td><strong>Health endpoints unauthenticated</strong></td><td><code>/health</code> and <code>/alive</code> are open. They disclose up/down only.</td><td>Restrict to the monitoring subnet at the firewall.</td><td>Low</td></tr>
+          <tr><td><strong>No SCA or secret scanning</strong></td><td>Neither is wired into the build.</td><td>Add <code>dotnet list package --vulnerable</code> and a secret scanner to CI.</td><td>Low</td></tr>
+          <tr><td><strong>No penetration test</strong></td><td>The application has never been independently tested.</td><td>Commission one before any deployment beyond the intranet.</td><td>External</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================================================== 12 -->
+  <section id="checklist">
+    <div class="sec-head"><span class="sec-num">12</span><h2>Pre-deployment checklist</h2></div>
+
+    <h4>Configuration</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Setting</th><th>Required value</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td><code>ASPNETCORE_ENVIRONMENT</code></td><td><code>Production</code> — enables the start-up guard</td></tr>
+          <tr><td class="num">2</td><td><code>Auth:SignInWith</code></td><td><code>KocEnvironment</code></td></tr>
+          <tr><td class="num">3</td><td><code>Auth:DemoPersonas</code>, <code>DevAuth:Enabled</code></td><td>Both <code>false</code></td></tr>
+          <tr><td class="num">4</td><td><code>Auth:TokenSigningKey</code></td><td>Fresh 256-bit key from the KOC secret store; identical on Web and API</td></tr>
+          <tr><td class="num">5</td><td><code>ConnectionStrings:kocdb</code></td><td>SQL Server, <code>Integrated Security=true</code>, <code>Encrypt=true</code></td></tr>
+          <tr><td class="num">6</td><td><code>Database:Provider</code></td><td><code>SqlServer</code></td></tr>
+          <tr><td class="num">7</td><td><code>Seed:Enabled</code></td><td><code>false</code></td></tr>
+          <tr><td class="num">8</td><td><code>Artifacts:RootPath</code></td><td>Absolute path outside the web root</td></tr>
+          <tr><td class="num">9</td><td><code>Artifacts:AllowedExtensions</code></td><td>Populated — see §11</td></tr>
+          <tr><td class="num">10</td><td><code>KocApi:BaseUrl</code> (Web)</td><td>HTTPS URL of the API site</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Infrastructure</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Item</th><th>Required state</th></tr></thead>
+        <tbody>
+          <tr><td class="num">11</td><td>IIS authentication (Web site)</td><td>Windows Authentication enabled; Anonymous enabled only if §10 is signed off</td></tr>
+          <tr><td class="num">12</td><td>TLS binding</td><td>Certificate bound on 443; 80 redirects only; TLS 1.2+ per KOC Schannel policy</td></tr>
+          <tr><td class="num">13</td><td>WebSocket support</td><td>Enabled on the Web site — <strong>the Blazor UI will not work without it</strong></td></tr>
+          <tr><td class="num">14</td><td>Application-pool identities</td><td>Dedicated domain service accounts, one per site, least privilege</td></tr>
+          <tr><td class="num">15</td><td>SQL permissions</td><td><code>db_datareader</code> + <code>db_datawriter</code> + EXECUTE. <strong>Not</strong> <code>db_owner</code> unless migrations run at start-up</td></tr>
+          <tr><td class="num">16</td><td>Artifact directory ACL</td><td>Restricted to the API and Worker pool identities</td></tr>
+          <tr><td class="num">17</td><td>Firewall — inbound</td><td>443 to Web from workstation subnets; 443 to API from the Web host only, unless the Desktop client is deployed</td></tr>
+          <tr><td class="num">18</td><td>Firewall — outbound</td><td>1433 to SQL from API and Worker. Outbound 443 from API only if URL dataset import is wanted</td></tr>
+          <tr><td class="num">19</td><td>Health endpoints</td><td>Restricted to the monitoring subnet</td></tr>
+          <tr><td class="num">20</td><td>Database encryption</td><td>TDE enabled; backups encrypted</td></tr>
+          <tr><td class="num">21</td><td>Migrations</td><td>Applied out of band, or <code>Database:MigrateOnStartup=true</code> with elevated rights for one run</td></tr>
+          <tr><td class="num">22</td><td>AppHost</td><td><strong>Not deployed</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Process</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>#</th><th>Item</th></tr></thead>
+        <tbody>
+          <tr><td class="num">23</td><td>Intended Platform Admin registered before the URL is shared (§11, first-account bootstrap)</td></tr>
+          <tr><td class="num">24</td><td>§10 exposure decision signed off by information security</td></tr>
+          <tr><td class="num">25</td><td>Backup and restore of database <em>and</em> artifact directory tested together — a database restored without its artifacts loses every dataset and model</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================================================== 13 -->
+  <section id="assurance">
+    <div class="sec-head"><span class="sec-num">13</span><h2>Assurance and scope of this document</h2></div>
+
+    <p>
+      The behaviours above are covered by an automated suite of <strong class="num">513</strong> tests run
+      against the application in its real configuration — a live HTTP host and a real database — rather than
+      against mocks. Security-relevant cases include:
+    </p>
+    <ul>
+      <li>Roles asserted by an external identity provider are ignored in favour of the database.</li>
+      <li>A position cannot be granted as a function role.</li>
+      <li>The last Platform Admin cannot be demoted.</li>
+      <li>Opening the community to anonymous readers does not expose narrower-scoped discussions.</li>
+      <li>The colleague directory is not searchable without an account.</li>
+      <li>Confidential and Restricted datasets refuse download to anyone but the owner or an admin.</li>
+      <li>Disabling a competition category hides it from every route reaching a competition, not just the browse list.</li>
+      <li>A model version cannot be approved by the person who registered it, and needs two distinct approvers.</li>
+    </ul>
+
+    <div class="note">
+      <p>
+        <strong>What this document is not.</strong> It describes the controls implemented in the
+        application, established by reading its source. It is <em>not</em> an independent security
+        assessment, a threat model, or a penetration test, and it should not be relied on as a substitute
+        for any of those. Rows marked <span class="pill na">Deployment</span> are the hosting engineer's to
+        confirm — the software makes no claim about them.
+      </p>
+    </div>
+  </section>
+
+  <div class="foot">
+    <p>
+      Prepared for KOC information-security review · Source of record: <code>master</code> at
+      <code>6383167</code>, 4 August 2026 · Controls verified against source, not inferred.
+      §11 records what is absent.
+    </p>
+    <p>
+      <strong>Revision.</strong> First issued 30 July 2026 against <code>0035f23</code>, when the API was a
+      separate website. Revised 4 August 2026 for the architecture change of 2 August, in which the API
+      became a library hosted inside the website: §02 topology, §03 ports, §04 data flows, §06 key custody
+      and §08 the loopback guard. Sections not listed were re-read and are unchanged.
+    </p>
+  </div>
+</div>
+

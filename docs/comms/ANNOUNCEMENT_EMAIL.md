@@ -24,8 +24,9 @@ from genuine KOC problems — with a live leaderboard, recognition, and rewards.
 ## What you can do
 
 - **Learn** — work through guided tracks that take you from the basics to building real models.
-- **Build** — use the visual Studio to prepare data and train models with clicks, not code (AutoML does
-  the heavy lifting when you want a fast start).
+- **Build** — install **KOC Studio** on your PC and prepare data and train models with clicks, not code
+  (AutoML does the heavy lifting when you want a fast start). It runs on your own machine, so your data
+  stays there and a long training run does not depend on the network.
 - **Compete** — enter challenges on real KOC problems (e.g., equipment failure prediction, production
   analytics), climb the live leaderboard, and earn points, badges, and recognition.
 - **Connect** — discuss, ask questions, and share solutions with colleagues across the company.
@@ -39,9 +40,11 @@ from genuine KOC problems — with a live leaderboard, recognition, and rewards.
 ## Getting started is easy
 
 1. Open the AI Digital Campus at **[platform URL]** — you're signed in automatically with your KOC
-   account. No installation, no separate password.
-2. Complete the **["Getting Started" track]** to learn the essentials.
-3. Enter the featured competition: **[first competition name]** — the countdown is already running.
+   account. Nothing to install to learn, browse the challenges, or follow a leaderboard.
+2. When you are ready to **build** a model, install **KOC Studio** from **[software portal link]**. It is
+   a desktop application, and it is where the designer and AutoML live.
+3. Complete the **["Getting Started" track]** to learn the essentials.
+4. Enter the featured competition: **[first competition name]** — the countdown is already running.
 
 Our **first competitions** open on **[launch date]**, with recognition for top performers. You don't need
 prior experience — just curiosity and a willingness to learn.
