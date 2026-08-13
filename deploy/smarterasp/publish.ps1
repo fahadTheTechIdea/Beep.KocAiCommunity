@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Publishes Beep.KocAiCommunity.Web to the SmarterASP.NET site behind
     kocaitraining.premiumasp.net, using the Web Deploy profile downloaded from the control panel.
