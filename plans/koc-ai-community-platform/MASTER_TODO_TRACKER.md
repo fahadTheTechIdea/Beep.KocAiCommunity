@@ -184,6 +184,12 @@
   - [ ] Azure Kuwait deployment, Bicep IaC, Managed Identity, Key Vault (deployment-time)
   - [ ] Backup/restore/DR runbooks, read-only Python-metadata importer (deployment-time)
 
+- [x] **Phase 24 — Compete pages & Host console rework** (`24_COMPETE_PAGES_AND_HOST_CONSOLE_REWORK.md`) — ✅ DONE (2026-08-13)
+  - [x] Stage 1 — task + evaluation stored and edited as one bound pair (create request, console init/constraint, per-task submit format + sample file)
+  - [x] Stage 2 — honest lifecycle (real drafts, own-draft visibility, answer-key gate on Activate, unified reveal handling, opt-in conclude-at-reveal + scheduler)
+  - [x] Stage 3 — one console, one editor (dialog → launcher; Host console the sole writer with EN+AR side by side; `CanManage` gating; uniform admin override incl. seeded competitions; host-set prizes; category endpoint wired; title/description/quota/scope editing; "Hosting" chip)
+  - [x] Stage 4 — competitor polish + sweep (quota remaining, per-task hints, sample file, Data-tab degradation, localisation sweep; journeys held by tests + smoke — see item 47 notes)
+
 ## Recommended build order (from here)
 
 1. ~~Phase 05b — engagement/gamification~~ ✅ DONE (2026-07-19)
@@ -500,6 +506,49 @@ KOC blueprint theme. No DB schema change anywhere.
     failure, CTS disposed. The workflow now remembers its dataset/target/task/structure without a manual save.
     Ui.Studio builds 0/0; UnitTests 218 green. (Full `slnx -warnaserror` copy step was blocked by the running
     Web app holding the DLL — a lock, not a code error.)
+
+## Compete pages & Host console rework (Phase 24)
+
+Decisions: **one editor** — the create dialog becomes a launcher (title + task card only) and the
+Host console is the single place competition data is created *and* updated, with English and
+Arabic side by side in the same section (the dialog and Host tab were two divergent editors: the
+popup held the English/scope/quota, the tab held the Arabic/data/lifecycle, and they had already
+drifted three ways); task + evaluation metric become **one bound decision** (create stores the
+pair, the console may only move within the scorer's family); drafts become true (create as draft,
+own drafts visible to self + admin, Activate gated on the answer key); the console keys off
+ownership (`CanManage` = creator or PlatformAdmin, one `RequireManageAsync` in the service — which
+also makes the 25 seeded `koc-platform` competitions manageable from the UI);
+prizes/category/English title/quota/scope(draft-only) get manage-gated endpoints. Full audit with
+file:line evidence in `24_COMPETE_PAGES_AND_HOST_CONSOLE_REWORK.md`.
+
+44. 🟢 **Stage 1 — task/evaluation pairing (2026-08-13)** — `TaskType` on `CreateCompetitionRequest` (validated
+    against `scorer.SupportedTasks` at create, same rule as upload); Host tab initialises
+    `_dsTask/_dsLabel/_dsId` from the competition and constrains the Task select to the scorer's
+    family; per-task submit-format panel + generated `sample_submission.csv`.
+45. 🟢 **Stage 2 — honest lifecycle (2026-08-13)** — `CreateAsync` makes drafts (dialog already says so);
+    `BrowseVisibleAsync` keeps own drafts (badged); Activate refuses without an answer key and the
+    readiness chips become the explaining checklist; one shared reveal date+time conversion in
+    dialog + Host tab; opt-in `ConcludeAtReveal` (the phase's only new column).
+46. 🟢 **Stage 3 — one console, one editor (2026-08-13)** — the `+ Host` dialog shrinks to a launcher (title +
+    task card → draft → `/compete/{id}?tab=host`); the Host console becomes the **only** writer of
+    competition fields, with English and Arabic side by side in the same section (ends the
+    popup-speaks-English/Host-tab-speaks-Arabic split); `CanManage` on the DTO gates it; uniform
+    admin override across datasets/key/status/reveal/translations (makes the 25 seeded
+    competitions manageable); prizes drop to manage-gated; wire the dead
+    `SetCompetitionCategoryRequest` contract (endpoint + client + console select);
+    `PUT /competitions/{id}` for title/description/quota/scope(draft-only); "Hosting" chip on the
+    arena; the dialog's duplicated hero/reveal/Arabic implementations are deleted.
+47. 🟢 **Stage 4 — competitor polish + sweep (2026-08-13)** — `QuotaRemainingToday` shown at the upload control;
+    failure reasons land in the History table; `LoadData` degrades instead of killing the page;
+    localisation sweep of the raw strings on both pages (`← All competitions`, `⚔ Competition`,
+    Overview's evaluation sentence, dialog rail/review). **Delivered notes:** the four journeys are
+    held by tests + a curl smoke rather than Playwright (host-from-zero and admin-rescue in
+    `CompetitionLifecycleTests`, console/launcher in `HostConsoleTests`); failure *reasons* stay in
+    the snackbar — a failed submission is never persisted, so there is no history row to carry the
+    text; a draft remains readable by direct GUID link (pre-existing `GetAsync` semantics — browse
+    hides it, the link is unguessable). Suites after the phase: Unit 432, Integration 238 (+8),
+    Component 71 (+6), Architecture 2, E2E 1 — all green. New migration
+    `CompetitionConcludeAtReveal` in both providers.
 
 ## Global definition of done
 
