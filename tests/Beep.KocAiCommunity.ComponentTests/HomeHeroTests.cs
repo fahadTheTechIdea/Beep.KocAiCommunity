@@ -121,6 +121,34 @@ public class HomeHeroTests : TestContext
     }
 
     [Fact]
+    public void The_guest_hero_asks_with_a_real_button_and_offers_a_no_account_door()
+    {
+        var cut = Render(asGuest: true, Competition());
+
+        // The one ask is now the hero's filled button rather than a text link — the page exists to get
+        // a colleague to join. The count rule above still holds; this pins the promotion.
+        cut.FindComponents<MudButton>().Select(b => b.Markup)
+            .Should().Contain(m => m.Contains("Sign in", StringComparison.OrdinalIgnoreCase));
+
+        // And beside it, the door for whoever is not ready: try the first lesson without an account.
+        cut.Markup.Should().Contain("Try it first — no account needed");
+    }
+
+    [Fact]
+    public void A_newcomer_is_shown_the_badge_cabinet_with_the_catalogs_real_medals()
+    {
+        var cut = Render(asGuest: true, Competition());
+
+        // The what-you-win section: Barrels, the rank ladder, and six real badges. Names must match
+        // BadgeCatalog — the page must never advertise a medal that does not exist.
+        cut.Markup.Should().Contain("koc-badgewall");
+        cut.Markup.Should().Contain("Wildcatter");
+        cut.Markup.Should().Contain("Gusher");
+        cut.Markup.Should().Contain("Steady Pump");
+        cut.Markup.Should().Contain("Chief Geoscientist", "the rank ladder shows where the climb ends");
+    }
+
+    [Fact]
     public void The_champions_board_renders_at_full_size()
     {
         var cut = Render(asGuest: false, Competition());

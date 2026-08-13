@@ -2040,3 +2040,85 @@
     color: var(--koc-accent, #1466A5);
     flex: 0 0 auto;
 }
+
+/* ---------------------------------------------------------------------------
+   Featured competition banner — pinned left-to-right in BOTH languages.
+   The uploaded hero photographs keep their subject on the right, and the
+   banner's gradient darkens the left side to hold the text. In Arabic the
+   document flips to RTL, which would slide the copy onto the photograph's
+   subject and the pale end of the gradient. So the banner alone stays LTR:
+   text on the left, photo breathing on the right, whatever the language.
+   unicode-bidi:plaintext keeps each Arabic sentence ordering itself correctly
+   inside its left-anchored box. Scoped to the banner — the standings card
+   below it has no photograph and mirrors with the rest of the page.
+   --------------------------------------------------------------------------- */
+
+.koc-arena-banner {
+    direction: ltr;
+    text-align: left;
+}
+
+.koc-arena-banner .mud-typography,
+.koc-arena-banner .koc-heading,
+.koc-arena-banner .koc-eyebrow {
+    unicode-bidi: plaintext;
+}
+
+/* ---------------------------------------------------------------------------
+   The game, shown to newcomers: Barrels, ranks, and the badge cabinet.
+   --------------------------------------------------------------------------- */
+
+.koc-game-tile img {
+    margin-bottom: .5rem;
+}
+
+/* The rank ladder, reading bottom → top left to right. */
+.koc-ranks {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .35rem;
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.koc-ranks .mud-icon-root { color: var(--koc-accent, #1466A5); opacity: .7; }
+.koc-ranks .koc-rank-top { color: var(--koc-accent, #1466A5); }
+
+/* The badge cabinet: real medals from the catalog, tier ring and all. */
+.koc-badgewall-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem .75rem;
+    justify-content: space-between;
+}
+
+.koc-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: .15rem;
+    flex: 1 1 130px;
+    max-width: 170px;
+}
+
+.koc-badge b { font-size: .88rem; margin-top: .3rem; }
+.koc-badge > span:last-child { font-size: .76rem; opacity: .7; }
+
+.koc-badge-medal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--koc-divider, #E1E7EC);
+    box-shadow: 0 0 0 3px rgba(20, 102, 165, .06);
+}
+
+/* Tier rings: muted metals that sit on the light blueprint rather than shout over it. */
+.koc-badge--bronze .koc-badge-medal { border-color: #B57F50; background: rgba(181, 127, 80, .08); }
+.koc-badge--silver .koc-badge-medal { border-color: #8C9BA8; background: rgba(140, 155, 168, .10); }
+.koc-badge--gold .koc-badge-medal { border-color: #C9A13B; background: rgba(201, 161, 59, .10); box-shadow: 0 0 0 3px rgba(201, 161, 59, .15); }

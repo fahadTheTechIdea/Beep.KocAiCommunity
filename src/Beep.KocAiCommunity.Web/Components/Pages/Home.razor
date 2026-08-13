@@ -65,11 +65,18 @@
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
                                StartIcon="@Icons.Material.Filled.Dashboard" OnClick="PrimaryCta">@L["Continue where you left off"]</MudButton>
                 }
-                <MudLink Href="/compete" Typo="Typo.body1">@L["See what colleagues are solving"] →</MudLink>
                 @if (Identity.IsGuest)
                 {
-                    <MudLink OnClick="PrimaryCta" Typo="Typo.body1" Style="cursor:pointer;">@SignInPrompt.ButtonText(Setup, L) →</MudLink>
+                    @* The ask, promoted from a text link to the hero's one filled button: this page
+                       exists to get a colleague to join, and a link beside two paragraphs asked for
+                       nothing. Still asked exactly once — and the try-first door sits beside it for
+                       whoever is not ready, because /learn is open to guests: a real door, not a gate. *@
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.Login" OnClick="PrimaryCta">@SignInPrompt.ButtonText(Setup, L)</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartLearning">@L["Try it first — no account needed"]</MudButton>
                 }
+                <MudLink Href="/compete" Typo="Typo.body1">@L["See what colleagues are solving"] →</MudLink>
             </div>
         </div>
 
@@ -253,6 +260,80 @@
                     <MudText Typo="Typo.body2">@L["The Titanic challenge is the world's most famous first machine-learning puzzle. No oil-and-gas knowledge needed — just a passenger list and a question: who survived? Most people submit their first model within the hour."]</MudText>
                 </div>
                 <MudButton Href="/compete" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowForward">@L["Take the first challenge"]</MudButton>
+            </div>
+        </BlueprintCard>
+    </section>
+
+    <!-- 1d · What you win. The reason the platform is fun, shown with the real badges — not a promise
+         of gamification but the actual cabinet, straight from the badge catalog, tier rings and all. -->
+    <section class="mb-8">
+        <MudText Typo="Typo.h5" HtmlTag="h2" Class="koc-heading mb-1">🛢️ @L["Collect Barrels. Climb the ranks. Win badges."]</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="opacity:.75;max-width:72ch;">
+            @L["Everything here pays. Finish a lesson, pass a quiz, send a submission — each one drops Barrels into your account, and Barrels carry you up the same ladder as everyone else at KOC."]
+        </MudText>
+
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-5 koc-game-tile" Style="height:100%;">
+                    <img src="@KocBrand.Icon("008-oil.png")" alt="" width="40" height="40" />
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Earn Barrels"]</MudText>
+                    <MudText Typo="Typo.body2">@L["The platform's points. A lesson pays, a quiz pays more, and a competition submission pays most of all."]</MudText>
+                </BlueprintCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-5 koc-game-tile" Style="height:100%;">
+                    <img src="@KocBrand.Icon("186-engineer.png")" alt="" width="40" height="40" />
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Climb the ranks"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-2">@L["Eight ranks sit between your first Barrel and the top of the field."]</MudText>
+                    <div class="koc-ranks">
+                        <span>@L["Roustabout"]</span><MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                        <span>@L["Driller"]</span><MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                        <span class="koc-rank-top">@L["Chief Geoscientist"]</span>
+                    </div>
+                </BlueprintCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <BlueprintCard Class="pa-5 koc-game-tile" Style="height:100%;">
+                    <img src="@KocBrand.Icon("105-management.png")" alt="" width="40" height="40" />
+                    <MudText Typo="Typo.h6" Class="koc-heading mb-1">@L["Carry your team"]</MudText>
+                    <MudText Typo="Typo.body2">@L["Monthly leaderboards for people and for departments — every Barrel you earn counts for your team too."]</MudText>
+                </BlueprintCard>
+            </MudItem>
+        </MudGrid>
+
+        @* Six of the thirteen, hand-picked to show the arc: two you collect on day one, two that take a
+           habit, two worth bragging about. Names and icons are the catalog's own (BadgeCatalog) — if a
+           badge is renamed there, rename it here, or the page advertises medals that do not exist. *@
+        <BlueprintCard Class="koc-badgewall pa-5 mt-4">
+            <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-4">
+                <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="koc-heading">🏅 @L["The badge cabinet"]</MudText>
+                <MudText Typo="Typo.caption" Style="opacity:.7;">@L["…and seven more in the cabinet. Every one has a story colleagues will ask about."]</MudText>
+            </div>
+            <div class="koc-badgewall-row">
+                <div class="koc-badge koc-badge--bronze">
+                    <span class="koc-badge-medal"><img src="@KocBrand.Icon("008-oil.png")" alt="" width="32" height="32" /></span>
+                    <b>@L["First Barrel"]</b><span>@L["your first Barrel"]</span>
+                </div>
+                <div class="koc-badge koc-badge--bronze">
+                    <span class="koc-badge-medal"><img src="@KocBrand.Icon("179-exploration.png")" alt="" width="32" height="32" /></span>
+                    <b>@L["Wildcatter"]</b><span>@L["your first submission"]</span>
+                </div>
+                <div class="koc-badge koc-badge--silver">
+                    <span class="koc-badge-medal"><img src="@KocBrand.Icon("220-pump-jack.png")" alt="" width="32" height="32" /></span>
+                    <b>@L["Steady Pump"]</b><span>@L["a 7-day streak"]</span>
+                </div>
+                <div class="koc-badge koc-badge--silver">
+                    <span class="koc-badge-medal"><img src="@KocBrand.Icon("100-goal.png")" alt="" width="32" height="32" /></span>
+                    <b>@L["On the Podium"]</b><span>@L["top three in any challenge"]</span>
+                </div>
+                <div class="koc-badge koc-badge--gold">
+                    <span class="koc-badge-medal"><img src="@KocBrand.Icon("039-oil-well.png")" alt="" width="32" height="32" /></span>
+                    <b>@L["Gusher"]</b><span>@L["first place in a competition"]</span>
+                </div>
+                <div class="koc-badge koc-badge--gold">
+                    <span class="koc-badge-medal"><img src="@KocBrand.Icon("016-pipeline.png")" alt="" width="32" height="32" /></span>
+                    <b>@L["Non-Stop Flow"]</b><span>@L["a 30-day streak"]</span>
+                </div>
             </div>
         </BlueprintCard>
     </section>

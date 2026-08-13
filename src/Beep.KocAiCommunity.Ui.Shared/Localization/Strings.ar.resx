@@ -2671,4 +2671,82 @@
   <data name="Pump P-114" xml:space="preserve">
     <value>المضخة P-114</value>
   </data>
+  <data name="Try it first — no account needed" xml:space="preserve">
+    <value>جرّبها أولًا — دون حساب</value>
+  </data>
+  <data name="Collect Barrels. Climb the ranks. Win badges." xml:space="preserve">
+    <value>اجمع البراميل، وارتقِ في الرتب، واكسب الأوسمة.</value>
+  </data>
+  <data name="Everything here pays. Finish a lesson, pass a quiz, send a submission — each one drops Barrels into your account, and Barrels carry you up the same ladder as everyone else at KOC." xml:space="preserve">
+    <value>كل شيء هنا له أجر: أكمل درسًا، أو اجتز اختبارًا، أو أرسل مشاركة — وكلٌّ منها يضيف براميل إلى رصيدك، والبراميل ترفعك على السلّم نفسه الذي يتسلّقه الجميع في الشركة.</value>
+  </data>
+  <data name="Earn Barrels" xml:space="preserve">
+    <value>اكسب البراميل</value>
+  </data>
+  <data name="The platform's points. A lesson pays, a quiz pays more, and a competition submission pays most of all." xml:space="preserve">
+    <value>نقاط المنصة: الدرس يدفع، والاختبار يدفع أكثر، ومشاركة المسابقة تدفع أكثر ما يكون.</value>
+  </data>
+  <data name="Climb the ranks" xml:space="preserve">
+    <value>ارتقِ في الرتب</value>
+  </data>
+  <data name="Eight ranks sit between your first Barrel and the top of the field." xml:space="preserve">
+    <value>ثماني رتب بين أول برميل تكسبه وقمة الحقل.</value>
+  </data>
+  <data name="Roustabout" xml:space="preserve">
+    <value>عامل حقل</value>
+  </data>
+  <data name="Driller" xml:space="preserve">
+    <value>حفّار</value>
+  </data>
+  <data name="Chief Geoscientist" xml:space="preserve">
+    <value>كبير الجيولوجيين</value>
+  </data>
+  <data name="Carry your team" xml:space="preserve">
+    <value>ارفع فريقك</value>
+  </data>
+  <data name="Monthly leaderboards for people and for departments — every Barrel you earn counts for your team too." xml:space="preserve">
+    <value>لوحات صدارة شهرية للأفراد وللإدارات — وكل برميل تكسبه يُحسب لفريقك أيضًا.</value>
+  </data>
+  <data name="The badge cabinet" xml:space="preserve">
+    <value>خزانة الأوسمة</value>
+  </data>
+  <data name="…and seven more in the cabinet. Every one has a story colleagues will ask about." xml:space="preserve">
+    <value>…وسبعة أوسمة أخرى في الخزانة، ولكلٍّ منها حكاية سيسأل عنها الزملاء.</value>
+  </data>
+  <data name="First Barrel" xml:space="preserve">
+    <value>أول برميل</value>
+  </data>
+  <data name="Wildcatter" xml:space="preserve">
+    <value>منقِّب</value>
+  </data>
+  <data name="Steady Pump" xml:space="preserve">
+    <value>ضخّ ثابت</value>
+  </data>
+  <data name="On the Podium" xml:space="preserve">
+    <value>على منصة التتويج</value>
+  </data>
+  <data name="Gusher" xml:space="preserve">
+    <value>فوّارة</value>
+  </data>
+  <data name="Non-Stop Flow" xml:space="preserve">
+    <value>تدفّق لا يتوقف</value>
+  </data>
+  <data name="your first Barrel" xml:space="preserve">
+    <value>أول برميل تكسبه</value>
+  </data>
+  <data name="your first submission" xml:space="preserve">
+    <value>أول مشاركة ترسلها</value>
+  </data>
+  <data name="a 7-day streak" xml:space="preserve">
+    <value>نشاط سبعة أيام متتالية</value>
+  </data>
+  <data name="top three in any challenge" xml:space="preserve">
+    <value>ضمن الثلاثة الأوائل في أي تحدٍّ</value>
+  </data>
+  <data name="first place in a competition" xml:space="preserve">
+    <value>المركز الأول في مسابقة</value>
+  </data>
+  <data name="a 30-day streak" xml:space="preserve">
+    <value>نشاط ثلاثين يومًا متتالية</value>
+  </data>
 </root>
