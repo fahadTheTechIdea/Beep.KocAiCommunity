@@ -86,8 +86,25 @@ builder.Services.AddHttpClient<IKocApiClient, KocApiClient>()
 builder.Services.AddHttpClient(KocExchangeClient.Name, client => client.BaseAddress = new Uri(apiBaseUrl));
 
 // Blazor Web App with global Interactive Server render mode.
+//
+// The timeouts below exist because of how browsers treat a tab that is not in front. After five
+// minutes hidden, Chrome and Edge wake a background tab's timers only once per minute — and the
+// circuit's keep-alive ping runs on one of those timers. With the 30-second default, the server
+// stops hearing pings, declares the client gone, and closes the circuit: no error anywhere, because
+// a silent client is a normal close. The colleague comes back to "reconnect failed, reload", sure
+// the site crashed. A two-minute allowance rides out a once-a-minute ping; ten minutes of retained
+// state means the tab that was parked through a meeting picks up where it left off instead of
+// reloading from scratch.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+    })
+    .AddHubOptions(options =>
+    {
+        options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+        options.ClientTimeoutInterval = TimeSpan.FromMinutes(2);
+    });
 
 builder.Services.AddMudServices();
 
