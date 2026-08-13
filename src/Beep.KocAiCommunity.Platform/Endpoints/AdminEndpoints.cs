@@ -166,7 +166,7 @@ public static class AdminEndpoints
         {
             try
             {
-                await svc.SetCompetitionCategoryAsync(me.UserId!, id, req.Code, ct);
+                await svc.SetCompetitionCategoryAsync(me.UserId!, id, req.Code, isPlatformAdmin: true, ct);
                 return Results.NoContent();
             }
             catch (CompetitionException ex)

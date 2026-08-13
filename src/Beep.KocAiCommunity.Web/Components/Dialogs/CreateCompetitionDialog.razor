@@ -1,12 +1,19 @@
+@* The launcher, not an editor. It asks for exactly the two things a competition can never change —
+   its name is here only because something has to be born with one, and the task-and-metric pair is
+   frozen because changing the metric after submissions exist would reorder a live leaderboard.
+   EVERYTHING else — the description in both languages, audience, quota, data, prizes, category,
+   reveal — lives in the Host console, the one editor. This dialog and that console used to be two
+   divergent forms for the same record: English editable here and never again, Arabic editable there,
+   the task collected here and discarded, then re-asked there. One field in two places is one drift
+   waiting to happen, so no field the console owns appears here. *@
 @using Beep.KocAiCommunity.Contracts.Competitions
-@using Beep.KocAiCommunity.Contracts.Datasets
 @using Beep.KocAiCommunity.Client
+@using Beep.KocAiCommunity.Web.Components.Shared
 @using Beep.KocAiCommunity.Ui.Shared.Components
-@inject IKocApiClient Api
-@inject Beep.KocAiCommunity.Web.Services.HeroImageStorage HeroImages
-@inject ISnackbar Snackbar
 @using Beep.KocAiCommunity.Ui.Shared.Localization
 @using Microsoft.Extensions.Localization
+@inject IKocApiClient Api
+@inject ISnackbar Snackbar
 @inject IStringLocalizer<Strings> L
 
 <MudDialog>
@@ -15,461 +22,84 @@
             <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Primary" />
             <div>
                 <MudText Typo="Typo.h6" Class="koc-heading">@L["Host a competition"]</MudText>
-                <MudText Typo="Typo.caption" Style="opacity:.7;">Step @(_step + 1) of @Steps.Length · @Steps[_step]</MudText>
+                <MudText Typo="Typo.caption" Style="opacity:.7;">@L["Name it and pick what is predicted — everything else happens on its Host console."]</MudText>
             </div>
         </div>
     </TitleContent>
     <DialogContent>
-        <!-- Progress rail -->
-        <div class="d-flex align-center gap-1 mb-4 flex-wrap">
-            @foreach (var (label, index) in Steps.Select((s, i) => (s, i)))
+        <MudTextField @bind-Value="_title" Immediate="true" Label="@L["Competition title"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Placeholder="ESP Failure Prediction Challenge" Counter="80" MaxLength="80"
+                      HelperText="@L["A clear, specific name. Include the asset or outcome."]" Class="mb-4" />
+
+        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["What do competitors predict?"]</MudText>
+        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
+            @L["This sets the scoring metric and the shape of your data files, and it is the one choice that cannot change later."]
+        </MudText>
+        <MudGrid Spacing="3">
+            @foreach (var option in CompetitionTaskCatalog.All)
             {
-                <MudChip T="string" Size="Size.Small"
-                         Variant="@(index == _step ? Variant.Filled : Variant.Text)"
-                         Color="@(index < _step ? Color.Success : index == _step ? Color.Primary : Color.Default)"
-                         Icon="@(index < _step ? Icons.Material.Filled.Check : null)"
-                         OnClick="@(() => { if (index < _step) { _step = index; } })">
-                    @($"{index + 1} · {label}")
-                </MudChip>
-                @if (index < Steps.Length - 1)
-                {
-                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="opacity:.4;" />
-                }
-            }
-        </div>
-
-        <MudGrid Spacing="4">
-            <!-- Main column -->
-            <MudItem xs="12" md="8">
-                @switch (_step)
-                {
-                    case 0:
-                        <MudTextField @bind-Value="_title" Immediate="true" Label="@L["Competition title"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                      Placeholder="@L["ESP Failure Prediction Challenge"]" Counter="80" MaxLength="80"
-                                      HelperText="@L["A clear, specific name. Include the asset or outcome."]" Class="mb-1" />
-                        <div class="d-flex gap-1 flex-wrap mb-3 align-center">
-                            <MudText Typo="Typo.caption" Style="opacity:.6;">@L["Examples:"]</MudText>
-                            @foreach (var ex in TitleExamples)
-                            {
-                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => _title = ex)">@ex</MudChip>
-                            }
-                        </div>
-
-                        <MudTextField @bind-Value="_description" Immediate="true" Label="@L["Overview — what competitors predict and why it matters"]"
-                                      Variant="Variant.Outlined" Lines="6" AutoGrow="true" Class="mb-1"
-                                      Placeholder="@L["Describe the business problem, what the target column means, and what a strong solution looks like. This is the first thing competitors read."]" />
-                        <div class="d-flex align-center gap-2 mb-3">
-                            <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.AutoFixHigh" OnClick="UseTemplate">@L["Insert a starter template"]</MudButton>
-                            <MudText Typo="Typo.caption" Style="opacity:.6;">@_description.Length characters</MudText>
-                        </div>
-
-                        @* Optional Arabic, collapsed by default. Somebody writing only English should not
-                           feel they have left the form half-finished; somebody writing both should not have
-                           to go somewhere else afterwards to do it. *@
-                        <MudExpansionPanels Elevation="0" Class="mb-3">
-                            <MudExpansionPanel Dense="true">
-                                <TitleContent>
-                                    <div class="d-flex align-center gap-2">
-                                        <MudIcon Icon="@Icons.Material.Filled.Translate" Size="Size.Small" />
-                                        <MudText Typo="Typo.body2"><b>@L["Add Arabic"]</b> <span style="opacity:.6;">@L["(optional)"]</span></MudText>
-                                        @if (_titleAr.Length > 0 || _descriptionAr.Length > 0)
-                                        {
-                                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["Added"]</MudChip>
-                                        }
-                                    </div>
-                                </TitleContent>
-                                <ChildContent>
-                                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
-                                        @L["Arabic-speaking colleagues will see these instead. Leave them blank and they simply see the English — nothing breaks."]
-                                    </MudText>
-                                    <MudTextField @bind-Value="_titleAr" Immediate="true" Label="@L["Competition title (العربية)"]"
-                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2"
-                                                  Style="direction:rtl;" />
-                                    <MudTextField @bind-Value="_descriptionAr" Immediate="true" Label="@L["Overview (العربية)"]"
-                                                  Variant="Variant.Outlined" Lines="5"
-                                                  Style="direction:rtl;" />
-                                </ChildContent>
-                            </MudExpansionPanel>
-                        </MudExpansionPanels>
-
-                        <MudText Typo="Typo.body2" Class="mb-1"><b>@L["Hero image"]</b> <span style="opacity:.6;">(optional)</span></MudText>
-                        <MudText Typo="Typo.caption" Class="d-block mb-1" Style="opacity:.7;">A banner shown on the competition — and, if it's featured, on the landing-page hero. PNG or JPG.</MudText>
-                        <InputFile OnChange="OnHeroImagePicked" accept="image/*" />
-                        @if (_heroImageName is not null)
-                        {
-                            <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.Image" Class="mt-1">@_heroImageName</MudChip>
-                        }
-
-                        <MudSelect T="string" Value="_scope" ValueChanged="OnScopeChanged" Label="@L["Who can compete"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   HelperText="@L["Only people in this scope see and enter the competition. Levels above your access are hidden."]">
-                            @if (Allowed("Company"))
-                            {
-                                <MudSelectItem Value="@("Company")">🏢 All of KOC</MudSelectItem>
-                            }
-                            @if (Allowed("Directorate"))
-                            {
-                                <MudSelectItem Value="@("Directorate")">@L["My directorate"]</MudSelectItem>
-                            }
-                            @if (Allowed("Group"))
-                            {
-                                <MudSelectItem Value="@("Group")">@L["My group"]</MudSelectItem>
-                            }
-                            @if (Allowed("Team"))
-                            {
-                                <MudSelectItem Value="@("Team")">@L["My team"]</MudSelectItem>
-                            }
-                        </MudSelect>
-                        @if (_audience is not null)
-                        {
-                            <MudText Typo="Typo.caption" Style="opacity:.7;">
-                                <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Small" /> ≈ @_audience.UserCount potential competitors (@_audience.OrgUnitName)
-                            </MudText>
-                        }
-                        break;
-
-                    case 1:
-                        <MudText Typo="Typo.body2" Class="mb-3">@L["What kind of value do competitors predict? This sets the scoring metric and the shape of your data files."]</MudText>
-                        <MudGrid Spacing="3" Class="mb-3">
-                            @foreach (var t in TaskOptions)
-                            {
-                                <MudItem xs="12" md="4">
-                                    <div @onclick="() => _task = t.Key" style="cursor:pointer;height:100%;">
-                                        <BlueprintCard Class="pa-4" Style="@(_task == t.Key ? "border-color:var(--koc-accent-500);height:100%;" : "height:100%;")">
-                                            <div class="d-flex align-center gap-2 mb-1">
-                                                <MudIcon Icon="@t.Icon" Color="@(_task == t.Key ? Color.Primary : Color.Default)" />
-                                                <MudText Typo="Typo.subtitle2" Class="koc-heading">@t.Label</MudText>
-                                            </div>
-                                            <MudText Typo="Typo.caption" Style="opacity:.75;">@t.Help</MudText>
-                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" Class="mt-1">@t.Metric</MudChip>
-                                        </BlueprintCard>
-                                    </div>
-                                </MudItem>
-                            }
-                        </MudGrid>
-
-                        <!-- Data format guide — the part hosts always get wrong -->
-                        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["The three files you'll prepare"]</MudText>
-                        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">For a <b>@CurrentTask.Label.ToLower()</b> task, your CSVs should look like this:</MudText>
-                        @RenderFile("training.csv", "labelled — competitors download this", CurrentTask.TrainingSample)
-                        @RenderFile("evaluation.csv", "no label — competitors predict for these rows", CurrentTask.EvalSample)
-                        @RenderFile("answer-key.csv", "hidden — only the platform sees it, used to score", CurrentTask.KeySample)
-                        break;
-
-                    case 2:
-                        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["Daily submission limit"]</MudText>
-                        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">@L["Keeps the field fair — nobody can brute-force the leaderboard with hundreds of tries. 5 per day suits most challenges."]</MudText>
-                        <div class="d-flex align-center gap-4 mb-1" style="max-width:460px;">
-                            <MudSlider T="int" @bind-Value="_quota" Min="1" Max="25" Step="1" Color="Color.Primary" />
-                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled">@_quota / day</MudChip>
-                        </div>
-                        <MudText Typo="Typo.caption" Class="d-block mb-4" Style="opacity:.6;">@QuotaHint</MudText>
-
-                        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">Final standings reveal <span style="opacity:.6;font-weight:400;">(optional)</span></MudText>
-                        <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
-                            A Kaggle-style public/private split. Until this date everyone sees a live public leaderboard; the final private
-                            standings unlock on reveal day, so no one can game the last hours. Leave blank for a simple always-live board.
-                        </MudText>
-                        <MudDatePicker @bind-Date="_revealDate" Label="Reveal date" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                       MinDate="DateTime.Today.AddDays(1)" Style="max-width:220px;" Clearable="true"
-                                       HelperText="@(_revealDate is { } d ? $"Runs for {Math.Max(1, (d - DateTime.Today).Days)} day(s)" : "No deadline")" />
-                        break;
-
-                    default:
-                        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-2">@L["Review"]</MudText>
-                        <BlueprintCard Class="pa-4 mb-3">
-                            <MudText Typo="Typo.h6" Class="koc-heading mb-1">🏆 @(_title.Length == 0 ? "(untitled)" : _title)</MudText>
-                            <MudText Typo="Typo.body2" Class="mb-3" Style="white-space:pre-wrap;">@_description</MudText>
-                            <div class="d-flex gap-1 flex-wrap">
-                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@CurrentTask.Label</MudChip>
-                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text">scored by @CurrentTask.Metric</MudChip>
-                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Visibility">@_scope</MudChip>
-                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@_quota submissions/day</MudChip>
-                                @if (_revealDate is { } rd)
-                                {
-                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Schedule">reveal @rd.ToString("d MMM yyyy")</MudChip>
-                                }
+                <MudItem xs="12" md="4">
+                    <div @onclick="() => _task = option.Key" style="cursor:pointer;height:100%;">
+                        <BlueprintCard Class="pa-4" Style="@(_task == option.Key ? "border-color:var(--koc-accent-500);height:100%;" : "height:100%;")">
+                            <div class="d-flex align-center gap-2 mb-1">
+                                <MudIcon Icon="@option.Icon" Color="@(_task == option.Key ? Color.Primary : Color.Default)" />
+                                <MudText Typo="Typo.subtitle2" Class="koc-heading">@L[option.Label]</MudText>
                             </div>
+                            <MudText Typo="Typo.caption" Style="opacity:.75;">@L[option.Help]</MudText>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" Class="mt-1">@L[option.Metric]</MudChip>
                         </BlueprintCard>
-
-                        <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["What happens next"]</MudText>
-                        <div class="mb-2">
-                            @foreach (var (text, i) in NextSteps.Select((x, i) => (x, i)))
-                            {
-                                <div class="d-flex align-center gap-2 py-1">
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" Style="min-width:26px;">@(i + 1)</MudChip>
-                                    <MudText Typo="Typo.body2">@((MarkupString)text)</MudText>
-                                </div>
-                            }
-                        </div>
-                        break;
-                }
-            </MudItem>
-
-            <!-- Contextual help rail -->
-            <MudItem xs="12" md="4">
-                <BlueprintCard Class="pa-4" Style="height:100%;background:var(--koc-bg);">
-                    <div class="d-flex align-center gap-2 mb-2">
-                        <MudIcon Icon="@Icons.Material.Filled.TipsAndUpdates" Color="Color.Primary" Size="Size.Small" />
-                        <MudText Typo="Typo.subtitle2" Class="koc-heading">@Help.Title</MudText>
                     </div>
-                    @foreach (var tip in Help.Tips)
-                    {
-                        <div class="d-flex gap-2 mb-2">
-                            <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Size="Size.Small" Color="Color.Success" Style="margin-top:2px;" />
-                            <MudText Typo="Typo.caption">@((MarkupString)tip)</MudText>
-                        </div>
-                    }
-                    @if (_step == 0)
-                    {
-                        <MudDivider Class="my-2" />
-                        <MudText Typo="Typo.caption" Style="opacity:.7;">@L["Overview quality"]</MudText>
-                        @foreach (var (met, text) in DescriptionChecks)
-                        {
-                            <div class="d-flex align-center gap-1">
-                                <MudIcon Icon="@(met ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
-                                         Color="@(met ? Color.Success : Color.Default)" Size="Size.Small" />
-                                <MudText Typo="Typo.caption" Style="@(met ? "" : "opacity:.6;")">@text</MudText>
-                            </div>
-                        }
-                    }
-                </BlueprintCard>
-            </MudItem>
+                </MudItem>
+            }
         </MudGrid>
+
+        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mt-3">
+            @L["It is created as a draft only you can see. The Host console is where you write the brief (English and Arabic together), attach the data and the hidden answer key, set the audience, prizes and domain — and activate when it is ready."]
+        </MudAlert>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudSpacer />
-        @if (_step > 0)
-        {
-            <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="() => _step--">@L["Back"]</MudButton>
-        }
-        @if (_step < Steps.Length - 1)
-        {
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.ArrowForward"
-                       Disabled="@(!StepValid)" OnClick="Next">@L["Next"]</MudButton>
-        }
-        else
-        {
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.RocketLaunch"
-                       Disabled="@(_busy || !StepValid)" OnClick="Submit">@L["Create draft"]</MudButton>
-        }
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.RocketLaunch"
+                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_title))" OnClick="Submit">@L["Create draft"]</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
 
-    /// <summary>The widest audience the current user may target (from /me), or null if none. Caps the scope picker.</summary>
+    /// <summary>The widest audience the current user may target (from /me). The draft is born at this
+    /// scope; the console can narrow it while it stays a draft.</summary>
     [Parameter] public string? MaxScope { get; set; }
 
-    // VisibilityScope is ordered narrow→wide; a user may target any level at or below their cap.
-    private static readonly string[] ScopeRank = ["Team", "Group", "Directorate", "Company"];
-
-    private bool Allowed(string scope) =>
-        MaxScope is null || Array.IndexOf(ScopeRank, scope) <= Array.IndexOf(ScopeRank, MaxScope);
-
-    private static readonly string[] Steps = ["Overview", "Task & data", "Rules", "Review"];
-
-    private static readonly string[] TitleExamples =
-        ["ESP Failure Prediction Challenge", "Daily Oil Rate Forecast", "Well-Log Facies Classification"];
-
-    private sealed record TaskOption(
-        string Key, string Label, string Icon, string Metric, string Scorer, string Help,
-        string TrainingSample, string EvalSample, string KeySample);
-
-    private static readonly TaskOption[] TaskOptions =
-    [
-        new("BinaryClassification", "Binary classification", Icons.Material.Filled.ToggleOn, "Accuracy", "accuracy",
-            "Yes/no outcomes — fails / doesn't fail, needs intervention or not.",
-            "id,pressure,vibration,label\nW-014,3200,4.1,1\nW-021,2750,1.2,0",
-            "id,pressure,vibration\nE-001,3100,3.8\nE-002,2680,1.0",
-            "id,label\nE-001,1\nE-002,0"),
-        new("MulticlassClassification", "Multiclass", Icons.Material.Filled.Category, "Accuracy", "accuracy",
-            "One of several classes — rock facies, failure modes, severity bands.",
-            "id,gr,resistivity,label\nD-11,82,14,sandstone\nD-12,120,4,shale",
-            "id,gr,resistivity\nE-01,90,11\nE-02,118,5",
-            "id,label\nE-01,sandstone\nE-02,shale"),
-        new("Regression", "Regression", Icons.Material.Filled.ShowChart, "RMSE (lower wins)", "rmse",
-            "A number — production rate, yield, time-to-failure.",
-            "id,choke,tubing_pressure,oil_rate\nP-07,32,180,1240\nP-08,24,150,900",
-            "id,choke,tubing_pressure\nE-1,30,175\nE-2,26,158",
-            "id,oil_rate\nE-1,1180\nE-2,980"),
-        new("Forecasting", "Time-series forecasting", Icons.Material.Filled.Timeline, "RMSE (lower wins)", "rmse",
-            "A number over time — production decline, demand. Competitors add a Chronological split node (order by the date column) so the model trains on the past and is scored on the future.",
-            "id,date,days_online,oil_rate\nW7-01,2024-01-01,10,1240\nW7-02,2024-01-02,11,1225",
-            "id,date,days_online\nW7-30,2024-01-30,39\nW7-31,2024-01-31,40",
-            "id,oil_rate\nW7-30,980\nW7-31,972"),
-        new("AnomalyDetection", "Anomaly detection", Icons.Material.Filled.Warning, "AUC (higher wins)", "auc",
-            "Flag the rare abnormal rows — HSE sensor spikes, equipment faults. Unsupervised: competitors train on the normal history; the label (1 = anomaly) is only for scoring. Scored on AUC.",
-            "id,motor_temp,vibration,current,label\nn1,150,2.1,64,0\nn2,148,2.3,66,0\na1,255,9.4,180,1",
-            "id,motor_temp,vibration,current\ne1,152,2.0,63\ne2,262,9.9,190",
-            "id,label\ne1,0\ne2,1"),
-    ];
-
-    private sealed record HelpContent(string Title, string[] Tips);
-
-    private int _step;
-    private Microsoft.AspNetCore.Components.Forms.IBrowserFile? _heroImage;
-    private string? _heroImageName;
     private string _title = "";
-    private string _description = "";
-    private string _titleAr = "";
-    private string _descriptionAr = "";
-    private string _scope = "Company";
     private string _task = "BinaryClassification";
-    private int _quota = 5;
-    private DateTime? _revealDate;
-    private VisibilityOptionDto? _audience;
     private bool _busy;
 
-    private TaskOption CurrentTask => TaskOptions.First(t => t.Key == _task);
-
-    private RenderFragment RenderFile(string title, string sub, string csv) => __builder =>
-    {
-        <div class="mb-2">
-            <div class="d-flex align-center gap-2">
-                <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" Color="Color.Primary" />
-                <MudText Typo="Typo.caption"><b>@title</b> — <span style="opacity:.7;">@sub</span></MudText>
-            </div>
-            <pre style="background:var(--koc-bg);border:1px solid var(--koc-divider);border-radius:6px;padding:8px 10px;margin:4px 0 0;overflow-x:auto;font-size:12px;line-height:1.5;">@csv</pre>
-        </div>
-    };
-
-    private string QuotaHint => _quota switch
-    {
-        <= 2 => "Tight — best for short, high-stakes challenges.",
-        <= 8 => "Balanced — enough iteration without leaderboard farming.",
-        _ => "Generous — good for learning events where trying often is encouraged.",
-    };
-
-    private (bool, string)[] DescriptionChecks =>
-    [
-        (_description.Length >= 60, "At least a couple of sentences"),
-        (_description.Contains("predict", StringComparison.OrdinalIgnoreCase), "Says what to predict"),
-        (_title.Length >= 8, "Clear, specific title"),
-    ];
-
-    private string[] NextSteps =>
-    [
-        L["Your competition is created as a <b>draft</b> — not yet visible to competitors."],
-        L["Open the <b>Host</b> tab to upload <b>training</b>, <b>evaluation</b>, and the <b>hidden answer key</b>."],
-        L["Hit <b>Activate</b> to open submissions — it appears on everyone's leaderboard."],
-        _revealDate is { } d
-            ? L["On <b>{0}</b> the final private standings are revealed.", d.ToString("d MMM yyyy")]
-            : L["Conclude it whenever you're ready to close submissions."],
-    ];
-
-    private HelpContent Help => _step switch
-    {
-        0 => new(L["Writing a great brief"],
-            [L["A specific title beats a generic one — name the asset and the outcome."],
-             L["State the <b>business value</b>: what decision does a good prediction improve?"],
-             L["Explain what the target column means in plain language."],
-             L["Pick the smallest audience that makes sense for the problem."]]),
-        1 => new(L["Choosing the task"],
-            [L["<b>Binary</b>: two outcomes (fail / no-fail)."],
-             L["<b>Multiclass</b>: one label out of several categories."],
-             L["<b>Regression</b>: a continuous number, scored on RMSE."],
-             L["Your <b>id</b> column links each evaluation row to the answer key — keep it unique."],
-             L["The answer key stays Restricted and is never returned by the API."]]),
-        2 => new(L["Fair play & timing"],
-            [L["A daily limit stops leaderboard farming; 5/day is a good default."],
-             L["A reveal date creates suspense and prevents last-minute gaming."],
-             L["No reveal date = a simple, always-live leaderboard."]]),
-        _ => new(L["Almost there"],
-            [L["Review reads exactly what competitors will see."],
-             L["Nothing goes live until you upload data and click Activate."],
-             L["You can edit the draft from the Host tab afterwards."]]),
-    };
-
-    private bool StepValid => _step switch
-    {
-        0 => !string.IsNullOrWhiteSpace(_title) && _description.Trim().Length >= 20,
-        _ => !string.IsNullOrWhiteSpace(_title),
-    };
-
-    protected override async Task OnInitializedAsync()
-    {
-        // Start at the widest audience the user is entitled to (Company default may be out of reach).
-        if (MaxScope is not null && !Allowed(_scope))
-        {
-            _scope = MaxScope;
-        }
-
-        await LoadAudience();
-    }
-
-    private void Next()
-    {
-        if (StepValid && _step < Steps.Length - 1)
-        {
-            _step++;
-        }
-    }
-
-    private void UseTemplate()
-    {
-        if (string.IsNullOrWhiteSpace(_description))
-        {
-            _description =
-                "Business problem: <describe the operational decision this helps>.\n\n" +
-                "What to predict: the target column is <label> — <what it means>.\n\n" +
-                "Data: sensor / log / production features per <asset>.\n\n" +
-                "A strong solution: <what good looks like — accuracy, robustness, interpretability>.";
-        }
-    }
-
-    private async Task OnScopeChanged(string scope)
-    {
-        _scope = scope;
-        await LoadAudience();
-    }
-
-    private async Task LoadAudience()
-    {
-        try { _audience = await Api.GetAudienceAsync(_scope); }
-        catch { _audience = null; }
-    }
-
     private void Cancel() => Dialog.Cancel();
-
-    private void OnHeroImagePicked(InputFileChangeEventArgs e)
-    {
-        _heroImage = e.File;
-        _heroImageName = e.File?.Name;
-    }
 
     private async Task Submit()
     {
         _busy = true;
         try
         {
-            var reveal = _revealDate is { } d ? DateTime.SpecifyKind(d.Date.AddHours(12), DateTimeKind.Utc) : (DateTime?)null;
+            var option = CompetitionTaskCatalog.Find(_task);
             var dto = await Api.CreateCompetitionAsync(new CreateCompetitionRequest(
-                _title.Trim(), _description.Trim(), _scope, null, reveal, _quota, CurrentTask.Scorer,
-                TitleAr: _titleAr.Trim(), DescriptionAr: _descriptionAr.Trim()));
+                _title.Trim(),
+                Description: string.Empty,
+                Scope: MaxScope ?? "Company",
+                VisibilityOrgUnitId: null,
+                RevealUtc: null,
+                QuotaPerDay: 5,
+                ScorerCode: option.Scorer,
+                TaskType: option.Key));
 
-            // Upload the hero image to the freshly-created competition (best effort — the competition still
-            // gets created even if the image fails).
-            if (dto is not null && _heroImage is not null)
-            {
-                try
-                {
-                    var path = await HeroImages.SaveAsync(dto.Id, _heroImage);
-                    await Api.SetCompetitionHeroImagePathAsync(dto.Id, path);
-                }
-                catch (Exception imgEx)
-                {
-                    Snackbar.Add($"Competition created, but the image upload failed: {imgEx.Message}", Severity.Warning);
-                }
-            }
-
-            Snackbar.Add("Draft created — attach data in the Host tab, then activate.", Severity.Success);
+            Snackbar.Add(L["Draft created — only you can see it until you activate."], Severity.Success);
             Dialog.Close(DialogResult.Ok(dto?.Id));
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Create failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(L["Create failed: {0}", ex.Message], Severity.Error);
             _busy = false;
         }
     }

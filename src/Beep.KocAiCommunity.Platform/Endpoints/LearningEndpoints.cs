@@ -23,7 +23,7 @@ public static class LearningEndpoints
             // Titles for the linked competitions, so a track can say where it leads without the page
             // making a request per card. A link into a hidden competition resolves to nothing and the
             // track simply shows no destination.
-            var visible = (await competitions.BrowseVisibleAsync(me.UserId ?? string.Empty, ct))
+            var visible = (await competitions.BrowseVisibleAsync(me.UserId ?? string.Empty, ct: ct))
                 .ToDictionary(c => c.Id, c => c.Title);
 
             var result = new List<TrackDto>(tracks.Count);

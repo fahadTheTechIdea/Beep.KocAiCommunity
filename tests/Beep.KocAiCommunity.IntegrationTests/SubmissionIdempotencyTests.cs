@@ -38,6 +38,10 @@ public class SubmissionIdempotencyTests(KocApiFactory factory) : IClassFixture<K
         (await host.PostAsync($"/api/v1/competitions/{created!.Id}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A")))
             .EnsureSuccessStatusCode();
 
+        // Born a draft — the key above satisfies the activation gate.
+        (await host.PostAsJsonAsync($"/api/v1/competitions/{created.Id}/status", new SetStatusRequest("active")))
+            .EnsureSuccessStatusCode();
+
         return created.Id;
     }
 

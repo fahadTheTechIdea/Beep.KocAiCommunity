@@ -17,6 +17,14 @@ public class Competition : AuditableEntity
     public Guid VisibilityOrgUnitId { get; set; }
 
     public DateTime? RevealUtc { get; set; }
+
+    /// <summary>
+    /// When true, the competition concludes itself the moment <see cref="RevealUtc"/> passes — the
+    /// host who set a reveal usually meant "this is when it ends", and without this they had to come
+    /// back at the right hour and press Conclude by hand.
+    /// </summary>
+    public bool ConcludeAtReveal { get; set; }
+
     public int SubmissionQuotaPerDay { get; set; } = 5;
 
     public string ScorerCode { get; set; } = "accuracy";  // trusted server-side scorer

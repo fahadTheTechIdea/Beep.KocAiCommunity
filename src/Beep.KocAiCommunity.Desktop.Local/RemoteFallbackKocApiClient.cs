@@ -91,7 +91,11 @@ public abstract class RemoteFallbackKocApiClient(IKocApiClient? remote) : IKocAp
     public virtual Task SetCompetitionFeaturedAsync(Guid competitionId, CancellationToken ct = default) => Remote.SetCompetitionFeaturedAsync(competitionId, ct);
     public virtual Task SetCompetitionPrizesAsync(Guid competitionId, SetPrizesRequest request, CancellationToken ct = default) => Remote.SetCompetitionPrizesAsync(competitionId, request, ct);
     public virtual Task SetCompetitionHeroImagePathAsync(Guid competitionId, string? path, CancellationToken ct = default) => Remote.SetCompetitionHeroImagePathAsync(competitionId, path, ct);
-    public virtual Task SetCompetitionRevealAsync(Guid competitionId, DateTime? revealUtc, CancellationToken ct = default) => Remote.SetCompetitionRevealAsync(competitionId, revealUtc, ct);
+    public virtual Task SetCompetitionRevealAsync(Guid competitionId, DateTime? revealUtc, bool? concludeAtReveal = null, CancellationToken ct = default) => Remote.SetCompetitionRevealAsync(competitionId, revealUtc, concludeAtReveal, ct);
+
+    public virtual Task UpdateCompetitionAsync(Guid competitionId, UpdateCompetitionRequest request, CancellationToken ct = default) => Remote.UpdateCompetitionAsync(competitionId, request, ct);
+
+    public virtual Task SetOwnCompetitionCategoryAsync(Guid competitionId, string? code, CancellationToken ct = default) => Remote.SetOwnCompetitionCategoryAsync(competitionId, code, ct);
     public virtual Task<IReadOnlyList<LeaderboardEntryDto>?> GetFinalLeaderboardAsync(Guid competitionId, CancellationToken ct = default) => Remote.GetFinalLeaderboardAsync(competitionId, ct);
     public virtual Task<SupervisionRollupDto?> GetSupervisionRollupAsync(CancellationToken ct = default) => Remote.GetSupervisionRollupAsync(ct);
     public virtual Task<PersonalDashboardDto?> GetPersonalDashboardAsync(CancellationToken ct = default) => Remote.GetPersonalDashboardAsync(ct);

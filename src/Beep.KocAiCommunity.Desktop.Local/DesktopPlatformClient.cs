@@ -38,7 +38,7 @@ public sealed class DesktopPlatformClient(
 
     public override async Task<IReadOnlyList<CompetitionDto>> GetCompetitionsAsync(CancellationToken ct = default)
     {
-        var visible = await competitions.BrowseVisibleAsync(UserId, ct);
+        var visible = await competitions.BrowseVisibleAsync(UserId, ct: ct);
         var stats = await competitions.GetStatsAsync([.. visible.Select(c => c.Id)], ct);
         return [.. visible.Select(c => ToDto(c, stats.GetValueOrDefault(c.Id)))];
     }

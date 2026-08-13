@@ -98,6 +98,15 @@ else
                      Color="@(_statusFilter == status ? Color.Primary : Color.Default)"
                      OnClick="() => _statusFilter = status">@(status == "all" ? L["All"] : L[CompetitionDisplay.StatusLabel(status)])</MudChip>
         }
+        @if (_competitions?.Any(c => c.CanManage) == true)
+        {
+            @* The route back to your own competitions — including drafts, which nobody else can see. *@
+            <MudChip T="string" Size="Size.Small"
+                     Variant="@(_hostingOnly ? Variant.Filled : Variant.Outlined)"
+                     Color="@(_hostingOnly ? Color.Primary : Color.Default)"
+                     Icon="@Icons.Material.Filled.Tune"
+                     OnClick="() => _hostingOnly = !_hostingOnly">@L["Hosting"]</MudChip>
+        }
         <MudDivider Vertical="true" FlexItem="true" Class="mx-2" />
         @foreach (var (task, label) in TaskFilters)
         {
@@ -131,7 +140,7 @@ else
     var visible = Filtered();
 
     <div class="koc-arena-count mb-3">
-        @if (visible.Count == _competitions.Count)
+        @if (visible.Count == _competitions!.Count)
         {
             @L["{0} competitions", _competitions.Count]
         }
@@ -197,8 +206,11 @@ else
         _statusFilter = "all";
         _taskFilter = "all";
         _categoryFilter = "all";
+        _hostingOnly = false;
         _search = "";
     }
+
+    private bool _hostingOnly;
 
     // Only enabled categories are served, so a switched-off one never appears as a filter.
     private string _categoryFilter = "all";
@@ -272,6 +284,7 @@ else
 
     private List<CompetitionDto> Filtered() =>
         (_competitions ?? [])
+            .Where(c => !_hostingOnly || c.CanManage)
             .Where(c => _statusFilter == "all" || c.Status == _statusFilter)
             .Where(c => _taskFilter == "all" || c.TaskType == _taskFilter)
             .Where(c => _categoryFilter == "all" || c.CategoryCode == _categoryFilter)

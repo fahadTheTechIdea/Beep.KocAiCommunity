@@ -69,6 +69,8 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         // which ids landed in the public half; an all-A key keeps this test about ranking, not the split).
         (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A\n5,A\n6,A")))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Competitor A: perfect on every id → 1.0 on any subset.
         var a = _factory.CreateClientAs("comp-a", "Employee");
@@ -120,6 +122,8 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var creator = _factory.CreateClientAs("comp-quota", "Employee");
         var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 1);
         await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A"));
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var competitor = _factory.CreateClientAs("comp-q1", "Employee");
         (await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A")))
@@ -135,6 +139,8 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var creator = _factory.CreateClientAs("comp-cover", "Employee");
         var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 5);
         (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Predictions cover only 1 of the 3 answer-key ids → must be rejected, not silently scored on a subset.
@@ -205,6 +211,8 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         // A signed-in host runs an active, company-wide competition.
         var host = _factory.CreateClientAs("showcase-host", "Employee");
         var competitionId = await CreateCompetition(host, revealUtc: null, quota: 5);
+        (await host.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,1\n")))
+            .EnsureSuccessStatusCode();
         (await host.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
             .EnsureSuccessStatusCode();
 
@@ -225,10 +233,9 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         // of a leaderboard. Signing in is for taking part, not for reading.
         var host = _factory.CreateClientAs("showcase-host", "Employee");
         var competitionId = await CreateCompetition(host, revealUtc: null, quota: 5);
-        (await host.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
-            .EnsureSuccessStatusCode();
-
         (await host.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,1\n2,0\n")))
+            .EnsureSuccessStatusCode();
+        (await host.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
             .EnsureSuccessStatusCode();
         var competitor = _factory.CreateClientAs("Fahad Al-Dhubaib", "Employee");
         (await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,1\n2,0\n")))
@@ -281,6 +288,8 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var creator = _factory.CreateClientAs("life-creator", "Employee");
         var competitionId = await CreateCompetition(creator, revealUtc: null, quota: 25);
         await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A"));
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var competitor = _factory.CreateClientAs("life-a", "Employee");
         (await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A")))
@@ -350,6 +359,8 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         // Key K1: every id is A (all-A keeps the assertion independent of the public/private split).
         (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A")))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // X is perfect under K1 (all A); Y is perfect under the *future* K2 (all B) → wrong under K1.
         var x = _factory.CreateClientAs("rekey-x", "Employee");
@@ -396,6 +407,8 @@ public class CompetitionEndpointsTests(KocApiFactory factory) : IClassFixture<Ko
         var creator = _factory.CreateClientAs("holdout-creator", "Employee");
         var competitionId = await CreateCompetition(creator, revealUtc: DateTime.UtcNow.AddMinutes(-5), quota: 5);
         (await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,A\n3,A\n4,A\n5,A\n6,A")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var top = _factory.CreateClientAs("holdout-top", "Employee");

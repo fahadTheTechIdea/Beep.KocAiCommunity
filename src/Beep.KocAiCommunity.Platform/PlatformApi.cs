@@ -104,6 +104,10 @@ public static class PlatformApi
         if (configuration.GetValue("Outbox:DispatcherEnabled", true))
         {
             services.AddHostedService<OutboxDispatcher>();
+
+            // The reveal-time scheduler rides the same switch: it is background machinery of the same
+            // kind, and the tests that turn the dispatcher off want a quiet host for the same reason.
+            services.AddHostedService<Competitions.RevealScheduler>();
         }
 
         return services;

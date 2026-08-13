@@ -28,6 +28,8 @@ public class CompetitionCategoryTests(KocApiFactory factory) : IClassFixture<Koc
         response.EnsureSuccessStatusCode();
         var competitionId = (await response.Content.ReadFromJsonAsync<CompetitionDto>())!.Id;
 
+        (await host.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,1\n")))
+            .EnsureSuccessStatusCode();
         (await host.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
             .EnsureSuccessStatusCode();
 
@@ -117,6 +119,8 @@ public class CompetitionCategoryTests(KocApiFactory factory) : IClassFixture<Koc
         var response = await host.PostAsJsonAsync("/api/v1/competitions",
             new CreateCompetitionRequest("Uncategorised", "No category.", "Company", null, null, 5, "accuracy"));
         var id = (await response.Content.ReadFromJsonAsync<CompetitionDto>())!.Id;
+        (await host.PostAsync($"/api/v1/competitions/{id}/answer-key", CsvFile("id,label\n1,1\n")))
+            .EnsureSuccessStatusCode();
         (await host.PostAsJsonAsync($"/api/v1/competitions/{id}/status", new SetStatusRequest("active")))
             .EnsureSuccessStatusCode();
 

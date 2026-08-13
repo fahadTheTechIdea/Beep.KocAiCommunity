@@ -67,15 +67,6 @@
   <data name=" — you're leading the board." xml:space="preserve">
     <value> — أنت في صدارة اللوحة.</value>
   </data>
-  <data name="&lt;b&gt;Binary&lt;/b&gt;: two outcomes (fail / no-fail)." xml:space="preserve">
-    <value>&lt;b&gt;ثنائي&lt;/b&gt;: نتيجتان (عطل / بلا عطل).</value>
-  </data>
-  <data name="&lt;b&gt;Multiclass&lt;/b&gt;: one label out of several categories." xml:space="preserve">
-    <value>&lt;b&gt;متعدد الفئات&lt;/b&gt;: تصنيف واحد من عدة فئات.</value>
-  </data>
-  <data name="&lt;b&gt;Regression&lt;/b&gt;: a continuous number, scored on RMSE." xml:space="preserve">
-    <value>&lt;b&gt;انحدار&lt;/b&gt;: قيمة رقمية متصلة، تُقيَّم بـRMSE.</value>
-  </data>
   <data name="A banner for this competition — and the landing-page hero if it's featured. PNG or JPG (max 5 MB)." xml:space="preserve">
     <value>لافتة لهذه المسابقة — وصورة الصفحة الرئيسية إن كانت مختارة. PNG أو JPG (بحد أقصى 5 ميغابايت).</value>
   </data>
@@ -85,17 +76,8 @@
   <data name="A company-wide view of KOC's own machine-learning environment — participation across directorates, skills building on company data, and governance keeping it sovereign." xml:space="preserve">
     <value>نظرة على مستوى الشركة لبيئة تعلُّم الآلة الخاصة بـKOC — المشاركة عبر الإدارات، والمهارات التي تُبنى على بيانات الشركة، والحوكمة التي تُبقيها سيادية.</value>
   </data>
-  <data name="A daily limit stops leaderboard farming; 5/day is a good default." xml:space="preserve">
-    <value>الحد اليومي يمنع استنزاف لوحة الصدارة؛ وخمس محاولات يوميًا قيمة افتراضية جيدة.</value>
-  </data>
-  <data name="A reveal date creates suspense and prevents last-minute gaming." xml:space="preserve">
-    <value>تاريخ الكشف يخلق التشويق ويمنع التلاعب في اللحظات الأخيرة.</value>
-  </data>
   <data name="A run stops when it reaches either limit. Raise them for a bigger dataset; lower them if your machine struggles while training." xml:space="preserve">
     <value>يتوقّف التشغيل عند بلوغ أيٍّ من الحدّين. ارفعهما لمجموعة بيانات أكبر، وأخفضهما إذا تعثّر جهازك أثناء التدريب.</value>
-  </data>
-  <data name="A specific title beats a generic one — name the asset and the outcome." xml:space="preserve">
-    <value>العنوان المحدّد أفضل من العام — اذكر الأصل والنتيجة.</value>
   </data>
   <data name="About" xml:space="preserve">
     <value>نبذة</value>
@@ -154,9 +136,6 @@
   <data name="All tracks" xml:space="preserve">
     <value>كل المسارات</value>
   </data>
-  <data name="Almost there" xml:space="preserve">
-    <value>أوشكت</value>
-  </data>
   <data name="Already registered?" xml:space="preserve">
     <value>مسجَّل بالفعل؟</value>
   </data>
@@ -207,9 +186,6 @@
   </data>
   <data name="Average" xml:space="preserve">
     <value>المتوسط</value>
-  </data>
-  <data name="Back" xml:space="preserve">
-    <value>السابق</value>
   </data>
   <data name="Back to draft" xml:space="preserve">
     <value>إعادة إلى مسودة</value>
@@ -274,9 +250,6 @@
   <data name="CSV files on this machine. The designer reads them directly, so pipelines run and score without the KOC network." xml:space="preserve">
     <value>ملفات CSV على هذا الجهاز. يقرأها المصمّم مباشرة، فتعمل المسارات وتُقيَّم دون شبكة KOC.</value>
   </data>
-  <data name="CSV of" xml:space="preserve">
-    <value>ملف CSV يحتوي</value>
-  </data>
   <data name="Cancel" xml:space="preserve">
     <value>إلغاء</value>
   </data>
@@ -288,9 +261,6 @@
   </data>
   <data name="Choose a dataset and the column you want to predict. Several algorithms are tried and the best one wins. Everything runs on this machine." xml:space="preserve">
     <value>اختر مجموعة بيانات والعمود الذي تريد التنبؤ به. تُجرَّب عدة خوارزميات ويفوز أفضلها. كل شيء يعمل على هذا الجهاز.</value>
-  </data>
-  <data name="Choosing the task" xml:space="preserve">
-    <value>اختيار المهمة</value>
   </data>
   <data name="Classification" xml:space="preserve">
     <value>تصنيف</value>
@@ -334,9 +304,6 @@
   <data name="Competition" xml:space="preserve">
     <value>مسابقة</value>
   </data>
-  <data name="Competition data" xml:space="preserve">
-    <value>بيانات المسابقة</value>
-  </data>
   <data name="Competition not found" xml:space="preserve">
     <value>لم يُعثر على المسابقة</value>
   </data>
@@ -366,9 +333,6 @@
   </data>
   <data name="Completed a track" xml:space="preserve">
     <value>أتمّ مسارًا</value>
-  </data>
-  <data name="Conclude it whenever you're ready to close submissions." xml:space="preserve">
-    <value>أنهِها متى كنت مستعدًا لإغلاق باب المشاركة.</value>
   </data>
   <data name="Conclude — close submissions" xml:space="preserve">
     <value>أنهِ — أغلق باب المشاركة</value>
@@ -433,9 +397,6 @@
   <data name="Create your account" xml:space="preserve">
     <value>أنشئ حسابك</value>
   </data>
-  <data name="Daily submission limit" xml:space="preserve">
-    <value>الحد اليومي للمشاركات</value>
-  </data>
   <data name="Dashboard" xml:space="preserve">
     <value>لوحة المتابعة</value>
   </data>
@@ -478,9 +439,6 @@
   <data name="Department and profile details load from the KOC directory once its API is configured." xml:space="preserve">
     <value>تُحمَّل تفاصيل الدائرة والملف الشخصي من دليل شركة نفط الكويت بمجرد إعداد واجهته البرمجية.</value>
   </data>
-  <data name="Describe the business problem, what the target column means, and what a strong solution looks like. This is the first thing competitors read." xml:space="preserve">
-    <value>صِف المسألة التشغيلية، ومعنى العمود الهدف، وكيف يبدو الحل القوي. هذا أول ما يقرأه المتنافسون.</value>
-  </data>
   <data name="Description" xml:space="preserve">
     <value>الوصف</value>
   </data>
@@ -522,9 +480,6 @@
   </data>
   <data name="Drift check" xml:space="preserve">
     <value>فحص الانحراف</value>
-  </data>
-  <data name="ESP Failure Prediction Challenge" xml:space="preserve">
-    <value>تحدي التنبؤ بأعطال مضخات ESP</value>
   </data>
   <data name="Earn badges by learning, competing, and helping colleagues. Locked badges show what's next." xml:space="preserve">
     <value>اكسب الأوسمة بالتعلُّم والتنافس ومساعدة الزملاء. والأوسمة المقفلة تُريك ما هو قادم.</value>
@@ -574,17 +529,11 @@
   <data name="Everything you have submitted has been sent." xml:space="preserve">
     <value>أُرسل كل ما قدّمته.</value>
   </data>
-  <data name="Examples:" xml:space="preserve">
-    <value>أمثلة:</value>
-  </data>
   <data name="Experiment" xml:space="preserve">
     <value>التجربة</value>
   </data>
   <data name="Experiments" xml:space="preserve">
     <value>التجارب</value>
-  </data>
-  <data name="Explain what the target column means in plain language." xml:space="preserve">
-    <value>اشرح معنى العمود الهدف بلغة بسيطة.</value>
   </data>
   <data name="Export" xml:space="preserve">
     <value>تصدير</value>
@@ -597,9 +546,6 @@
   </data>
   <data name="Failed" xml:space="preserve">
     <value>فشل</value>
-  </data>
-  <data name="Fair play &amp; timing" xml:space="preserve">
-    <value>العدالة والتوقيت</value>
   </data>
   <data name="Feature" xml:space="preserve">
     <value>الخاصية</value>
@@ -691,9 +637,6 @@
   <data name="History" xml:space="preserve">
     <value>السجل</value>
   </data>
-  <data name="Hit &lt;b&gt;Activate&lt;/b&gt; to open submissions — it appears on everyone's leaderboard." xml:space="preserve">
-    <value>اضغط &lt;b&gt;تفعيل&lt;/b&gt; لفتح باب المشاركة — عندها تظهر على لوحة صدارة الجميع.</value>
-  </data>
   <data name="Hit the limit" xml:space="preserve">
     <value>بلغ الحدّ</value>
   </data>
@@ -748,9 +691,6 @@
   <data name="In progress" xml:space="preserve">
     <value>قيد التقدّم</value>
   </data>
-  <data name="Insert a starter template" xml:space="preserve">
-    <value>أدرج قالبًا مبدئيًا</value>
-  </data>
   <data name="Internal, Kaggle-style challenges on real KOC problems — get the data, build your model in KOC Studio on the desktop, and climb the live leaderboard. Final standings stay hidden until reveal day." xml:space="preserve">
     <value>تحديات داخلية على غرار Kaggle حول مشكلات حقيقية في شركة نفط الكويت — احصل على البيانات، وابنِ نموذجك في استوديو KOC على سطح المكتب، وتسلّق لوحة الصدارة الحيّة. تبقى الترتيبات النهائية مخفية حتى يوم الكشف.</value>
   </data>
@@ -786,9 +726,6 @@
   </data>
   <data name="Keep this model" xml:space="preserve">
     <value>احتفظ بهذا النموذج</value>
-  </data>
-  <data name="Keeps the field fair — nobody can brute-force the leaderboard with hundreds of tries. 5 per day suits most challenges." xml:space="preserve">
-    <value>يحفظ عدالة المنافسة — فلا أحد يستطيع اقتحام لوحة الصدارة بمئات المحاولات. وخمس محاولات يوميًا تناسب معظم التحديات.</value>
   </data>
   <data name="Kept as “{0}” v{1}." xml:space="preserve">
     <value>حُفظ باسم “{0}” الإصدار {1}.</value>
@@ -970,9 +907,6 @@
   <data name="New workflow" xml:space="preserve">
     <value>مسار عمل جديد</value>
   </data>
-  <data name="Next" xml:space="preserve">
-    <value>التالي</value>
-  </data>
   <data name="No" xml:space="preserve">
     <value>لا</value>
   </data>
@@ -1021,9 +955,6 @@
   <data name="No per-trial metrics recorded." xml:space="preserve">
     <value>لم تُسجَّل مقاييس لكل محاولة.</value>
   </data>
-  <data name="No reveal date = a simple, always-live leaderboard." xml:space="preserve">
-    <value>بلا تاريخ كشف = لوحة صدارة بسيطة ومباشرة دائمًا.</value>
-  </data>
   <data name="No runs yet" xml:space="preserve">
     <value>لا تشغيلات بعد</value>
   </data>
@@ -1054,9 +985,6 @@
   <data name="Nothing could be sent this time." xml:space="preserve">
     <value>تعذّر إرسال أي شيء هذه المرة.</value>
   </data>
-  <data name="Nothing goes live until you upload data and click Activate." xml:space="preserve">
-    <value>لا شيء ينطلق حتى ترفع البيانات وتضغط تفعيل.</value>
-  </data>
   <data name="Nothing here yet. Earn a badge or cheer a colleague to get things moving." xml:space="preserve">
     <value>لا شيء هنا بعد. اكسب وسامًا أو شجّع زميلًا لتبدأ الحركة.</value>
   </data>
@@ -1078,14 +1006,8 @@
   <data name="Offline" xml:space="preserve">
     <value>غير متصل</value>
   </data>
-  <data name="On &lt;b&gt;{0}&lt;/b&gt; the final private standings are revealed." xml:space="preserve">
-    <value>في &lt;b&gt;{0}&lt;/b&gt; يُكشف الترتيب النهائي الخاص.</value>
-  </data>
   <data name="Only in {0}" xml:space="preserve">
     <value>متاح بـ{0} فقط</value>
-  </data>
-  <data name="Only people in this scope see and enter the competition. Levels above your access are hidden." xml:space="preserve">
-    <value>يرى المسابقة ويدخلها من هم ضمن هذا النطاق فقط. والمستويات الأعلى من صلاحيتك مخفية.</value>
   </data>
   <data name="Open" xml:space="preserve">
     <value>افتح</value>
@@ -1095,9 +1017,6 @@
   </data>
   <data name="Open logs" xml:space="preserve">
     <value>افتح السجلات</value>
-  </data>
-  <data name="Open the &lt;b&gt;Host&lt;/b&gt; tab to upload &lt;b&gt;training&lt;/b&gt;, &lt;b&gt;evaluation&lt;/b&gt;, and the &lt;b&gt;hidden answer key&lt;/b&gt;." xml:space="preserve">
-    <value>افتح تبويب &lt;b&gt;الاستضافة&lt;/b&gt; لرفع بيانات &lt;b&gt;التدريب&lt;/b&gt; و&lt;b&gt;التقييم&lt;/b&gt; و&lt;b&gt;مفتاح الإجابات المخفي&lt;/b&gt;.</value>
   </data>
   <data name="Open this run" xml:space="preserve">
     <value>افتح هذا التشغيل</value>
@@ -1116,9 +1035,6 @@
   </data>
   <data name="Overview" xml:space="preserve">
     <value>نظرة عامة</value>
-  </data>
-  <data name="Overview quality" xml:space="preserve">
-    <value>جودة النظرة العامة</value>
   </data>
   <data name="Overview — what competitors predict and why it matters" xml:space="preserve">
     <value>نظرة عامة — بمَ يتنبأ المتنافسون ولماذا يهم</value>
@@ -1140,9 +1056,6 @@
   </data>
   <data name="Pick an avatar" xml:space="preserve">
     <value>اختر صورة رمزية</value>
-  </data>
-  <data name="Pick the smallest audience that makes sense for the problem." xml:space="preserve">
-    <value>اختر أضيق جمهور يناسب المسألة.</value>
   </data>
   <data name="Pin" xml:space="preserve">
     <value>تثبيت</value>
@@ -1245,12 +1158,6 @@
   </data>
   <data name="Revealed" xml:space="preserve">
     <value>انكشفت النتائج</value>
-  </data>
-  <data name="Review" xml:space="preserve">
-    <value>المراجعة</value>
-  </data>
-  <data name="Review reads exactly what competitors will see." xml:space="preserve">
-    <value>تعرض المراجعة ما سيراه المتنافسون بالضبط.</value>
   </data>
   <data name="Rows" xml:space="preserve">
     <value>الصفوف</value>
@@ -1423,9 +1330,6 @@
   <data name="Start with the recommended learning track" xml:space="preserve">
     <value>ابدأ بالمسار التعليمي المقترح</value>
   </data>
-  <data name="State the &lt;b&gt;business value&lt;/b&gt;: what decision does a good prediction improve?" xml:space="preserve">
-    <value>اذكر &lt;b&gt;القيمة التشغيلية&lt;/b&gt;: أي قرار يُحسّنه التنبؤ الجيد؟</value>
-  </data>
   <data name="Status" xml:space="preserve">
     <value>الحالة</value>
   </data>
@@ -1524,9 +1428,6 @@
   </data>
   <data name="The KOC AI community" xml:space="preserve">
     <value>مجتمع الذكاء الاصطناعي في KOC</value>
-  </data>
-  <data name="The answer key stays Restricted and is never returned by the API." xml:space="preserve">
-    <value>يبقى مفتاح الإجابات مقيَّدًا ولا تُرجعه الواجهة البرمجية أبدًا.</value>
   </data>
   <data name="The arena" xml:space="preserve">
     <value>الحلبة</value>
@@ -1666,9 +1567,6 @@
   <data name="Unpin" xml:space="preserve">
     <value>إلغاء التثبيت</value>
   </data>
-  <data name="Until the reveal, the final private standings stay concealed so no one games the last day." xml:space="preserve">
-    <value>حتى موعد الكشف يبقى الترتيب النهائي الخاص محجوبًا حتى لا يستغل أحد اليوم الأخير.</value>
-  </data>
   <data name="Use KOC Studio on the desktop, or any tool you prefer — the leaderboard only sees your predictions." xml:space="preserve">
     <value>استخدم استوديو KOC على سطح المكتب، أو أي أداة تفضّلها — لا ترى لوحة الصدارة سوى تنبؤاتك.</value>
   </data>
@@ -1707,12 +1605,6 @@
   </data>
   <data name="Website address" xml:space="preserve">
     <value>عنوان الموقع</value>
-  </data>
-  <data name="What happens next" xml:space="preserve">
-    <value>ما الذي يحدث بعد ذلك</value>
-  </data>
-  <data name="What kind of value do competitors predict? This sets the scoring metric and the shape of your data files." xml:space="preserve">
-    <value>أي نوع من القيم يتنبأ به المتنافسون؟ هذا يحدّد مقياس التقييم وشكل ملفات بياناتك.</value>
   </data>
   <data name="What you can win" xml:space="preserve">
     <value>ما يمكن أن تربحه</value>
@@ -1759,17 +1651,11 @@
   <data name="Write a reply" xml:space="preserve">
     <value>اكتب ردًا</value>
   </data>
-  <data name="Writing a great brief" xml:space="preserve">
-    <value>كتابة وصف جيد</value>
-  </data>
   <data name="Yes" xml:space="preserve">
     <value>نعم</value>
   </data>
   <data name="You are signed in automatically with your KOC account — if you are seeing this, contact the platform team." xml:space="preserve">
     <value>يتم تسجيل دخولك تلقائيًا بحساب KOC — إن ظهرت لك هذه الرسالة فتواصل مع فريق المنصة.</value>
-  </data>
-  <data name="You can edit the draft from the Host tab afterwards." xml:space="preserve">
-    <value>يمكنك تعديل المسودة لاحقًا من تبويب الاستضافة.</value>
   </data>
   <data name="You don't have access to this area" xml:space="preserve">
     <value>لا تملك صلاحية الوصول إلى هذه المنطقة</value>
@@ -1792,9 +1678,6 @@
   <data name="You've earned {0} of {1} badges. Keep learning, competing, and helping colleagues to collect them all." xml:space="preserve">
     <value>حصلت على {0} من {1} وسامًا. واصل التعلُّم والتنافس ومساعدة الزملاء لتجمعها كلها.</value>
   </data>
-  <data name="Your &lt;b&gt;id&lt;/b&gt; column links each evaluation row to the answer key — keep it unique." xml:space="preserve">
-    <value>يربط عمود &lt;b&gt;المعرّف&lt;/b&gt; كل صف تقييم بمفتاح الإجابات — فاجعله فريدًا.</value>
-  </data>
   <data name="Your AI &amp; ML workspace." xml:space="preserve">
     <value>مساحتك للذكاء الاصطناعي وتعلُّم الآلة.</value>
   </data>
@@ -1803,9 +1686,6 @@
   </data>
   <data name="Your best score per competition" xml:space="preserve">
     <value>أفضل نتيجة لك في كل مسابقة</value>
-  </data>
-  <data name="Your competition is created as a &lt;b&gt;draft&lt;/b&gt; — not yet visible to competitors." xml:space="preserve">
-    <value>تُنشأ مسابقتك كـ&lt;b&gt;مسودة&lt;/b&gt; — غير ظاهرة للمتنافسين بعد.</value>
   </data>
   <data name="Your department's AI &amp; ML workspace." xml:space="preserve">
     <value>مساحة دائرتك للذكاء الاصطناعي وتعلُّم الآلة.</value>
@@ -1926,9 +1806,6 @@
   </data>
   <data name="s" xml:space="preserve">
     <value>ث</value>
-  </data>
-  <data name="scored instantly against the hidden answer key." xml:space="preserve">
-    <value>يُقيَّم فورًا مقابل مفتاح الإجابات المخفي.</value>
   </data>
   <data name="sec" xml:space="preserve">
     <value>ثانية</value>
@@ -2404,38 +2281,14 @@
   <data name="Take the first challenge" xml:space="preserve">
     <value>ابدأ التحدي الأول</value>
   </data>
-  <data name="Add Arabic" xml:space="preserve">
-    <value>أضف العربية</value>
-  </data>
-  <data name="(optional)" xml:space="preserve">
-    <value>(اختياري)</value>
-  </data>
-  <data name="Added" xml:space="preserve">
-    <value>تمت الإضافة</value>
-  </data>
   <data name="Competition title (العربية)" xml:space="preserve">
     <value>عنوان المسابقة (بالعربية)</value>
   </data>
   <data name="Overview (العربية)" xml:space="preserve">
     <value>نبذة عن المسابقة (بالعربية)</value>
   </data>
-  <data name="Arabic-speaking colleagues will see these instead. Leave them blank and they simply see the English — nothing breaks." xml:space="preserve">
-    <value>سيرى الزملاء الناطقون بالعربية هذه النصوص بدلاً من الإنجليزية. واتركها فارغة فيرون النص الإنجليزي كما هو — لا شيء يتعطّل.</value>
-  </data>
-  <data name="Languages" xml:space="preserve">
-    <value>اللغات</value>
-  </data>
-  <data name="Save Arabic" xml:space="preserve">
-    <value>احفظ العربية</value>
-  </data>
   <data name="Saved" xml:space="preserve">
     <value>تم الحفظ</value>
-  </data>
-  <data name="Arabic saved." xml:space="preserve">
-    <value>تم حفظ النص العربي.</value>
-  </data>
-  <data name="What Arabic-speaking colleagues see. Leave blank and they see your English — nothing breaks." xml:space="preserve">
-    <value>ما يراه الزملاء الناطقون بالعربية. اتركه فارغاً فيرون نصّك الإنجليزي — لا شيء يتعطّل.</value>
   </data>
   <data name="pumps" xml:space="preserve">
     <value>مضخّة</value>
@@ -2748,5 +2601,173 @@
   </data>
   <data name="a 30-day streak" xml:space="preserve">
     <value>نشاط ثلاثين يومًا متتالية</value>
+  </data>
+  <data name="Name it and pick what is predicted — everything else happens on its Host console." xml:space="preserve">
+    <value>سمِّها واختر ما الذي سيُتنبأ به — وكل ما عدا ذلك يتم في لوحة الاستضافة.</value>
+  </data>
+  <data name="What do competitors predict?" xml:space="preserve">
+    <value>ما الذي يتنبأ به المتسابقون؟</value>
+  </data>
+  <data name="This sets the scoring metric and the shape of your data files, and it is the one choice that cannot change later." xml:space="preserve">
+    <value>هذا يحدّد مقياس التقييم وشكل ملفات البيانات، وهو الخيار الوحيد الذي لا يمكن تغييره لاحقًا.</value>
+  </data>
+  <data name="It is created as a draft only you can see. The Host console is where you write the brief (English and Arabic together), attach the data and the hidden answer key, set the audience, prizes and domain — and activate when it is ready." xml:space="preserve">
+    <value>تُنشأ كمسودة لا يراها غيرك. وفي لوحة الاستضافة تكتب النبذة (بالإنجليزية والعربية معًا)، وترفق البيانات ومفتاح الإجابة المخفي، وتحدّد الجمهور والجوائز والمجال — ثم تفعّلها متى جهزت.</value>
+  </data>
+  <data name="Draft created — only you can see it until you activate." xml:space="preserve">
+    <value>أُنشئت المسودة — لا يراها غيرك حتى تفعّلها.</value>
+  </data>
+  <data name="Create failed: {0}" xml:space="preserve">
+    <value>فشل الإنشاء: {0}</value>
+  </data>
+  <data name="Hosting" xml:space="preserve">
+    <value>استضافتي</value>
+  </data>
+  <data name="Scored with {0} against a hidden answer key — only modelling moves your rank." xml:space="preserve">
+    <value>يُقيَّم بـ {0} مقابل مفتاح إجابة مخفي — ولا يحرّك ترتيبك سوى النمذجة.</value>
+  </data>
+  <data name="Download a sample submission file" xml:space="preserve">
+    <value>نزّل ملف مشاركة تجريبيًا</value>
+  </data>
+  <data name="Scored instantly against the hidden answer key." xml:space="preserve">
+    <value>يُقيَّم فورًا مقابل مفتاح الإجابة المخفي.</value>
+  </data>
+  <data name="{0} of {1} submissions left today — the quota resets at midnight UTC." xml:space="preserve">
+    <value>بقي لك اليوم {0} من {1} مشاركات — تتجدد الحصة منتصف الليل بالتوقيت العالمي.</value>
+  </data>
+  <data name="Brief" xml:space="preserve">
+    <value>النبذة</value>
+  </data>
+  <data name="About this challenge" xml:space="preserve">
+    <value>عن هذا التحدي</value>
+  </data>
+  <data name="What competitors read. Leave the Arabic blank and Arabic readers simply see the English — nothing breaks." xml:space="preserve">
+    <value>ما يقرؤه المتسابقون. اترك العربية فارغة فيرى قارئ العربية الإنجليزية كما هي — ولا يتعطل شيء.</value>
+  </data>
+  <data name="Submissions per day" xml:space="preserve">
+    <value>المشاركات في اليوم</value>
+  </data>
+  <data name="The audience is frozen once a competition activates — changing it live would change who can see submissions already made." xml:space="preserve">
+    <value>يتجمّد الجمهور بعد تفعيل المسابقة — فتغييره وهي جارية يغيّر من يرى مشاركات قُدّمت بالفعل.</value>
+  </data>
+  <data name="Save — all languages" xml:space="preserve">
+    <value>حفظ — بكل اللغات</value>
+  </data>
+  <data name="Which part of KOC this challenge belongs to — the area filters across the site run on it." xml:space="preserve">
+    <value>إلى أي قطاع في الشركة ينتمي هذا التحدي — وعليه تعمل مرشّحات المجالات في الموقع كله.</value>
+  </data>
+  <data name="Prizes" xml:space="preserve">
+    <value>الجوائز</value>
+  </data>
+  <data name="Free text, shown on the banner and cards. Blank clears — the standard Barrels and badges are awarded either way." xml:space="preserve">
+    <value>نص حر يظهر على اللافتة والبطاقات. اتركه فارغًا لمسحه — وتُمنح البراميل والأوسمة المعتادة في الحالين.</value>
+  </data>
+  <data name="Save prizes" xml:space="preserve">
+    <value>حفظ الجوائز</value>
+  </data>
+  <data name="Task &amp; scoring" xml:space="preserve">
+    <value>المهمة والتقييم</value>
+  </data>
+  <data name="labelled — competitors download this" xml:space="preserve">
+    <value>موسوم — وهو ما ينزّله المتسابقون</value>
+  </data>
+  <data name="no label — competitors predict for these rows" xml:space="preserve">
+    <value>بلا وسم — هذه الصفوف هي ما يتنبأ به المتسابقون</value>
+  </data>
+  <data name="hidden — only the platform sees it, used to score" xml:space="preserve">
+    <value>مخفي — لا تراه إلا المنصة، ويُستخدم للتقييم</value>
+  </data>
+  <data name="Until the reveal, the final private standings stay concealed so no one games the last day. Times are your local time." xml:space="preserve">
+    <value>حتى موعد الكشف يبقى الترتيب النهائي الخاص مخفيًا كي لا يتلاعب أحد باليوم الأخير. والأوقات بتوقيتك المحلي.</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>الوقت</value>
+  </data>
+  <data name="Conclude automatically at reveal" xml:space="preserve">
+    <value>الاختتام تلقائيًا عند الكشف</value>
+  </data>
+  <data name="Upload the hidden answer key first — without it no submission can be scored." xml:space="preserve">
+    <value>ارفع مفتاح الإجابة المخفي أولًا — فبدونه لا يمكن تقييم أي مشاركة.</value>
+  </data>
+  <data name="Saved — all languages." xml:space="preserve">
+    <value>حُفظ — بكل اللغات.</value>
+  </data>
+  <data name="Domain saved." xml:space="preserve">
+    <value>حُفظ المجال.</value>
+  </data>
+  <data name="Prizes saved." xml:space="preserve">
+    <value>حُفظت الجوائز.</value>
+  </data>
+  <data name="Submission failed: {0}" xml:space="preserve">
+    <value>فشلت المشاركة: {0}</value>
+  </data>
+  <data name="Status change failed: {0}" xml:space="preserve">
+    <value>فشل تغيير الحالة: {0}</value>
+  </data>
+  <data name="Reveal update failed: {0}" xml:space="preserve">
+    <value>فشل تحديث موعد الكشف: {0}</value>
+  </data>
+  <data name="Competition data uploaded." xml:space="preserve">
+    <value>رُفعت بيانات المسابقة.</value>
+  </data>
+  <data name="Upload failed: {0}" xml:space="preserve">
+    <value>فشل الرفع: {0}</value>
+  </data>
+  <data name="Answer key set." xml:space="preserve">
+    <value>ضُبط مفتاح الإجابة.</value>
+  </data>
+  <data name="Hero image uploaded." xml:space="preserve">
+    <value>رُفعت صورة اللافتة.</value>
+  </data>
+  <data name="Accuracy" xml:space="preserve">
+    <value>الدقّة</value>
+  </data>
+  <data name="Accuracy — the share of rows predicted right; higher wins." xml:space="preserve">
+    <value>الدقّة — نسبة الصفوف المتنبأ بها صحيحًا؛ والأعلى يفوز.</value>
+  </data>
+  <data name="Yes/no outcomes — fails / doesn't fail, needs intervention or not." xml:space="preserve">
+    <value>نتائج نعم/لا — يتعطل أو لا يتعطل، يحتاج تدخلًا أو لا.</value>
+  </data>
+  <data name="One row per evaluation id, predicting the label's own values (e.g. true/false or 1/0)." xml:space="preserve">
+    <value>صف لكل معرّف تقييم، تتنبأ فيه بقيم الوسم نفسها (مثل true/false أو 1/0).</value>
+  </data>
+  <data name="One of several classes — rock facies, failure modes, severity bands." xml:space="preserve">
+    <value>فئة من عدة فئات — سحنات صخرية، أنماط أعطال، درجات خطورة.</value>
+  </data>
+  <data name="One row per evaluation id, predicting the class name exactly as it appears in training." xml:space="preserve">
+    <value>صف لكل معرّف تقييم، تتنبأ فيه باسم الفئة كما ورد في بيانات التدريب تمامًا.</value>
+  </data>
+  <data name="RMSE (lower wins)" xml:space="preserve">
+    <value>جذر متوسط مربع الخطأ (الأقل يفوز)</value>
+  </data>
+  <data name="RMSE — the average size of your miss; lower wins." xml:space="preserve">
+    <value>جذر متوسط مربع الخطأ — متوسط حجم خطئك؛ والأقل يفوز.</value>
+  </data>
+  <data name="A number — production rate, yield, time-to-failure." xml:space="preserve">
+    <value>رقم — معدّل إنتاج، أو مردود، أو زمن حتى العطل.</value>
+  </data>
+  <data name="One row per evaluation id, predicting the number itself." xml:space="preserve">
+    <value>صف لكل معرّف تقييم، تتنبأ فيه بالرقم نفسه.</value>
+  </data>
+  <data name="A number over time — production decline, demand. Competitors train on the past and are scored on the future." xml:space="preserve">
+    <value>رقم عبر الزمن — انحدار الإنتاج، أو الطلب. يتدرّب المتسابقون على الماضي ويُقيَّمون على المستقبل.</value>
+  </data>
+  <data name="One row per evaluation id, predicting the number for that future point." xml:space="preserve">
+    <value>صف لكل معرّف تقييم، تتنبأ فيه بالرقم عند تلك النقطة المستقبلية.</value>
+  </data>
+  <data name="AUC (higher wins)" xml:space="preserve">
+    <value>المساحة تحت المنحنى (الأعلى يفوز)</value>
+  </data>
+  <data name="AUC — how well your scores rank the anomalies above the normal rows; higher wins." xml:space="preserve">
+    <value>المساحة تحت المنحنى — مدى ترتيب درجاتك للشواذ فوق الصفوف السليمة؛ والأعلى يفوز.</value>
+  </data>
+  <data name="Flag the rare abnormal rows — sensor spikes, equipment faults, a payroll run off its pattern." xml:space="preserve">
+    <value>التقط الصفوف الشاذة النادرة — قفزات الحساسات، وأعطال المعدات، وتشغيلة رواتب خارجة عن نمطها.</value>
+  </data>
+  <data name="One row per evaluation id with an anomaly score — higher means more anomalous. AUC ranks your scores, so 0-to-1 works and hard 0/1 calls are not required." xml:space="preserve">
+    <value>صف لكل معرّف تقييم مع درجة شذوذ — والأعلى أشدّ شذوذًا. المقياس يرتّب درجاتك، فالمدى من 0 إلى 1 يكفي ولا يلزم حسم 0/1.</value>
+  </data>
+  <data name="All of KOC" xml:space="preserve">
+    <value>كل شركة نفط الكويت</value>
   </data>
 </root>

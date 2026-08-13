@@ -501,6 +501,9 @@ namespace Beep.KocAiCommunity.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ConcludeAtReveal")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("CreatedByUserId")
                         .HasColumnType("TEXT");
 

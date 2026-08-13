@@ -40,7 +40,7 @@ public sealed class CompetitionService(
 
     public async Task<Competition> CreateAsync(
         string userId, bool isPlatformAdmin, string title, string description, VisibilityScope scope, Guid visibilityOrgUnitId,
-        DateTime? revealUtc, int quotaPerDay, string scorerCode, CancellationToken ct = default)
+        DateTime? revealUtc, int quotaPerDay, string scorerCode, string? taskType = null, CancellationToken ct = default)
     {
         // Authorization: a platform admin may create at any level; anyone else needs an active
         // creator grant, and may only target an audience at or narrower than their granted maximum.
@@ -55,14 +55,26 @@ public sealed class CompetitionService(
             throw new CompetitionAccessException("You can only create competitions up to {0} scope.", max);
         }
 
-        // Fail fast if the scorer code is unknown.
-        _ = scorers.Resolve(scorerCode);
+        // Fail fast if the scorer code is unknown — and hold task and metric to each other from the
+        // very first moment. These are two halves of one decision; letting them drift apart here is
+        // how a "Binary classification" chip ended up beside an "RMSE" chip in the arena.
+        var scorer = scorers.Resolve(scorerCode);
+        var resolvedTask = string.IsNullOrWhiteSpace(taskType) ? scorer.SupportedTasks.First() : taskType.Trim();
+        if (!scorer.SupportedTasks.Any(t => t.Equals(resolvedTask, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new CompetitionException(
+                "Scorer '{0}' cannot score a '{1}' task. It scores: {2}.",
+                scorerCode, resolvedTask, string.Join(", ", scorer.SupportedTasks));
+        }
 
         var competition = new Competition
         {
             Title = title,
             Description = description,
-            Status = "active",
+            // Born a draft — which is what every word of the create dialog already promised. Nothing
+            // is visible to competitors until the host uploads a key and presses Activate.
+            Status = "draft",
+            TaskType = resolvedTask,
             VisibilityScope = scope,
             VisibilityOrgUnitId = visibilityOrgUnitId,
             RevealUtc = revealUtc,
@@ -88,15 +100,9 @@ public sealed class CompetitionService(
         return grant is not null && grant.IsActive(DateTime.UtcNow) ? grant.MaxScope : null;
     }
 
-    public async Task SetAnswerKeyAsync(string userId, Guid competitionId, Stream answerKey, CancellationToken ct = default)
+    public async Task SetAnswerKeyAsync(string userId, Guid competitionId, Stream answerKey, bool isPlatformAdmin = false, CancellationToken ct = default)
     {
-        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
-            ?? throw new CompetitionException("Competition not found.");
-
-        if (competition.CreatedByUserId != userId)
-        {
-            throw new CompetitionException("Only the competition creator can set the answer key.");
-        }
+        var competition = await RequireManageAsync(userId, isPlatformAdmin, competitionId, ct);
 
         // A concluded competition's results are final — its key is locked so standings can't be rewritten
         // after podium Barrels/badges have been awarded.
@@ -277,15 +283,9 @@ public sealed class CompetitionService(
 
     public async Task SetDatasetsAsync(
         string userId, Guid competitionId, Stream trainingData, Stream evaluationData,
-        string labelColumn, string idColumn, string taskType, CancellationToken ct = default)
+        string labelColumn, string idColumn, string taskType, bool isPlatformAdmin = false, CancellationToken ct = default)
     {
-        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
-            ?? throw new CompetitionException("Competition not found.");
-
-        if (competition.CreatedByUserId != userId)
-        {
-            throw new CompetitionException("Only the competition creator can set the datasets.");
-        }
+        var competition = await RequireManageAsync(userId, isPlatformAdmin, competitionId, ct);
 
         var training = await artifacts.SaveAsync(
             trainingData, $"competitions/{competitionId}/training.csv", "text/csv", KocDataClassification.Internal, ct);
@@ -314,7 +314,7 @@ public sealed class CompetitionService(
 
     private static readonly string[] LifecycleStatuses = ["draft", "active", "concluded"];
 
-    public async Task SetStatusAsync(string userId, Guid competitionId, string status, CancellationToken ct = default)
+    public async Task SetStatusAsync(string userId, Guid competitionId, string status, bool isPlatformAdmin = false, CancellationToken ct = default)
     {
         var normalized = (status ?? string.Empty).Trim().ToLowerInvariant();
         if (!LifecycleStatuses.Contains(normalized))
@@ -322,26 +322,61 @@ public sealed class CompetitionService(
             throw new CompetitionException("Unknown status '{0}'. Use draft, active, or concluded.", status ?? string.Empty);
         }
 
-        var competition = await RequireCreatorAsync(userId, competitionId, ct);
-        var wasConcluded = competition.Status == "concluded";
+        var competition = await RequireManageAsync(userId, isPlatformAdmin, competitionId, ct);
+
+        // The readiness gate. An active competition without a key accepts nobody's work — every
+        // submission bounces with a generic error after somebody has already built a model. Refuse
+        // here, where the host can still fix it, instead of there.
+        if (normalized == "active" && competition.AnswerKeyArtifactId is null)
+        {
+            throw new CompetitionException("Upload the hidden answer key before activating — without it no submission can be scored.");
+        }
+
+        if (normalized == "concluded" && competition.Status != "concluded")
+        {
+            await ConcludeCoreAsync(competition, ct);
+            return;
+        }
+
         competition.Status = normalized;
         await db.SaveChangesAsync(ct);
+    }
 
-        // Tell every participant when a competition wraps up.
-        if (normalized == "concluded" && !wasConcluded)
+    /// <summary>
+    /// The single way a competition concludes — the manual button and the reveal-time scheduler both
+    /// land here, so the notifications and podium awards can never differ by path.
+    /// </summary>
+    private async Task ConcludeCoreAsync(Competition competition, CancellationToken ct)
+    {
+        competition.Status = "concluded";
+        await db.SaveChangesAsync(ct);
+
+        var participants = await db.Set<Submission>().AsNoTracking()
+            .Where(s => s.CompetitionId == competition.Id)
+            .Select(s => s.SubmitterUserId).Distinct().ToListAsync(ct);
+        await notifications.NotifyManyAsync(participants, "competition-concluded",
+            $"Competition concluded: {competition.Title}",
+            competition.RevealUtc is { } reveal
+                ? $"Submissions are closed. Final standings reveal {reveal.ToLocalTime():g}."
+                : "Submissions are closed. Check the leaderboard for final standings.",
+            $"/compete/{competition.Id}", ct);
+
+        await AwardPodiumAsync(competition, ct);
+    }
+
+    public async Task<int> ConcludeDueAsync(CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var due = await db.Set<Competition>()
+            .Where(c => c.Status == "active" && c.ConcludeAtReveal && c.RevealUtc != null && c.RevealUtc <= now)
+            .ToListAsync(ct);
+
+        foreach (var competition in due)
         {
-            var participants = await db.Set<Submission>().AsNoTracking()
-                .Where(s => s.CompetitionId == competitionId)
-                .Select(s => s.SubmitterUserId).Distinct().ToListAsync(ct);
-            await notifications.NotifyManyAsync(participants, "competition-concluded",
-                $"Competition concluded: {competition.Title}",
-                competition.RevealUtc is { } reveal
-                    ? $"Submissions are closed. Final standings reveal {reveal.ToLocalTime():g}."
-                    : "Submissions are closed. Check the leaderboard for final standings.",
-                $"/compete/{competition.Id}", ct);
-
-            await AwardPodiumAsync(competition, ct);
+            await ConcludeCoreAsync(competition, ct);
         }
+
+        return due.Count;
     }
 
     /// <summary>At conclusion, the top three earn podium Barrels; first place earns the winner badge.</summary>
@@ -378,21 +413,87 @@ public sealed class CompetitionService(
         }
     }
 
-    public async Task SetRevealAsync(string userId, Guid competitionId, DateTime? revealUtc, CancellationToken ct = default)
+    public async Task SetRevealAsync(string userId, Guid competitionId, DateTime? revealUtc,
+        bool? concludeAtReveal = null, bool isPlatformAdmin = false, CancellationToken ct = default)
     {
-        var competition = await RequireCreatorAsync(userId, competitionId, ct);
+        var competition = await RequireManageAsync(userId, isPlatformAdmin, competitionId, ct);
         competition.RevealUtc = revealUtc;
+
+        // Only touched when the caller expressed a choice — except that clearing the reveal always
+        // clears it, because "conclude at reveal" with no reveal is not a state that means anything.
+        if (concludeAtReveal is { } conclude)
+        {
+            competition.ConcludeAtReveal = conclude;
+        }
+
+        if (revealUtc is null)
+        {
+            competition.ConcludeAtReveal = false;
+        }
+
         await db.SaveChangesAsync(ct);
     }
 
-    private async Task<Competition> RequireCreatorAsync(string userId, Guid competitionId, CancellationToken ct)
+    public async Task UpdateAsync(string userId, bool isPlatformAdmin, Guid competitionId,
+        string title, string description, int quotaPerDay, VisibilityScope? scope, CancellationToken ct = default)
+    {
+        var competition = await RequireManageAsync(userId, isPlatformAdmin, competitionId, ct);
+
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new CompetitionException("A competition needs a title.");
+        }
+
+        competition.Title = title.Trim();
+        competition.Description = (description ?? string.Empty).Trim();
+        competition.SubmissionQuotaPerDay = quotaPerDay <= 0 ? competition.SubmissionQuotaPerDay : quotaPerDay;
+
+        // The audience is a free choice only while nothing has happened yet. Widening or narrowing a
+        // live competition would silently change who can see submissions already made.
+        if (scope is { } newScope && newScope != competition.VisibilityScope)
+        {
+            if (competition.Status != "draft")
+            {
+                throw new CompetitionException("The audience can only change while the competition is a draft.");
+            }
+
+            var max = await GetMaxCreateScopeAsync(userId, isPlatformAdmin, ct);
+            if (max is null || (int)newScope > (int)max.Value)
+            {
+                throw new CompetitionAccessException("You can only target an audience up to {0} scope.", max ?? VisibilityScope.Team);
+            }
+
+            competition.VisibilityScope = newScope;
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<int> GetQuotaRemainingAsync(string userId, Guid competitionId, CancellationToken ct = default)
+    {
+        var competition = await db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
+            ?? throw new CompetitionException("Competition not found.");
+
+        // The same day window the submit guard charges against — one definition of "today".
+        var sinceUtc = DateTime.UtcNow.Date;
+        var todayCount = await db.Set<Submission>()
+            .CountAsync(s => s.CompetitionId == competitionId && s.SubmitterUserId == userId && s.SubmittedUtc >= sinceUtc, ct);
+        return Math.Max(0, competition.SubmissionQuotaPerDay - todayCount);
+    }
+
+    /// <summary>
+    /// The one gate for every console action: the creator, or a platform admin. One rule instead of a
+    /// different inline check per method — the hero-image method's pattern, promoted to policy. The
+    /// admin half is also what makes the seeded competitions (owner "koc-platform") manageable at all.
+    /// </summary>
+    private async Task<Competition> RequireManageAsync(string userId, bool isPlatformAdmin, Guid competitionId, CancellationToken ct)
     {
         var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
             ?? throw new CompetitionException("Competition not found.");
 
-        if (competition.CreatedByUserId != userId)
+        if (competition.CreatedByUserId != userId && !isPlatformAdmin)
         {
-            throw new CompetitionException("Only the competition creator can change its lifecycle.");
+            throw new CompetitionException("Only the competition's host or a platform admin can manage it.");
         }
 
         return competition;
@@ -422,10 +523,13 @@ public sealed class CompetitionService(
         competition.CategoryCode is { Length: > 0 } code
         && await db.CompetitionCategories.AsNoTracking().AnyAsync(c => c.Code == code && !c.IsEnabled, ct);
 
-    public async Task<IReadOnlyList<Competition>> BrowseVisibleAsync(string userId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Competition>> BrowseVisibleAsync(string userId, bool isPlatformAdmin = false, CancellationToken ct = default)
     {
+        // Drafts are invisible to their audience — but never to their own host, who would otherwise
+        // lose the only route back to a competition they just parked. An admin sees them all, because
+        // an admin can manage them all.
         var open = await db.Set<Competition>().AsNoTracking()
-            .Where(c => c.Status != "draft")
+            .Where(c => c.Status != "draft" || c.CreatedByUserId == userId || isPlatformAdmin)
             .OrderByDescending(c => c.CreatedUtc)
             .ToListAsync(ct);
 
@@ -541,10 +645,9 @@ public sealed class CompetitionService(
         await audit.WriteAsync(new AuditEntry("competition-category.delete", "competition-category", code), ct);
     }
 
-    public async Task SetCompetitionCategoryAsync(string actorUserId, Guid competitionId, string? code, CancellationToken ct = default)
+    public async Task SetCompetitionCategoryAsync(string actorUserId, Guid competitionId, string? code, bool isPlatformAdmin = false, CancellationToken ct = default)
     {
-        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
-            ?? throw new CompetitionException("Competition not found.");
+        var competition = await RequireManageAsync(actorUserId, isPlatformAdmin, competitionId, ct);
 
         code = string.IsNullOrWhiteSpace(code) ? null : code.Trim().ToLowerInvariant();
         if (code is not null && !await db.CompetitionCategories.AnyAsync(c => c.Code == code, ct))
@@ -586,10 +689,10 @@ public sealed class CompetitionService(
     public Task<Competition?> GetFeaturedAsync(CancellationToken ct = default) =>
         db.Set<Competition>().AsNoTracking().FirstOrDefaultAsync(c => c.IsFeatured, ct);
 
-    public async Task SetPrizesAsync(Guid competitionId, string? first, string? second, string? third, CancellationToken ct = default)
+    public async Task SetPrizesAsync(string userId, bool isPlatformAdmin, Guid competitionId,
+        string? first, string? second, string? third, CancellationToken ct = default)
     {
-        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
-            ?? throw new CompetitionException("Competition not found.");
+        var competition = await RequireManageAsync(userId, isPlatformAdmin, competitionId, ct);
 
         // Blank → null (clears the prize).
         competition.FirstPrize = string.IsNullOrWhiteSpace(first) ? null : first.Trim();
@@ -600,12 +703,7 @@ public sealed class CompetitionService(
 
     public async Task SetHeroImagePathAsync(string userId, bool isPlatformAdmin, Guid competitionId, string? path, CancellationToken ct = default)
     {
-        var competition = await db.Set<Competition>().FirstOrDefaultAsync(c => c.Id == competitionId, ct)
-            ?? throw new CompetitionException("Competition not found.");
-        if (competition.CreatedByUserId != userId && !isPlatformAdmin)
-        {
-            throw new CompetitionException("Only the competition creator or a platform admin can set the hero image.");
-        }
+        var competition = await RequireManageAsync(userId, isPlatformAdmin, competitionId, ct);
 
         competition.HeroImagePath = string.IsNullOrWhiteSpace(path) ? null : path.Trim();
         await db.SaveChangesAsync(ct);

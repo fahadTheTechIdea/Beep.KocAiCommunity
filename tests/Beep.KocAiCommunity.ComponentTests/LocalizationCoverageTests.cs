@@ -86,6 +86,13 @@ public class LocalizationCoverageTests
 
             // The home-page worked example, one per area of KOC. Every line of it is a computed key.
             (nameof(HeroShots), HeroShots.Translatable),
+
+            // The task-and-metric catalog behind the launcher and the Host console, and the console's
+            // audience choices — all reach markup as computed keys.
+            (nameof(Beep.KocAiCommunity.Web.Components.Shared.CompetitionTaskCatalog),
+                Beep.KocAiCommunity.Web.Components.Shared.CompetitionTaskCatalog.Translatable),
+            (nameof(Beep.KocAiCommunity.Web.Components.Pages.CompetitionDetail),
+                Beep.KocAiCommunity.Web.Components.Pages.CompetitionDetail.TranslatableScopeChoices),
         }
         .SelectMany(set => set.Item2.Select(key => (File: set.Item1 + ".cs", Key: key)));
 

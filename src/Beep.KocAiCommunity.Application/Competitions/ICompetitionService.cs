@@ -69,6 +69,7 @@ public interface ICompetitionService
         DateTime? revealUtc,
         int quotaPerDay,
         string scorerCode,
+        string? taskType = null,
         CancellationToken ct = default);
 
     /// <summary>
@@ -77,17 +78,29 @@ public interface ICompetitionService
     /// </summary>
     Task<VisibilityScope?> GetMaxCreateScopeAsync(string userId, bool isPlatformAdmin, CancellationToken ct = default);
 
-    /// <summary>Uploads (or replaces) the hidden answer key. Creator only.</summary>
-    Task SetAnswerKeyAsync(string userId, Guid competitionId, Stream answerKey, CancellationToken ct = default);
+    /// <summary>Uploads (or replaces) the hidden answer key. Manager only (creator or platform admin).</summary>
+    Task SetAnswerKeyAsync(string userId, Guid competitionId, Stream answerKey, bool isPlatformAdmin = false, CancellationToken ct = default);
 
-    /// <summary>Moves a competition through its lifecycle (draft → active → concluded). Creator only.</summary>
-    Task SetStatusAsync(string userId, Guid competitionId, string status, CancellationToken ct = default);
+    /// <summary>
+    /// Moves a competition through its lifecycle (draft → active → concluded). Manager only.
+    /// Activation requires the hidden answer key — an active competition that cannot score anything
+    /// is a promise the arena cannot keep.
+    /// </summary>
+    Task SetStatusAsync(string userId, Guid competitionId, string status, bool isPlatformAdmin = false, CancellationToken ct = default);
+
+    /// <summary>
+    /// Edits the competition's own words and rules: title, description, daily quota — and, while it is
+    /// still a draft, its audience scope. Manager only.
+    /// </summary>
+    Task UpdateAsync(string userId, bool isPlatformAdmin, Guid competitionId,
+        string title, string description, int quotaPerDay, VisibilityScope? scope, CancellationToken ct = default);
 
     /// <summary>Pins one competition as THE landing-page hero (clears the flag on any other). Platform admin only.</summary>
     Task SetFeaturedAsync(Guid competitionId, CancellationToken ct = default);
 
-    /// <summary>Set (or clear, with blanks) the 1st/2nd/3rd podium prizes shown for a competition.</summary>
-    Task SetPrizesAsync(Guid competitionId, string? first, string? second, string? third, CancellationToken ct = default);
+    /// <summary>Set (or clear, with blanks) the 1st/2nd/3rd podium prizes. Manager only.</summary>
+    Task SetPrizesAsync(string userId, bool isPlatformAdmin, Guid competitionId,
+        string? first, string? second, string? third, CancellationToken ct = default);
 
     /// <summary>
     /// Store the web-relative path of the competition's hero image (the creator, or a platform admin).
@@ -99,16 +112,29 @@ public interface ICompetitionService
     /// <summary>The currently featured competition (the admin-pinned landing-page hero), or null.</summary>
     Task<Competition?> GetFeaturedAsync(CancellationToken ct = default);
 
-    /// <summary>Sets (or clears) the reveal time that unlocks the final leaderboard. Creator only.</summary>
-    Task SetRevealAsync(string userId, Guid competitionId, DateTime? revealUtc, CancellationToken ct = default);
+    /// <summary>
+    /// Sets (or clears) the reveal time that unlocks the final leaderboard, and optionally whether the
+    /// competition concludes itself at that moment. Manager only.
+    /// </summary>
+    Task SetRevealAsync(string userId, Guid competitionId, DateTime? revealUtc,
+        bool? concludeAtReveal = null, bool isPlatformAdmin = false, CancellationToken ct = default);
+
+    /// <summary>
+    /// Concludes every active competition whose reveal has passed with <c>ConcludeAtReveal</c> set —
+    /// the scheduler's tick. Returns how many it concluded, for the log line.
+    /// </summary>
+    Task<int> ConcludeDueAsync(CancellationToken ct = default);
+
+    /// <summary>How many submissions this user has left today for a competition (never negative).</summary>
+    Task<int> GetQuotaRemainingAsync(string userId, Guid competitionId, CancellationToken ct = default);
 
     /// <summary>
     /// Uploads the participant-visible training data and evaluation feature set, plus the column names
-    /// a pipeline runner needs (label, id, task). Creator only.
+    /// a pipeline runner needs (label, id, task). Manager only.
     /// </summary>
     Task SetDatasetsAsync(
         string userId, Guid competitionId, Stream trainingData, Stream evaluationData,
-        string labelColumn, string idColumn, string taskType, CancellationToken ct = default);
+        string labelColumn, string idColumn, string taskType, bool isPlatformAdmin = false, CancellationToken ct = default);
 
     /// <summary>
     /// Runs a participant's pipeline definition on the competition's authoritative training and
@@ -121,7 +147,11 @@ public interface ICompetitionService
     /// </summary>
     Task<Submission> SubmitPipelineAsync(string userId, Guid competitionId, WorkflowDefinition definition, string? idempotencyKey = null, CancellationToken ct = default);
 
-    Task<IReadOnlyList<Competition>> BrowseVisibleAsync(string userId, CancellationToken ct = default);
+    /// <summary>
+    /// Everything this user may browse. Drafts are invisible — except the caller's own (and, for a
+    /// platform admin, everyone's): "draft" must mean hidden from the audience, never lost to the host.
+    /// </summary>
+    Task<IReadOnlyList<Competition>> BrowseVisibleAsync(string userId, bool isPlatformAdmin = false, CancellationToken ct = default);
 
     /// <summary>
     /// Active, company-wide competitions for the signed-out landing preview (featured first). No user scope
@@ -165,7 +195,7 @@ public interface ICompetitionService
     Task DeleteCategoryAsync(string actorUserId, string code, CancellationToken ct = default);
 
     /// <summary>Assigns a competition to a category, or clears it when <paramref name="code"/> is null.</summary>
-    Task SetCompetitionCategoryAsync(string actorUserId, Guid competitionId, string? code, CancellationToken ct = default);
+    Task SetCompetitionCategoryAsync(string actorUserId, Guid competitionId, string? code, bool isPlatformAdmin = false, CancellationToken ct = default);
 
     /// <summary>Arena stats for a set of competitions, computed in one pass (no per-competition queries).</summary>
     Task<IReadOnlyDictionary<Guid, CompetitionStats>> GetStatsAsync(IReadOnlyCollection<Guid> competitionIds, CancellationToken ct = default);

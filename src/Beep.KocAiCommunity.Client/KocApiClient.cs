@@ -87,7 +87,13 @@ public interface IKocApiClient
     Task MarkNotificationReadAsync(Guid id, CancellationToken ct = default);
     Task MarkAllNotificationsReadAsync(CancellationToken ct = default);
     Task SetCompetitionStatusAsync(Guid competitionId, string status, CancellationToken ct = default);
-    Task SetCompetitionRevealAsync(Guid competitionId, DateTime? revealUtc, CancellationToken ct = default);
+    Task SetCompetitionRevealAsync(Guid competitionId, DateTime? revealUtc, bool? concludeAtReveal = null, CancellationToken ct = default);
+
+    /// <summary>The Host console's one save for the words and the rules (title, description, quota, draft-only scope).</summary>
+    Task UpdateCompetitionAsync(Guid competitionId, UpdateCompetitionRequest request, CancellationToken ct = default);
+
+    /// <summary>Places the competition in a KOC domain (or clears it) — the host's own route, not the admin one.</summary>
+    Task SetOwnCompetitionCategoryAsync(Guid competitionId, string? code, CancellationToken ct = default);
     /// <summary>Pin one competition as the landing-page hero (platform admin only).</summary>
     Task SetCompetitionFeaturedAsync(Guid competitionId, CancellationToken ct = default);
     Task SetCompetitionPrizesAsync(Guid competitionId, SetPrizesRequest request, CancellationToken ct = default);
@@ -503,9 +509,27 @@ public sealed class KocApiClient(HttpClient http) : IKocApiClient
         }
     }
 
-    public async Task SetCompetitionRevealAsync(Guid competitionId, DateTime? revealUtc, CancellationToken ct = default)
+    public async Task SetCompetitionRevealAsync(Guid competitionId, DateTime? revealUtc, bool? concludeAtReveal = null, CancellationToken ct = default)
     {
-        var response = await http.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/reveal", new SetRevealRequest(revealUtc), ct);
+        var response = await http.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/reveal", new SetRevealRequest(revealUtc, concludeAtReveal), ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await response.Content.ReadAsStringAsync(ct));
+        }
+    }
+
+    public async Task UpdateCompetitionAsync(Guid competitionId, UpdateCompetitionRequest request, CancellationToken ct = default)
+    {
+        var response = await http.PutAsJsonAsync($"/api/v1/competitions/{competitionId}", request, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await response.Content.ReadAsStringAsync(ct));
+        }
+    }
+
+    public async Task SetOwnCompetitionCategoryAsync(Guid competitionId, string? code, CancellationToken ct = default)
+    {
+        var response = await http.PutAsJsonAsync($"/api/v1/competitions/{competitionId}/category", new SetCompetitionCategoryRequest(code), ct);
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException(await response.Content.ReadAsStringAsync(ct));

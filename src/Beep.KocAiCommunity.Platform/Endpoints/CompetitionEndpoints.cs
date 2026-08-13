@@ -48,7 +48,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             try
             {
                 var isPlatformAdmin = me.IsInRole(KocRoles.PlatformAdmin);
-                var competition = await svc.CreateAsync(me.UserId!, isPlatformAdmin, req.Title, req.Description, scope, unit, req.RevealUtc, req.QuotaPerDay, req.ScorerCode, ct);
+                var competition = await svc.CreateAsync(me.UserId!, isPlatformAdmin, req.Title, req.Description, scope, unit, req.RevealUtc, req.QuotaPerDay, req.ScorerCode, req.TaskType, ct);
 
                 // The author may have written it in both languages. Saved against the new id, so a
                 // later rename of the English title does not orphan the Arabic.
@@ -76,8 +76,9 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             // people are competing on before deciding to sign in. Joining, downloading the data and
             // submitting all stay behind RequireEmployee below — it is the shop window that is public,
             // not the shop. A signed-out caller sees company-wide competitions only.
+            var isAdmin = me.IsInRole(KocRoles.PlatformAdmin);
             var visible = me.UserId is { Length: > 0 } userId
-                ? await svc.BrowseVisibleAsync(userId, ct)
+                ? await svc.BrowseVisibleAsync(userId, isAdmin, ct)
                 : await svc.BrowsePublicAllAsync(ct);
 
             var stats = await svc.GetStatsAsync([.. visible.Select(c => c.Id)], ct);
@@ -88,7 +89,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             var (titles, descriptions) = await CompetitionTextAsync(translator, http.RequestLanguage(), ct);
 
             return Results.Ok(visible
-                .Select(c => Translate(ToDto(c, stats.GetValueOrDefault(c.Id), scorers, categories), titles, descriptions))
+                .Select(c => Translate(ToDto(c, stats.GetValueOrDefault(c.Id), scorers, categories, me.UserId, isAdmin), titles, descriptions))
                 .ToList());
         })
         .WithName("BrowseCompetitions")
@@ -122,7 +123,8 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         group.MapGet("/competitions/{id:guid}/translations", async (
             Guid id, ICompetitionService svc, IContentTranslator translator, CancellationToken ct) =>
         {
-            if (await svc.GetAsync(id, ct) is null)
+            var competition = await svc.GetAsync(id, ct);
+            if (competition is null)
             {
                 return Results.NotFound();
             }
@@ -133,6 +135,10 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
 
             return Results.Ok(new List<CompetitionTranslationDto>
             {
+                // The base text as written, labelled "en". The ordinary competition read arrives
+                // translated for whoever is reading, so an Arabic-reading host editing the console
+                // would otherwise see their own Arabic echoed into the English boxes.
+                new(KocLanguages.English, competition.Title, competition.Description),
                 new(KocLanguages.Arabic, titles.GetValueOrDefault(key), descriptions.GetValueOrDefault(key)),
             });
         })
@@ -188,8 +194,15 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             var stats = await svc.GetStatsAsync([id], ct);
             var (titles, descriptions) = await CompetitionTextAsync(translator, http.RequestLanguage(), ct);
 
+            // The caller's remaining quota rides the read the page already makes — "3 of 5 left today"
+            // must never cost a second request.
+            var isAdmin = me.IsInRole(KocRoles.PlatformAdmin);
+            int? quotaRemaining = me.UserId is { Length: > 0 } uid
+                ? await svc.GetQuotaRemainingAsync(uid, id, ct)
+                : null;
+
             return Results.Ok(Translate(
-                ToDto(competition, stats.GetValueOrDefault(id), scorers, await CategoryNamesAsync(svc, ct)),
+                ToDto(competition, stats.GetValueOrDefault(id), scorers, await CategoryNamesAsync(svc, ct), me.UserId, isAdmin, quotaRemaining),
                 titles, descriptions));
         })
         .WithName("GetCompetition")
@@ -200,7 +213,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             try
             {
                 await using var stream = file.OpenReadStream();
-                await svc.SetAnswerKeyAsync(me.UserId!, id, stream, ct);
+                await svc.SetAnswerKeyAsync(me.UserId!, id, stream, me.IsInRole(KocRoles.PlatformAdmin), ct);
                 return Results.NoContent();
             }
             catch (CompetitionException ex)
@@ -222,7 +235,8 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
                 await using var trainStream = training.OpenReadStream();
                 await using var evalStream = evaluation.OpenReadStream();
                 await svc.SetDatasetsAsync(me.UserId!, id, trainStream, evalStream,
-                    labelColumn ?? "label", idColumn ?? "id", task ?? "BinaryClassification", ct);
+                    labelColumn ?? "label", idColumn ?? "id", task ?? "BinaryClassification",
+                    me.IsInRole(KocRoles.PlatformAdmin), ct);
                 return Results.NoContent();
             }
             catch (CompetitionException ex)
@@ -262,7 +276,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         {
             try
             {
-                await svc.SetStatusAsync(me.UserId!, id, req.Status, ct);
+                await svc.SetStatusAsync(me.UserId!, id, req.Status, me.IsInRole(KocRoles.PlatformAdmin), ct);
                 return Results.NoContent();
             }
             catch (CompetitionException ex)
@@ -289,12 +303,14 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         .WithName("SetFeaturedCompetition")
         .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
 
-        // Set the 1st/2nd/3rd podium prizes for a competition (platform admin).
-        group.MapPost("/competitions/{id:guid}/prizes", async (Guid id, SetPrizesRequest req, ICompetitionService svc, CancellationToken ct) =>
+        // Set the 1st/2nd/3rd podium prizes. The host's own call now — prize text is free-form and
+        // visible only inside the competition's scope; there is no budget system to protect. The admin
+        // console keeps working through the same route.
+        group.MapPost("/competitions/{id:guid}/prizes", async (Guid id, SetPrizesRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
         {
             try
             {
-                await svc.SetPrizesAsync(id, req.FirstPrize, req.SecondPrize, req.ThirdPrize, ct);
+                await svc.SetPrizesAsync(me.UserId!, me.IsInRole(KocRoles.PlatformAdmin), id, req.FirstPrize, req.SecondPrize, req.ThirdPrize, ct);
                 return Results.NoContent();
             }
             catch (CompetitionException ex)
@@ -303,7 +319,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             }
         })
         .WithName("SetCompetitionPrizes")
-        .RequireAuthorization(KocPolicies.RequirePlatformAdmin);
+        .RequireAuthorization(KocPolicies.RequireEmployee);
 
         // Store the web-relative path of the competition's hero image (creator or platform admin). The
         // image file itself is written to the web app's wwwroot by the caller; here we only persist the path.
@@ -326,7 +342,7 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
         {
             try
             {
-                await svc.SetRevealAsync(me.UserId!, id, req.RevealUtc, ct);
+                await svc.SetRevealAsync(me.UserId!, id, req.RevealUtc, req.ConcludeAtReveal, me.IsInRole(KocRoles.PlatformAdmin), ct);
                 return Results.NoContent();
             }
             catch (CompetitionException ex)
@@ -335,6 +351,55 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             }
         })
         .WithName("SetCompetitionReveal")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // The Host console's one save for the words and the rules. English title and description live
+        // HERE — for a long time the Arabic was editable after creation and the English was not.
+        group.MapPut("/competitions/{id:guid}", async (Guid id, UpdateCompetitionRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        {
+            VisibilityScope? scope = null;
+            if (!string.IsNullOrWhiteSpace(req.Scope))
+            {
+                if (!Enum.TryParse<VisibilityScope>(req.Scope, ignoreCase: true, out var parsed))
+                {
+                    return Results.BadRequest(new { error = $"Unknown visibility scope '{req.Scope}'." });
+                }
+
+                scope = parsed;
+            }
+
+            try
+            {
+                await svc.UpdateAsync(me.UserId!, me.IsInRole(KocRoles.PlatformAdmin), id, req.Title, req.Description, req.QuotaPerDay, scope, ct);
+                return Results.NoContent();
+            }
+            catch (CompetitionAccessException ex)
+            {
+                return Results.Json(new { error = messages.For(ex) }, statusCode: StatusCodes.Status403Forbidden);
+            }
+            catch (CompetitionException ex)
+            {
+                return Results.BadRequest(new { error = messages.For(ex) });
+            }
+        })
+        .WithName("UpdateCompetition")
+        .RequireAuthorization(KocPolicies.RequireEmployee);
+
+        // Which part of KOC the challenge belongs to — the host's own choice. Without it a hosted
+        // competition is invisible to every category filter on the site.
+        group.MapPut("/competitions/{id:guid}/category", async (Guid id, SetCompetitionCategoryRequest req, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
+        {
+            try
+            {
+                await svc.SetCompetitionCategoryAsync(me.UserId!, id, req.Code, me.IsInRole(KocRoles.PlatformAdmin), ct);
+                return Results.NoContent();
+            }
+            catch (CompetitionException ex)
+            {
+                return Results.BadRequest(new { error = messages.For(ex) });
+            }
+        })
+        .WithName("SetOwnCompetitionCategory")
         .RequireAuthorization(KocPolicies.RequireEmployee);
 
         group.MapGet("/competitions/{id:guid}/data/{which}", async (Guid id, string which, IKocCurrentUser me, ICompetitionService svc, CancellationToken ct) =>
@@ -458,7 +523,8 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
 
     private static CompetitionDto ToDto(
         Competition c, CompetitionStats? stats, IScorerRegistry scorers,
-        IReadOnlyDictionary<string, string>? categoryNames = null)
+        IReadOnlyDictionary<string, string>? categoryNames = null,
+        string? viewerUserId = null, bool viewerIsAdmin = false, int? quotaRemaining = null)
     {
         var scorer = scorers.Resolve(c.ScorerCode);
         var metric = scorer.Code.Equals("rmse", StringComparison.OrdinalIgnoreCase) ? "RMSE"
@@ -483,7 +549,15 @@ group.MapPost("/competitions", async (CreateCompetitionRequest req, IKocCurrentU
             c.HeroImagePath is not null,
             c.HeroImagePath,
             c.CategoryCode,
-            c.CategoryCode is { Length: > 0 } code ? categoryNames?.GetValueOrDefault(code) : null);
+            c.CategoryCode is { Length: > 0 } code ? categoryNames?.GetValueOrDefault(code) : null,
+            // The scoring identity travels with every card: it is what keeps the console's Task select
+            // inside the metric's family, and it costs nothing — the scorer is already resolved above.
+            scorer.Code,
+            [.. scorer.SupportedTasks],
+            // Computed here, server-side: the page never guesses who may manage what.
+            viewerUserId is { Length: > 0 } && (c.CreatedByUserId == viewerUserId || viewerIsAdmin),
+            quotaRemaining,
+            c.ConcludeAtReveal);
     }
 
     /// <summary>Category code → display name, so the DTO carries a label the UI can show without a lookup.</summary>

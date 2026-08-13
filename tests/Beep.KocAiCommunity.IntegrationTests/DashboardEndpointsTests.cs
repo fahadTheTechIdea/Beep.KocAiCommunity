@@ -19,6 +19,8 @@ public class DashboardEndpointsTests(KocApiFactory factory) : IClassFixture<KocA
             new CreateCompetitionRequest("Dash comp", "predict", "Company", null, null, 5, "accuracy"));
         var competitionId = (await create.Content.ReadFromJsonAsync<CompetitionDto>())!.Id;
         await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,B"));
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .EnsureSuccessStatusCode();
 
         var competitor = _factory.CreateClientAs("dash-a", "Employee");
         await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,B"));

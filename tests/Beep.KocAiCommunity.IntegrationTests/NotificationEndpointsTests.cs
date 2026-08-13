@@ -21,6 +21,10 @@ public class NotificationEndpointsTests(KocApiFactory factory) : IClassFixture<K
         var competitionId = (await create.Content.ReadFromJsonAsync<CompetitionDto>())!.Id;
         await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A\n2,B"));
 
+        // Competitions are born drafts now; nothing accepts submissions until the host activates.
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
         var competitor = _factory.CreateClientAs("notif-a", "Employee");
         (await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A\n2,B")))
             .StatusCode.Should().Be(HttpStatusCode.OK);
@@ -50,6 +54,10 @@ public class NotificationEndpointsTests(KocApiFactory factory) : IClassFixture<K
             new CreateCompetitionRequest("Wrap up", "predict", "Company", null, null, 5, "accuracy"));
         var competitionId = (await create.Content.ReadFromJsonAsync<CompetitionDto>())!.Id;
         await creator.PostAsync($"/api/v1/competitions/{competitionId}/answer-key", CsvFile("id,label\n1,A"));
+
+        // Born a draft — activate before anyone can take part.
+        (await creator.PostAsJsonAsync($"/api/v1/competitions/{competitionId}/status", new SetStatusRequest("active")))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var competitor = _factory.CreateClientAs("notif-p", "Employee");
         await competitor.PostAsync($"/api/v1/competitions/{competitionId}/submissions", CsvFile("id,label\n1,A"));

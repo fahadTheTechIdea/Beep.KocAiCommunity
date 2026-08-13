@@ -37,10 +37,10 @@ else
 {
     <!-- Arena banner -->
     <BlueprintCard Class="@($"koc-arena-banner pa-6 mb-4{(_competition.HasHeroImage ? " koc-has-photo" : "")}")" Style="@BannerStyle()">
-        <MudLink Href="/compete" Style="color:#cfe4f5;font-size:13px;">← All competitions</MudLink>
+        <MudLink Href="/compete" Style="color:#cfe4f5;font-size:13px;">← @L["All competitions"]</MudLink>
         <div class="d-flex justify-space-between align-end flex-wrap gap-4 mt-2">
             <div style="min-width:280px;max-width:62ch;">
-                <span class="koc-eyebrow">⚔ Competition</span>
+                <span class="koc-eyebrow">⚔ @L["Competition"]</span>
                 <MudText Typo="Typo.h4" Class="koc-heading" Style="color:#fff;">🏆 @_competition.Title</MudText>
                 <MudText Typo="Typo.caption" Style="opacity:.85;">@L["Hosted by {0}", _competition.HostName]</MudText>
                 <div class="d-flex gap-1 flex-wrap mt-2">
@@ -156,12 +156,13 @@ else
                 </MudGrid>
 
                 <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Evaluation"]</MudText>
-                <MudText Typo="Typo.body2" Style="max-width:75ch;">
-                    Submissions are scored with <b>@CompetitionDisplay.MetricLabel(_competition, L)</b> against a hidden answer key.
+                <MudText Typo="Typo.body2" Style="max-width:75ch;" Class="mb-1">
+                    @L["Scored with {0} against a hidden answer key — only modelling moves your rank.", CompetitionDisplay.MetricLabel(_competition, L)]
                     @(_competition.RevealUtc is null
                         ? L["The live leaderboard reflects your best score."]
                         : L["The live leaderboard shows public scores; final private standings unlock on reveal day so no one can game the last hours."])
                 </MudText>
+                <MudText Typo="Typo.caption" Style="opacity:.75;">@L[CompetitionTaskCatalog.Find(_competition.TaskType).MetricPlain]</MudText>
             </MudTabPanel>
 
             <!-- 2 · Data -->
@@ -198,6 +199,11 @@ else
                             </MudItem>
                         }
                     </MudGrid>
+                    @if (_evalCsv is not null)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FileDownload"
+                                   Href="@DataUri(BuildSampleSubmission())" download="sample_submission.csv">@L["Download a sample submission file"]</MudButton>
+                    }
                     <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.7;">
                         @L["KOC Studio reads these files directly — download them only if you want to explore them yourself."]
                     </MudText>
@@ -206,7 +212,7 @@ else
                 {
                     <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true">
                         @L["No data files attached yet — this challenge currently accepts uploaded prediction files only."]
-                        @(CanCreate ? L["Attach the files in the Host tab."] : "")
+                        @(_competition.CanManage ? L["Attach the files in the Host tab."] : "")
                     </MudAlert>
                 }
             </MudTabPanel>
@@ -270,10 +276,27 @@ else
                 else
                 {
                     <MudText Typo="Typo.subtitle2" Class="koc-heading mb-1">@L["Submit a prediction"]</MudText>
-                    <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="opacity:.75;">
-                        @L["CSV of"] <code>@_competition.IdColumn, @_competition.LabelColumn</code> — @L["scored instantly against the hidden answer key."]
+                    @* The one line of format guidance a competitor gets, so it speaks THIS task's
+                       language — "predict the number" for regression, "a score, higher = more
+                       anomalous" for AUC — instead of saying id,label to everyone. *@
+                    <MudText Typo="Typo.caption" Class="mb-1 d-block" Style="opacity:.75;">
+                        <code>@_competition.IdColumn, @_competition.LabelColumn</code> — @L[CompetitionTaskCatalog.Find(_competition.TaskType).SubmissionHint]
                     </MudText>
+                    <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="opacity:.75;">@L["Scored instantly against the hidden answer key."]</MudText>
+                    @if (_evalCsv is not null)
+                    {
+                        <div class="mb-2">
+                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FileDownload"
+                                       Href="@DataUri(BuildSampleSubmission())" download="sample_submission.csv">@L["Download a sample submission file"]</MudButton>
+                        </div>
+                    }
                     <InputFile OnChange="OnPredictionSelected" accept=".csv" />
+                    @if (_competition.MyQuotaRemainingToday is { } quotaLeft)
+                    {
+                        <MudText Typo="Typo.caption" Class="d-block mt-1" Style="opacity:.7;">
+                            @L["{0} of {1} submissions left today — the quota resets at midnight UTC.", quotaLeft, _competition.QuotaPerDay]
+                        </MudText>
+                    }
                     @if (_lastScore is not null)
                     {
                         <MudAlert Severity="Severity.Success" Variant="Variant.Text" Dense="true" Class="mt-2">
@@ -305,11 +328,15 @@ else
                 }
             </MudTabPanel>
 
-            @if (CanCreate)
+            @if (_competition.CanManage)
             {
-                <!-- 5 · Host -->
+                <!-- 5 · Host — the one editor. The launcher only names a competition; it is finished
+                     here, and ONLY here: every field this console owns appears on no other surface. -->
                 <MudTabPanel Text="@L["Host"]" Icon="@Icons.Material.Filled.Tune" Class="pa-5">
-                    <div class="d-flex align-center gap-2 mb-4">
+                    @* The readiness checklist, wired to the same rule the Activate button enforces. *@
+                    <div class="d-flex align-center gap-2 mb-4 flex-wrap">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(HasBrief ? Color.Success : Color.Default)"
+                                 Icon="@(HasBrief ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">@L["Brief"]</MudChip>
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_competition.HasDatasets ? Color.Success : Color.Default)"
                                  Icon="@(_competition.HasDatasets ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">@L["Data"]</MudChip>
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_competition.HasAnswerKey ? Color.Success : Color.Default)"
@@ -317,41 +344,129 @@ else
                         <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="@CompetitionDisplay.StatusColor(_competition.Status)">@L[CompetitionDisplay.StatusLabel(_competition.Status)]</MudChip>
                     </div>
 
-                    @* Translation lives with the other things only the host can change. An author who published
-                       in English and wants the Arabic later had nowhere to do it — the create dialog was the only
-                       door, and it closes behind you. *@
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Languages"]</MudText>
+                    @* ---- The words, every language side by side, one save. English is the record
+                         itself — the fallback everyone sees; each other language is an optional
+                         overlay. For a long time the Arabic was editable here and the English was
+                         frozen at creation, which is how typos became permanent. *@
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["About this challenge"]</MudText>
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
-                        @L["What Arabic-speaking colleagues see. Leave blank and they see your English — nothing breaks."]
+                        @L["What competitors read. Leave the Arabic blank and Arabic readers simply see the English — nothing breaks."]
                     </MudText>
-                    <MudTextField @bind-Value="_titleAr" Label="@L["Competition title (العربية)"]" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" Class="mb-2" Style="direction:rtl;" />
-                    <MudTextField @bind-Value="_descriptionAr" Label="@L["Overview (العربية)"]" Variant="Variant.Outlined"
-                                  Lines="4" Class="mb-2" Style="direction:rtl;" />
+                    <MudGrid Spacing="3" Class="mb-1">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_titleEn" Label="@L["Competition title"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2" />
+                            <MudTextField @bind-Value="_descriptionEn" Label="@L["Overview — what competitors predict and why it matters"]"
+                                          Variant="Variant.Outlined" Lines="6" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="_titleAr" Label="@L["Competition title (العربية)"]" Variant="Variant.Outlined"
+                                          Margin="Margin.Dense" Class="mb-2" Style="direction:rtl;" />
+                            <MudTextField @bind-Value="_descriptionAr" Label="@L["Overview (العربية)"]" Variant="Variant.Outlined"
+                                          Lines="6" Style="direction:rtl;" />
+                        </MudItem>
+                    </MudGrid>
+
+                    @* ---- Audience & rules save with the words: one request, one button. *@
+                    <div class="d-flex gap-3 flex-wrap align-center mb-3">
+                        <MudSelect T="string" @bind-Value="_scope" Label="@L["Who can compete"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Style="max-width:220px;" Disabled="@(_competition.Status != "draft")">
+                            @foreach (var scope in AllowedScopes)
+                            {
+                                <MudSelectItem Value="@scope">@L[ScopeChoiceLabel(scope)]</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudNumericField T="int" @bind-Value="_quota" Label="@L["Submissions per day"]" Variant="Variant.Outlined"
+                                         Margin="Margin.Dense" Min="1" Max="25" Style="max-width:170px;" />
+                        @if (_competition.Status != "draft")
+                        {
+                            <MudText Typo="Typo.caption" Style="opacity:.7;max-width:34ch;">
+                                @L["The audience is frozen once a competition activates — changing it live would change who can see submissions already made."]
+                            </MudText>
+                        }
+                    </div>
                     <div class="d-flex align-center gap-3 mb-6">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_savingTranslation"
-                                   StartIcon="@Icons.Material.Filled.Translate" OnClick="SaveTranslation">@L["Save Arabic"]</MudButton>
-                        @if (_translationSaved)
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_savingAbout"
+                                   StartIcon="@Icons.Material.Filled.Save" OnClick="SaveAboutAsync">@L["Save — all languages"]</MudButton>
+                        @if (_aboutSaved)
                         {
                             <MudText Typo="Typo.caption" Color="Color.Success">@L["Saved"]</MudText>
                         }
                     </div>
 
-                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Competition data"]</MudText>
+                    <MudDivider Class="my-4" />
+
+                    @* ---- Where it belongs and what it pays. *@
+                    <MudGrid Spacing="4" Class="mb-2">
+                        <MudItem xs="12" md="5">
+                            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Domain"]</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
+                                @L["Which part of KOC this challenge belongs to — the area filters across the site run on it."]
+                            </MudText>
+                            <MudSelect T="string" Value="_categoryCode" ValueChanged="OnCategoryChanged" Label="@L["Domain"]"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Style="max-width:280px;">
+                                @foreach (var category in _categories)
+                                {
+                                    <MudSelectItem T="string" Value="@category.Code">@category.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="7">
+                            <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">🏆 @L["Prizes"]</MudText>
+                            <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">
+                                @L["Free text, shown on the banner and cards. Blank clears — the standard Barrels and badges are awarded either way."]
+                            </MudText>
+                            <div class="d-flex gap-2 flex-wrap align-center">
+                                <MudTextField @bind-Value="_firstPrize" Label="🥇" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:180px;" />
+                                <MudTextField @bind-Value="_secondPrize" Label="🥈" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:180px;" />
+                                <MudTextField @bind-Value="_thirdPrize" Label="🥉" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:180px;" />
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" OnClick="SavePrizesAsync">@L["Save prizes"]</MudButton>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudDivider Class="my-4" />
+
+                    @* ---- Task & data. The metric was chosen at creation and is read-only here: changing
+                         it under a live leaderboard would reorder everyone. The task may still move, but
+                         only within the metric's family — the select simply has no other options. *@
+                    <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Task & scoring"]</MudText>
+                    <div class="d-flex align-center gap-2 mb-2 flex-wrap">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">@CompetitionDisplay.MetricLabel(_competition, L)</MudChip>
+                        <MudText Typo="Typo.caption" Style="opacity:.75;">@L[CompetitionTaskCatalog.Find(_dsTask).MetricPlain]</MudText>
+                    </div>
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="opacity:.75;">
                         @L["Competitors download the training data, build a model, and are scored on the evaluation set against your hidden answer key."]
                     </MudText>
                     <div class="d-flex gap-3 flex-wrap mb-3">
                         <MudTextField @bind-Value="_dsLabel" Label="@L["Label column"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
                         <MudTextField @bind-Value="_dsId" Label="@L["Id column"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:150px;" />
-                        <MudSelect @bind-Value="_dsTask" Label="@L["Task"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:220px;">
-                            <MudSelectItem Value="@("BinaryClassification")">@L["Binary classification"]</MudSelectItem>
-                            <MudSelectItem Value="@("MulticlassClassification")">@L["Multiclass classification"]</MudSelectItem>
-                            <MudSelectItem Value="@("Regression")">@L["Regression"]</MudSelectItem>
-                            <MudSelectItem Value="@("Forecasting")">@L["Time-series forecasting"]</MudSelectItem>
-                            <MudSelectItem Value="@("AnomalyDetection")">@L["Anomaly detection"]</MudSelectItem>
+                        <MudSelect @bind-Value="_dsTask" Label="@L["Task"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:240px;">
+                            @foreach (var option in TaskChoices)
+                            {
+                                <MudSelectItem Value="@option.Key">@L[option.Label]</MudSelectItem>
+                            }
                         </MudSelect>
                     </div>
+
+                    @* The three files, sketched for the CURRENT task — moved here from the old create
+                       dialog, next to the uploads they describe. *@
+                    <MudExpansionPanels Elevation="0" Class="mb-3">
+                        <MudExpansionPanel Dense="true">
+                            <TitleContent>
+                                <div class="d-flex align-center gap-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
+                                    <MudText Typo="Typo.body2"><b>@L["The three files you'll prepare"]</b></MudText>
+                                </div>
+                            </TitleContent>
+                            <ChildContent>
+                                @{ var sample = CompetitionTaskCatalog.Find(_dsTask); }
+                                @FilePreview("training.csv", L["labelled — competitors download this"], sample.TrainingSample)
+                                @FilePreview("evaluation.csv", L["no label — competitors predict for these rows"], sample.EvalSample)
+                                @FilePreview("answer-key.csv", L["hidden — only the platform sees it, used to score"], sample.KeySample)
+                            </ChildContent>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+
                     <MudGrid Spacing="3">
                         <MudItem xs="12" md="4">
                             <MudText Typo="Typo.subtitle2" Class="koc-heading">@L["Training data"]</MudText>
@@ -396,9 +511,11 @@ else
                     <MudDivider Class="my-4" />
 
                     <MudText Typo="Typo.subtitle1" Class="koc-heading mb-1">@L["Timeline"]</MudText>
-                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">@L["Until the reveal, the final private standings stay concealed so no one games the last day."]</MudText>
+                    <MudText Typo="Typo.caption" Class="d-block mb-2" Style="opacity:.75;">@L["Until the reveal, the final private standings stay concealed so no one games the last day. Times are your local time."]</MudText>
                     <div class="d-flex gap-2 align-center flex-wrap">
-                        <MudDatePicker @bind-Date="_revealDate" Label="@L["Reveal date"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:200px;" />
+                        <MudDatePicker @bind-Date="_revealDate" Label="@L["Reveal date"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:180px;" />
+                        <MudTimePicker @bind-Time="_revealTime" Label="@L["Time"]" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:130px;" />
+                        <MudSwitch T="bool" @bind-Value="_concludeAtReveal" Color="Color.Primary" Label="@L["Conclude automatically at reveal"]" />
                         <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="SetReveal" Disabled="_revealDate is null">@L["Set reveal"]</MudButton>
                         @if (_competition.RevealUtc is not null)
                         {
@@ -426,7 +543,14 @@ else
                         @if (_competition.Status != "active")
                         {
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.RocketLaunch"
+                                       Disabled="@(!_competition.HasAnswerKey)"
                                        OnClick='() => SetStatus("active")'>@L["Activate — open submissions"]</MudButton>
+                            @if (!_competition.HasAnswerKey)
+                            {
+                                <MudText Typo="Typo.caption" Style="opacity:.75;">
+                                    @L["Upload the hidden answer key first — without it no submission can be scored."]
+                                </MudText>
+                            }
                         }
                         @if (_competition.Status != "concluded")
                         {
@@ -483,9 +607,49 @@ else
     private MemoryStream? _dsEval;
     private int _heroVersion = 1;
     private DateTime? _revealDate;
+    private TimeSpan? _revealTime;
+    private bool _concludeAtReveal;
 
+    // The console's editable copy of the record — initialised from the competition on load, written
+    // back by SaveAboutAsync. _titleEn/_descriptionEn come from the translations read (the "en" row),
+    // never from the competition DTO, which arrives already translated for whoever is reading.
+    private string _titleEn = "";
+    private string _descriptionEn = "";
+    private int _quota = 5;
+    private string _scope = "Company";
+    private string? _categoryCode;
+    private string _firstPrize = "";
+    private string _secondPrize = "";
+    private string _thirdPrize = "";
+    private bool _savingAbout;
+    private bool _aboutSaved;
+    private IReadOnlyList<CompetitionCategoryDto> _categories = [];
+
+    /// <summary>The launcher's cap on audience width, for the scope select's options.</summary>
     private string? _maxScope;
-    private bool CanCreate => _maxScope is not null;
+
+    private static readonly string[] ScopeRank = ["Team", "Group", "Directorate", "Company"];
+
+    private IEnumerable<string> AllowedScopes =>
+        ScopeRank.Where(scope => _maxScope is null || Array.IndexOf(ScopeRank, scope) <= Array.IndexOf(ScopeRank, _maxScope));
+
+    private static string ScopeChoiceLabel(string scope) => scope switch
+    {
+        "Company" => "All of KOC",
+        "Directorate" => "My directorate",
+        "Group" => "My group",
+        _ => "My team",
+    };
+
+    /// <summary>Declared for the localization coverage test — computed keys the markup scan cannot see.</summary>
+    public static readonly string[] TranslatableScopeChoices = ["All of KOC", "My directorate", "My group", "My team"];
+
+    /// <summary>A brief exists once the description says anything at all.</summary>
+    private bool HasBrief => !string.IsNullOrWhiteSpace(_descriptionEn);
+
+    /// <summary>The tasks the Task select may offer: the scorer's own family, nothing else.</summary>
+    private IReadOnlyList<CompetitionTaskOption> TaskChoices =>
+        CompetitionTaskCatalog.ForScorer(_competition?.ScorerCode);
 
     /// <summary>Who is asking, when anyone at all may be asking. Null outside an auth-aware render.</summary>
     [CascadingParameter]
@@ -493,8 +657,6 @@ else
 
     private string _titleAr = "";
     private string _descriptionAr = "";
-    private bool _savingTranslation;
-    private bool _translationSaved;
 
     private HubConnection? _hub;
     private Guid? _joinedCompetition;
@@ -551,7 +713,30 @@ else
             return;
         }
 
-        _revealDate = _competition.RevealUtc?.ToLocalTime();
+        var revealLocal = _competition.RevealUtc?.ToLocalTime();
+        _revealDate = revealLocal?.Date;
+        _revealTime = revealLocal?.TimeOfDay;
+        _concludeAtReveal = _competition.ConcludeAtReveal;
+
+        // The console edits what is actually stored, so its fields start from the record — the old tab
+        // reset the task to BinaryClassification on every load, and a host re-uploading data silently
+        // rewrote the competition's task with it.
+        _dsLabel = _competition.LabelColumn;
+        _dsId = _competition.IdColumn;
+        _dsTask = _competition.TaskType;
+        _quota = _competition.QuotaPerDay > 0 ? _competition.QuotaPerDay : 5;
+        _scope = _competition.Scope;
+        _categoryCode = _competition.CategoryCode;
+        _firstPrize = _competition.FirstPrize ?? "";
+        _secondPrize = _competition.SecondPrize ?? "";
+        _thirdPrize = _competition.ThirdPrize ?? "";
+
+        if (_competition.CanManage && _categories.Count == 0)
+        {
+            try { _categories = await Api.GetCompetitionCategoriesAsync(); }
+            catch { _categories = []; }
+        }
+
         await LoadLeaderboard();
         await LoadMySubmissions();
         await LoadData();
@@ -594,23 +779,37 @@ else
         try
         {
             var translations = await Api.GetCompetitionTranslationsAsync(Id);
+            var english = translations.FirstOrDefault(t => t.Language == "en");
             var arabic = translations.FirstOrDefault(t => t.Language == "ar");
+            _titleEn = english?.Title ?? _competition.Title;
+            _descriptionEn = english?.Description ?? _competition.Description;
             _titleAr = arabic?.Title ?? "";
             _descriptionAr = arabic?.Description ?? "";
         }
         catch
         {
-            // Only the host can read these; a competitor opening the page is not an error worth showing.
+            // A competitor opening the page cannot read these; that is not an error worth showing.
+            _titleEn = _competition.Title;
+            _descriptionEn = _competition.Description;
             _titleAr = _descriptionAr = "";
         }
     }
 
-    private async Task SaveTranslation()
+    /// <summary>
+    /// One save for everything written: the English (the record itself), each other language's overlay,
+    /// the quota, and — while it is a draft — the audience. Two stores, one button; a host should not
+    /// have to know which words live in which table.
+    /// </summary>
+    private async Task SaveAboutAsync()
     {
-        _savingTranslation = true;
-        _translationSaved = false;
+        _savingAbout = true;
+        _aboutSaved = false;
         try
         {
+            await Api.UpdateCompetitionAsync(Id, new UpdateCompetitionRequest(
+                _titleEn, _descriptionEn, _quota,
+                _competition?.Status == "draft" ? _scope : null));
+
             var error = await Api.SetCompetitionTranslationAsync(Id, new SetCompetitionTranslationRequest("ar", _titleAr, _descriptionAr));
             if (error is not null)
             {
@@ -618,11 +817,10 @@ else
                 return;
             }
 
-            _translationSaved = true;
-            Snackbar.Add(L["Arabic saved."], Severity.Success);
+            _aboutSaved = true;
+            Snackbar.Add(L["Saved — all languages."], Severity.Success);
 
-            // Re-read the competition: if the person editing is reading in Arabic, the page around them
-            // should now say what they just wrote.
+            // Re-read the competition: the banner around the console should now say what was just written.
             await LoadAllAsync();
         }
         catch (Exception ex)
@@ -631,16 +829,56 @@ else
         }
         finally
         {
-            _savingTranslation = false;
+            _savingAbout = false;
+        }
+    }
+
+    private async Task OnCategoryChanged(string? code)
+    {
+        _categoryCode = string.IsNullOrWhiteSpace(code) ? null : code;
+        try
+        {
+            await Api.SetOwnCompetitionCategoryAsync(Id, _categoryCode);
+            Snackbar.Add(L["Domain saved."], Severity.Success);
+            await ReloadCompetitionAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task SavePrizesAsync()
+    {
+        try
+        {
+            await Api.SetCompetitionPrizesAsync(Id, new SetPrizesRequest(_firstPrize, _secondPrize, _thirdPrize));
+            Snackbar.Add(L["Prizes saved."], Severity.Success);
+            await ReloadCompetitionAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
         }
     }
 
     private async Task LoadData()
     {
-        if (_competition is { HasDatasets: true })
+        if (_competition is not { HasDatasets: true })
+        {
+            return;
+        }
+
+        try
         {
             _trainingCsv = await Api.GetCompetitionDataAsync(Id, "training");
             _evalCsv = await Api.GetCompetitionDataAsync(Id, "evaluation");
+        }
+        catch
+        {
+            // The Data tab degrades to its empty state; a rejected download must not take the whole
+            // page down with it.
+            _trainingCsv = _evalCsv = null;
         }
     }
 
@@ -729,7 +967,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Submission failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(L["Submission failed: {0}", ex.Message], Severity.Error);
         }
     }
 
@@ -744,7 +982,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Status change failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(L["Status change failed: {0}", ex.Message], Severity.Error);
         }
     }
 
@@ -757,12 +995,15 @@ else
 
         try
         {
-            await Api.SetCompetitionRevealAsync(Id, DateTime.SpecifyKind(_revealDate.Value, DateTimeKind.Local).ToUniversalTime());
+            // One conversion, spelled out: the picked wall-clock (defaulting to noon, never a silent
+            // midnight) is local time, converted to UTC here and nowhere else.
+            var local = _revealDate.Value.Date + (_revealTime ?? TimeSpan.FromHours(12));
+            await Api.SetCompetitionRevealAsync(Id, DateTime.SpecifyKind(local, DateTimeKind.Local).ToUniversalTime(), _concludeAtReveal);
             await ReloadCompetitionAsync();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Reveal update failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(L["Reveal update failed: {0}", ex.Message], Severity.Error);
         }
     }
 
@@ -772,11 +1013,13 @@ else
         {
             await Api.SetCompetitionRevealAsync(Id, null);
             _revealDate = null;
+            _revealTime = null;
+            _concludeAtReveal = false;
             await ReloadCompetitionAsync();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Reveal update failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(L["Reveal update failed: {0}", ex.Message], Severity.Error);
         }
     }
 
@@ -802,13 +1045,13 @@ else
             _dsTraining.Position = 0;
             _dsEval.Position = 0;
             await Api.SetCompetitionDatasetsAsync(Id, _dsTraining, _dsEval, _dsLabel, _dsId, _dsTask);
-            Snackbar.Add("Competition data uploaded.", Severity.Success);
+            Snackbar.Add(L["Competition data uploaded."], Severity.Success);
             await ReloadCompetitionAsync();
             await LoadData();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(L["Upload failed: {0}", ex.Message], Severity.Error);
         }
     }
 
@@ -818,12 +1061,12 @@ else
         {
             using var ms = await ReadAsync(e.File);
             await Api.SetAnswerKeyAsync(Id, ms, e.File.Name);
-            Snackbar.Add("Answer key set.", Severity.Success);
+            Snackbar.Add(L["Answer key set."], Severity.Success);
             await ReloadCompetitionAsync();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(L["Upload failed: {0}", ex.Message], Severity.Error);
         }
     }
 
@@ -834,12 +1077,12 @@ else
             var path = await HeroImages.SaveAsync(Id, e.File);
             await Api.SetCompetitionHeroImagePathAsync(Id, path);
             _heroVersion++; // bust the browser cache so the new image shows immediately
-            Snackbar.Add("Hero image uploaded.", Severity.Success);
+            Snackbar.Add(L["Hero image uploaded."], Severity.Success);
             await ReloadCompetitionAsync();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(L["Upload failed: {0}", ex.Message], Severity.Error);
         }
     }
 
@@ -850,6 +1093,37 @@ else
     private string? BannerStyle() => _competition?.HeroImagePath is { } heroPath
         ? $"background-image: linear-gradient(120deg, rgba(11,46,76,.64), rgba(11,46,76,.30)), url('{heroPath}?v={_heroVersion}'); background-size: cover; background-position: center;"
         : null;
+
+    /// <summary>
+    /// A ready-to-edit submission file: every evaluation id, the label header, and a placeholder value
+    /// per row — the fastest possible answer to "what exactly do I upload?".
+    /// </summary>
+    private string BuildSampleSubmission()
+    {
+        var option = CompetitionTaskCatalog.Find(_competition?.TaskType);
+        var sb = new System.Text.StringBuilder($"{_competition?.IdColumn ?? "id"},{_competition?.LabelColumn ?? "label"}\n");
+        foreach (var line in (_evalCsv ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(1))
+        {
+            var id = line.Split(',')[0].Trim();
+            if (id.Length > 0)
+            {
+                sb.Append($"{id},{option.SampleValue}\n");
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private RenderFragment FilePreview(string title, string sub, string csv) => __builder =>
+    {
+        <div class="mb-2">
+            <div class="d-flex align-center gap-2">
+                <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" Color="Color.Primary" />
+                <MudText Typo="Typo.caption"><b>@title</b> — <span style="opacity:.7;">@sub</span></MudText>
+            </div>
+            <pre style="background:var(--koc-bg);border:1px solid var(--koc-divider);border-radius:6px;padding:8px 10px;margin:4px 0 0;overflow-x:auto;font-size:12px;line-height:1.5;">@csv</pre>
+        </div>
+    };
 
     private static string DataUri(string csv) =>
         $"data:text/csv;charset=utf-8;base64,{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(csv))}";
